@@ -1,8 +1,9 @@
-# Binaries
+# Binaries and compiled
 *.exe
 *.o
 *.out
 *.a
+*.pyc
 
 # auto-generated
 *.egg-info/
@@ -17,3 +18,7 @@
 # developer environments
 .idea
 .vscode
+
+# Documentation
+docs/*
+doctest/*

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Common Mathematical routines
+Common mathematical routines.
+
 """
 
 import numpy as np
@@ -13,9 +14,9 @@ RAD2DEG = 180.0 / M_PI
 
 def cosd(x):
     """
-    Return the cosine of x, which is expressed in degrees.
+    Return the cosine of `x`, which is expressed in degrees.
 
-    If x is a list, it will be converted first to a NumPy array, and then the
+    If `x` is a list, it will be converted first to a NumPy array, and then the
     cosine operation over each value will be carried out.
 
     Parameters
@@ -45,9 +46,9 @@ def cosd(x):
 
 def sind(x):
     """
-    Return the sine of x, which is expressed in degrees.
+    Return the sine of `x`, which is expressed in degrees.
 
-    If x is a list, it will be converted first to a NumPy array, and then the
+    If `x` is a list, it will be converted first to a NumPy array, and then the
     sine operation over each value will be carried out.
 
     Parameters

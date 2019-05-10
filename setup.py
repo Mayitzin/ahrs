@@ -23,24 +23,21 @@ from setuptools import setup, find_packages
 if sys.version_info.major < 3:
     raise RuntimeError("Python version >= 3 required.")
 
-from versions import pkg_version
-protoboard_version = pkg_version()
-
-DEFAULT_URL = 'https://gitlab.com/Mayitzin/ahrs/'
+REPOSITORY_URL = 'https://github.com/Mayitzin/ahrs'
 
 metadata = dict(
     name='AHRS',
-    version=protoboard_version,
+    version='0.0.1',
     description='Attitude and Heading Reference Systems.',
     long_description=__doc__,
-    url=DEFAULT_URL,
-    download_url=DEFAULT_URL+'-/archive/master/ahrs-master.zip',
+    url=REPOSITORY_URL,
+    download_url=REPOSITORY_URL+'-/archive/master/ahrs-master.zip',
     author='Mario Garcia',
     author_email='mario.garcia@tum.de',
     project_urls={
-        "Bug Tracker": DEFAULT_URL+"issues"
+        "Bug Tracker": REPOSITORY_URL+"issues"
     },
-    install_requires=['numpy',   # Newest numpy version yields problems
+    install_requires=['numpy',
                       'scipy'],
     packages=find_packages()
 )

@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Quaternion Module
+Routines for orientation estimation.
 
-@author: Mario Garcia
+Further description will follow.
+
 """
 
 import numpy as np
-from . maths import *
+from .mathfuncs import *
 
 def q_conj(q):
     """
@@ -37,6 +38,7 @@ def q_conj(q):
       and Intelligent Machines. Georgia Tech.
       (http://www.neil.dantam.name/note/dantam-quaternion.pdf)
     .. [W1] https://en.wikipedia.org/wiki/Quaternion#Conjugation,_the_norm,_and_reciprocal
+
     """
     if len(q) != 4:
         return None
@@ -606,7 +608,7 @@ def am2q(a, m):
 
     References
     ----------
-    ..[Michel] Michel, T. et al. (2018) Attitude Estimation for Indoor
+    .. [Michel] Michel, T. et al. (2018) Attitude Estimation for Indoor
       Navigation and Augmented Reality with Smartphones.
       (http://tyrex.inria.fr/mobile/benchmarks-attitude/)
       (https://hal.inria.fr/hal-01650142v2/document)
@@ -685,9 +687,9 @@ def acc2q(a, return_euler=False):
         ay /= a_norm
         az /= a_norm
         # Euler Angles from Gravity vector
-        ex = np.arctan2( ay, az) - np.pi
-        if ex < -np.pi:
-            ex += np.pi
+        ex = np.arctan2(ay, az) - np.pi
+        if ex*RAD2DEG < -180.0:
+            ex += 2.0*np.pi
         ey = np.arctan2(-ax, np.sqrt(ay*ay + az*az))
         ez = 0.0
         if return_euler:
