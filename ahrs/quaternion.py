@@ -6,7 +6,7 @@ Quaternion Module
 """
 
 import numpy as np
-from maths import *
+from . maths import *
 
 def q_conj(q):
     """
@@ -423,22 +423,23 @@ def rotation(ax=None, ang=0.0):
         ax = "z"
     if type(ax) is int:
         if ax < 0:
-            ax = 0      # Negative axes default to Zero (X-axis)
+            ax = 2      # Negative axes default to 2 (Z-axis)
         ax = valid_axes[ax] if ax < 3 else "z"
     try:
         ang = float(ang)
     except:
-        ang = 0.0
+        return I_3
     # Return 3-by-3 Identity matrix if invalid input
     if ax not in valid_axes:
         return I_3
     # Compute rotation
+    ca, sa = cosd(ang), sind(ang)
     if ax.lower() == "x":
-        return np.array([[1.0, 0.0, 0.0], [0.0, cosd(ang), -sind(ang)], [0.0, sind(ang), cosd(ang)]])
+        return np.array([[1.0, 0.0, 0.0], [0.0, ca, -sa], [0.0, sa, ca]])
     if ax.lower() == "y":
-        return np.array([[cosd(ang), 0.0, sind(ang)], [0.0, 1.0, 0.0], [-sind(ang), 0.0, cosd(ang)]])
+        return np.array([[ca, 0.0, sa], [0.0, 1.0, 0.0], [-sa, 0.0, ca]])
     if ax.lower() == "z":
-        return np.array([[cosd(ang), -sind(ang), 0.0], [sind(ang), cosd(ang), 0.0], [0.0, 0.0, 1.0]])
+        return np.array([[ca, -sa, 0.0], [sa, ca, 0.0], [0.0, 0.0, 1.0]])
 
 def rot_chain(axes=None, angles=None):
     """
@@ -464,7 +465,7 @@ def rot_chain(axes=None, angles=None):
     --------
     >>> import numpy as np
     >>> import random
-    >>> from protoboard.motion import ahrs
+    >>> from ahrs import quaternion
     >>> num_rotations = 5
     >>> axis_order = random.choices("XYZ", k=num_rotations)
     >>> axis_order
@@ -473,7 +474,7 @@ def rot_chain(axes=None, angles=None):
     >>> angles
     array([-139.24498146,  99.8691407, -171.30712526, -60.57132043,
              17.4475838 ])
-    >>> R = ahrs.rot_chain(axis_order, angles)
+    >>> R = quaternion.rot_chain(axis_order, angles)
     >>> R   # R = R_z(-139.24) R_z(99.87) R_x(-171.31) R_z(-60.57) R_y(17.45)
     array([[ 0.85465231  0.3651317   0.36911822]
            [ 0.3025091  -0.92798938  0.21754072]
@@ -486,12 +487,12 @@ def rot_chain(axes=None, angles=None):
         axes = list(axes)
     num_rotations = len(axes)
     if num_rotations < 1:
-        return np.identity(3)
+        return R
     valid_given_axes = set(axes).issubset(set(accepted_axes))
     if valid_given_axes:
-        # Perform the matrix multiplication
+        # Perform the matrix multiplications
         for i in list(range(num_rotations-1, -1, -1)):
-            R = np.dot(rotation(axes[i], angles[i]), R)
+            R = rotation(axes[i], angles[i])@R
     return R
 
 def R2q(R=None, eta=0.0):
@@ -544,14 +545,14 @@ def R2q(R=None, eta=0.0):
         q_z = 0.5*np.sqrt(nom/(3.0-d_z))
     # Assign signs
     if q_w >= 0.0:
-        q_x *= sign(r32-r23)
-        q_y *= sign(r13-r31)
-        q_z *= sign(r21-r12)
+        q_x *= np.sign(r32-r23)
+        q_y *= np.sign(r13-r31)
+        q_z *= np.sign(r21-r12)
     else:
         q_w *= -1.0
-        q_x *= -sign(r32-r23)
-        q_y *= -sign(r13-r31)
-        q_z *= -sign(r21-r12)
+        q_x *= -np.sign(r32-r23)
+        q_y *= -np.sign(r13-r31)
+        q_z *= -np.sign(r21-r12)
     # Return values of quaternion
     return np.asarray([q_w, q_x, q_y, q_z])
 
@@ -586,3 +587,124 @@ def dcm2quat(R):
     qz = (R[0, 1] - R[1, 0]) / qw4
     q = np.array([qw, qx, qy, qz])
     return q / np.linalg.norm(q)
+
+def am2q(a, m):
+    """
+    Estimate pose from given acceleration and/or compass using Michel-method.
+
+    Parameters
+    ----------
+    a : array
+        Array of single sample of 3 orthogonal accelerometers.
+    m : array
+        Array of single sample of 3 orthogonal magnetometers.
+
+    Returns
+    -------
+    pose : array
+        Estimated Quaternion
+
+    References
+    ----------
+    ..[Michel] Michel, T. et al. (2018) Attitude Estimation for Indoor
+      Navigation and Augmented Reality with Smartphones.
+      (http://tyrex.inria.fr/mobile/benchmarks-attitude/)
+      (https://hal.inria.fr/hal-01650142v2/document)
+    .. [Janota] Janota, A. Improving the Precision and Speed of Euler Angles
+      Computation from Low-Cost Rotation Sensor Data. (https://www.mdpi.com/1424-8220/15/3/7016/pdf)
+
+    """
+    if m is None:
+        m = np.array([0.0, 0.0, 0.0])
+    if type(a) != np.ndarray:
+        a = np.array(a)
+    if type(m) != np.ndarray:
+        m = np.array(m)
+    H = np.cross(m, a)
+    H /= np.linalg.norm(H)
+    a /= np.linalg.norm(a)
+    M = np.cross(a, H)
+    # ENU
+    R = np.array([[H[0], M[0], a[0]],
+                  [H[1], M[1], a[1]],
+                  [H[2], M[2], a[2]]])
+    q = dcm2quat(R)
+    return q
+
+
+def acc2q(a, return_euler=False):
+    """
+    Estimate pose from given acceleration and/or compass.
+
+    Parameters
+    ----------
+    a : array
+        A sample of 3 orthogonal accelerometers.
+    m : array
+        A sample of 3 orthogonal magnetometers.
+    return_euler : bool
+        Return pose as Euler angles
+
+    Returns
+    -------
+    pose : array
+        Estimated Quaternion or Euler Angles
+
+    References
+    ----------
+    .. [Michel] Michel, T. et al. (2018) Attitude Estimation for Indoor
+      Navigation and Augmented Reality with Smartphones.
+      (http://tyrex.inria.fr/mobile/benchmarks-attitude/)
+      (https://hal.inria.fr/hal-01650142v2/document)
+    .. [Zhang] Zhang, H. et al (2015) Axis-Exchanged Compensation and Gait
+      Parameters Analysis for High Accuracy Indoor Pedestrian Dead Reckoning.
+      (https://www.researchgate.net/publication/282535868_Axis-Exchanged_Compensation_and_Gait_Parameters_Analysis_for_High_Accuracy_Indoor_Pedestrian_Dead_Reckoning)
+    .. [Yun] Yun, X. et al. (2008) A Simplified Quaternion-Based Algorithm for
+      Orientation Estimation From Earth Gravity and Magnetic Field Measurements.
+      (https://apps.dtic.mil/dtic/tr/fulltext/u2/a601113.pdf)
+    .. [Jung] Jung, D. et al. Inertial Attitude and Position Reference System
+      Development for a Small UAV.
+      (https://pdfs.semanticscholar.org/fb62/903d8e6c051c8f4780c79b6b18fbd02a0ff9.pdf)
+    .. [Bleything] Bleything, T. How to convert Magnetometer data into Compass Heading.
+      (https://blog.digilentinc.com/how-to-convert-magnetometer-data-into-compass-heading/)
+    .. [RTIMU] RT IMU Library. (https://github.com/RTIMULib/RTIMULib2/blob/master/RTIMULib/RTFusion.cpp)
+    .. [Janota] Janota, A. Improving the Precision and Speed of Euler Angles
+      Computation from Low-Cost Rotation Sensor Data. (https://www.mdpi.com/1424-8220/15/3/7016/pdf)
+    .. [Trimpe] Trimpe, S. Accelerometer -based Tilt Estimation of a Rigid Body
+      with only Rotational Degrees of Freedom. 2010.
+      (http://www.idsc.ethz.ch/content/dam/ethz/special-interest/mavt/dynamic-systems-n-control/idsc-dam/Research_DAndrea/Balancing%20Cube/ICRA10_1597_web.pdf)
+
+    """
+    qw, qx, qy, qz = 1.0, 0.0, 0.0, 0.0
+    ex, ey, ez = 0.0, 0.0, 0.0
+    if len(a) == 3:
+        ax, ay, az = a[0], a[1], a[2]
+        # Normalize accelerometer measurements
+        a_norm = np.linalg.norm(a)
+        ax /= a_norm
+        ay /= a_norm
+        az /= a_norm
+        # Euler Angles from Gravity vector
+        ex = np.arctan2( ay, az) - np.pi
+        if ex < -np.pi:
+            ex += np.pi
+        ey = np.arctan2(-ax, np.sqrt(ay*ay + az*az))
+        ez = 0.0
+        if return_euler:
+            return [ex*RAD2DEG, ey*RAD2DEG, ez*RAD2DEG]
+        # Euler to Quaternion
+        cx2 = np.cos(ex/2.0)
+        sx2 = np.sin(ex/2.0)
+        cy2 = np.cos(ey/2.0)
+        sy2 = np.sin(ey/2.0)
+        qrw =  cx2*cy2
+        qrx =  sx2*cy2
+        qry =  cx2*sy2
+        qrz = -sx2*sy2
+        # Normalize reference Quaternion
+        q_norm = np.linalg.norm([qrw, qrx, qry, qrz])
+        qw = qrw/q_norm
+        qx = qrx/q_norm
+        qy = qry/q_norm
+        qz = qrz/q_norm
+    return [qw, qx, qy, qz]
