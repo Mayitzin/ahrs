@@ -34,8 +34,8 @@ def q_conj(q):
     References
     ----------
     .. [MW] Dantam, N. (2014) Quaternion Computation. Institute for Robotics
-            and Intelligent Machines. Georgia Tech.
-            (http://www.neil.dantam.name/note/dantam-quaternion.pdf)
+      and Intelligent Machines. Georgia Tech.
+      (http://www.neil.dantam.name/note/dantam-quaternion.pdf)
     .. [W1] https://en.wikipedia.org/wiki/Quaternion#Conjugation,_the_norm,_and_reciprocal
     """
     if len(q) != 4:
