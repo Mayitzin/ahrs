@@ -8,6 +8,7 @@ AHRS
 """
 
 from . import common
+from . import filters
 
 VERSION = "0.0.1"
 

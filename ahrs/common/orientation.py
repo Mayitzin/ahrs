@@ -34,10 +34,10 @@ def q_conj(q):
 
     References
     ----------
-    .. [MW] Dantam, N. (2014) Quaternion Computation. Institute for Robotics
-      and Intelligent Machines. Georgia Tech.
-      (http://www.neil.dantam.name/note/dantam-quaternion.pdf)
-    .. [W1] https://en.wikipedia.org/wiki/Quaternion#Conjugation,_the_norm,_and_reciprocal
+    .. [1] Dantam, N. (2014) Quaternion Computation. Institute for Robotics
+           and Intelligent Machines. Georgia Tech.
+           (http://www.neil.dantam.name/note/dantam-quaternion.pdf)
+    .. [2] https://en.wikipedia.org/wiki/Quaternion#Conjugation,_the_norm,_and_reciprocal
 
     """
     if len(q) != 4:
@@ -86,8 +86,8 @@ def q_norm(q):
 
     References
     ----------
-    .. [W1] https://en.wikipedia.org/wiki/Quaternion#Unit_quaternion
-    .. [W2] https://en.wikipedia.org/wiki/Versor
+    .. [1] https://en.wikipedia.org/wiki/Quaternion#Unit_quaternion
+    .. [2] https://en.wikipedia.org/wiki/Versor
 
     """
     if len(q)!=4:
@@ -145,10 +145,10 @@ def q_prod(p, q):
 
     References
     ----------
-    .. [MW] Dantam, N. (2014) Quaternion Computation. Institute for Robotics
-        and Intelligent Machines. Georgia Tech.
-        (http://www.neil.dantam.name/note/dantam-quaternion.pdf)
-    .. [W1] https://www.mathworks.com/help/aeroblks/quaternionmultiplication.html
+    .. [1] Dantam, N. (2014) Quaternion Computation. Institute for Robotics
+           and Intelligent Machines. Georgia Tech.
+           (http://www.neil.dantam.name/note/dantam-quaternion.pdf)
+    .. [2] https://www.mathworks.com/help/aeroblks/quaternionmultiplication.html
 
     Examples
     --------
@@ -200,8 +200,8 @@ def axang2quat(axis, angle, rad=True):
 
     References
     ----------
-    .. [W1] https://en.wikipedia.org/wiki/Axis%E2%80%93angle_representation
-    .. [MW] https://www.mathworks.com/help/robotics/ref/axang2quat.html
+    .. [1] https://en.wikipedia.org/wiki/Axis%E2%80%93angle_representation
+    .. [2] https://www.mathworks.com/help/robotics/ref/axang2quat.html
 
     """
     if axis is None:
@@ -232,7 +232,7 @@ def quat2axang(q):
 
     References
     ----------
-    .. [W1] https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation#Recovering_the_axis-angle_representation
+    .. [1] https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation#Recovering_the_axis-angle_representation
 
     """
     if q is None:
@@ -282,8 +282,8 @@ def q2R(q):
 
     References
     ----------
-    .. [W1] https://en.wikipedia.org/wiki/Rotation_matrix#Quaternion
-    .. [W2] https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation#Quaternion-derived_rotation_matrix
+    .. [1] https://en.wikipedia.org/wiki/Rotation_matrix#Quaternion
+    .. [2] https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation#Quaternion-derived_rotation_matrix
 
     """
     if q is None:
@@ -309,7 +309,7 @@ def q2eul(q=None, mode=0):
 
     References
     ----------
-    .. [W1] https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles#Quaternion_to_Euler_Angles_Conversion
+    .. [1] https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles#Quaternion_to_Euler_Angles_Conversion
 
     """
     if q is None:
@@ -340,7 +340,7 @@ def rotation(ax=None, ang=0.0):
     """
     Return a :math:`3 \\times 3` rotation matrix :math:`\\mathbf{R} \\in SO(3)`
 
-    The rotation matrix :math:`\\mathbf{R}` [WA]_ is created for the given axis
+    The rotation matrix :math:`\\mathbf{R}` [1]_ is created for the given axis
     with the given angle :math:`\\theta`. Where the possible rotation axes are:
 
     .. math::
@@ -412,7 +412,7 @@ def rotation(ax=None, ang=0.0):
 
     References
     ----------
-    .. [WA] http://mathworld.wolfram.com/RotationMatrix.html
+    .. [1] http://mathworld.wolfram.com/RotationMatrix.html
 
     """
     # Default values
@@ -482,6 +482,11 @@ def rot_chain(axes=None, angles=None):
            [ 0.3025091  -0.92798938  0.21754072]
            [ 0.4219688  -0.07426006 -0.90356393]])
 
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Rotation_matrix#General_rotations
+    .. [2] https://en.wikipedia.org/wiki/Euler_angles
+
     """
     accepted_axes = list('xyzXYZ')
     R = np.identity(3)
@@ -506,9 +511,9 @@ def R2q(R=None, eta=0.0):
 
     References
     ----------
-    .. [SS] Sarabandi, S. et al. (2018) Accurate Computation of Quaternions
-            from Rotation Matrices.
-            (http://www.iri.upc.edu/files/scidoc/2068-Accurate-Computation-of-Quaternions-from-Rotation-Matrices.pdf)
+    .. [1] Sarabandi, S. et al. (2018) Accurate Computation of Quaternions
+           from Rotation Matrices.
+           (http://www.iri.upc.edu/files/scidoc/2068-Accurate-Computation-of-Quaternions-from-Rotation-Matrices.pdf)
 
     """
     if R is None:
@@ -574,8 +579,8 @@ def dcm2quat(R):
 
     References
     ----------
-    .. [Markley] F. Landis Markley. Attitude Determination using two Vector
-        Measurements.
+    .. [1] F. Landis Markley. Attitude Determination using two Vector
+           Measurements.
 
     """
     if(R.shape[0]!=R.shape[1]):
@@ -608,12 +613,13 @@ def am2q(a, m):
 
     References
     ----------
-    .. [Michel] Michel, T. et al. (2018) Attitude Estimation for Indoor
-      Navigation and Augmented Reality with Smartphones.
-      (http://tyrex.inria.fr/mobile/benchmarks-attitude/)
-      (https://hal.inria.fr/hal-01650142v2/document)
-    .. [Janota] Janota, A. Improving the Precision and Speed of Euler Angles
-      Computation from Low-Cost Rotation Sensor Data. (https://www.mdpi.com/1424-8220/15/3/7016/pdf)
+    .. [1] Michel, T. et al. (2018) Attitude Estimation for Indoor
+           Navigation and Augmented Reality with Smartphones.
+           (http://tyrex.inria.fr/mobile/benchmarks-attitude/)
+           (https://hal.inria.fr/hal-01650142v2/document)
+    .. [2] Janota, A. Improving the Precision and Speed of Euler Angles
+           Computation from Low-Cost Rotation Sensor Data.
+           (https://www.mdpi.com/1424-8220/15/3/7016/pdf)
 
     """
     if m is None:
@@ -654,27 +660,27 @@ def acc2q(a, return_euler=False):
 
     References
     ----------
-    .. [Michel] Michel, T. et al. (2018) Attitude Estimation for Indoor
-      Navigation and Augmented Reality with Smartphones.
-      (http://tyrex.inria.fr/mobile/benchmarks-attitude/)
-      (https://hal.inria.fr/hal-01650142v2/document)
-    .. [Zhang] Zhang, H. et al (2015) Axis-Exchanged Compensation and Gait
-      Parameters Analysis for High Accuracy Indoor Pedestrian Dead Reckoning.
-      (https://www.researchgate.net/publication/282535868_Axis-Exchanged_Compensation_and_Gait_Parameters_Analysis_for_High_Accuracy_Indoor_Pedestrian_Dead_Reckoning)
-    .. [Yun] Yun, X. et al. (2008) A Simplified Quaternion-Based Algorithm for
-      Orientation Estimation From Earth Gravity and Magnetic Field Measurements.
-      (https://apps.dtic.mil/dtic/tr/fulltext/u2/a601113.pdf)
-    .. [Jung] Jung, D. et al. Inertial Attitude and Position Reference System
-      Development for a Small UAV.
-      (https://pdfs.semanticscholar.org/fb62/903d8e6c051c8f4780c79b6b18fbd02a0ff9.pdf)
-    .. [Bleything] Bleything, T. How to convert Magnetometer data into Compass Heading.
-      (https://blog.digilentinc.com/how-to-convert-magnetometer-data-into-compass-heading/)
-    .. [RTIMU] RT IMU Library. (https://github.com/RTIMULib/RTIMULib2/blob/master/RTIMULib/RTFusion.cpp)
-    .. [Janota] Janota, A. Improving the Precision and Speed of Euler Angles
-      Computation from Low-Cost Rotation Sensor Data. (https://www.mdpi.com/1424-8220/15/3/7016/pdf)
-    .. [Trimpe] Trimpe, S. Accelerometer -based Tilt Estimation of a Rigid Body
-      with only Rotational Degrees of Freedom. 2010.
-      (http://www.idsc.ethz.ch/content/dam/ethz/special-interest/mavt/dynamic-systems-n-control/idsc-dam/Research_DAndrea/Balancing%20Cube/ICRA10_1597_web.pdf)
+    .. [1] Michel, T. et al. (2018) Attitude Estimation for Indoor
+           Navigation and Augmented Reality with Smartphones.
+           (http://tyrex.inria.fr/mobile/benchmarks-attitude/)
+           (https://hal.inria.fr/hal-01650142v2/document)
+    .. [2] Zhang, H. et al (2015) Axis-Exchanged Compensation and Gait
+           Parameters Analysis for High Accuracy Indoor Pedestrian Dead Reckoning.
+           (https://www.researchgate.net/publication/282535868_Axis-Exchanged_Compensation_and_Gait_Parameters_Analysis_for_High_Accuracy_Indoor_Pedestrian_Dead_Reckoning)
+    .. [3] Yun, X. et al. (2008) A Simplified Quaternion-Based Algorithm for
+           Orientation Estimation From Earth Gravity and Magnetic Field Measurements.
+           (https://apps.dtic.mil/dtic/tr/fulltext/u2/a601113.pdf)
+    .. [4] Jung, D. et al. Inertial Attitude and Position Reference System
+           Development for a Small UAV.
+           (https://pdfs.semanticscholar.org/fb62/903d8e6c051c8f4780c79b6b18fbd02a0ff9.pdf)
+    .. [5] Bleything, T. How to convert Magnetometer data into Compass Heading.
+           (https://blog.digilentinc.com/how-to-convert-magnetometer-data-into-compass-heading/)
+    .. [6] RT IMU Library. (https://github.com/RTIMULib/RTIMULib2/blob/master/RTIMULib/RTFusion.cpp)
+    .. [7] Janota, A. Improving the Precision and Speed of Euler Angles
+           Computation from Low-Cost Rotation Sensor Data. (https://www.mdpi.com/1424-8220/15/3/7016/pdf)
+    .. [8] Trimpe, S. Accelerometer -based Tilt Estimation of a Rigid Body
+           with only Rotational Degrees of Freedom. 2010.
+           (http://www.idsc.ethz.ch/content/dam/ethz/special-interest/mavt/dynamic-systems-n-control/idsc-dam/Research_DAndrea/Balancing%20Cube/ICRA10_1597_web.pdf)
 
     """
     qw, qx, qy, qz = 1.0, 0.0, 0.0, 0.0

@@ -22,7 +22,7 @@ cd ahrs
 sudo python setup.py install
 ```
 
-Alternatively, you can install AHRS using pip
+Alternatively, you can install AHRS using `pip`
 ```sh
 sudo pip install .
 ```
