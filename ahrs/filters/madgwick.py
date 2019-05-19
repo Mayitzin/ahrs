@@ -7,45 +7,59 @@ Filtering routines
 import numpy as np
 from ahrs.common.orientation import *
 
-def updateIMU(gyr, acc, q, beta=0.1, freq=1.0/256.0):
-    """Non-optimized Madgwick's AHRS algorithm with a IMU architecture.
+def updateIMU(gyr, acc, q, **kwargs):
+    """
+    Madgwick's AHRS algorithm with a IMU architecture.
 
     Adapted to Python from original implementation by Sebastian Madgwick.
 
-    See: http://www.x-io.co.uk/open-source-imu-and-ahrs-algorithms/
-    @author: Sebastian Madgwick (2011)
-    See: http://www.olliw.eu/2013/imu-data-fusing/
-         https://motsai.com/omid-vs-madgwick-low-power-orientation-filters/
+    References
+    ----------
+    .. [Madgwick] http://www.x-io.co.uk/open-source-imu-and-ahrs-algorithms/
+    .. [OlliW] http://www.olliw.eu/2013/imu-data-fusing/
+    .. [Motsai] https://motsai.com/omid-vs-madgwick-low-power-orientation-filters/
+
     """
+    # Read input parameters
+    beta = kwargs['beta'] if 'beta' in kwargs.keys() else 0.1
+    samplePeriod = kwargs['samplePeriod'] if 'samplePeriod' in kwargs.keys() else 1.0/256.0
+    # Assert values
     acc /= np.linalg.norm(acc)
     qw, qx, qy, qz = q[0], q[1], q[2], q[3]
     # Gradient decent algorithm corrective step
-    F = np.asarray([[2.0*(qx*qz - qw*qy)   - acc[0]],
-                    [2.0*(qw*qx + qy*qz)   - acc[1]],
-                    [2.0*(0.5-qx**2-qy**2) - acc[2]]])
+    F = np.asarray([2.0*(qx*qz - qw*qy)   - acc[0],
+                    2.0*(qw*qx + qy*qz)   - acc[1],
+                    2.0*(0.5-qx**2-qy**2) - acc[2]])
     J = np.asarray([[-2.0*qy, 2.0*qz, -2.0*qw, 2.0*qx],
                     [ 2.0*qx, 2.0*qw,  2.0*qz, 2.0*qy],
                     [ 0.0,   -4.0*qx, -4.0*qy, 0.0   ]])
-    step = np.dot(J.transpose(), F)
+    step = J.T@F
     step /= np.linalg.norm(step)
     # Compute rate of change of quaternion
-    qDot = 0.5 * q_prod(q, [0, gyr[0], gyr[1], gyr[2]]) - beta * step.transpose()
+    qDot = 0.5 * q_prod(q, [0, gyr[0], gyr[1], gyr[2]]) - beta * step.T
     # Integrate to yield Quaternion
-    q = q + qDot/freq
+    q = q + qDot*samplePeriod
     q /= np.linalg.norm(q)
-    return q[0]
+    return q
 
 
-def updateMARG(gyr, a, m, q, beta=0.1, samplePeriod=1.0/256.0):
-    """Non-optimized Madgwick's AHRS algorithm with a MARG architecture.
+def updateMARG(gyr, a, m, q, **kwargs):
+    """
+    Madgwick's AHRS algorithm with a MARG architecture.
 
     Adapted to Python from original implementation by Sebastian Madgwick.
 
-    See: http://www.x-io.co.uk/open-source-imu-and-ahrs-algorithms/
-    @author: Sebastian Madgwick (2011)
-    See: http://www.olliw.eu/2013/imu-data-fusing/
-         https://motsai.com/omid-vs-madgwick-low-power-orientation-filters/
+    References
+    ----------
+    .. [Madgwick] http://www.x-io.co.uk/open-source-imu-and-ahrs-algorithms/
+    .. [OlliW] http://www.olliw.eu/2013/imu-data-fusing/
+    .. [Motsai] https://motsai.com/omid-vs-madgwick-low-power-orientation-filters/
+
     """
+    # Read input parameters
+    beta = kwargs['beta'] if 'beta' in kwargs.keys() else 0.1
+    samplePeriod = kwargs['samplePeriod'] if 'samplePeriod' in kwargs.keys() else 1.0/256.0
+    # Assert values
     qw, qx, qy, qz = q[0], q[1], q[2], q[3]
     # Normalise accelerometer measurement
     a_norm = np.linalg.norm(a)
@@ -60,7 +74,7 @@ def updateMARG(gyr, a, m, q, beta=0.1, samplePeriod=1.0/256.0):
     # Reference direction of Earth's magnetic field
     h = q_prod(q, q_prod([0, m[0], m[1], m[2]], q_conj(q)))
     b = [0.0, np.linalg.norm([h[1], h[2]]), 0.0, h[3]]
-    # Gradient decent algorithm corrective step    
+    # Gradient decent algorithm corrective step
     F = np.array([2.0*(qx * qz - qw * qy)   - a[0],
                   2.0*(qw * qx + qy * qz)   - a[1],
                   2.0*(0.5 - qx**2 - qy**2) - a[2],

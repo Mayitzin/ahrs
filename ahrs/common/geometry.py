@@ -6,7 +6,7 @@ Geometrical routines
 
 import numpy as np
 
-def circle(c, radius=1.0, num_points=20):
+def circle(center, radius=1.0, num_points=20):
     """
     Build a circle with the given characteristics.
 
@@ -29,9 +29,8 @@ def circle(c, radius=1.0, num_points=20):
     .. [WAC] Wolfram Alpha: Circle. (http://mathworld.wolfram.com/Circle.html)
     """
     R = np.linspace(0.0, 2.0*np.pi, num_points+1)
-    c_x, c_y = c
-    x = c_x + radius*np.cos(R)
-    y = c_y + radius*np.sin(R)
+    x = center[0] + radius*np.cos(R)
+    y = center[1] + radius*np.sin(R)
     return np.array([x, y]).transpose()
 
 def ellipse(center, phi, axes, num_points=20):
