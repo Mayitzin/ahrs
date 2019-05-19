@@ -320,30 +320,17 @@ def q2euler(q=None, mode=0):
         return [0.0, 0.0, 0.0]
     if len(q) != 4:
         return None
-    q = q_norm(q)
-    # qw, qx, qy, qz = q
-    # if mode == 0:
-    #     ex = np.arctan2(2.0*(qw*qx + qy*qz), 1.0 - 2.0*(qx*qx + qy*qy))
-    #     ey = np.arcsin( 2.0*(qw*qy-qz*qx) )
-    #     ez = np.arctan2(2.0*(qw*qz + qx*qy), 1.0 - 2.0*(qy*qy + qz*qz))
-    # elif mode == 1:
-    #     ex = np.arctan2( (qw*qy+qx*qz), -(qx*qy-qw*qz))
-    #     ey = np.arccos( -(qw*qw)-(qx*qx)+(qy*qy)+(qz*qz))
-    #     ez = np.arctan2( (qw*qy-qx*qz),(qx*qy+qw*qz))
-    # elif mode == 2:
-    #     ex = np.arctan((2.0*qy*qz-2.0*qw*qx)/(2.0*qw**2+2.0*qz**2-1.0))
-    #     ey = -np.arcsin(2.0*qx*qz+2.0*qw*qy)
-    #     ez = np.arctan((2.0*qx*qy-2.0*qw*qz)/(2*qw**2+2.0*qx**2-1.0))
-    # else:
-    #     ex = 1.0 - 2.0*(qy*qy + qz*qz)
-    #     ey = 1.0 - 2.0*(qx*qx + qz*qz)
-    #     ez = 1.0 - 2.0*(qx*qx + qy*qy)
-    # return [ex*RAD2DEG, ey*RAD2DEG, ez*RAD2DEG]
-    R = q2R(q)
-    phi = np.arctan2(R[2, 1], R[2, 2])
-    theta = -np.arctan(R[2, 0]/np.sqrt(1.0-R[2, 0]**2))
-    psi = np.arctan2(R[1, 0], R[0, 0])
-    return np.array([phi, theta, psi])*RAD2DEG
+    # R = q2R(q)
+    R = np.zeros((3, 3))
+    R[0, 0] = 2.0*q[0]**2 - 1.0 + 2.0*q[1]**2
+    R[1, 0] = 2.0*(q[1]*q[2] - q[0]*q[3])
+    R[2, 0] = 2.0*(q[1]*q[3] + q[0]*q[2])
+    R[2, 1] = 2.0*(q[2]*q[3] - q[0]*q[1])
+    R[2, 2] = 2.0*q[0]**2 - 1.0 + 2.0*q[3]**2
+    phi   = np.arctan2( R[2, 1], R[2, 2])
+    theta = -np.arctan( R[2, 0]/np.sqrt(1.0-R[2, 0]**2))
+    psi   = np.arctan2( R[1, 0], R[0, 0])
+    return np.array([phi, theta, psi])
 
 def rotation(ax=None, ang=0.0):
     """
