@@ -25,7 +25,8 @@ Q = np.tile([1., 0., 0., 0.], (num_samples, 1))
 euler_angles = np.zeros((num_samples, 3))
 q = Q[0].copy()
 for t, ts in enumerate(time):
-    q = ahrs.filters.madgwick.updateMARG(DEG2RAD*gyrs[t].copy(), accs[t].copy(), mags[t].copy(), q, beta=0.05)
+#     q = ahrs.filters.madgwick.updateMARG(DEG2RAD*gyrs[t].copy(), accs[t].copy(), mags[t].copy(), q, beta=0.05)
+    q = ahrs.filters.madgwick.updateIMU(DEG2RAD*gyrs[t].copy(), accs[t].copy(), q, beta=0.1)
     Q[t] = q.copy()
     euler_angles[t] = ahrs.common.orientation.q2euler(ahrs.common.orientation.q_conj(q))*RAD2DEG
 
@@ -37,5 +38,5 @@ for n, p in enumerate(sensors):
         plt.plot(time, data[p][:, 0], 'r-', time, data[p][:, 1], 'g-', time, data[p][:, 2], 'b-', linewidth=0.2)
 # Figure 2
 fig2 = plt.figure()
-plt.plot(time, euler_angles[:,0], 'r-', time, euler_angles[:,1], 'g-', time, euler_angles[:,2], 'b-', linewidth=0.2)
+plt.plot(time, euler_angles[:, 0], 'r-', time, euler_angles[:, 1], 'g-', time, euler_angles[:, 2], 'b-', linewidth=0.2)
 plt.show()
