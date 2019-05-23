@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-This are the most common routines used to estimate attitude and heading.
+This are the most common attitude filters.
 
 """
 
-from . import madgwick
+from .madgwick import Madgwick
+from .mahony import Mahony

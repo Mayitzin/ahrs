@@ -1,34 +1,36 @@
 # -*- coding: utf-8 -*-
 """
-Madgwick Algorithm
+Mahony Algorithm as proposed by R. Mahony et al [1]_ in 2010.
+
+This implementation is based in the one made by S. Madgwick.
 
 References
 ----------
-.. [1] http://www.x-io.co.uk/open-source-imu-and-ahrs-algorithms/
-.. [2] Nonlinear Complementary Filters on the Special Orthogonal Group; R.
+.. [1] Nonlinear Complementary Filters on the Special Orthogonal Group; R.
    Mahony et al. 2010. (https://hal.archives-ouvertes.fr/hal-00488376/document)
-.. [3] http://www.olliw.eu/2013/imu-data-fusing/
-.. [4] https://motsai.com/omid-vs-madgwick-low-power-orientation-filters/
 
 """
 
 import numpy as np
 from ahrs.common.orientation import *
 
-class Madgwick:
+class Mahony:
     """
-    Class of Madgwick algorithm
+    Class of Mahony algorithm
     """
     __dict__ = {
-        "beta": 0.1,
+        "Kp": 1.0,
+        "Ki": 0.0,
         "samplePeriod": 1.0/256.0
     }
     def __init__(self, *args, **kwargs):
+        # Integral Error
+        self.eInt = np.array([0.0, 0.0, 0.0])
         self.__dict__.update(kwargs)
 
     def updateIMU(self, g, a, q, **kwargs):
         """
-        Madgwick's AHRS algorithm with an IMU architecture.
+        Mahony's AHRS algorithm with an IMU architecture.
 
         Adapted to Python from original implementation by Sebastian Madgwick.
 
@@ -40,8 +42,10 @@ class Madgwick:
             Sample of tri-axial Accelerometer.
         q : array
             A-priori quaternion.
-        beta : float
-            Filter gain of a quaternion derivative.
+        Kp : float
+            Proportional filter gain.
+        Ki : float
+            Integral filter gain.
         samplePeriod : float
             Sampling rate in seconds. Inverse of sampling frequency.
 
@@ -52,8 +56,10 @@ class Madgwick:
 
         """
         # Read input parameters
-        beta = kwargs['beta'] if 'beta' in kwargs.keys() else self.__dict__['beta']
+        Kp = kwargs['Kp'] if 'Kp' in kwargs.keys() else self.__dict__['Kp']
+        Ki = kwargs['Ki'] if 'Ki' in kwargs.keys() else self.__dict__['Ki']
         samplePeriod = kwargs['samplePeriod'] if 'samplePeriod' in kwargs.keys() else self.__dict__['samplePeriod']
+        # Normalise accelerometer measurement
         a_norm = np.linalg.norm(a)
         if a_norm == 0:     # handle NaN
             return q
@@ -61,17 +67,16 @@ class Madgwick:
         # Assert values
         q /= np.linalg.norm(q)
         qw, qx, qy, qz = q[0], q[1], q[2], q[3]
-        # Gradient decent algorithm corrective step
-        F = np.array([2.0*(qx*qz - qw*qy)   - a[0],
-                      2.0*(qw*qx + qy*qz)   - a[1],
-                      2.0*(0.5-qx**2-qy**2) - a[2]])
-        J = np.array([[-2.0*qy, 2.0*qz, -2.0*qw, 2.0*qx],
-                      [ 2.0*qx, 2.0*qw,  2.0*qz, 2.0*qy],
-                      [ 0.0,   -4.0*qx, -4.0*qy, 0.0   ]])
-        step = J.T@F
-        step /= np.linalg.norm(step)
+        # Estimated direction of gravity and magnetic flux
+        v = np.array([2.0*(qx*qz - qw*qy),
+                    2.0*(qw*qx + qy*qz),
+                    qw**2 - qx**2 - qy**2 + qz**2])
+        e = np.cross(a, v)
+        self.eInt = self.eInt + e*samplePeriod if Ki > 0 else np.array([0.0, 0.0, 0.0])
+        # Apply feedback term
+        g += Kp*e + Ki*self.eInt
         # Compute rate of change of quaternion
-        qDot = 0.5 * q_prod(q, [0, g[0], g[1], g[2]]) - beta * step.T
+        qDot = 0.5*q_prod(q, [0.0, g[0], g[1], g[2]])
         # Integrate to yield Quaternion
         q += qDot*samplePeriod
         q /= np.linalg.norm(q)
@@ -79,7 +84,7 @@ class Madgwick:
 
     def updateMARG(self, g, a, m, q, **kwargs):
         """
-        Madgwick's AHRS algorithm with a MARG architecture.
+        Mahony's AHRS algorithm with a MARG architecture.
 
         Adapted to Python from original implementation by Sebastian Madgwick.
 
@@ -93,8 +98,10 @@ class Madgwick:
             Sample of tri-axial Magnetometer.
         q : array
             A-priori quaternion.
-        beta : float
-            Filter gain of a quaternion derivative.
+        Kp : float
+            Proportional filter gain.
+        Ki : float
+            Integral filter gain.
         samplePeriod : float
             Sampling rate in seconds. Inverse of sampling frequency.
 
@@ -105,7 +112,8 @@ class Madgwick:
 
         """
         # Read input parameters
-        beta = kwargs['beta'] if 'beta' in kwargs.keys() else self.__dict__['beta']
+        Kp = kwargs['Kp'] if 'Kp' in kwargs.keys() else self.__dict__['Kp']
+        Ki = kwargs['Ki'] if 'Ki' in kwargs.keys() else self.__dict__['Ki']
         samplePeriod = kwargs['samplePeriod'] if 'samplePeriod' in kwargs.keys() else self.__dict__['samplePeriod']
         # Normalise accelerometer measurement
         a_norm = np.linalg.norm(a)
@@ -118,30 +126,25 @@ class Madgwick:
             return q
         m /= m_norm
         # Assert values
-        q /= np.linalg.norm(q)
         qw, qx, qy, qz = q[0], q[1], q[2], q[3]
-        # Reference direction of Earth's magnetic field
+        # Reference direction of Earth's magnetic feild
         h = q_prod(q, q_prod([0, m[0], m[1], m[2]], q_conj(q)))
         b = [0.0, np.linalg.norm([h[1], h[2]]), 0.0, h[3]]
-        # Gradient decent algorithm corrective step
-        F = np.array([2.0*(qx * qz - qw * qy) - a[0],
-                    2.0*(qw * qx + qy * qz)   - a[1],
-                    2.0*(0.5 - qx**2 - qy**2) - a[2],
-                    2.0*b[1]*(0.5 - qy**2 - qz**2) + 2.0*b[3]*(qx*qz - qw*qy)       - m[0],
-                    2.0*b[1]*(qx*qy - qw*qz)       + 2.0*b[3]*(qw*qx + qy*qz)       - m[1],
-                    2.0*b[1]*(qw*qy + qx*qz)       + 2.0*b[3]*(0.5 - qx**2 - qy**2) - m[2]])
-        J = np.array([[-2.0*qy,               2.0*qz,                  -2.0*qw,                    2.0*qx],
-                    [ 2.0*qx,                 2.0*qw,                   2.0*qz,                    2.0*qy],
-                    [ 0.0,                   -4.0*qx,                  -4.0*qy,                    0.0],
-                    [-2.0*b[3]*qy,            2.0*b[3]*qz,             -4.0*b[1]*qy-2.0*b[3]*qw,  -4.0*b[1]*qz+2.0*b[3]*qx],
-                    [-2.0*b[1]*qz+2*b[3]*qx,  2.0*b[1]*qy+2.0*b[3]*qw,  2.0*b[1]*qx+2.0*b[3]*qz,  -2.0*b[1]*qw+2.0*b[3]*qy],
-                    [ 2.0*b[1]*qy,            2.0*b[1]*qz-4.0*b[3]*qx,  2.0*b[1]*qw-4.0*b[3]*qy,   2.0*b[1]*qx]])
-        step = J.T@F
-        step /= np.linalg.norm(step)    # normalise step magnitude
+        # Estimated direction of gravity and magnetic flux
+        v = np.array([2.0*(qx*qz - qw*qy),
+                    2.0*(qw*qx + qy*qz),
+                    qw**2 - qx**2 - qy**2 + qz**2])
+        w = np.array([2.0*b[1]*(0.5 - qy**2 - qz**2) + 2.0*b[3]*(qx*qz - qw*qy),
+                    2.0*b[1]*(qx*qy - qw*qz) + 2.0*b[3]*(qw*qx + qy*qz),
+                    2.0*b[1]*(qw*qy + qx*qz) + 2.0*b[3]*(0.5 - qx**2 - qy**2)])
+        # Error is sum of cross product between estimated direction and measured direction of fields
+        e = np.cross(a, v) + np.cross(m, w)
+        self.eInt = self.eInt + e*samplePeriod if Ki > 0 else np.array([0.0, 0.0, 0.0])
+        # Apply feedback term
+        g += Kp*e + Ki*self.eInt
         # Compute rate of change of quaternion
-        qDot = 0.5 * q_prod(q, [0, g[0], g[1], g[2]]) - beta * step.T
-        # Integrate to yield quaternion
+        qDot = 0.5*q_prod(q, [0.0, g[0], g[1], g[2]])
+        # Integrate to yield Quaternion
         q += qDot*samplePeriod
-        q /= np.linalg.norm(q) # normalise quaternion
+        q /= np.linalg.norm(q)
         return q
-
