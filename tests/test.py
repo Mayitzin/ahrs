@@ -44,11 +44,11 @@ def test_madgwick(**kwargs):
     euler_angles = np.zeros((num_samples, 3))
     q = Q[0].copy()
     madgwick = ahrs.filters.Madgwick(beta=0.05)
-    mahony = ahrs.filters.Mahony(Kp=0.5)
+    mahony = ahrs.filters.Mahony(Kp=1.0)
     for t,_ in enumerate(time):
         # q = madgwick.updateMARG(DEG2RAD*gyrs[t].copy(), accs[t].copy(), mags[t].copy(), q)
-        # q = madgwick.updateIMU(DEG2RAD*gyrs[t].copy(), accs[t].copy(), q, beta=0.1)
-        q = mahony.updateIMU(DEG2RAD*gyrs[t].copy(), accs[t].copy(), q)
+        q = madgwick.updateIMU(DEG2RAD*gyrs[t].copy(), accs[t].copy(), q, beta=0.5)
+        # q = mahony.updateIMU(DEG2RAD*gyrs[t].copy(), accs[t].copy(), q)
         # q = mahony.updateMARG(DEG2RAD*gyrs[t].copy(), accs[t].copy(), mags[t].copy(), q)
         Q[t] = q.copy()
         euler_angles[t] = ahrs.common.orientation.q2euler(ahrs.common.orientation.q_conj(q))*RAD2DEG

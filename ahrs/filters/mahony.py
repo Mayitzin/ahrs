@@ -18,15 +18,12 @@ class Mahony:
     """
     Class of Mahony algorithm
     """
-    __dict__ = {
-        "Kp": 1.0,
-        "Ki": 0.0,
-        "samplePeriod": 1.0/256.0
-    }
     def __init__(self, *args, **kwargs):
         # Integral Error
         self.eInt = np.array([0.0, 0.0, 0.0])
-        self.__dict__.update(kwargs)
+        self.Kp = kwargs['Kp'] if 'Kp' in kwargs else 1.0
+        self.Ki = kwargs['Ki'] if 'Ki' in kwargs else 0.0
+        self.samplePeriod = kwargs['samplePeriod'] if 'samplePeriod' in kwargs else 1.0/256.0
 
     def updateIMU(self, g, a, q, **kwargs):
         """
@@ -55,10 +52,6 @@ class Mahony:
             Estimated quaternion.
 
         """
-        # Read input parameters
-        Kp = kwargs['Kp'] if 'Kp' in kwargs.keys() else self.__dict__['Kp']
-        Ki = kwargs['Ki'] if 'Ki' in kwargs.keys() else self.__dict__['Ki']
-        samplePeriod = kwargs['samplePeriod'] if 'samplePeriod' in kwargs.keys() else self.__dict__['samplePeriod']
         # Normalise accelerometer measurement
         a_norm = np.linalg.norm(a)
         if a_norm == 0:     # handle NaN
@@ -72,13 +65,13 @@ class Mahony:
                     2.0*(qw*qx + qy*qz),
                     qw**2 - qx**2 - qy**2 + qz**2])
         e = np.cross(a, v)
-        self.eInt = self.eInt + e*samplePeriod if Ki > 0 else np.array([0.0, 0.0, 0.0])
+        self.eInt = self.eInt + e*self.samplePeriod if self.Ki > 0 else np.array([0.0, 0.0, 0.0])
         # Apply feedback term
-        g += Kp*e + Ki*self.eInt
+        g += self.Kp*e + self.Ki*self.eInt
         # Compute rate of change of quaternion
         qDot = 0.5*q_prod(q, [0.0, g[0], g[1], g[2]])
         # Integrate to yield Quaternion
-        q += qDot*samplePeriod
+        q += qDot*self.samplePeriod
         q /= np.linalg.norm(q)
         return q
 
@@ -111,10 +104,6 @@ class Mahony:
             Estimated quaternion.
 
         """
-        # Read input parameters
-        Kp = kwargs['Kp'] if 'Kp' in kwargs.keys() else self.__dict__['Kp']
-        Ki = kwargs['Ki'] if 'Ki' in kwargs.keys() else self.__dict__['Ki']
-        samplePeriod = kwargs['samplePeriod'] if 'samplePeriod' in kwargs.keys() else self.__dict__['samplePeriod']
         # Normalise accelerometer measurement
         a_norm = np.linalg.norm(a)
         if a_norm == 0:     # handle NaN
@@ -139,12 +128,12 @@ class Mahony:
                     2.0*b[1]*(qw*qy + qx*qz) + 2.0*b[3]*(0.5 - qx**2 - qy**2)])
         # Error is sum of cross product between estimated direction and measured direction of fields
         e = np.cross(a, v) + np.cross(m, w)
-        self.eInt = self.eInt + e*samplePeriod if Ki > 0 else np.array([0.0, 0.0, 0.0])
+        self.eInt = self.eInt + e*self.samplePeriod if self.Ki > 0 else np.array([0.0, 0.0, 0.0])
         # Apply feedback term
-        g += Kp*e + Ki*self.eInt
+        g += self.Kp*e + self.Ki*self.eInt
         # Compute rate of change of quaternion
         qDot = 0.5*q_prod(q, [0.0, g[0], g[1], g[2]])
         # Integrate to yield Quaternion
-        q += qDot*samplePeriod
+        q += qDot*self.samplePeriod
         q /= np.linalg.norm(q)
         return q

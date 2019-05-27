@@ -19,12 +19,9 @@ class Madgwick:
     """
     Class of Madgwick algorithm
     """
-    __dict__ = {
-        "beta": 0.1,
-        "samplePeriod": 1.0/256.0
-    }
     def __init__(self, *args, **kwargs):
-        self.__dict__.update(kwargs)
+        self.beta = kwargs['beta'] if 'beta' in kwargs else 0.1
+        self.samplePeriod = kwargs['samplePeriod'] if 'samplePeriod' in kwargs else 1.0/256.0
 
     def updateIMU(self, g, a, q, **kwargs):
         """
@@ -51,9 +48,7 @@ class Madgwick:
             Estimated quaternion.
 
         """
-        # Read input parameters
-        beta = kwargs['beta'] if 'beta' in kwargs.keys() else self.__dict__['beta']
-        samplePeriod = kwargs['samplePeriod'] if 'samplePeriod' in kwargs.keys() else self.__dict__['samplePeriod']
+        # Normalise accelerometer measurement
         a_norm = np.linalg.norm(a)
         if a_norm == 0:     # handle NaN
             return q
@@ -65,15 +60,15 @@ class Madgwick:
         F = np.array([2.0*(qx*qz - qw*qy)   - a[0],
                       2.0*(qw*qx + qy*qz)   - a[1],
                       2.0*(0.5-qx**2-qy**2) - a[2]])
-        J = np.array([[-2.0*qy, 2.0*qz, -2.0*qw, 2.0*qx],
-                      [ 2.0*qx, 2.0*qw,  2.0*qz, 2.0*qy],
-                      [ 0.0,   -4.0*qx, -4.0*qy, 0.0   ]])
-        step = J.T@F
+        J = np.array([[-qy, qz, -qw, qx],
+                      [ qx, qw,  qz, qy],
+                      [ 0.0, -2.0*qx, -2.0*qy, 0.0]])
+        step = 2.0*J.T@F
         step /= np.linalg.norm(step)
         # Compute rate of change of quaternion
-        qDot = 0.5 * q_prod(q, [0, g[0], g[1], g[2]]) - beta * step.T
+        qDot = 0.5 * q_prod(q, [0, g[0], g[1], g[2]]) - self.beta * step.T
         # Integrate to yield Quaternion
-        q += qDot*samplePeriod
+        q += qDot*self.samplePeriod
         q /= np.linalg.norm(q)
         return q
 
@@ -104,9 +99,6 @@ class Madgwick:
             Estimated quaternion.
 
         """
-        # Read input parameters
-        beta = kwargs['beta'] if 'beta' in kwargs.keys() else self.__dict__['beta']
-        samplePeriod = kwargs['samplePeriod'] if 'samplePeriod' in kwargs.keys() else self.__dict__['samplePeriod']
         # Normalise accelerometer measurement
         a_norm = np.linalg.norm(a)
         if a_norm == 0:     # handle NaN
@@ -139,9 +131,9 @@ class Madgwick:
         step = J.T@F
         step /= np.linalg.norm(step)    # normalise step magnitude
         # Compute rate of change of quaternion
-        qDot = 0.5 * q_prod(q, [0, g[0], g[1], g[2]]) - beta * step.T
+        qDot = 0.5 * q_prod(q, [0, g[0], g[1], g[2]]) - self.beta * step.T
         # Integrate to yield quaternion
-        q += qDot*samplePeriod
+        q += qDot*self.samplePeriod
         q /= np.linalg.norm(q) # normalise quaternion
         return q
 
