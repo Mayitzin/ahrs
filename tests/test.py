@@ -47,17 +47,17 @@ def test_madgwick(**kwargs):
     mahony = ahrs.filters.Mahony(Kp=1.0)
     for t,_ in enumerate(time):
         # q = madgwick.updateMARG(DEG2RAD*gyrs[t].copy(), accs[t].copy(), mags[t].copy(), q)
-        q = madgwick.updateIMU(DEG2RAD*gyrs[t].copy(), accs[t].copy(), q, beta=0.5)
+        # q = madgwick.updateIMU(DEG2RAD*gyrs[t].copy(), accs[t].copy(), q, beta=0.5)
         # q = mahony.updateIMU(DEG2RAD*gyrs[t].copy(), accs[t].copy(), q)
-        # q = mahony.updateMARG(DEG2RAD*gyrs[t].copy(), accs[t].copy(), mags[t].copy(), q)
+        q = mahony.updateMARG(DEG2RAD*gyrs[t].copy(), accs[t].copy(), mags[t].copy(), q)
         Q[t] = q.copy()
         euler_angles[t] = ahrs.common.orientation.q2euler(ahrs.common.orientation.q_conj(q))*RAD2DEG
-    # Figure 1
-    fig1 = plt.figure()
-    for n, p in enumerate(sensors):
-        fig1.add_subplot(len(sensors), 1, n+1, title=p, xlabel='Time')
-        for sensor, sensor_data in data.items():
-            plt.plot(time, data[p][:, 0], 'r-', time, data[p][:, 1], 'g-', time, data[p][:, 2], 'b-', linewidth=0.2)
+    # # Figure 1
+    # fig1 = plt.figure()
+    # for n, p in enumerate(sensors):
+    #     fig1.add_subplot(len(sensors), 1, n+1, title=p, xlabel='Time')
+    #     for sensor, sensor_data in data.items():
+    #         plt.plot(time, data[p][:, 0], 'r-', time, data[p][:, 1], 'g-', time, data[p][:, 2], 'b-', linewidth=0.2)
     # Figure 2
     fig2 = plt.figure()
     plt.plot(time, euler_angles[:, 0], 'r-', time, euler_angles[:, 1], 'g-', time, euler_angles[:, 2], 'b-', linewidth=0.2)

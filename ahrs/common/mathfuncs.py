@@ -6,7 +6,7 @@ Common mathematical routines.
 
 import numpy as np
 
-__all__ = ['M_PI', 'DEG2RAD', 'RAD2DEG', 'cosd', 'sind']
+__all__ = ['M_PI', 'DEG2RAD', 'RAD2DEG', 'cosd', 'sind', 'skew']
 
 M_PI = np.pi
 DEG2RAD = M_PI / 180.0
@@ -31,7 +31,7 @@ def cosd(x):
 
     Examples
     --------
-    >>> from protoboard.common.mathfuncs import *
+    >>> from ahrs.common.mathfuncs import *
     >>> cosd(0.0)
     1.0
     >>> cosd(90.0)
@@ -63,7 +63,7 @@ def sind(x):
 
     Examples
     --------
-    >>> from protoboard.common.mathfuncs import *
+    >>> from ahrs.common.mathfuncs import *
     >>> sind(0.0)
     0.0
     >>> sind(90.0)
@@ -75,3 +75,40 @@ def sind(x):
     if type(x) == list:
         x = np.asarray(x)
     return np.sin(x*DEG2RAD)
+
+def skew(x):
+    """
+    Return the 3-by-3 skew-symmetric matrix [Wiki_skew]_ of a 3-element vector x.
+
+    Parameters
+    ----------
+    x : array
+        3-element array with values to be ordered in a skew-symmetric matrix.
+
+    Returns
+    -------
+    X : ndarray
+        3-by-3 numpy array of the skew-symmetric matrix.
+
+    Examples
+    --------
+    >>> from ahrs.common.mathfuncs import skew_matrix
+    >>> a = [1, 2, 3]
+    >>> skew_matrix(a)
+    [[ 0. -3.  2.]
+     [ 3.  0. -1.]
+     [-2.  1.  0.]]
+    >>> a = np.array([[4.0], [5.0], [6.0]])
+    >>> skew_matrix(a)
+    [[ 0. -6.  5.]
+     [ 6.  0. -4.]
+     [-5.  4.  0.]]
+
+    References
+    ----------
+    .. [Wiki_skew] https://en.wikipedia.org/wiki/Skew-symmetric_matrix
+
+    """
+    if len(x) != 3:
+        return None
+    return np.array([[0, -x[2], x[1]], [x[2], 0, -x[0]], [-x[1], x[0], 0.0]])

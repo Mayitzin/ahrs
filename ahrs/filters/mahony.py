@@ -121,13 +121,13 @@ class Mahony:
         b = [0.0, np.linalg.norm([h[1], h[2]]), 0.0, h[3]]
         # Estimated direction of gravity and magnetic flux
         v = np.array([2.0*(qx*qz - qw*qy),
-                    2.0*(qw*qx + qy*qz),
-                    qw**2 - qx**2 - qy**2 + qz**2])
-        w = np.array([2.0*b[1]*(0.5 - qy**2 - qz**2) + 2.0*b[3]*(qx*qz - qw*qy),
-                    2.0*b[1]*(qx*qy - qw*qz) + 2.0*b[3]*(qw*qx + qy*qz),
-                    2.0*b[1]*(qw*qy + qx*qz) + 2.0*b[3]*(0.5 - qx**2 - qy**2)])
+                      2.0*(qw*qx + qy*qz),
+                      qw**2 - qx**2 - qy**2 + qz**2])
+        w = np.array([b[1]*(0.5 - qy**2 - qz**2) + b[3]*(qx*qz - qw*qy),
+                      b[1]*(qx*qy - qw*qz)       + b[3]*(qw*qx + qy*qz),
+                      b[1]*(qw*qy + qx*qz)       + b[3]*(0.5 - qx**2 - qy**2)])
         # Error is sum of cross product between estimated direction and measured direction of fields
-        e = np.cross(a, v) + np.cross(m, w)
+        e = np.cross(a, v) + np.cross(m, 2.0*w)
         self.eInt = self.eInt + e*self.samplePeriod if self.Ki > 0 else np.array([0.0, 0.0, 0.0])
         # Apply feedback term
         g += self.Kp*e + self.Ki*self.eInt

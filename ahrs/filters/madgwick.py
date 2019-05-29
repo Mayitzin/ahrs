@@ -122,13 +122,13 @@ class Madgwick:
                     2.0*b[1]*(0.5 - qy**2 - qz**2) + 2.0*b[3]*(qx*qz - qw*qy)       - m[0],
                     2.0*b[1]*(qx*qy - qw*qz)       + 2.0*b[3]*(qw*qx + qy*qz)       - m[1],
                     2.0*b[1]*(qw*qy + qx*qz)       + 2.0*b[3]*(0.5 - qx**2 - qy**2) - m[2]])
-        J = np.array([[-2.0*qy,               2.0*qz,                  -2.0*qw,                    2.0*qx],
-                    [ 2.0*qx,                 2.0*qw,                   2.0*qz,                    2.0*qy],
-                    [ 0.0,                   -4.0*qx,                  -4.0*qy,                    0.0],
-                    [-2.0*b[3]*qy,            2.0*b[3]*qz,             -4.0*b[1]*qy-2.0*b[3]*qw,  -4.0*b[1]*qz+2.0*b[3]*qx],
-                    [-2.0*b[1]*qz+2*b[3]*qx,  2.0*b[1]*qy+2.0*b[3]*qw,  2.0*b[1]*qx+2.0*b[3]*qz,  -2.0*b[1]*qw+2.0*b[3]*qy],
-                    [ 2.0*b[1]*qy,            2.0*b[1]*qz-4.0*b[3]*qx,  2.0*b[1]*qw-4.0*b[3]*qy,   2.0*b[1]*qx]])
-        step = J.T@F
+        J = np.array([[-qy,               qz,                  -qw,                    qx],
+                    [ qx,                 qw,                   qz,                    qy],
+                    [ 0.0,               -2.0*qx,              -2.0*qy,                0.0],
+                    [-b[3]*qy,            b[3]*qz,             -2.0*b[1]*qy-b[3]*qw,  -2.0*b[1]*qz+b[3]*qx],
+                    [-b[1]*qz+2*b[3]*qx,  b[1]*qy+b[3]*qw,      b[1]*qx+b[3]*qz,      -b[1]*qw+b[3]*qy],
+                    [ b[1]*qy,            b[1]*qz-2.0*b[3]*qx,  b[1]*qw-2.0*b[3]*qy,   b[1]*qx]])
+        step = 2.0*J.T@F
         step /= np.linalg.norm(step)    # normalise step magnitude
         # Compute rate of change of quaternion
         qDot = 0.5 * q_prod(q, [0, g[0], g[1], g[2]]) - self.beta * step.T
