@@ -35,7 +35,7 @@ def test_mahony(**kwargs):
         Q[t] = mahony.updateMARG(DEG2RAD*gyrs[t].copy(), accs[t].copy(), mags[t].copy(), Q[t-1].copy())
         # Q[t] = mahony.updateIMU(DEG2RAD*gyrs[t].copy(), accs[t].copy(), Q[t-1].copy())
         euler_angles[t] = ahrs.common.orientation.q2euler(ahrs.common.orientation.q_conj(Q[t]))*RAD2DEG
-    # # Plot Signals
-    # plot_sensors(gyrs, accs, mags, time=time)
-    # plot_euler(euler_angles, time=time)
-    # plt.show()
+    # Plot Signals
+    ahrs.utils.plot_sensors(gyrs, accs, mags, time=time, title="Sensors: Mahony")
+    ahrs.utils.plot_euler(euler_angles, time=time, title="Euler Angles: Mahony")
+    plt.show()

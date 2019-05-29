@@ -30,12 +30,12 @@ def test_madgwick(**kwargs):
     num_samples = len(time)
     Q = np.tile([1., 0., 0., 0.], (num_samples, 1))
     euler_angles = np.zeros((num_samples, 3))
-    madgwick = ahrs.filters.Madgwick(beta=0.1)
+    madgwick = ahrs.filters.Madgwick()
     for t in range(1, num_samples):
-        Q[t] = madgwick.updateMARG(DEG2RAD*gyrs[t].copy(), accs[t].copy(), mags[t].copy(), Q[t-1].copy())
-        # Q[t] = madgwick.updateIMU(DEG2RAD*gyrs[t].copy(), accs[t].copy(), Q[t-1].copy())
+        Q[t] = madgwick.updateMARG(DEG2RAD*gyrs[t].copy(), accs[t].copy(), mags[t].copy(), Q[t-1])
+        # Q[t] = madgwick.updateIMU(DEG2RAD*gyrs[t].copy(), accs[t].copy(), Q[t-1])
         euler_angles[t] = ahrs.common.orientation.q2euler(ahrs.common.orientation.q_conj(Q[t]))*RAD2DEG
-    # # Plot Signals
-    # plot_sensors(gyrs, accs, mags, time=time)
-    # plot_euler(euler_angles, time=time)
-    # plt.show()
+    # Plot Signals
+    ahrs.utils.plot_sensors(gyrs, accs, mags, time=time, title="Sensors: Madgwick")
+    ahrs.utils.plot_euler(euler_angles, time=time, title="Euler Angles: Madgwick")
+    plt.show()

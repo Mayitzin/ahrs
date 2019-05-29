@@ -437,7 +437,7 @@ def rotation(ax=None, ang=0.0):
     if ax.lower() == "z":
         return np.array([[ca, -sa, 0.0], [sa, ca, 0.0], [0.0, 0.0, 1.0]])
 
-def rot_chain(axes=None, angles=None):
+def rot_seq(axes=None, angles=None):
     """
     Return a :math:`3 \\times 3` rotation matrix :math:`\\mathbf{R} \\in SO(3)`
     from given set of axes and angles.
@@ -470,7 +470,7 @@ def rot_chain(axes=None, angles=None):
     >>> angles
     array([-139.24498146,  99.8691407, -171.30712526, -60.57132043,
              17.4475838 ])
-    >>> R = quaternion.rot_chain(axis_order, angles)
+    >>> R = quaternion.rot_seq(axis_order, angles)
     >>> R   # R = R_z(-139.24) R_z(99.87) R_x(-171.31) R_z(-60.57) R_y(17.45)
     array([[ 0.85465231  0.3651317   0.36911822]
            [ 0.3025091  -0.92798938  0.21754072]

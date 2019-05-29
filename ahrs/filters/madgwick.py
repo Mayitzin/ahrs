@@ -116,19 +116,19 @@ class Madgwick:
         h = q_prod(q, q_prod([0, m[0], m[1], m[2]], q_conj(q)))
         b = [0.0, np.linalg.norm([h[1], h[2]]), 0.0, h[3]]
         # Gradient decent algorithm corrective step
-        F = np.array([2.0*(qx * qz - qw * qy)   - a[0],
-                      2.0*(qw * qx + qy * qz)   - a[1],
-                      2.0*(0.5 - qx**2 - qy**2) - a[2],
-                      2.0*b[1]*(0.5 - qy**2 - qz**2) + 2.0*b[3]*(qx*qz - qw*qy)       - m[0],
-                      2.0*b[1]*(qx*qy - qw*qz)       + 2.0*b[3]*(qw*qx + qy*qz)       - m[1],
-                      2.0*b[1]*(qw*qy + qx*qz)       + 2.0*b[3]*(0.5 - qx**2 - qy**2) - m[2]])
+        F = np.array([(qx * qz - qw * qy)   - 0.5*a[0],
+                      (qw * qx + qy * qz)   - 0.5*a[1],
+                      (0.5 - qx**2 - qy**2) - 0.5*a[2],
+                      b[1]*(0.5 - qy**2 - qz**2) + b[3]*(qx*qz - qw*qy)       - 0.5*m[0],
+                      b[1]*(qx*qy - qw*qz)       + b[3]*(qw*qx + qy*qz)       - 0.5*m[1],
+                      b[1]*(qw*qy + qx*qz)       + b[3]*(0.5 - qx**2 - qy**2) - 0.5*m[2]])
         J = np.array([[-qy,               qz,                  -qw,                    qx],
                     [ qx,                 qw,                   qz,                    qy],
                     [ 0.0,               -2.0*qx,              -2.0*qy,                0.0],
                     [-b[3]*qy,            b[3]*qz,             -2.0*b[1]*qy-b[3]*qw,  -2.0*b[1]*qz+b[3]*qx],
                     [-b[1]*qz+2*b[3]*qx,  b[1]*qy+b[3]*qw,      b[1]*qx+b[3]*qz,      -b[1]*qw+b[3]*qy],
                     [ b[1]*qy,            b[1]*qz-2.0*b[3]*qx,  b[1]*qw-2.0*b[3]*qy,   b[1]*qx]])
-        step = 2.0*J.T@F
+        step = 4.0*J.T@F
         step /= np.linalg.norm(step)    # normalise step magnitude
         # Compute rate of change of quaternion
         qDot = 0.5 * q_prod(q, [0, g[0], g[1], g[2]]) - self.beta * step.T

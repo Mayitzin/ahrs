@@ -19,6 +19,7 @@ All AHRS wheels distributed on PyPI are BSD licensed.
 
 import sys
 from setuptools import setup, find_packages
+from ahrs import get_version
 
 if sys.version_info.major < 3:
     raise RuntimeError("Python version >= 3 required.")
@@ -27,7 +28,7 @@ REPOSITORY_URL = 'https://github.com/Mayitzin/ahrs'
 
 metadata = dict(
     name='AHRS',
-    version='0.0.1',
+    version=get_version(),
     description='Attitude and Heading Reference Systems.',
     long_description=__doc__,
     url=REPOSITORY_URL,

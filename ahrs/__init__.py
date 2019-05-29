@@ -5,12 +5,22 @@ AHRS
 
 @author: Mario Garcia
 
+The versioning follows the principles of Semantic Versioning as specified in
+https://semver.org
+
 """
 
 from . import common
 from . import filters
+from . import utils
 
-VERSION = "0.0.1"
+MAJOR = "0"
+MINOR = "1"
+PATCH = "1"
+RELEASE = "alpha.1"
+VERSION = "{}.{}.{}-{}".format(MAJOR, MINOR, PATCH, RELEASE)
 
-def get_version():
+def get_version(short=False):
+    if short:
+        return "{}.{}.{}".format(MAJOR, MINOR, PATCH)
     return VERSION
