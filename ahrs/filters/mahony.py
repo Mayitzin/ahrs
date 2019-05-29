@@ -17,13 +17,23 @@ from ahrs.common.orientation import *
 class Mahony:
     """
     Class of Mahony algorithm
+
+    Parameters
+    ----------
+    Kp : float
+        Proportional filter gain.
+    Ki : float
+        Integral filter gain.
+    samplePeriod : float
+        Sampling rate in seconds. Inverse of sampling frequency.
+
     """
     def __init__(self, *args, **kwargs):
-        # Integral Error
-        self.eInt = np.array([0.0, 0.0, 0.0])
         self.Kp = kwargs['Kp'] if 'Kp' in kwargs else 1.0
         self.Ki = kwargs['Ki'] if 'Ki' in kwargs else 0.0
         self.samplePeriod = kwargs['samplePeriod'] if 'samplePeriod' in kwargs else 1.0/256.0
+        # Integral Error
+        self.eInt = np.array([0.0, 0.0, 0.0])
 
     def updateIMU(self, g, a, q):
         """
@@ -39,12 +49,6 @@ class Mahony:
             Sample of tri-axial Accelerometer.
         q : array
             A-priori quaternion.
-        Kp : float
-            Proportional filter gain.
-        Ki : float
-            Integral filter gain.
-        samplePeriod : float
-            Sampling rate in seconds. Inverse of sampling frequency.
 
         Returns
         -------
@@ -91,12 +95,6 @@ class Mahony:
             Sample of tri-axial Magnetometer.
         q : array
             A-priori quaternion.
-        Kp : float
-            Proportional filter gain.
-        Ki : float
-            Integral filter gain.
-        samplePeriod : float
-            Sampling rate in seconds. Inverse of sampling frequency.
 
         Returns
         -------

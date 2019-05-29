@@ -178,6 +178,52 @@ def q_prod(p, q):
         pq = np.array(pq)
     return pq
 
+def q_mult_L(q):
+    """
+    Return the matrix form of a left-sided quaternion multiplication Q.
+
+    Parameters
+    ----------
+    q : array
+        Quaternion to multiply from the left side.
+
+    Returns
+    -------
+    Q : array
+        Matrix form of the left side quaternion multiplication.
+
+    """
+    q /= np.linalg.norm(q)
+    Q = np.array([
+        [q[0], -q[1], -q[2], -q[3]],
+        [q[1],  q[0], -q[3],  q[2]],
+        [q[2],  q[3],  q[0], -q[1]],
+        [q[3], -q[2],  q[1],  q[0]]])
+    return Q
+
+def q_mult_R(q):
+    """
+    Return the matrix form of a right-sided quaternion multiplication Q.
+
+    Parameters
+    ----------
+    q : array
+        Quaternion to multiply from the right side.
+
+    Returns
+    -------
+    Q : array
+        Matrix form of the right side quaternion multiplication.
+
+    """
+    q /= np.linalg.norm(q)
+    Q = np.array([
+        [q[0], -q[1], -q[2], -q[3]],
+        [q[1],  q[0],  q[3], -q[2]],
+        [q[2], -q[3],  q[0],  q[1]],
+        [q[3],  q[2], -q[1],  q[0]]])
+    return Q
+
 def axang2quat(axis, angle, rad=True):
     """
     Return Quaternion from given Axis-Angle.

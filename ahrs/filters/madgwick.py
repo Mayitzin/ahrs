@@ -18,6 +18,14 @@ from ahrs.common.orientation import *
 class Madgwick:
     """
     Class of Madgwick algorithm
+
+    Parameters
+    ----------
+    beta : float
+        Filter gain of a quaternion derivative.
+    samplePeriod : float
+        Sampling rate in seconds. Inverse of sampling frequency.
+
     """
     def __init__(self, *args, **kwargs):
         self.beta = kwargs['beta'] if 'beta' in kwargs else 0.1
@@ -37,10 +45,6 @@ class Madgwick:
             Sample of tri-axial Accelerometer.
         q : array
             A-priori quaternion.
-        beta : float
-            Filter gain of a quaternion derivative.
-        samplePeriod : float
-            Sampling rate in seconds. Inverse of sampling frequency.
 
         Returns
         -------
@@ -88,10 +92,6 @@ class Madgwick:
             Sample of tri-axial Magnetometer.
         q : array
             A-priori quaternion.
-        beta : float
-            Filter gain of a quaternion derivative.
-        samplePeriod : float
-            Sampling rate in seconds. Inverse of sampling frequency.
 
         Returns
         -------
