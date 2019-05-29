@@ -25,7 +25,7 @@ class Mahony:
         self.Ki = kwargs['Ki'] if 'Ki' in kwargs else 0.0
         self.samplePeriod = kwargs['samplePeriod'] if 'samplePeriod' in kwargs else 1.0/256.0
 
-    def updateIMU(self, g, a, q, **kwargs):
+    def updateIMU(self, g, a, q):
         """
         Mahony's AHRS algorithm with an IMU architecture.
 
@@ -75,7 +75,7 @@ class Mahony:
         q /= np.linalg.norm(q)
         return q
 
-    def updateMARG(self, g, a, m, q, **kwargs):
+    def updateMARG(self, g, a, m, q):
         """
         Mahony's AHRS algorithm with a MARG architecture.
 

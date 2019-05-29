@@ -23,7 +23,7 @@ class Madgwick:
         self.beta = kwargs['beta'] if 'beta' in kwargs else 0.1
         self.samplePeriod = kwargs['samplePeriod'] if 'samplePeriod' in kwargs else 1.0/256.0
 
-    def updateIMU(self, g, a, q, **kwargs):
+    def updateIMU(self, g, a, q):
         """
         Madgwick's AHRS algorithm with an IMU architecture.
 
@@ -72,7 +72,7 @@ class Madgwick:
         q /= np.linalg.norm(q)
         return q
 
-    def updateMARG(self, g, a, m, q, **kwargs):
+    def updateMARG(self, g, a, m, q):
         """
         Madgwick's AHRS algorithm with a MARG architecture.
 
@@ -116,12 +116,12 @@ class Madgwick:
         h = q_prod(q, q_prod([0, m[0], m[1], m[2]], q_conj(q)))
         b = [0.0, np.linalg.norm([h[1], h[2]]), 0.0, h[3]]
         # Gradient decent algorithm corrective step
-        F = np.array([2.0*(qx * qz - qw * qy) - a[0],
-                    2.0*(qw * qx + qy * qz)   - a[1],
-                    2.0*(0.5 - qx**2 - qy**2) - a[2],
-                    2.0*b[1]*(0.5 - qy**2 - qz**2) + 2.0*b[3]*(qx*qz - qw*qy)       - m[0],
-                    2.0*b[1]*(qx*qy - qw*qz)       + 2.0*b[3]*(qw*qx + qy*qz)       - m[1],
-                    2.0*b[1]*(qw*qy + qx*qz)       + 2.0*b[3]*(0.5 - qx**2 - qy**2) - m[2]])
+        F = np.array([2.0*(qx * qz - qw * qy)   - a[0],
+                      2.0*(qw * qx + qy * qz)   - a[1],
+                      2.0*(0.5 - qx**2 - qy**2) - a[2],
+                      2.0*b[1]*(0.5 - qy**2 - qz**2) + 2.0*b[3]*(qx*qz - qw*qy)       - m[0],
+                      2.0*b[1]*(qx*qy - qw*qz)       + 2.0*b[3]*(qw*qx + qy*qz)       - m[1],
+                      2.0*b[1]*(qw*qy + qx*qz)       + 2.0*b[3]*(0.5 - qx**2 - qy**2) - m[2]])
         J = np.array([[-qy,               qz,                  -qw,                    qx],
                     [ qx,                 qw,                   qz,                    qy],
                     [ 0.0,               -2.0*qx,              -2.0*qy,                0.0],

@@ -175,9 +175,8 @@ def q_prod(p, q):
     pq_z = p[0]*q[3] - p[1]*q[2] + p[2]*q[1] + p[3]*q[0]
     pq = [pq_w, pq_x, pq_y, pq_z]
     if (type(p) is np.ndarray) or (type(q) is np.ndarray):
-        return np.asarray(pq)
-    else:
-        return pq
+        pq = np.array(pq)
+    return pq
 
 def axang2quat(axis, angle, rad=True):
     """
@@ -320,7 +319,6 @@ def q2euler(q=None, mode=0):
         return [0.0, 0.0, 0.0]
     if len(q) != 4:
         return None
-    # R = q2R(q)
     R = np.zeros((3, 3))
     R[0, 0] = 2.0*q[0]**2 - 1.0 + 2.0*q[1]**2
     R[1, 0] = 2.0*(q[1]*q[2] - q[0]*q[3])
@@ -494,7 +492,7 @@ def rot_chain(axes=None, angles=None):
     valid_given_axes = set(axes).issubset(set(accepted_axes))
     if valid_given_axes:
         # Perform the matrix multiplications
-        for i in list(range(num_rotations-1, -1, -1)):
+        for i in range(num_rotations-1, -1, -1):
             R = rotation(axes[i], angles[i])@R
     return R
 
