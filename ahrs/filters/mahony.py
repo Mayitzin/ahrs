@@ -29,9 +29,9 @@ class Mahony:
 
     """
     def __init__(self, *args, **kwargs):
-        self.Kp = kwargs['Kp'] if 'Kp' in kwargs else 1.0
-        self.Ki = kwargs['Ki'] if 'Ki' in kwargs else 0.0
-        self.samplePeriod = kwargs['samplePeriod'] if 'samplePeriod' in kwargs else 1.0/256.0
+        self.Kp = kwargs.get('Kp', 1.0)
+        self.Ki = kwargs.get('Ki', 0.0)
+        self.samplePeriod = kwargs.get('samplePeriod', 1.0/256.0)
         # Integral Error
         self.eInt = np.array([0.0, 0.0, 0.0])
 

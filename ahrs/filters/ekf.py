@@ -36,8 +36,8 @@ class EKF:
 
     """
     def __init__(self, *args, **kwargs):
-        self.samplePeriod = kwargs['samplePeriod'] if 'samplePeriod' in kwargs else 1.0/256.0
-        self.noises = kwargs['noises'] if 'noises' in kwargs else [0.3**2, 0.5**2, 0.8**2]
+        self.samplePeriod = kwargs.get('samplePeriod', 1.0/256.0)
+        self.noises = kwargs.get('noises', [0.3**2, 0.5**2, 0.8**2])
         self.g_noise = self.noises[0]*np.identity(3)
         self.a_noise = self.noises[1]*np.identity(3)
         self.m_noise = self.noises[2]*np.identity(3)

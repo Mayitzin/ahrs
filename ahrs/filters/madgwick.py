@@ -28,8 +28,8 @@ class Madgwick:
 
     """
     def __init__(self, *args, **kwargs):
-        self.beta = kwargs['beta'] if 'beta' in kwargs else 0.1
-        self.samplePeriod = kwargs['samplePeriod'] if 'samplePeriod' in kwargs else 1.0/256.0
+        self.beta = kwargs.get('beta', 0.1)
+        self.samplePeriod = kwargs.get('samplePeriod', 1.0/256.0)
 
     def updateIMU(self, g, a, q):
         """

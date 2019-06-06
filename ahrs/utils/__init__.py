@@ -5,3 +5,4 @@ These are tools to show data.
 """
 
 from .plot import *
+from .io import *
