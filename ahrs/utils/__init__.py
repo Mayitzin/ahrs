@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Thesw are tools to show data.
+These are tools to show data.
 
 """
 

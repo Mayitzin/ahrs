@@ -3,8 +3,6 @@
 AHRS
 ====
 
-@author: Mario Garcia
-
 The versioning follows the principles of Semantic Versioning as specified in
 https://semver.org
 

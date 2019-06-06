@@ -36,6 +36,6 @@ def test_madgwick(**kwargs):
         # Q[t] = madgwick.updateIMU(DEG2RAD*gyrs[t].copy(), accs[t].copy(), Q[t-1])
         euler_angles[t] = ahrs.common.orientation.q2euler(ahrs.common.orientation.q_conj(Q[t]))*RAD2DEG
     # Plot Signals
-    ahrs.utils.plot_sensors(gyrs, accs, mags, time=time, title="Sensors: Madgwick")
-    ahrs.utils.plot_euler(euler_angles, time=time, title="Euler Angles: Madgwick")
+    ahrs.utils.plot_sensors(gyrs, accs, mags, x_axis=time, title="Sensors: Madgwick")
+    ahrs.utils.plot_euler(euler_angles, x_axis=time, title="Euler Angles: Madgwick")
     plt.show()

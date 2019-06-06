@@ -9,7 +9,9 @@ Further description will follow.
 import numpy as np
 from .mathfuncs import *
 
-__all__ = ['q_conj', 'q_norm', 'q_prod']
+__all__ = ['q_conj', 'q_norm', 'q_prod', 'q_mult_L', 'q_mult_R', 'q_rot', 'axang2quat',
+'quat2axang', 'q2R', 'q2euler', 'rotation', 'rot_seq', 'R2q', 'dcm2quat',
+'am2q', 'acc2q']
 
 def q_conj(q):
     """
@@ -168,6 +170,8 @@ def q_prod(p, q):
     >>> quaternion.q_prod(p, q)
     array([-0.36348726,  0.38962514,  0.34188103,  0.77407146])
 
+    And that is all!
+
     """
     pq_w = p[0]*q[0] - p[1]*q[1] - p[2]*q[2] - p[3]*q[3]
     pq_x = p[0]*q[1] + p[1]*q[0] - p[2]*q[3] + p[3]*q[2]
@@ -223,6 +227,19 @@ def q_mult_R(q):
         [q[2], -q[3],  q[0],  q[1]],
         [q[3],  q[2], -q[1],  q[0]]])
     return Q
+
+def q_rot(v, q):
+    """
+    Rotate vector :math:`\\mathbf{v}` through quaternion :math:`\\mathbf{q}`.
+
+    It should be equal to call q2R(q)@v
+
+    """
+    qw, qx, qy, qz = q
+    vo = np.array([ -v[0]*(2.0*qy**2 + 2.0*qz**2 - 1) + v[1]*(2*qw*qz + 2.0*qx*qy)     - v[2]*(2.0*qw*qy - 2.0*qx*qz),
+                    -v[0]*(2.0*qw*qz - 2.0*qx*qy)     - v[1]*(2*qx**2 + 2.0*qz**2 - 1) + v[2]*(2.0*qw*qx + 2.0*qy*qz),
+                     v[0]*(2.0*qw*qy + 2.0*qx*qz)     - v[1]*(2*qw*qx - 2.0*qy*qz)     - v[2]*(2.0*qx**2 + 2.0*qy**2 - 1)])
+    return vo
 
 def axang2quat(axis, angle, rad=True):
     """
@@ -678,7 +695,6 @@ def am2q(a, m):
                   [H[2], M[2], a[2]]])
     q = dcm2quat(R)
     return q
-
 
 def acc2q(a, return_euler=False):
     """

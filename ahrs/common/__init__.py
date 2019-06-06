@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-This are the most common routines used to estimate attitude and heading.
+These are the most common routines used to estimate attitude and heading.
 
 """
 
 from . import mathfuncs
 from . import orientation
+from . import geometry
