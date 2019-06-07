@@ -36,3 +36,7 @@ def test_madgwick(**kwargs):
         ahrs.utils.plot_sensors(gyrs, accs, mags, x_axis=time, title="Sensors: Madgwick")
         ahrs.utils.plot_euler(euler_angles, x_axis=time, title="Euler Angles: Madgwick")
         plt.show()
+    # Test data
+    qts_ok = not(np.allclose(np.sum(Q, axis=0), num_samples*np.array([1., 0., 0., 0.])))
+    qnm_ok = np.allclose(np.linalg.norm(Q, axis=1).mean(), 1.0)
+    return qts_ok and qnm_ok
