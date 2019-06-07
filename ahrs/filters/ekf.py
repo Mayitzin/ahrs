@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-** UNDER CONSTRUCTION **
+Attitude estimation using an Extended Kalman Filter
 
 References
 ----------
@@ -21,7 +21,7 @@ from ahrs.common.mathfuncs import *
 
 class EKF:
     """
-    Class of Extended Kalman Filter
+    Extended Kalman Filter
 
     Parameters
     ----------
@@ -46,14 +46,22 @@ class EKF:
 
     def jacobian(self, q, v):
         """
-        Jacobian
+        Jacobian of vector :math:`\\mathbf{v}` with respect to quaternion :math:`\\mathbf{q}`.
+
+        Parameters
+        ----------
+        q : array
+            Quaternion.
+        v : array
+            vector to build a Jacobian from.
+
         """
         qw, qx, qy, qz = q
         vx, vy, vz = v
-        H = np.array([[qy*vz - qz*vy,             qy*vy + qz*vz, qw*vz + qx*vy - 2.0*qy*vx, qx*vz - qw*vy - 2.0*qz*vx],
-                      [qz*vx - qx*vz, qy*vx - 2.0*qx*vy - qw*vz,             qx*vx + qz*vz, qw*vx + qy*vz - 2.0*qz*vy],
-                      [qx*vy - qy*vx, qw*vy - 2.0*qx*vz + qz*vx, qz*vy - 2.0*qy*vz - qw*vx,             qx*vx + qy*vy]])
-        return H
+        J = 2.0*np.array([[qy*vz - qz*vy,             qy*vy + qz*vz, qw*vz + qx*vy - 2.0*qy*vx, qx*vz - qw*vy - 2.0*qz*vx],
+                          [qz*vx - qx*vz, qy*vx - 2.0*qx*vy - qw*vz,             qx*vx + qz*vz, qw*vx + qy*vz - 2.0*qz*vy],
+                          [qx*vy - qy*vx, qw*vy - 2.0*qx*vz + qz*vx, qz*vy - 2.0*qy*vz - qw*vx,             qx*vx + qy*vy]])
+        return J
 
     def update(self, g, a, m, q):
         """
@@ -76,17 +84,16 @@ class EKF:
             Estimated (A-posteriori) quaternion.
 
         """
-        # Normalise accelerometer measurement
+        # handle NaNs
         a_norm = np.linalg.norm(a)
-        if a_norm == 0:     # handle NaN
+        if a_norm == 0:
             return q
-        a /= a_norm
-        # Normalise magnetometer measurement
         m_norm = np.linalg.norm(m)
-        if m_norm == 0:     # handle NaN
+        if m_norm == 0:
             return q
+        # Normalize vectors
+        a /= a_norm
         m /= m_norm
-        # Normalize input quaternion
         q /= np.linalg.norm(q)
 
         # ----- Prediction -----
@@ -100,13 +107,13 @@ class EKF:
 
         # ----- Correction -----
         q_apriori_conj = q_conj(q_apriori)
-        dz = np.concatenate((q2R(q_apriori_conj)@m, q2R(q_apriori_conj)@a))
+        z = np.concatenate((q2R(q_apriori_conj)@m, q2R(q_apriori_conj)@a))
         H = np.vstack((self.jacobian(q_apriori_conj, m), self.jacobian(q_apriori_conj, a)))
         R = np.zeros((6, 6))
         R[:3, :3] = self.m_noise
         R[3:, 3:] = self.a_noise
         K = P_apriori@H.T@np.linalg.inv(H@P_apriori@H.T + R)
-        q = q_apriori + K@dz
+        q = q_apriori + K@z
         P = (np.identity(4) - K@H)@P_apriori
 
         self.q = q/np.linalg.norm(q)

@@ -24,6 +24,7 @@ def test_mahony(**kwargs):
     num_samples = len(time)
     Q = np.tile([1., 0., 0., 0.], (num_samples, 1))
     euler_angles = np.zeros((num_samples, 3))
+    # Mahony Object
     mahony = ahrs.filters.Mahony(beta=0.1)
     for t in range(1, num_samples):
         Q[t] = mahony.updateMARG(DEG2RAD*gyrs[t].copy(), accs[t].copy(), mags[t].copy(), Q[t-1].copy())

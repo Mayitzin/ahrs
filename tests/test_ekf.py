@@ -25,7 +25,7 @@ def test_ekf(**kwargs):
     num_samples = len(time)
     Q = np.tile([1., 0., 0., 0.], (num_samples, 1))
     euler_angles = np.zeros((num_samples, 3))
-    # EKF Instance
+    # EKF Object
     ekf = ahrs.filters.EKF()
     for t in range(1, num_samples):
         Q[t] = ekf.update(DEG2RAD*gyrs[t].copy(), accs[t].copy(), mags[t].copy(), Q[t-1])

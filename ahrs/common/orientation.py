@@ -232,14 +232,21 @@ def q_rot(v, q):
     """
     Rotate vector :math:`\\mathbf{v}` through quaternion :math:`\\mathbf{q}`.
 
-    It should be equal to call q2R(q)@v
+    It should be equal to calling `q2R(q)@v`.
+
+    Parameters
+    ----------
+    v : array
+        Vector to rotate in 3 dimensions.
+    q : array
+        Quaternion to rotate through.
 
     """
     qw, qx, qy, qz = q
-    vo = np.array([ -v[0]*(2.0*qy**2 + 2.0*qz**2 - 1) + v[1]*(2*qw*qz + 2.0*qx*qy)     - v[2]*(2.0*qw*qy - 2.0*qx*qz),
-                    -v[0]*(2.0*qw*qz - 2.0*qx*qy)     - v[1]*(2*qx**2 + 2.0*qz**2 - 1) + v[2]*(2.0*qw*qx + 2.0*qy*qz),
-                     v[0]*(2.0*qw*qy + 2.0*qx*qz)     - v[1]*(2*qw*qx - 2.0*qy*qz)     - v[2]*(2.0*qx**2 + 2.0*qy**2 - 1)])
-    return vo
+    return np.array([
+        -2.0*v[0]*(qy**2 + qz**2 - 0.5) + 2.0*v[1]*(qw*qz + qx*qy)       - 2.0*v[2]*(qw*qy - qx*qz),
+        -2.0*v[0]*(qw*qz - qx*qy)       - 2.0*v[1]*(qx**2 + qz**2 - 0.5) + 2.0*v[2]*(qw*qx + qy*qz),
+         2.0*v[0]*(qw*qy + qx*qz)       - 2.0*v[1]*(qw*qx - qy*qz)       - 2.0*v[2]*(qx**2 + qy**2 - 0.5)])
 
 def axang2quat(axis, angle, rad=True):
     """

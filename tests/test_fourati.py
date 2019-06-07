@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Test Magdwick Filter
+Test Fourati Filter
 
 """
 
@@ -9,9 +9,9 @@ import ahrs
 RAD2DEG = ahrs.common.mathfuncs.RAD2DEG
 DEG2RAD = ahrs.common.mathfuncs.DEG2RAD
 
-def test_madgwick(**kwargs):
+def test_fourati(**kwargs):
     """
-    Test Magdwick Filter
+    Test Fourati Filter
     """
     test_file = kwargs.get('file', "ExampleData.mat")
     plot = kwargs.get('plot', False)
@@ -24,15 +24,15 @@ def test_madgwick(**kwargs):
     num_samples = len(time)
     Q = np.tile([1., 0., 0., 0.], (num_samples, 1))
     euler_angles = np.zeros((num_samples, 3))
-    # Madgwick Object
-    madgwick = ahrs.filters.Madgwick()
+    # Fourati Object
+    fourati = ahrs.filters.Fourati()
     for t in range(1, num_samples):
-        Q[t] = madgwick.updateMARG(DEG2RAD*gyrs[t].copy(), accs[t].copy(), mags[t].copy(), Q[t-1])
-        # Q[t] = madgwick.updateIMU(DEG2RAD*gyrs[t].copy(), accs[t].copy(), Q[t-1])
+        Q[t] = fourati.update(DEG2RAD*gyrs[t].copy(), accs[t].copy(), mags[t].copy(), Q[t-1].copy())
         euler_angles[t] = ahrs.common.orientation.q2euler(ahrs.common.orientation.q_conj(Q[t]))*RAD2DEG
+
     if plot:
         # Plot Signals
         import matplotlib.pyplot as plt
-        ahrs.utils.plot_sensors(gyrs, accs, mags, x_axis=time, title="Sensors: Madgwick")
-        ahrs.utils.plot_euler(euler_angles, x_axis=time, title="Euler Angles: Madgwick")
+        ahrs.utils.plot_sensors(gyrs, accs, mags, x_axis=time, title="Sensors: Fourati")
+        ahrs.utils.plot_euler(euler_angles, x_axis=time, title="Euler Angles: Fourati")
         plt.show()

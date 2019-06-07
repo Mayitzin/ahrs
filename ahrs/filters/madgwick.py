@@ -17,7 +17,7 @@ from ahrs.common.orientation import *
 
 class Madgwick:
     """
-    Class of Madgwick algorithm
+    Class of Madgwick filter algorithm
 
     Parameters
     ----------
