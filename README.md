@@ -10,21 +10,29 @@ AHRS is compatible with __Python 3.6__ and above.
 
 ## Installation
 
-First, clone AHRS using `git`:
+AHRS may be installed using [pip](https://pip.pypa.io):
+
+```sh
+pip install ahrs
+```
+
+Or using the latest version from the repository. First, clone AHRS using `git`:
 
 ```sh
 git clone https://github.com/Mayitzin/ahrs.git
 ```
 
 Then, `cd` to the AHRS folder and run the install command:
+
 ```sh
 cd ahrs
-sudo python setup.py install
+python setup.py install
 ```
 
-Alternatively, you can install AHRS using `pip`
+Or, again, using `pip`:
+
 ```sh
-sudo pip install .
+pip install .
 ```
 
 AHRS depends on the most distributed packages of Python. If you don't have them, they will be automatically downloaded and installed.

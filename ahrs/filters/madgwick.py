@@ -31,7 +31,7 @@ class Madgwick:
         self.beta = kwargs.get('beta', 0.1)
         self.samplePeriod = kwargs.get('samplePeriod', 1.0/256.0)
 
-    def updateIMU(self, g, a, q):
+    def updateIMU(self, gyr, acc, q):
         """
         Madgwick's AHRS algorithm with an IMU architecture.
 
@@ -52,6 +52,8 @@ class Madgwick:
             Estimated quaternion.
 
         """
+        g = gyr.copy()
+        a = acc.copy()
         # Normalise accelerometer measurement
         a_norm = np.linalg.norm(a)
         if a_norm == 0:     # handle NaN
@@ -76,7 +78,7 @@ class Madgwick:
         q /= np.linalg.norm(q)
         return q
 
-    def updateMARG(self, g, a, m, q):
+    def updateMARG(self, gyr, acc, mag, q):
         """
         Madgwick's AHRS algorithm with a MARG architecture.
 
@@ -99,6 +101,9 @@ class Madgwick:
             Estimated quaternion.
 
         """
+        g = gyr.copy()
+        a = acc.copy()
+        m = mag.copy()
         # Normalise accelerometer measurement
         a_norm = np.linalg.norm(a)
         if a_norm == 0:     # handle NaN

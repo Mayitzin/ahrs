@@ -35,7 +35,7 @@ class Mahony:
         # Integral Error
         self.eInt = np.array([0.0, 0.0, 0.0])
 
-    def updateIMU(self, g, a, q):
+    def updateIMU(self, gyr, acc, q):
         """
         Mahony's AHRS algorithm with an IMU architecture.
 
@@ -43,9 +43,9 @@ class Mahony:
 
         Parameters
         ----------
-        g : array
+        gyr : array
             Sample of tri-axial Gyroscope in radians.
-        a : array
+        acc : array
             Sample of tri-axial Accelerometer.
         q : array
             A-priori quaternion.
@@ -56,6 +56,8 @@ class Mahony:
             Estimated quaternion.
 
         """
+        g = gyr.copy()
+        a = acc.copy()
         # Normalise accelerometer measurement
         a_norm = np.linalg.norm(a)
         if a_norm == 0:     # handle NaN
@@ -79,7 +81,7 @@ class Mahony:
         q /= np.linalg.norm(q)
         return q
 
-    def updateMARG(self, g, a, m, q):
+    def updateMARG(self, gyr, acc, mag, q):
         """
         Mahony's AHRS algorithm with a MARG architecture.
 
@@ -87,11 +89,11 @@ class Mahony:
 
         Parameters
         ----------
-        g : array
+        gyr : array
             Sample of tri-axial Gyroscope in radians.
-        a : array
+        acc : array
             Sample of tri-axial Accelerometer.
-        m : array
+        mag : array
             Sample of tri-axial Magnetometer.
         q : array
             A-priori quaternion.
@@ -102,6 +104,9 @@ class Mahony:
             Estimated quaternion.
 
         """
+        g = gyr.copy()
+        a = acc.copy()
+        m = mag.copy()
         # Normalise accelerometer measurement
         a_norm = np.linalg.norm(a)
         if a_norm == 0:     # handle NaN

@@ -13,6 +13,8 @@ def euclidean(x, y, **kwargs):
 
     Accepts the same parameters as the function `numpy.linalg.norm()`.
 
+    This metric gives values in the range [0, :math:`\\pi\\sqrt{3}`]
+
     Parameters
     ----------
     x : array

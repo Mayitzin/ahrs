@@ -4,12 +4,16 @@ Attitude estimation using an Extended Kalman Filter
 
 References
 ----------
-.. [1] Simo Särkkä (2013). Bayesian Filtering and Smoothing. Cambridge University Press.
+.. [1] João Luís Marins, Xiaoping Yun, Eric R. Bachmann, Robert B. McGhee, and
+  Michael J.Zyda. An Extended Kalman Filter for Quaternion-Based Orientation
+  Estimation Using MARG Sensors. Proceedings of the 2001 IEEE/RSJ International
+  Conference on Intelligent Robots and Systems, Maui, Hawaii, USA, Oct. 29 -
+  Nov. 03, 2001, pp. 2003-2011.
+  https://calhoun.nps.edu/handle/10945/41567
+.. [2] Simo Särkkä (2013). Bayesian Filtering and Smoothing. Cambridge University Press.
   https://users.aalto.fi/~ssarkka/pub/cup_book_online_20131111.pdf
-.. [2] Wikipedia: Extended Kalman Filter.
+.. [3] Wikipedia: Extended Kalman Filter.
   https://en.wikipedia.org/wiki/Extended_Kalman_filter
-.. [3] Yan-Bin Jia (2018). Quaternions.
-  http://web.cs.iastate.edu/~cs577/handouts/quaternion.pdf
 .. [4] Thibaud Michel (2016). On Attitude Estimation with Smartphones.
   http://tyrex.inria.fr/mobile/benchmarks-attitude/
 
@@ -28,11 +32,19 @@ class EKF:
     samplePeriod : float
         Sampling rate in seconds. Inverse of sampling frequency.
     noises : array
-        List of noise variance for each type of sensor, whose order is:
+        List of noise variances :math:`\\sigma` for each type of sensor.
+        Default values:
 
-        [gyroscope, accelerometer, magnetometer]
 
-        Default values: [0.3^2, 0.5^2, 0.8^2]
+    .. math::
+
+        \\sigma =
+        \\begin{bmatrix}
+        \\sigma_\\mathrm{acc} \\\\
+        \\sigma_\\mathrm{gyr} \\\\
+        \\sigma_\\mathrm{mag}
+        \\end{bmatrix} =
+        \\begin{bmatrix} 0.3^2 \\\\ 0.5^2 \\\\ 0.8^2 \\end{bmatrix}
 
     """
     def __init__(self, *args, **kwargs):
@@ -63,17 +75,17 @@ class EKF:
                           [qx*vy - qy*vx, qw*vy - 2.0*qx*vz + qz*vx, qz*vy - 2.0*qy*vz - qw*vx,             qx*vx + qy*vy]])
         return J
 
-    def update(self, g, a, m, q):
+    def update(self, gyr, acc, mag, q):
         """
-        Update State.
+        Perform an update of the state.
 
         Parameters
         ----------
-        g : array
+        gyr : array
             Sample of tri-axial Gyroscope in radians.
-        a : array
+        aacc : array
             Sample of tri-axial Accelerometer.
-        m : array
+        mag : array
             Sample of tri-axial Magnetometer.
         q : array
             A-priori quaternion.
@@ -84,6 +96,9 @@ class EKF:
             Estimated (A-posteriori) quaternion.
 
         """
+        g = gyr.copy()
+        a = acc.copy()
+        m = mag.copy()
         # handle NaNs
         a_norm = np.linalg.norm(a)
         if a_norm == 0:

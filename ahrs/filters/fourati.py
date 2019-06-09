@@ -41,13 +41,12 @@ class Fourati:
         self.ka = kwargs.get('ka', 2.0)
         self.km = kwargs.get('km', 1.0)
         self.samplePeriod = kwargs.get('samplePeriod', 1.0/256.0)
-        # self.gravity = kwargs.get('gravity', 9.87)
         # Vector Representation of references measurements
-        self.aq = np.array([0., 0., 1.0])
+        self.aq = np.array([0., 0., 1.0])       # Acceleration assumed 1g n Z-axis
         self.mq = np.array([0.5*cosd(65.0), 0., 0.5*sind(65.0)]) # Using UK's magnetic reference
         self.mq /= np.linalg.norm(self.mq)
 
-    def update(self, g, a, m, q):
+    def update(self, gyr, acc, mag, q):
         """
         Fourati's AHRS algorithm with a MARG architecture.
 
@@ -68,6 +67,9 @@ class Fourati:
             Estimated quaternion.
 
         """
+        g = gyr.copy()
+        a = acc.copy()
+        m = mag.copy()
         # handle NaNs
         a_norm = np.linalg.norm(a)
         if a_norm == 0:

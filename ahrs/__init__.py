@@ -15,7 +15,7 @@ from . import utils
 MAJOR = "0"
 MINOR = "1"
 PATCH = "2"
-RELEASE = ""
+RELEASE = "2"
 VERSION = "{}.{}.{}-{}".format(MAJOR, MINOR, PATCH, RELEASE)
 
 def get_version(short=False):

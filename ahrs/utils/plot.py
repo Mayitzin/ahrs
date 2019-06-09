@@ -9,9 +9,9 @@ Plotting tools
 """
 
 import matplotlib.pyplot as plt
-COLORS = ['#ff0000', '#00aa00', '#0000ff', '#aaaa00', '#000000']
+COLORS = ['#aaaa00', '#ff0000', '#00aa00', '#0000ff', '#000000']
 
-__all__ = ['plot_sensors', 'plot_euler']
+__all__ = ['plot_sensors', 'plot_euler', 'plot_quaternions']
 
 def plot_sensors(*sensors, **kwargs):
     """
@@ -40,27 +40,25 @@ def plot_sensors(*sensors, **kwargs):
     --------
     >>> import scipy.io as sio
     >>> import ahrs
-    >>> data = data = sio.loadmat("data.mat")
-    >>> gyrs = data['Gyroscope']
-    >>> accs = data['Accelerometer']
-    >>> ahrs.utils.plot_sensors(gyrs)   # Plot Gyroscopes
+    >>> data = sio.loadmat("data.mat")
+    >>> ahrs.utils.plot_sensors(data.gyrs)   # Plot Gyroscopes
 
     Each call will open a new window with the requested plots and pause any
     further computation, until the window is closed.
 
     >>> ahrs.utils.plot_sensors(gyrs, accs) # Plot Gyroscopes and Accelerometers in same window
     >>> time = data['time']
-    >>> ahrs.utils.plot_sensors(gyrs, accs, mags, x_axis=time, title="Sensors")
+    >>> ahrs.utils.plot_sensors(data.gyr, data.acc, data.mag, x_axis=data.time, title="Sensors")
 
     """
-    num_axes = kwargs['num_axes'] if 'num_axes' in kwargs else 3
-    title = kwargs['title'] if 'title' in kwargs else "Sensors"
+    num_axes = kwargs.get('num_axes', 3)
+    title = kwargs.get('title', "Sensors")
     fig = plt.figure(title)
     for n, s in enumerate(sensors):
         fig.add_subplot(len(sensors), 1, n+1)
-        x_axis = kwargs['x_axis'] if 'x_axis' in kwargs else range(s.shape[0])
+        x_axis = kwargs.get('x_axis', range(s.shape[0]))
         for i in range(num_axes):
-            plt.plot(x_axis, s[:, i], c=COLORS[i], ls='-', lw=0.3)
+            plt.plot(x_axis, s[:, i], c=COLORS[i+1], ls='-', lw=0.3)
     plt.plot()
 
 
@@ -68,8 +66,7 @@ def plot_euler(angles, **kwargs):
     """
     Plot Euler Angles.
 
-    Opens a window and plots each sensor array in a different row. The window
-    builds a subplot for each sensor array.
+    Opens a window and plots the three Euler Angles in a centered plot.
 
     Parameters
     ----------
@@ -79,6 +76,50 @@ def plot_euler(angles, **kwargs):
         Optional. X-axis data array of the plot. Default is `range(M)`.
     title : str
         Optional. Title of window. Default is 'Euler Angles'.
+
+    Returns
+    -------
+    None
+
+    Examples
+    --------
+    >>> import scipy.io as sio
+    >>> import ahrs
+    >>> data = sio.loadmat("data.mat")
+    >>> ahrs.utils.plot_euler(data.euler_angles)
+
+    Each call will open a new window with the requested plots and pause any
+    further computation, until the window is closed.
+
+    >>> time = data['time']
+    >>> ahrs.utils.plot_euler(data.euler_angles, x_axis=data.time, title="My Angles")
+
+    """
+    sz = angles.shape
+    if sz[1] != 3:
+        return None
+    x_axis = kwargs.get('x_axis', range(sz[0]))
+    title = kwargs.get('title', "Euler Angles")
+    fig = plt.figure(title)
+    for i in range(sz[1]):
+        plt.plot(x_axis, angles[:, i], c=COLORS[i+1], ls='-', lw=0.3)
+    plt.plot()
+
+
+def plot_quaternions(quaternions, **kwargs):
+    """
+    Plot Quaternions.
+
+    Opens a window and plots the Quaternions in a centered plot.
+
+    Parameters
+    ----------
+    sensors : arrays
+        Array of Quaternions to plot. Each array is of size M-by-4.
+    x_axis : array
+        Optional. X-axis data array of the plot. Default is `range(M)`.
+    title : str
+        Optional. Title of window. Default is 'Quaternions'.
 
     Returns
     -------
@@ -99,10 +140,12 @@ def plot_euler(angles, **kwargs):
     >>> ahrs.utils.plot_euler(euler_angles, x_axis=time, title="My Angles")
 
     """
-    sz = angles.shape
-    x_axis = kwargs['x_axis'] if 'x_axis' in kwargs else range(sz[0])
-    title = kwargs['title'] if 'title' in kwargs else "Euler Angles"
+    sz = quaternions.shape
+    if sz[1] != 4:
+        return None
+    x_axis = kwargs.get('x_axis', range(sz[0]))
+    title = kwargs.get('title', "Quaternions")
     fig = plt.figure(title)
-    for i in range(sz[1]):
-        plt.plot(x_axis, angles[:, i], c=COLORS[i], ls='-', lw=0.3)
+    for i in range(4):
+        plt.plot(x_axis, quaternions[:, i], c=COLORS[i], ls='-', lw=0.3)
     plt.plot()

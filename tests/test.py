@@ -32,16 +32,15 @@ def test_filters(**kwargs):
 
     """
     results = True
-    results &= test_mahony(**kwargs)
+    # results &= test_fourati(**kwargs)
+    # results &= test_ekf(**kwargs)
+    # results &= test_mahony(**kwargs)
     results &= test_madgwick(**kwargs)
-    results &= test_ekf(**kwargs)
-    results &= test_fourati(**kwargs)
-    result_text = "OK" if results else "ERROR"
-    print("Filter testing results: {}".format(result_text))
+    print("Filter testing results: {}".format("OK" if results else "ERROR"))
 
 def test_metrics(**kwargs):
     result = test_dist()
 
 if __name__ == "__main__":
-    test_filters(plot=False)
+    test_filters(plot=True)
     # test_metrics()
