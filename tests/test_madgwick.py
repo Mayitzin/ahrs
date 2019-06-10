@@ -7,8 +7,8 @@ Test Magdwick Filter
 
 import numpy as np
 import ahrs
-RAD2DEG = ahrs.common.mathfuncs.RAD2DEG
-DEG2RAD = ahrs.common.mathfuncs.DEG2RAD
+RAD2DEG = ahrs.common.RAD2DEG
+DEG2RAD = ahrs.common.DEG2RAD
 
 def test_madgwick(**kwargs):
     """
@@ -31,9 +31,9 @@ def test_madgwick(**kwargs):
     if plot:
         # Plot Signals
         import matplotlib.pyplot as plt
-        ahrs.utils.plot_sensors(data.gyr, data.acc, data.mag, x_axis=data.time, title="Sensors: Madgwick")
+        # ahrs.utils.plot_sensors(data.gyr, data.acc, data.mag, x_axis=data.time, title="Sensors: Madgwick")
         ahrs.utils.plot_euler(euler_angles, x_axis=data.time, title="Euler Angles: Madgwick")
-        ahrs.utils.plot_quaternions(Q, x_axis=data.time, title="Quaternions: Madgwick")
+        # ahrs.utils.plot_quaternions(Q, x_axis=data.time, title="Quaternions: Madgwick")
         plt.show()
     # Test computed data
     qts_ok = not(np.allclose(np.sum(Q, axis=0), data.num_samples*np.array([1., 0., 0., 0.])))

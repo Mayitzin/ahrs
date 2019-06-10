@@ -7,8 +7,8 @@ Test Mahony Filter
 
 import numpy as np
 import ahrs
-RAD2DEG = ahrs.common.mathfuncs.RAD2DEG
-DEG2RAD = ahrs.common.mathfuncs.DEG2RAD
+RAD2DEG = ahrs.common.RAD2DEG
+DEG2RAD = ahrs.common.DEG2RAD
 
 def test_mahony(**kwargs):
     """

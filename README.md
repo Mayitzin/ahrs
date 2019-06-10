@@ -16,23 +16,69 @@ AHRS may be installed using [pip](https://pip.pypa.io):
 pip install ahrs
 ```
 
-Or using the latest version from the repository. First, clone AHRS using `git`:
+Or using the latest version from the repository:
 
 ```sh
 git clone https://github.com/Mayitzin/ahrs.git
-```
-
-Then, `cd` to the AHRS folder and run the install command:
-
-```sh
 cd ahrs
 python setup.py install
 ```
 
-Or, again, using `pip`:
+AHRS depends on the most distributed packages of Python. If you don't have them, they will be automatically downloaded and installed.
 
-```sh
-pip install .
+## Using AHRS
+
+To play with orientations, for example, we can use the `orientation` module.
+
+```py
+>>> import ahrs
+>>> # Rotation matrix of 30.0 degrees around X-axis
+... ahrs.common.orientation.rotation('x', 30.0)
+array([[ 1.       ,  0.       ,  0.       ],
+       [ 0.       ,  0.8660254, -0.5      ],
+       [ 0.       ,  0.5      ,  0.8660254]])
+>>> # Rotation sequence of the form: R_y(10.0)@R_x(20.0)@R_z(30.0)
+... ahrs.common.orientation.rot_seq('yXy', [10.0, 20.0, 30.0])
+array([[ 0.77128058,  0.05939117,  0.63371836],
+       [ 0.17101007,  0.93969262, -0.29619813],
+       [-0.61309202,  0.33682409,  0.71461018]])
 ```
 
-AHRS depends on the most distributed packages of Python. If you don't have them, they will be automatically downloaded and installed.
+It also works nicely with Quaternions.
+
+```py
+>>> import numpy as np
+>>> q = np.random.random(4)
+>>> # It automatically normalizes any given vector
+... ahrs.common.orientation.q2R(q)
+array([[ 0.76811067,  0.3546719 ,  0.53311709],
+       [ 0.55044928,  0.05960693, -0.83273802],
+       [-0.32712625,  0.93308888, -0.14944417]])
+```
+
+`ahrs` also includes a module that simplifies data loading and visualizing
+
+```py
+>>> data = ahrs.utils.io.load("ExampleData.mat")
+>>> ahrs.utils.plot_sensors(data.gyr, data.acc, data.mag)
+```
+
+![Sensor Plotting](plot_sensors_screenshot.png)
+
+If you want to use the sensor data to estimate the attitude, use the `filters` module that includes various (more coming) algorithms for it.
+
+```py
+>>> madgwick = ahrs.filters.Madgwick()
+>>> Q = np.tile([1., 0., 0., 0.], (data.num_samples, 1)) # Allocate an array for all quaternions
+>>> d2g = ahrs.common.DEG2RAD   # Constant to convert degrees to radians
+>>> for t in range(1, data.num_samples):
+...     Q[t] = madgwick.updateMARG(d2g*data.gyr[t], data.acc[t], data.mag[t], Q[t-1])
+...
+>>> ahrs.utils.plot_quaternions(Q)
+```
+
+![Quaternion Plotting](plot_quaternions_screenshot.png)
+
+## Documentation
+
+A comprehensive documentation, with examples, will soon come to [Read the Docs](https://docs.readthedocs.io/).

@@ -6,7 +6,8 @@ Common mathematical routines.
 
 import numpy as np
 
-__all__ = ['M_PI', 'DEG2RAD', 'RAD2DEG', 'cosd', 'sind', 'skew']
+# __all__ = ['M_PI', 'DEG2RAD', 'RAD2DEG', 'cosd', 'sind', 'skew']
+__all__ = ['cosd', 'sind', 'skew']
 
 M_PI = np.pi
 DEG2RAD = M_PI / 180.0

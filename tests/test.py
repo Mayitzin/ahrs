@@ -6,11 +6,8 @@ Test Script
 
 """
 
-from test_madgwick import test_madgwick
-from test_mahony import test_mahony
-from test_ekf import test_ekf
-from test_fourati import test_fourati
 from test_metrics import *
+from test_filters import Test_Filter
 
 def test_filters(**kwargs):
     """
@@ -31,16 +28,18 @@ def test_filters(**kwargs):
         Flag to indicate if results are to be plotted. Requires package matplotlib
 
     """
+    file_name = kwargs.get('file', "ExampleData.mat")
+    test = Test_Filter(file_name, **kwargs)
     results = True
-    # results &= test_fourati(**kwargs)
-    # results &= test_ekf(**kwargs)
-    # results &= test_mahony(**kwargs)
-    results &= test_madgwick(**kwargs)
-    print("Filter testing results: {}".format("OK" if results else "ERROR"))
+    results &= test.ekf()
+    results &= test.fourati()
+    results &= test.mahony()
+    results &= test.madgwick()
+    print("Filter testing results: {}".format("OK" if results else "FAILED"))
 
 def test_metrics(**kwargs):
     result = test_dist()
 
 if __name__ == "__main__":
-    test_filters(plot=True)
+    test_filters()
     # test_metrics()

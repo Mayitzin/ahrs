@@ -127,17 +127,15 @@ def plot_quaternions(quaternions, **kwargs):
 
     Examples
     --------
-    >>> import scipy.io as sio
     >>> import ahrs
-    >>> data = data = sio.loadmat("data.mat")
-    >>> euler_angles = data['Euler']
-    >>> ahrs.utils.plot_euler(euler_angles)
+    >>> data = ahrs.utils.io.load("data.mat")
+    >>> ahrs.utils.plot_quaternions(data.quaternions)
 
     Each call will open a new window with the requested plots and pause any
     further computation, until the window is closed.
 
     >>> time = data['time']
-    >>> ahrs.utils.plot_euler(euler_angles, x_axis=time, title="My Angles")
+    >>> ahrs.utils.plot_quaternions(quaternions, x_axis=time, title="My Quaternions")
 
     """
     sz = quaternions.shape
