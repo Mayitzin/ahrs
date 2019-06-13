@@ -59,7 +59,7 @@ def plot_sensors(*sensors, **kwargs):
         x_axis = kwargs.get('x_axis', range(s.shape[0]))
         for i in range(num_axes):
             plt.plot(x_axis, s[:, i], c=COLORS[i+1], ls='-', lw=0.3)
-    plt.plot()
+    plt.show()
 
 
 def plot_euler(angles, **kwargs):
@@ -103,7 +103,7 @@ def plot_euler(angles, **kwargs):
     fig = plt.figure(title)
     for i in range(sz[1]):
         plt.plot(x_axis, angles[:, i], c=COLORS[i+1], ls='-', lw=0.3)
-    plt.plot()
+    plt.show()
 
 
 def plot_quaternions(quaternions, **kwargs):
@@ -146,4 +146,4 @@ def plot_quaternions(quaternions, **kwargs):
     fig = plt.figure(title)
     for i in range(4):
         plt.plot(x_axis, quaternions[:, i], c=COLORS[i], ls='-', lw=0.3)
-    plt.plot()
+    plt.show()

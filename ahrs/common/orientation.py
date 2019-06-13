@@ -9,9 +9,9 @@ Further description will follow.
 import numpy as np
 from .mathfuncs import *
 
-__all__ = ['q_conj', 'q_norm', 'q_prod', 'q_mult_L', 'q_mult_R', 'q_rot', 'axang2quat',
-'quat2axang', 'q2R', 'q2euler', 'rotation', 'rot_seq', 'R2q', 'dcm2quat',
-'am2q', 'acc2q']
+__all__ = ['q_conj', 'q_random', 'q_norm', 'q_prod', 'q_mult_L', 'q_mult_R',
+'q_rot', 'axang2quat', 'quat2axang', 'q2R', 'q2euler', 'rotation', 'rot_seq',
+'R2q', 'dcm2quat', 'am2q', 'acc2q']
 
 def q_conj(q):
     """
@@ -29,12 +29,29 @@ def q_conj(q):
     Parameters
     ----------
     q : array
-        Unit quaternion
+        Unit quaternion or 2D array of Quaternions.
 
     Returns
     -------
     q_conj : array
-        Conjugated quaternion
+        Conjugated quaternion or 2D array of conjugated Quaternions.
+
+    Examples
+    --------
+    >>> q = np.array([0.603297, 0.749259, 0.176548, 0.20850 ])
+    >>> ahrs.common.orientation.q_conj(q)
+    array([0.603297, -0.749259, -0.176548, -0.20850 ])
+    >>> Q = np.array([[0.039443, 0.307174, 0.915228, 0.257769],
+        [0.085959, 0.708518, 0.039693, 0.699311],
+        [0.555887, 0.489330, 0.590976, 0.319829],
+        [0.578965, 0.202390, 0.280560, 0.738321],
+        [0.848611, 0.442224, 0.112601, 0.267611]])
+    >>> ahrs.common.orientation.q_conj(Q)
+    array([[ 0.039443, -0.307174, -0.915228, -0.257769],
+           [ 0.085959, -0.708518, -0.039693, -0.699311],
+           [ 0.555887, -0.489330, -0.590976, -0.319829],
+           [ 0.578965, -0.202390, -0.280560, -0.738321],
+           [ 0.848611, -0.442224, -0.112601, -0.267611]])
 
     References
     ----------
@@ -44,13 +61,51 @@ def q_conj(q):
     .. [2] https://en.wikipedia.org/wiki/Quaternion#Conjugation,_the_norm,_and_reciprocal
 
     """
-    if len(q) != 4:
+    sz = np.shape(q)
+    if len(sz) == 1 and sz[0] != 4:
         return None
-    if type(q) is not np.ndarray:
-        q = np.array(q)
-    # if type(q) is list:
-    #     return [q[0], -q[1], -q[2], -q[3]]
-    return np.array([1., -1., -1., -1.])*q
+    if len(sz) == 2 and sz[1] != 4:
+        return None
+    # I think that can be done better with some clever use of numpy.ndim
+    return np.array([1., -1., -1., -1.])*np.array(q)
+
+def q_random(size=1):
+    """
+    Generate random quaternions
+
+    Parameters
+    ----------
+    size : int
+        Number of Quaternions to generate. Default is 1 quaternion only.
+
+    Returns
+    -------
+    q : array
+        M-by-4 array of generated random Quaternions, where M is the requested size.
+
+    Examples
+    --------
+    >>> import ahrs
+    >>> q = ahrs.common.orientation.q_random()
+    array([0.65733485, 0.29442787, 0.55337745, 0.41832587])
+    >>> q = ahrs.common.orientation.q_random(5)
+    >>> q
+    array([[-0.81543924, -0.06443342, -0.08727487, -0.56858621],
+           [ 0.23124879,  0.55068024, -0.59577746, -0.53695855],
+           [ 0.74998503, -0.38943692,  0.27506719,  0.45847506],
+           [-0.43213176, -0.55350396, -0.54203589, -0.46161954],
+           [-0.17662536,  0.55089287, -0.81357401,  0.05846234]])
+    >>> np.linalg.norm(q, axis=1)   # Each quaternion is, naturally, normalized
+    array([1., 1., 1., 1., 1.])
+
+    """
+    assert size > 0 and type(size) is int, "size must be a positive non-zero integer value."
+    q = np.random.random((size, 4))-0.5
+    q /= np.linalg.norm(q, axis=1)[:, np.newaxis]
+    if size == 1:
+        return q[0]
+    return q
+
 
 def q_norm(q):
     """
@@ -80,11 +135,11 @@ def q_norm(q):
     Examples
     --------
     >>> import numpy as np
-    >>> from ahrs import quaternion
+    >>> import ahrs
     >>> q = np.random.random(4)
     >>> q
     array([0.94064704, 0.12645116, 0.80194097, 0.62633894])
-    >>> q = quaternion.q_norm(q)
+    >>> q = ahrs.common.orientation.q_norm(q)
     >>> q
     array([0.67600473, 0.0908753 , 0.57632232, 0.45012429])
     >>> np.linalg.norm(q)
@@ -97,7 +152,7 @@ def q_norm(q):
 
     """
     if len(q)!=4:
-        return q
+        return None
     return q/np.linalg.norm(q)
 
 def q_prod(p, q):
@@ -149,13 +204,6 @@ def q_prod(p, q):
     pq : array
         Product of both quaternions
 
-    References
-    ----------
-    .. [1] Dantam, N. (2014) Quaternion Computation. Institute for Robotics
-           and Intelligent Machines. Georgia Tech.
-           (http://www.neil.dantam.name/note/dantam-quaternion.pdf)
-    .. [2] https://www.mathworks.com/help/aeroblks/quaternionmultiplication.html
-
     Examples
     --------
     >>> import numpy as np
@@ -170,7 +218,12 @@ def q_prod(p, q):
     >>> quaternion.q_prod(p, q)
     array([-0.36348726,  0.38962514,  0.34188103,  0.77407146])
 
-    And that is all!
+    References
+    ----------
+    .. [1] Dantam, N. (2014) Quaternion Computation. Institute for Robotics
+           and Intelligent Machines. Georgia Tech.
+           (http://www.neil.dantam.name/note/dantam-quaternion.pdf)
+    .. [2] https://www.mathworks.com/help/aeroblks/quaternionmultiplication.html
 
     """
     pq_w = p[0]*q[0] - p[1]*q[1] - p[2]*q[2] - p[3]*q[3]
@@ -371,7 +424,7 @@ def q2R(q):
         [2.0*(q[1]*q[2]+q[0]*q[3]), 1.0-2.0*(q[1]**2+q[3]**2), 2.0*(q[2]*q[3]-q[0]*q[1])],
         [2.0*(q[1]*q[3]-q[0]*q[2]), 2.0*(q[0]*q[1]+q[2]*q[3]), 1.0-2.0*(q[1]**2+q[2]**2)]])
 
-def q2euler(q=None, mode=0):
+def q2euler(q):
     """
     Convert from a unit Quaternion to Euler Angles.
 
@@ -385,19 +438,19 @@ def q2euler(q=None, mode=0):
     .. [1] https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles#Quaternion_to_Euler_Angles_Conversion
 
     """
-    if q is None:
-        return [0.0, 0.0, 0.0]
+    if sum(np.array([1., 0., 0., 0.])-q) == 0.0:
+        return np.zeros(3)
     if len(q) != 4:
         return None
     R = np.zeros((3, 3))
-    R[0, 0] = 2.0*q[0]**2 - 1.0 + 2.0*q[1]**2
-    R[1, 0] = 2.0*(q[1]*q[2] - q[0]*q[3])
-    R[2, 0] = 2.0*(q[1]*q[3] + q[0]*q[2])
-    R[2, 1] = 2.0*(q[2]*q[3] - q[0]*q[1])
-    R[2, 2] = 2.0*q[0]**2 - 1.0 + 2.0*q[3]**2
-    phi   = np.arctan2( R[2, 1], R[2, 2])
-    theta = -np.arctan( R[2, 0]/np.sqrt(1.0-R[2, 0]**2))
-    psi   = np.arctan2( R[1, 0], R[0, 0])
+    R_00 = 2.0*q[0]**2 - 1.0 + 2.0*q[1]**2
+    R_10 = 2.0*(q[1]*q[2] - q[0]*q[3])
+    R_20 = 2.0*(q[1]*q[3] + q[0]*q[2])
+    R_21 = 2.0*(q[2]*q[3] - q[0]*q[1])
+    R_22 = 2.0*q[0]**2 - 1.0 + 2.0*q[3]**2
+    phi   = np.arctan2( R_21, R_22)
+    theta = -np.arctan( R_20/np.sqrt(1.0-R_20**2))
+    psi   = np.arctan2( R_10, R_00)
     return np.array([phi, theta, psi])
 
 def rotation(ax=None, ang=0.0):

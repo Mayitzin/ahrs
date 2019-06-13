@@ -40,6 +40,17 @@ def test_filters(**kwargs):
 def test_metrics(**kwargs):
     result = test_dist()
 
+def test_plot(**kwargs):
+    """
+    Test plotting capabilities of the package
+    """
+    import ahrs
+    file_name = kwargs.get('file', "repoIMU.csv")
+    data = ahrs.utils.io.load(file_name)
+    ahrs.utils.plot_sensors(data.acc, data.gyr)
+    ahrs.utils.plot_quaternions(data.qts)
+
 if __name__ == "__main__":
-    test_filters()
+    # test_filters()
     # test_metrics()
+    test_plot()
