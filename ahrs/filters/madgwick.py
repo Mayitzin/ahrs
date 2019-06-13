@@ -5,10 +5,6 @@ Madgwick Algorithm
 References
 ----------
 .. [1] http://www.x-io.co.uk/open-source-imu-and-ahrs-algorithms/
-.. [2] Nonlinear Complementary Filters on the Special Orthogonal Group; R.
-   Mahony et al. 2010. (https://hal.archives-ouvertes.fr/hal-00488376/document)
-.. [3] http://www.olliw.eu/2013/imu-data-fusing/
-.. [4] https://motsai.com/omid-vs-madgwick-low-power-orientation-filters/
 
 """
 
@@ -29,7 +25,8 @@ class Madgwick:
     """
     def __init__(self, *args, **kwargs):
         self.beta = kwargs.get('beta', 0.1)
-        self.samplePeriod = kwargs.get('samplePeriod', 1.0/256.0)
+        self.frequency = kwargs.get('frequency', 256.0)
+        self.samplePeriod = kwargs.get('samplePeriod', 1.0/self.frequency)
 
     def updateIMU(self, gyr, acc, q):
         """

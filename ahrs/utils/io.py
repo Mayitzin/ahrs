@@ -24,7 +24,7 @@ def load(file_name):
     """
     Load the contents of a file into a dictionary.
 
-    Supported formats, so far, are MAT files. More to come.
+    Supported formats, so far, are MAT and CSV files. More to come.
 
     To Do:
     - Get a better way to find data from keys of dictionary. PLEASE.
@@ -48,7 +48,7 @@ def load(file_name):
         g_idx = find_index(split_header, 'gyr')
         m_idx = find_index(split_header, 'mag')
         q_idx = find_index(split_header, 'orient')
-        data =  np.genfromtxt(all_lines[2:], delimiter=';')
+        data = np.genfromtxt(all_lines[2:], delimiter=';')
         d = {'time' : data[:, 0],
         'acc' : data[:, a_idx:a_idx+3],
         'gyr' : data[:, g_idx:g_idx+3],
@@ -63,15 +63,15 @@ class Data:
     """
     def __init__(self, data_dict, **kwargs):
         # Find possible data from keys of dictionary
-        time_label = list(s for s in data_dict.keys() if 'time' in s.lower())[0]
-        acc_label = list(s for s in data_dict.keys() if 'acc' in s.lower())[0]
-        gyr_label = list(s for s in data_dict.keys() if 'gyr' in s.lower())[0]
-        mag_label = list(s for s in data_dict.keys() if 'mag' in s.lower())[0]
-        qts_label = list(s for s in data_dict.keys() if 'qts' in s.lower())[0]
+        time_label = list(s for s in data_dict.keys() if 'time' in s.lower())
+        acc_label = list(s for s in data_dict.keys() if 'acc' in s.lower())
+        gyr_label = list(s for s in data_dict.keys() if 'gyr' in s.lower())
+        mag_label = list(s for s in data_dict.keys() if 'mag' in s.lower())
+        qts_label = list(s for s in data_dict.keys() if 'qts' in s.lower())
         # Load data into each attribute
-        self.time = data_dict.get(time_label, None)
-        self.acc = data_dict.get(acc_label, None)
-        self.gyr = data_dict.get(gyr_label, None)
-        self.mag = data_dict.get(mag_label, None)
-        self.qts = data_dict.get(qts_label, None)
+        self.time = data_dict.get(time_label[0], None)
+        self.acc = data_dict.get(acc_label[0], None)
+        self.gyr = data_dict.get(gyr_label[0], None)
+        self.mag = data_dict.get(mag_label[0], None)
+        self.qts = data_dict.get(qts_label[0], None) if qts_label else None
         self.num_samples, self.num_axes = self.acc.shape

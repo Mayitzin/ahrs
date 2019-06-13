@@ -32,15 +32,9 @@ def plot_sensors(*sensors, **kwargs):
     title : str
         Optional. Title of window. Default is 'Sensors'
 
-    Returns
-    -------
-    None
-
     Examples
     --------
-    >>> import scipy.io as sio
-    >>> import ahrs
-    >>> data = sio.loadmat("data.mat")
+    >>> data = ahrs.utils.io.load("data.mat")
     >>> ahrs.utils.plot_sensors(data.gyrs)   # Plot Gyroscopes
 
     Each call will open a new window with the requested plots and pause any
@@ -77,15 +71,9 @@ def plot_euler(angles, **kwargs):
     title : str
         Optional. Title of window. Default is 'Euler Angles'.
 
-    Returns
-    -------
-    None
-
     Examples
     --------
-    >>> import scipy.io as sio
-    >>> import ahrs
-    >>> data = sio.loadmat("data.mat")
+    >>> data = ahrs.utils.io.load("data.mat")
     >>> ahrs.utils.plot_euler(data.euler_angles)
 
     Each call will open a new window with the requested plots and pause any
@@ -106,7 +94,7 @@ def plot_euler(angles, **kwargs):
     plt.show()
 
 
-def plot_quaternions(quaternions, **kwargs):
+def plot_quaternions(*quaternions, **kwargs):
     """
     Plot Quaternions.
 
@@ -121,29 +109,28 @@ def plot_quaternions(quaternions, **kwargs):
     title : str
         Optional. Title of window. Default is 'Quaternions'.
 
-    Returns
-    -------
-    None
-
     Examples
     --------
-    >>> import ahrs
     >>> data = ahrs.utils.io.load("data.mat")
-    >>> ahrs.utils.plot_quaternions(data.quaternions)
+    >>> ahrs.utils.plot_quaternions(data.qts)
 
     Each call will open a new window with the requested plots and pause any
     further computation, until the window is closed.
 
     >>> time = data['time']
-    >>> ahrs.utils.plot_quaternions(quaternions, x_axis=time, title="My Quaternions")
+    >>> ahrs.utils.plot_quaternions(data.qts, x_axis=time, title="My Quaternions")
+
+    Two or more quaternions can also be plotted, like in the sensor plotting
+    function.
+
+    >>> ahrs.utils.plot_quaternions(data.qts, ref_quaternions)
 
     """
-    sz = quaternions.shape
-    if sz[1] != 4:
-        return None
-    x_axis = kwargs.get('x_axis', range(sz[0]))
     title = kwargs.get('title', "Quaternions")
     fig = plt.figure(title)
-    for i in range(4):
-        plt.plot(x_axis, quaternions[:, i], c=COLORS[i], ls='-', lw=0.3)
+    for n, q in enumerate(quaternions):
+        fig.add_subplot(len(quaternions), 1, n+1)
+        x_axis = kwargs.get('x_axis', range(q.shape[0]))
+        for i in range(4):
+            plt.plot(x_axis, q[:, i], c=COLORS[i], ls='-', lw=0.3)
     plt.show()

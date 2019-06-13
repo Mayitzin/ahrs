@@ -8,6 +8,7 @@ Test Script
 
 from test_metrics import *
 from test_filters import Test_Filter
+import ahrs
 
 def test_filters(**kwargs):
     """
@@ -44,11 +45,18 @@ def test_plot(**kwargs):
     """
     Test plotting capabilities of the package
     """
-    import ahrs
     file_name = kwargs.get('file', "repoIMU.csv")
     data = ahrs.utils.io.load(file_name)
-    ahrs.utils.plot_sensors(data.acc, data.gyr)
-    ahrs.utils.plot_quaternions(data.qts)
+    Q = np.tile([1., 0., 0., 0.], (data.num_samples, 1))
+    fourati = ahrs.filters.Fourati(k=0.001, ka=0.1, km=0.1)
+    for t in range(1, data.num_samples):
+        Q[t] = fourati.update(data.gyr[t], data.acc[t], data.mag[t], Q[t-1])
+    ahrs.utils.plot_quaternions(data.qts, Q)
+    # madgwick = ahrs.filters.Madgwick(beta=0.01, frequency=100.0)
+    # for t in range(1, data.num_samples):
+    #     Q[t] = madgwick.updateIMU(data.gyr[t], data.acc[t], Q[t-1])
+    #     # Q[t] = madgwick.updateMARG(data.gyr[t], data.acc[t], data.mag[t], Q[t-1])
+    # ahrs.utils.plot_quaternions(data.qts, Q)
 
 if __name__ == "__main__":
     # test_filters()

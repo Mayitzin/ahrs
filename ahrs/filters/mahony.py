@@ -31,7 +31,8 @@ class Mahony:
     def __init__(self, *args, **kwargs):
         self.Kp = kwargs.get('Kp', 1.0)
         self.Ki = kwargs.get('Ki', 0.0)
-        self.samplePeriod = kwargs.get('samplePeriod', 1.0/256.0)
+        self.frequency = kwargs.get('frequency', 100.0)
+        self.samplePeriod = kwargs.get('samplePeriod', 1.0/self.frequency)
         # Integral Error
         self.eInt = np.array([0.0, 0.0, 0.0])
 

@@ -40,10 +40,11 @@ class Fourati:
         self.k = kwargs.get('k', 0.3)
         self.ka = kwargs.get('ka', 2.0)
         self.km = kwargs.get('km', 1.0)
-        self.samplePeriod = kwargs.get('samplePeriod', 1.0/256.0)
+        self.frequency = kwargs.get('frequency', 256.0)
+        self.samplePeriod = kwargs.get('samplePeriod', 1.0/self.frequency)
         # Vector Representation of references measurements
         self.aq = np.array([0., 0., 1.0])       # Acceleration assumed 1g n Z-axis
-        self.mq = np.array([0.5*cosd(65.0), 0., 0.5*sind(65.0)]) # Using UK's magnetic reference
+        self.mq = np.array([0.5*cosd(64.0), 0., 0.5*sind(64.0)]) # Using UK's magnetic reference
         self.mq /= np.linalg.norm(self.mq)
 
     def update(self, gyr, acc, mag, q):
@@ -89,7 +90,8 @@ class Fourati:
         # Gradient Descent correction
         d = 1.0e-5  # Guarantees a non-singular inverted term
         dq = (measurement-estimation)@(np.linalg.inv(delta@delta.T+d*np.identity(3))@delta).T
-        qDot = 0.5*q_prod(q, np.concatenate(([0.0], g))) + self.k*q_prod(q, np.concatenate(([0.0], dq)))
+        # qDot = 0.5*q_prod(q, np.concatenate(([0.0], g))) + self.k*q_prod(q, np.concatenate(([0.0], dq)))
+        qDot = 0.5*q_prod(q, np.insert(g, 0, 0.0)) + self.k*q_prod(q, np.insert(dq, 0, 0.0))
         q += qDot*self.samplePeriod
         q /= np.linalg.norm(q)
         return q
