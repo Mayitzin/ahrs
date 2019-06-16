@@ -19,6 +19,7 @@ References
 import numpy as np
 from ahrs.common.orientation import *
 from ahrs.common.mathfuncs import *
+from ahrs.common import DEG2RAD
 
 class Fourati:
     """
@@ -37,15 +38,39 @@ class Fourati:
 
     """
     def __init__(self, *args, **kwargs):
+        self.input = args[0] if args else None
         self.k = kwargs.get('k', 0.3)
         self.ka = kwargs.get('ka', 2.0)
         self.km = kwargs.get('km', 1.0)
-        self.frequency = kwargs.get('frequency', 256.0)
+        self.frequency = kwargs.get('frequency', 100.0)
         self.samplePeriod = kwargs.get('samplePeriod', 1.0/self.frequency)
         # Vector Representation of references measurements
         self.aq = np.array([0., 0., 1.0])       # Acceleration assumed 1g n Z-axis
         self.mq = np.array([0.5*cosd(64.0), 0., 0.5*sind(64.0)]) # Using UK's magnetic reference
         self.mq /= np.linalg.norm(self.mq)
+        # Process of data is given
+        if self.input:
+            self.Q = self.estimate_all()
+
+    def estimate_all(self):
+        """
+        Estimate the quaternions given all data in class Data.
+
+        Class Data must have, at least, `acc` and `mag` attributes.
+
+        Returns
+        -------
+        Q : array
+            M-by-4 Array with all estimated quaternions, where M is the number
+            of samples.
+
+        """
+        data = self.input
+        d2r = 1.0 if data.in_rads else DEG2RAD
+        Q = np.tile([1., 0., 0., 0.], (data.num_samples, 1))
+        for t in range(1, data.num_samples):
+            Q[t] = self.update(d2r*data.gyr[t], data.acc[t], data.mag[t], Q[t-1])
+        return Q
 
     def update(self, gyr, acc, mag, q):
         """

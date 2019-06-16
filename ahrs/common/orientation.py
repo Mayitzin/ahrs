@@ -109,8 +109,8 @@ def q_random(size=1):
 
 def q_norm(q):
     """
-    Return the normalized quaternion [W1]_ :math:`\\mathbf{q}_u`, also known as a
-    versor [W2]_ :
+    Return the normalized quaternion [WQ1]_ :math:`\\mathbf{q}_u`, also known as a
+    versor [WV1]_ :
 
     .. math::
 
@@ -147,8 +147,8 @@ def q_norm(q):
 
     References
     ----------
-    .. [1] https://en.wikipedia.org/wiki/Quaternion#Unit_quaternion
-    .. [2] https://en.wikipedia.org/wiki/Versor
+    .. [WQ1] https://en.wikipedia.org/wiki/Quaternion#Unit_quaternion
+    .. [WV1] https://en.wikipedia.org/wiki/Versor
 
     """
     if len(q)!=4:
@@ -160,7 +160,7 @@ def q_prod(p, q):
     Product of two unit quaternions.
 
     Given two unit quaternions :math:`\\mathbf{p}=(p_w, \\mathbf{p}_v)` and
-    :math:`\\mathbf{q} = (q_w, \\mathbf{q}_v)`, their product is defined [MW]_ [W1]_
+    :math:`\\mathbf{q} = (q_w, \\mathbf{q}_v)`, their product is defined [ND]_ [MWQW]_
     as:
 
     .. math::
@@ -208,31 +208,28 @@ def q_prod(p, q):
     --------
     >>> import numpy as np
     >>> from ahrs import quaternion
-    >>> p, q = np.random.random(4), np.random.random(4)
-    >>> p /= np.linalg.norm(p)  # Quaternions must be normalized
-    >>> q /= np.linalg.norm(q)
-    >>> p
+    >>> q = ahrs.common.orientation.q_random(2)
+    >>> q[0]
     array([0.55747131, 0.12956903, 0.5736954 , 0.58592763])
-    >>> q
+    >>> q[1]
     array([0.49753507, 0.50806522, 0.52711628, 0.4652709 ])
-    >>> quaternion.q_prod(p, q)
+    >>> quaternion.q_prod(q[0], q[1])
     array([-0.36348726,  0.38962514,  0.34188103,  0.77407146])
 
     References
     ----------
-    .. [1] Dantam, N. (2014) Quaternion Computation. Institute for Robotics
-           and Intelligent Machines. Georgia Tech.
-           (http://www.neil.dantam.name/note/dantam-quaternion.pdf)
-    .. [2] https://www.mathworks.com/help/aeroblks/quaternionmultiplication.html
+    .. [ND] Dantam, N. (2014) Quaternion Computation. Institute for Robotics
+            and Intelligent Machines. Georgia Tech.
+            (http://www.neil.dantam.name/note/dantam-quaternion.pdf)
+    .. [MWQM] Mathworks: Quaternion Multiplication.
+           https://www.mathworks.com/help/aeroblks/quaternionmultiplication.html
 
     """
-    pq_w = p[0]*q[0] - p[1]*q[1] - p[2]*q[2] - p[3]*q[3]
-    pq_x = p[0]*q[1] + p[1]*q[0] - p[2]*q[3] + p[3]*q[2]
-    pq_y = p[0]*q[2] + p[1]*q[3] + p[2]*q[0] - p[3]*q[1]
-    pq_z = p[0]*q[3] - p[1]*q[2] + p[2]*q[1] + p[3]*q[0]
-    pq = [pq_w, pq_x, pq_y, pq_z]
-    if (type(p) is np.ndarray) or (type(q) is np.ndarray):
-        pq = np.array(pq)
+    pq = np.zeros(4)
+    pq[0] = p[0]*q[0] - p[1]*q[1] - p[2]*q[2] - p[3]*q[3]
+    pq[1] = p[0]*q[1] + p[1]*q[0] - p[2]*q[3] + p[3]*q[2]
+    pq[2] = p[0]*q[2] + p[1]*q[3] + p[2]*q[0] - p[3]*q[1]
+    pq[3] = p[0]*q[3] - p[1]*q[2] + p[2]*q[1] + p[3]*q[0]
     return pq
 
 def q_mult_L(q):
@@ -432,6 +429,11 @@ def q2euler(q):
     ----------
     q : array
         Unit quaternion
+
+    Returns
+    -------
+    angles : array
+        Euler Angles around X-, Y- and Z-axis.
 
     References
     ----------

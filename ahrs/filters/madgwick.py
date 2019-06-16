@@ -10,6 +10,8 @@ References
 
 import numpy as np
 from ahrs.common.orientation import *
+from ahrs.common import DEG2RAD
+from ahrs.utils.io import load
 
 class Madgwick:
     """
@@ -19,14 +21,44 @@ class Madgwick:
     ----------
     beta : float
         Filter gain of a quaternion derivative.
-    samplePeriod : float
+    frequency : float
+        Sampling frequency in Herz.
+    Dt : float
         Sampling rate in seconds. Inverse of sampling frequency.
 
     """
     def __init__(self, *args, **kwargs):
+        self.input = args[0] if args else None
         self.beta = kwargs.get('beta', 0.1)
-        self.frequency = kwargs.get('frequency', 256.0)
-        self.samplePeriod = kwargs.get('samplePeriod', 1.0/self.frequency)
+        self.frequency = kwargs.get('frequency', 100.0)
+        self.Dt = kwargs.get('Dt', 1.0/self.frequency)
+        # Process of data is given
+        if self.input:
+            self.Q = self.estimate_all()
+
+    def estimate_all(self):
+        """
+        Estimate the quaternions given all data in class Data.
+
+        Class Data must have, at least, `acc` and `mag` attributes.
+
+        Returns
+        -------
+        Q : array
+            M-by-4 Array with all estimated quaternions, where M is the number
+            of samples.
+
+        """
+        data = self.input
+        d2r = 1.0 if data.in_rads else DEG2RAD
+        Q = np.tile([1., 0., 0., 0.], (data.num_samples, 1))
+        if data.mag is None:
+            for t in range(1, data.num_samples):
+                Q[t] = self.updateIMU(d2r*data.gyr[t], data.acc[t], Q[t-1])
+        else:
+            for t in range(1, data.num_samples):
+                Q[t] = self.updateMARG(d2r*data.gyr[t], data.acc[t], data.mag[t], Q[t-1])
+        return Q
 
     def updateIMU(self, gyr, acc, q):
         """
@@ -71,7 +103,7 @@ class Madgwick:
         # Compute rate of change of quaternion
         qDot = 0.5 * q_prod(q, [0, g[0], g[1], g[2]]) - self.beta * step.T
         # Integrate to yield Quaternion
-        q += qDot*self.samplePeriod
+        q += qDot*self.Dt
         q /= np.linalg.norm(q)
         return q
 
@@ -135,7 +167,7 @@ class Madgwick:
         # Compute rate of change of quaternion
         qDot = 0.5 * q_prod(q, [0, g[0], g[1], g[2]]) - self.beta * step.T
         # Integrate to yield quaternion
-        q += qDot*self.samplePeriod
+        q += qDot*self.Dt
         q /= np.linalg.norm(q) # normalise quaternion
         return q
 

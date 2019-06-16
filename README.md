@@ -16,7 +16,7 @@ AHRS may be installed using [pip](https://pip.pypa.io):
 pip install ahrs
 ```
 
-Or using the latest version from the repository:
+Or directly from the repository:
 
 ```sh
 git clone https://github.com/Mayitzin/ahrs.git
@@ -37,7 +37,7 @@ To play with orientations, for example, we can use the `orientation` module.
 array([[ 1.       ,  0.       ,  0.       ],
        [ 0.       ,  0.8660254, -0.5      ],
        [ 0.       ,  0.5      ,  0.8660254]])
->>> # Rotation sequence of the form: R_y(10.0)@R_x(20.0)@R_z(30.0)
+>>> # Rotation sequence of the form: R_y(10.0)@R_x(20.0)@R_y(30.0)
 ... ahrs.common.orientation.rot_seq('yXy', [10.0, 20.0, 30.0])
 array([[ 0.77128058,  0.05939117,  0.63371836],
        [ 0.17101007,  0.93969262, -0.29619813],
@@ -56,7 +56,7 @@ array([[ 0.76811067,  0.3546719 ,  0.53311709],
        [-0.32712625,  0.93308888, -0.14944417]])
 ```
 
-`ahrs` also includes a module that simplifies data loading and visualizing
+`ahrs` also includes a module that simplifies data loading and visualization
 
 ```py
 >>> data = ahrs.utils.io.load("ExampleData.mat")

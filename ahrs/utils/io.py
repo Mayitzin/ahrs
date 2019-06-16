@@ -3,10 +3,6 @@
 """
 Input and Output routines
 
-To Do:
-
-- Add support for loading of CSV Files.
-
 """
 
 import os
@@ -38,8 +34,9 @@ def load(file_name):
         sys.exit("[ERROR] The file {} does not exist.".format(file_name))
     file_ext = file_name.strip().split('.')[-1]
     if file_ext == 'mat':
-        data_dict = sio.loadmat(file_name)
-        return Data(data_dict)
+        d = sio.loadmat(file_name)
+        d.update({'rads':False})
+        return Data(d)
     if file_ext == 'csv':
         with open(file_name, 'r') as f:
             all_lines = f.readlines()
@@ -54,6 +51,7 @@ def load(file_name):
         'gyr' : data[:, g_idx:g_idx+3],
         'mag' : data[:, m_idx:m_idx+3],
         'qts' : data[:, q_idx:q_idx+4]}
+        d.update({'rads':True})
         return Data(d)
     return None
 
@@ -62,16 +60,20 @@ class Data:
     Data to store the arrays of the most common variables.
     """
     def __init__(self, data_dict, **kwargs):
+        # Create empty data attributes
+        self.qts = None
         # Find possible data from keys of dictionary
         time_label = list(s for s in data_dict.keys() if 'time' in s.lower())
         acc_label = list(s for s in data_dict.keys() if 'acc' in s.lower())
         gyr_label = list(s for s in data_dict.keys() if 'gyr' in s.lower())
         mag_label = list(s for s in data_dict.keys() if 'mag' in s.lower())
         qts_label = list(s for s in data_dict.keys() if 'qts' in s.lower())
+        rad_label = list(s for s in data_dict.keys() if 'rad' in s.lower())
+        self.in_rads = data_dict.get(rad_label[0], False)
         # Load data into each attribute
         self.time = data_dict.get(time_label[0], None)
         self.acc = data_dict.get(acc_label[0], None)
         self.gyr = data_dict.get(gyr_label[0], None)
         self.mag = data_dict.get(mag_label[0], None)
-        self.qts = data_dict.get(qts_label[0], None) if qts_label else None
+        self.q_ref = data_dict.get(qts_label[0], None) if qts_label else None
         self.num_samples, self.num_axes = self.acc.shape

@@ -22,6 +22,7 @@ References
 import numpy as np
 from ahrs.common.orientation import *
 from ahrs.common.mathfuncs import *
+from ahrs.common import DEG2RAD
 
 class EKF:
     """
@@ -29,7 +30,7 @@ class EKF:
 
     Parameters
     ----------
-    samplePeriod : float
+    Dt : float
         Sampling rate in seconds. Inverse of sampling frequency.
     noises : array
         List of noise variances :math:`\\sigma` for each type of sensor.
@@ -48,14 +49,38 @@ class EKF:
 
     """
     def __init__(self, *args, **kwargs):
-        self.frequency = kwargs.get('frequency', 256.0)
-        self.samplePeriod = kwargs.get('samplePeriod', 1.0/self.frequency)
+        self.input = args[0] if args else None
+        self.frequency = kwargs.get('frequency', 100.0)
+        self.Dt = kwargs.get('Dt', 1.0/self.frequency)
         self.noises = kwargs.get('noises', [0.3**2, 0.5**2, 0.8**2])
         self.g_noise = self.noises[0]*np.identity(3)
         self.a_noise = self.noises[1]*np.identity(3)
         self.m_noise = self.noises[2]*np.identity(3)
         self.q = np.array([1., 0., 0., 0.])
         self.P = np.identity(4)
+        # Process of data is given
+        if self.input:
+            self.Q = self.estimate_all()
+
+    def estimate_all(self):
+        """
+        Estimate the quaternions given all data in class Data.
+
+        Class Data must have, at least, `acc` and `mag` attributes.
+
+        Returns
+        -------
+        Q : array
+            M-by-4 Array with all estimated quaternions, where M is the number
+            of samples.
+
+        """
+        data = self.input
+        d2r = 1.0 if data.in_rads else DEG2RAD
+        Q = np.tile([1., 0., 0., 0.], (data.num_samples, 1))
+        for t in range(1, data.num_samples):
+            Q[t] = self.update(d2r*data.gyr[t], data.acc[t], data.mag[t], Q[t-1])
+        return Q
 
     def jacobian(self, q, v):
         """
@@ -114,11 +139,11 @@ class EKF:
 
         # ----- Prediction -----
         # Approximate apriori quaternion
-        F = q_mult_L(np.insert(0.5*self.samplePeriod*g, 0, 1.0))
+        F = q_mult_L(np.insert(0.5*self.Dt*g, 0, 1.0))
         q_apriori = F@q
         # Estimate apriori Covariance Matrix
         E = np.vstack((-q[1:], skew(q[1:]) + q[0]*np.identity(3)))
-        Qk = 0.25*self.samplePeriod**2 * (E@self.g_noise@E.T)
+        Qk = 0.25*self.Dt**2 * (E@self.g_noise@E.T)
         P_apriori = F@self.P@F.T + Qk
 
         # ----- Correction -----

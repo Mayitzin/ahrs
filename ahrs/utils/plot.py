@@ -25,12 +25,14 @@ def plot_sensors(*sensors, **kwargs):
     sensors : arrays
         Arrays of sensors to plot. Each array is of size M-by-N, where M is the
         number of samples, and N is the number of axes.
-    num_axes : int
-        Optional. Number of axes per sensor. Default is 3.
-    x_axis : array
-        Optional. X-axis data array of the plots. Default is `range(M)`.
-    title : str
-        Optional. Title of window. Default is 'Sensors'
+    num_axes : int, optional
+        Number of axes per sensor. Default is 3.
+    x_axis : array, optional
+        X-axis data array of the plots. Default is `range(M)`.
+    title : str, optional
+        Title of window. Default is 'Sensors'
+    subtitles : list of strings, optional
+        List of titles for each subplot.
 
     Examples
     --------
@@ -47,9 +49,12 @@ def plot_sensors(*sensors, **kwargs):
     """
     num_axes = kwargs.get('num_axes', 3)
     title = kwargs.get('title', "Sensors")
+    subtitles = kwargs.get('subtitles', None)
     fig = plt.figure(title)
     for n, s in enumerate(sensors):
         fig.add_subplot(len(sensors), 1, n+1)
+        if subtitles:
+            plt.subplot(len(sensors), 1, n+1, title=subtitles[n])
         x_axis = kwargs.get('x_axis', range(s.shape[0]))
         for i in range(num_axes):
             plt.plot(x_axis, s[:, i], c=COLORS[i+1], ls='-', lw=0.3)
@@ -127,9 +132,12 @@ def plot_quaternions(*quaternions, **kwargs):
 
     """
     title = kwargs.get('title', "Quaternions")
+    subtitles = kwargs.get('subtitles', None)
     fig = plt.figure(title)
     for n, q in enumerate(quaternions):
         fig.add_subplot(len(quaternions), 1, n+1)
+        if subtitles:
+            plt.subplot(len(quaternions), 1, n+1, title=subtitles[n])
         x_axis = kwargs.get('x_axis', range(q.shape[0]))
         for i in range(4):
             plt.plot(x_axis, q[:, i], c=COLORS[i], ls='-', lw=0.3)

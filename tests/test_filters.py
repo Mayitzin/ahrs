@@ -4,6 +4,18 @@
 Attitude Filters Testing
 ========================
 
+References
+----------
+.. [Crassidis] John L. Crassidis (2007) A Survey of Nonlinear Attitude
+    Estimation Methods.
+.. [Teage] Harris Teage (2016) Comparison of Attitude Estimation Techniques for
+    Low-cost Unmanned Aerial Vehicles.
+    https://arxiv.org/pdf/1602.07733.pdf
+    http://ancs.eng.buffalo.edu/pdf/ancs_papers/2007/att_survey07.pdf
+.. [Cirillo] A. Cirillo et al. (2016) A comparison of multisensor attitude
+    estimation algorithms.
+    https://www.researchgate.net/profile/Pasquale_Cirillo/publication/303738116_A_comparison_of_multisensor_attitude_estimation_algorithms/links/5750181208aeb753e7b4a0c0/A-comparison-of-multisensor-attitude-estimation-algorithms.pdf
+
 """
 
 import numpy as np
@@ -15,7 +27,6 @@ DEG2RAD = ahrs.common.DEG2RAD
 class Test_Filter:
     def __init__(self, file_name, **kwargs):
         self.file = file_name
-        # Load data
         self.data = ahrs.utils.io.load(self.file)
 
     def check_integrity(self, Q):
@@ -25,8 +36,8 @@ class Test_Filter:
         return qts_ok and qnm_ok
 
     def allocate_arrays(self):
-        self.Q = np.tile([1., 0., 0., 0.], (self.data.num_samples, 1))
-        self.euler_angles = np.zeros((self.data.num_samples, 3))
+        self.Q = np.zeros((self.data.num_samples, 4))
+        self.Q[:, 0] = 1.0
 
     def fourati(self):
         self.allocate_arrays()

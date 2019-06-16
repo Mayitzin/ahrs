@@ -13,7 +13,7 @@ It provides:
 AHRS is compatible with Python 3.6 and above. Using an older version is highly
 discouraged.
 
-All AHRS wheels distributed on PyPI are BSD licensed.
+All AHRS wheels distributed on PyPI are MIT licensed.
 
 """
 

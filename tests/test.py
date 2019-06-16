@@ -4,6 +4,10 @@
 Test Script
 ===========
 
+Note:
+- The angular velocity of ExampleData.mat is in degrees/second with f=256.0
+- The angular velocity of repoIMU.csv is in radians/second with f=100.0
+
 """
 
 from test_metrics import *
@@ -46,19 +50,23 @@ def test_plot(**kwargs):
     Test plotting capabilities of the package
     """
     file_name = kwargs.get('file', "repoIMU.csv")
+    freq = kwargs.get('freq', 100.0)
     data = ahrs.utils.io.load(file_name)
-    Q = np.tile([1., 0., 0., 0.], (data.num_samples, 1))
-    fourati = ahrs.filters.Fourati(k=0.001, ka=0.1, km=0.1)
-    for t in range(1, data.num_samples):
-        Q[t] = fourati.update(data.gyr[t], data.acc[t], data.mag[t], Q[t-1])
-    ahrs.utils.plot_quaternions(data.qts, Q)
-    # madgwick = ahrs.filters.Madgwick(beta=0.01, frequency=100.0)
-    # for t in range(1, data.num_samples):
-    #     Q[t] = madgwick.updateIMU(data.gyr[t], data.acc[t], Q[t-1])
-    #     # Q[t] = madgwick.updateMARG(data.gyr[t], data.acc[t], data.mag[t], Q[t-1])
-    # ahrs.utils.plot_quaternions(data.qts, Q)
+
+    # filtered = ahrs.filters.Fourati(data, k=0.001, ka=0.01, km=0.1)
+    # filtered = ahrs.filters.FQA(data, frequency=freq)
+    # filtered = ahrs.filters.AQUA(data, frequency=100.0)
+    # filtered = ahrs.filters.EKF(data, frequency=freq, noises=[0.1, 0.1, 0.1])
+    # filtered = ahrs.filters.Mahony(data, Kp=0.2, Ki=0.1, frequency=freq)
+    filtered = ahrs.filters.Madgwick(data, beta=0.01, frequency=freq)
+
+    if data.q_ref is None:
+        ahrs.utils.plot_quaternions(filtered.Q, subtitles=["Estimated"])
+    else:
+        ahrs.utils.plot_quaternions(data.q_ref, filtered.Q, subtitles=["Reference", "Estimated"])
 
 if __name__ == "__main__":
-    # test_filters()
+    test_filters()
     # test_metrics()
-    test_plot()
+    # test_plot(file="ExampleData.mat", freq=256.0)
+    # test_plot(file="repoIMU.csv", freq=100.0)

@@ -13,6 +13,7 @@ References
 
 import numpy as np
 from ahrs.common.orientation import *
+from ahrs.common import DEG2RAD
 
 class Mahony:
     """
@@ -29,12 +30,40 @@ class Mahony:
 
     """
     def __init__(self, *args, **kwargs):
+        self.input = args[0] if args else None
         self.Kp = kwargs.get('Kp', 1.0)
         self.Ki = kwargs.get('Ki', 0.0)
         self.frequency = kwargs.get('frequency', 100.0)
         self.samplePeriod = kwargs.get('samplePeriod', 1.0/self.frequency)
         # Integral Error
         self.eInt = np.array([0.0, 0.0, 0.0])
+        # Process of data is given
+        if self.input:
+            self.Q = self.estimate_all()
+
+    def estimate_all(self):
+        """
+        Estimate the quaternions given all data in class Data.
+
+        Class Data must have, at least, `acc` and `mag` attributes.
+
+        Returns
+        -------
+        Q : array
+            M-by-4 Array with all estimated quaternions, where M is the number
+            of samples.
+
+        """
+        data = self.input
+        d2r = 1.0 if data.in_rads else DEG2RAD
+        Q = np.tile([1., 0., 0., 0.], (data.num_samples, 1))
+        if data.mag is None:
+            for t in range(1, data.num_samples):
+                Q[t] = self.updateIMU(d2r*data.gyr[t], data.acc[t], Q[t-1])
+        else:
+            for t in range(1, data.num_samples):
+                Q[t] = self.updateMARG(d2r*data.gyr[t], data.acc[t], data.mag[t], Q[t-1])
+        return Q
 
     def updateIMU(self, gyr, acc, q):
         """

@@ -13,3 +13,5 @@ from .madgwick import Madgwick
 from .mahony import Mahony
 from .ekf import EKF
 from .fourati import Fourati
+from .fqa import FQA
+from .aqua import AQUA
