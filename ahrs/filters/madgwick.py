@@ -2,9 +2,20 @@
 """
 Madgwick Algorithm
 
+Orientation filter applicable to IMUs consisting of tri-axis gyroscopes and
+accelerometers, and MARG sensor arrays that also include tri-axis magnetometers.
+
+The MARG implementation incorporates magnetic distortion and gyroscope bias
+drift compensation. The filter uses a quaternion representation, allowing
+accelerometer and magnetometer data to be used in an analytically derived and
+optimised gradient-descent algorithm to compute the direction of the gyroscope
+measurement error as a quaternion derivative.
+
 References
 ----------
-.. [1] http://www.x-io.co.uk/open-source-imu-and-ahrs-algorithms/
+.. [Madgwick] Sebastian Madgwick. An efficient orientation filter for inertial
+    and inertial/magnetic sensor arrays. Internal Report. 2010.
+    http://www.x-io.co.uk/open-source-imu-and-ahrs-algorithms/
 
 """
 
@@ -92,13 +103,13 @@ class Madgwick:
         q /= np.linalg.norm(q)
         qw, qx, qy, qz = q[0], q[1], q[2], q[3]
         # Gradient decent algorithm corrective step
-        F = np.array([2.0*(qx*qz - qw*qy)   - a[0],
+        f = np.array([2.0*(qx*qz - qw*qy)   - a[0],
                       2.0*(qw*qx + qy*qz)   - a[1],
                       2.0*(0.5-qx**2-qy**2) - a[2]])
-        J = np.array([[-qy, qz, -qw, qx],
-                      [ qx, qw,  qz, qy],
+        J = np.array([[-qy,       qz,     -qw,  qx],
+                      [ qx,       qw,      qz,  qy],
                       [ 0.0, -2.0*qx, -2.0*qy, 0.0]])
-        step = 2.0*J.T@F
+        step = 2.0*J.T@f
         step /= np.linalg.norm(step)
         # Compute rate of change of quaternion
         qDot = 0.5 * q_prod(q, [0, g[0], g[1], g[2]]) - self.beta * step.T
