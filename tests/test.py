@@ -49,24 +49,31 @@ def test_plot(**kwargs):
     """
     Test plotting capabilities of the package
     """
-    file_name = kwargs.get('file', "repoIMU.csv")
     freq = kwargs.get('freq', 100.0)
+    file_name = kwargs.get('file', "repoIMU.csv")
     data = ahrs.utils.io.load(file_name)
 
-    # filtered = ahrs.filters.Fourati(data, k=0.001, ka=0.01, km=0.1)
-    # filtered = ahrs.filters.FQA(data, frequency=freq)
-    # filtered = ahrs.filters.AQUA(data, frequency=100.0)
-    # filtered = ahrs.filters.EKF(data, frequency=freq, noises=[0.1, 0.1, 0.1])
-    # filtered = ahrs.filters.Mahony(data, Kp=0.2, Ki=0.1, frequency=freq)
-    filtered = ahrs.filters.Madgwick(data, beta=0.01, frequency=freq)
+    orientation = ahrs.filters.AngularRate(data, frequency=freq)
+    # orientation = ahrs.filters.Fourati(data, k=0.001, ka=0.01, km=0.1)
+    # orientation = ahrs.filters.FQA(data, frequency=freq)
+    # orientation = ahrs.filters.AQUA(data, frequency=100.0)
+    # orientation = ahrs.filters.EKF(data, frequency=freq, noises=[0.1, 0.1, 0.1])
+    # orientation = ahrs.filters.Mahony(data, Kp=0.2, Ki=0.1, frequency=freq)
+    # orientation = ahrs.filters.Madgwick(data, beta=0.01, frequency=freq)
 
     if data.q_ref is None:
-        ahrs.utils.plot_quaternions(filtered.Q, subtitles=["Estimated"])
+        ahrs.utils.plot_quaternions(orientation.Q, subtitles=["Estimated"])
     else:
-        ahrs.utils.plot_quaternions(data.q_ref, filtered.Q, subtitles=["Reference", "Estimated"])
+        ahrs.utils.plot_quaternions(data.q_ref, orientation.Q, subtitles=["Reference", "Estimated"])
+
+def test_load(path):
+    data = ahrs.utils.io.loadETH(path)
+    # ahrs.utils.plot_sensors(data.gyr, data.acc, x_axis=data.time)
+    ahrs.utils.plot_quaternions(data.q_ref, x_axis=data.time_ref)
 
 if __name__ == "__main__":
-    test_filters()
+    # test_filters()
     # test_metrics()
     # test_plot(file="ExampleData.mat", freq=256.0)
-    # test_plot(file="repoIMU.csv", freq=100.0)
+    test_plot(file="repoIMU.csv", freq=100.0)
+    # test_load("../../Datasets/ETH-Event-Camera/shapes_6dof")
