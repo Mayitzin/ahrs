@@ -55,6 +55,55 @@ def load(file_name):
         return Data(d)
     return None
 
+def loadETH(path):
+    """
+    Loads data from a directory containing files of the Event-Camera Dataset
+    from the ETH Zurich (http://rpg.ifi.uzh.ch/davis_data.html)
+
+    The dataset includes 4 basic text files with recorded data, plus a file
+    listing all images of the recording included in the subfolder 'images.'
+
+    **events.txt**: One event per line (timestamp x y polarity)
+    **images.txt**: One image reference per line (timestamp filename)
+    **imu.txt**: One measurement per line (timestamp ax ay az gx gy gz)
+    **groundtruth.txt**: One ground truth measurements per line (timestamp px py pz qx qy qz qw)
+    **calib.txt**: Camera parameters (fx fy cx cy k1 k2 p1 p2 k3)
+
+    Parameters
+    ----------
+    path : str
+        Path of the folder containing the TXT files.
+
+    Returns
+    -------
+    data : Data
+        class Data with the contents of the dataset.
+
+    """
+    if os.path.isdir(path):
+        data = {}
+        files = []
+        [files.append(f) for f in os.listdir(path) if f.endswith('.txt')]
+        missing = list(set(files).symmetric_difference([
+            'events.txt',
+            'images.txt',
+            'imu.txt',
+            'groundtruth.txt',
+            'calib.txt']))
+        if missing:
+            sys.exit("Incomplete data. Missing files:\n{}".format('\n'.join(missing)))
+        imu_data = np.loadtxt(os.path.join(path, 'imu.txt'), delimiter=' ')
+        data.update({"time_sensors": imu_data[:, 0]})
+        data.update({"accs": imu_data[:, 1:4]})
+        data.update({"gyros": imu_data[:, 4:7]})
+        data.update({"rads": False})
+        truth_data = np.loadtxt(os.path.join(path, 'groundtruth.txt'), delimiter=' ')
+        data.update({"time_truth": truth_data[:, 0]})
+        data.update({"qts": truth_data[:, 4:]})
+        return Data(data)
+    else:
+        sys.exit("Invalid path")
+
 class Data:
     """
     Data to store the arrays of the most common variables.
@@ -62,18 +111,21 @@ class Data:
     def __init__(self, data_dict, **kwargs):
         # Create empty data attributes
         self.qts = None
+        data_keys = list(data_dict.keys())
         # Find possible data from keys of dictionary
-        time_label = list(s for s in data_dict.keys() if 'time' in s.lower())
-        acc_label = list(s for s in data_dict.keys() if 'acc' in s.lower())
-        gyr_label = list(s for s in data_dict.keys() if 'gyr' in s.lower())
-        mag_label = list(s for s in data_dict.keys() if 'mag' in s.lower())
-        qts_label = list(s for s in data_dict.keys() if 'qts' in s.lower())
-        rad_label = list(s for s in data_dict.keys() if 'rad' in s.lower())
-        self.in_rads = data_dict.get(rad_label[0], False)
+        time_labels = list(s for s in data_keys if 'time' in s.lower())
+        acc_labels = list(s for s in data_keys if 'acc' in s.lower())
+        gyr_labels = list(s for s in data_keys if 'gyr' in s.lower())
+        mag_labels = list(s for s in data_keys if 'mag' in s.lower())
+        qts_labels = list(s for s in data_keys if 'qts' in s.lower())
+        rad_labels = list(s for s in data_keys if 'rad' in s.lower())
+        self.in_rads = data_dict.get(rad_labels[0], False)
         # Load data into each attribute
-        self.time = data_dict.get(time_label[0], None)
-        self.acc = data_dict.get(acc_label[0], None)
-        self.gyr = data_dict.get(gyr_label[0], None)
-        self.mag = data_dict.get(mag_label[0], None)
-        self.q_ref = data_dict.get(qts_label[0], None) if qts_label else None
+        self.time = data_dict.get(time_labels[0], None) if time_labels else None
+        if len(time_labels) > 1:
+            self.time_ref = data_dict.get(time_labels[1], None) if time_labels else None
+        self.acc = data_dict.get(acc_labels[0], None) if acc_labels else None
+        self.gyr = data_dict.get(gyr_labels[0], None) if gyr_labels else None
+        self.mag = data_dict.get(mag_labels[0], None) if mag_labels else None
+        self.q_ref = data_dict.get(qts_labels[0], None) if qts_labels else None
         self.num_samples, self.num_axes = self.acc.shape
