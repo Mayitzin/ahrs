@@ -15,3 +15,5 @@ from .ekf import EKF
 from .fourati import Fourati
 from .fqa import FQA
 from .aqua import AQUA
+from .angular import AngularRate
+from .flae import FLAE

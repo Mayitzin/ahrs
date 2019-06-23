@@ -65,13 +65,13 @@ class Madgwick:
         Q = np.tile([1., 0., 0., 0.], (data.num_samples, 1))
         if data.mag is None:
             for t in range(1, data.num_samples):
-                Q[t] = self.updateIMU(d2r*data.gyr[t], data.acc[t], Q[t-1])
+                Q[t] = self.updateIMU(Q[t-1], d2r*data.gyr[t], data.acc[t])
         else:
             for t in range(1, data.num_samples):
-                Q[t] = self.updateMARG(d2r*data.gyr[t], data.acc[t], data.mag[t], Q[t-1])
+                Q[t] = self.updateMARG(Q[t-1], d2r*data.gyr[t], data.acc[t], data.mag[t])
         return Q
 
-    def updateIMU(self, gyr, acc, q):
+    def updateIMU(self, q, gyr, acc):
         """
         Madgwick's AHRS algorithm with an IMU architecture.
 
@@ -79,9 +79,9 @@ class Madgwick:
 
         Parameters
         ----------
-        g : array
+        gyr : array
             Sample of tri-axial Gyroscope in radians.
-        a : array
+        acc : array
             Sample of tri-axial Accelerometer.
         q : array
             A-priori quaternion.
@@ -118,7 +118,7 @@ class Madgwick:
         q /= np.linalg.norm(q)
         return q
 
-    def updateMARG(self, gyr, acc, mag, q):
+    def updateMARG(self, q, gyr, acc, mag):
         """
         Madgwick's AHRS algorithm with a MARG architecture.
 
@@ -126,11 +126,11 @@ class Madgwick:
 
         Parameters
         ----------
-        g : array
+        gyr : array
             Sample of tri-axial Gyroscope in radians.
-        a : array
+        acc : array
             Sample of tri-axial Accelerometer.
-        m : array
+        mag : array
             Sample of tri-axial Magnetometer.
         q : array
             A-priori quaternion.

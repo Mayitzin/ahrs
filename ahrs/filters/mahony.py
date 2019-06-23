@@ -25,6 +25,8 @@ class Mahony:
         Proportional filter gain.
     Ki : float
         Integral filter gain.
+    frequency : float
+        Sampling frequency in Herz.
     samplePeriod : float
         Sampling rate in seconds. Inverse of sampling frequency.
 
@@ -59,13 +61,13 @@ class Mahony:
         Q = np.tile([1., 0., 0., 0.], (data.num_samples, 1))
         if data.mag is None:
             for t in range(1, data.num_samples):
-                Q[t] = self.updateIMU(d2r*data.gyr[t], data.acc[t], Q[t-1])
+                Q[t] = self.updateIMU(Q[t-1], d2r*data.gyr[t], data.acc[t])
         else:
             for t in range(1, data.num_samples):
-                Q[t] = self.updateMARG(d2r*data.gyr[t], data.acc[t], data.mag[t], Q[t-1])
+                Q[t] = self.updateMARG(Q[t-1], d2r*data.gyr[t], data.acc[t], data.mag[t])
         return Q
 
-    def updateIMU(self, gyr, acc, q):
+    def updateIMU(self, q, gyr, acc):
         """
         Mahony's AHRS algorithm with an IMU architecture.
 
@@ -111,7 +113,7 @@ class Mahony:
         q /= np.linalg.norm(q)
         return q
 
-    def updateMARG(self, gyr, acc, mag, q):
+    def updateMARG(self, q, gyr, acc, mag):
         """
         Mahony's AHRS algorithm with a MARG architecture.
 
