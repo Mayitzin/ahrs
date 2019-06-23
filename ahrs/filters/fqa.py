@@ -12,6 +12,7 @@ References
 
 import numpy as np
 from ahrs.common.orientation import *
+from ahrs.common.mathfuncs import *
 from ahrs.common import DEG2RAD
 
 class FQA:
@@ -20,16 +21,13 @@ class FQA:
 
     Parameters
     ----------
-    frequency : float
-        Sampling frequency in Herz.
-    samplePeriod : float
-        Sampling rate in seconds. Inverse of sampling frequency.
 
     """
     def __init__(self, *args, **kwargs):
         self.input = args[0] if args else None
-        self.frequency = kwargs.get('frequency', 100.0)
-        self.samplePeriod = kwargs.get('samplePeriod', 1.0/self.frequency)
+        mdip = kwargs.get('magnetic_dip', 64.22)    # Magnetic dip, in degrees, in Munich, Germany.
+        self.a_ref = np.array([0.0, 0.0, 1.0])
+        self.m_ref = np.array([cosd(mdip), 0.0, -sind(mdip)])
         # Process of data is given
         if self.input:
             self.Q = self.estimate_all()
@@ -48,8 +46,8 @@ class FQA:
 
         """
         data = self.input
-        Q = np.tile([1., 0., 0., 0.], (data.num_samples, 1))
-        for t in range(1, data.num_samples):
+        Q = np.zeros((data.num_samples, 4))
+        for t in range(data.num_samples):
             Q[t] = self.update(data.acc[t], data.mag[t])
         return Q
 
@@ -88,16 +86,17 @@ class FQA:
         c_theta_2 = np.sqrt((1.0+c_theta)/2.0)
         q_e = np.array([c_theta_2, 0.0, s_theta_2, 0.0])
         # Roll Quaternion
-        s_phi = 0.0 if c_theta == 0.0 else -a[1]/c_theta
-        c_phi = 0.0 if c_theta == 0.0 else -a[2]/c_theta
+        is_singular = c_theta == 0.0
+        s_phi = 0.0 if is_singular else -a[1]/c_theta
+        c_phi = 0.0 if is_singular else -a[2]/c_theta
         s_phi_2 = np.sign(s_phi)*np.sqrt((1.0-c_phi)/2.0)
         c_phi_2 = np.sqrt((1.0+c_phi)/2.0)
         q_r = np.array([c_phi_2, s_phi_2, 0.0, 0.0])
         # Azimuth Quaternion
         bm = np.array([0.0, m[0], m[1], m[2]])
         em = q_prod(q_e, q_prod(q_r, q_prod(bm, q_prod(q_conj(q_r), q_conj(q_e)))))
-        n = m.copy()
-        N = n[1:3]/np.linalg.norm(n[1:3])
+        nx, ny = self.m_ref[0], self.m_ref[2]
+        N = np.array([nx, ny])/np.linalg.norm([nx, ny])
         M = em[1:3]/np.linalg.norm(em[1:3])
         c_psi, s_psi = np.array([[M[0], M[1]], [-M[1], M[0]]])@N
         s_psi_2 = np.sign(s_psi)*np.sqrt((1.0-c_psi)/2.0)

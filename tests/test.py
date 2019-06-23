@@ -53,9 +53,10 @@ def test_plot(**kwargs):
     file_name = kwargs.get('file', "repoIMU.csv")
     data = ahrs.utils.io.load(file_name)
 
-    orientation = ahrs.filters.AngularRate(data, frequency=freq)
+    # orientation = ahrs.filters.AngularRate(data, frequency=freq)
+    # orientation = ahrs.filters.FLAE(data)
     # orientation = ahrs.filters.Fourati(data, k=0.001, ka=0.01, km=0.1)
-    # orientation = ahrs.filters.FQA(data, frequency=freq)
+    orientation = ahrs.filters.FQA(data, frequency=freq)
     # orientation = ahrs.filters.AQUA(data, frequency=100.0)
     # orientation = ahrs.filters.EKF(data, frequency=freq, noises=[0.1, 0.1, 0.1])
     # orientation = ahrs.filters.Mahony(data, Kp=0.2, Ki=0.1, frequency=freq)
@@ -67,7 +68,7 @@ def test_plot(**kwargs):
         ahrs.utils.plot_quaternions(data.q_ref, orientation.Q, subtitles=["Reference", "Estimated"])
 
 def test_load(path):
-    data = ahrs.utils.io.loadETH(path)
+    data = ahrs.utils.io.load_ETH_EC(path)
     # ahrs.utils.plot_sensors(data.gyr, data.acc, x_axis=data.time)
     ahrs.utils.plot_quaternions(data.q_ref, x_axis=data.time_ref)
 
