@@ -55,7 +55,7 @@ def load(file_name):
         return Data(d)
     return None
 
-def loadETH(path):
+def load_ETH_EC(path):
     """
     Loads data from a directory containing files of the Event-Camera Dataset
     from the ETH Zurich (http://rpg.ifi.uzh.ch/davis_data.html)
@@ -119,7 +119,7 @@ class Data:
         mag_labels = list(s for s in data_keys if 'mag' in s.lower())
         qts_labels = list(s for s in data_keys if 'qts' in s.lower())
         rad_labels = list(s for s in data_keys if 'rad' in s.lower())
-        self.in_rads = data_dict.get(rad_labels[0], False)
+        self.in_rads = data_dict.get(rad_labels[0], False) if rad_labels else False
         # Load data into each attribute
         self.time = data_dict.get(time_labels[0], None) if time_labels else None
         if len(time_labels) > 1:
@@ -128,4 +128,5 @@ class Data:
         self.gyr = data_dict.get(gyr_labels[0], None) if gyr_labels else None
         self.mag = data_dict.get(mag_labels[0], None) if mag_labels else None
         self.q_ref = data_dict.get(qts_labels[0], None) if qts_labels else None
-        self.num_samples, self.num_axes = self.acc.shape
+        self.num_samples = self.acc.shape[0] if np.ndim(self.acc) > 0 else 0
+        self.num_axes = self.acc.shape[1] if np.ndim(self.acc) > 1 else 0
