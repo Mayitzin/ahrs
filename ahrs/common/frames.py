@@ -80,7 +80,7 @@ def geo2rect(r, h, long, lat, ecc):
     Returns
     -------
     X : array
-        e-frame rectangular coordinates
+        ECEF rectangular coordinates
     """
     X = np.zeros(3)
     X[0] = (r+h)*np.cos(lat)*np.cos(long)
@@ -88,7 +88,7 @@ def geo2rect(r, h, long, lat, ecc):
     X[2] = (r*(1.0-ecc**2)+h)*np.sin(lat)
     return X
 
-def normal_radius(lat):
+def normal_radius(lat, **kwargs):
     """
     The normal radius, a.k.a the radius of curvature of the prime vertical,
     defined for the East-West direction.
@@ -98,14 +98,23 @@ def normal_radius(lat):
     lat : float
         Geodetic latitude
 
+    Extra Parameters
+    ----------------
+    a : float
+        Semi-major axis of Earth, in meters (Equatorial Radius)
+    e : float
+        Spheroids' eccentricity.
+
     Returns
     -------
     r : float
         Normal radius
     """
-    return EQUATOR_RADIUS / (1.0-EARTH_ECCENTRICITY**2*np.sin(lat)**2)**0.5
+    a = kwargs.get('a', EQUATOR_RADIUS)
+    e = kwargs.get('e', EARTH_ECCENTRICITY)
+    return a / np.sqrt(1.0-e**2*np.sin(lat)**2)
 
-def meridian_radius(lat):
+def meridian_radius(lat, **kwargs):
     """
     The meridian radius is the Earth's radius of curvature in the (north-south)
     meridian at a given latitude `lat`.
@@ -115,12 +124,21 @@ def meridian_radius(lat):
     lat : float
         Geodetic latitude
 
+    Extra Parameters
+    ----------------
+    a : float
+        Semi-major axis of Earth, in meters (Equatorial Radius)
+    e : float
+        Spheroids' eccentricity.
+
     Returns
     -------
     r : float
         Normal radius
     """
-    return EQUATOR_RADIUS*(1.0-EARTH_ECCENTRICITY**2) / (1.0-EARTH_ECCENTRICITY**2*np.sin(lat)**2)**1.5
+    a = kwargs.get('a', EQUATOR_RADIUS)
+    e = kwargs.get('e', EARTH_ECCENTRICITY)
+    return a*(1.0-e**2) / (1.0-e**2*np.sin(lat)**2)**1.5
 
 def gravity(lat, h=0.0, **kwargs):
     """
@@ -155,7 +173,7 @@ def gravity(lat, h=0.0, **kwargs):
     Returns
     -------
     g : float
-        Ellipsoidal gravity 
+        Ellipsoidal gravity.
 
     References
     ----------
