@@ -53,20 +53,22 @@ def test_plot(**kwargs):
     file_name = kwargs.get('file', "repoIMU.csv")
     data = ahrs.utils.io.load(file_name)
 
-    # orientation = ahrs.filters.AngularRate(data, frequency=freq)
+    orientation = ahrs.filters.AngularRate(data, frequency=freq)
     # orientation = ahrs.filters.FLAE(data)
     # orientation = ahrs.filters.Fourati(data, k=0.001, ka=0.01, km=0.1)
     # orientation = ahrs.filters.FQA(data, frequency=freq)
-    orientation = ahrs.filters.GravityQuaternion(data)
+    orientation_2 = ahrs.filters.GravityQuaternion(data)
     # orientation = ahrs.filters.AQUA(data)
     # orientation = ahrs.filters.EKF(data, frequency=freq, noises=[0.1, 0.1, 0.1])
     # orientation = ahrs.filters.Mahony(data, Kp=0.2, Ki=0.1, frequency=freq)
     # orientation = ahrs.filters.Madgwick(data, beta=0.01, frequency=freq)
 
+    # ahrs.utils.plot_sensors(data.acc)
+
     if data.q_ref is None:
-        ahrs.utils.plot_quaternions(orientation.Q, subtitles=["Estimated"])
+        ahrs.utils.plot_quaternions(orientation.Q, orientation_2.Q, subtitles=["Angular", "Gravity"])
     else:
-        ahrs.utils.plot_quaternions(data.q_ref, orientation.Q, subtitles=["Reference", "Estimated"])
+        ahrs.utils.plot_quaternions(data.q_ref, orientation.Q, orientation_2.Q, subtitles=["Reference", "Angular", "Gravity"])
 
 def test_load(path):
     data = ahrs.utils.io.load_ETH_EC(path)
@@ -76,6 +78,6 @@ def test_load(path):
 if __name__ == "__main__":
     # test_filters()
     # test_metrics()
-    test_plot(file="ExampleData.mat", freq=256.0)
-    # test_plot(file="repoIMU.csv", freq=100.0)
+    # test_plot(file="ExampleData.mat", freq=256.0)
+    test_plot(file="repoIMU.csv", freq=100.0)
     # test_load("../../Datasets/ETH-Event-Camera/shapes_6dof")

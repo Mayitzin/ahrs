@@ -28,7 +28,7 @@ class GravityQuaternion:
         data = self.input
         Q = np.zeros((data.num_samples, 4))
         for t in range(data.num_samples):
-            Q[t] = self.estimate(data.acc[t])
+            Q[t] = self.estimate(data.acc[t].copy())
         return Q
 
     def estimate(self, a):
