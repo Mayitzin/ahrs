@@ -22,7 +22,7 @@ References
 import numpy as np
 from ahrs.common.orientation import *
 from ahrs.common import DEG2RAD
-from ahrs.utils.io import load
+# from ahrs.utils.io import load
 
 class Madgwick:
     """

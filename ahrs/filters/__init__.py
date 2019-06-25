@@ -17,3 +17,4 @@ from .fqa import FQA
 from .aqua import AQUA
 from .angular import AngularRate
 from .flae import FLAE
+from .gravityquaternion import GravityQuaternion
