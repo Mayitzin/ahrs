@@ -80,29 +80,94 @@ def load_ETH_EC(path):
         class Data with the contents of the dataset.
 
     """
-    if os.path.isdir(path):
-        data = {}
-        files = []
-        [files.append(f) for f in os.listdir(path) if f.endswith('.txt')]
-        missing = list(set(files).symmetric_difference([
-            'events.txt',
-            'images.txt',
-            'imu.txt',
-            'groundtruth.txt',
-            'calib.txt']))
-        if missing:
-            sys.exit("Incomplete data. Missing files:\n{}".format('\n'.join(missing)))
-        imu_data = np.loadtxt(os.path.join(path, 'imu.txt'), delimiter=' ')
-        data.update({"time_sensors": imu_data[:, 0]})
-        data.update({"accs": imu_data[:, 1:4]})
-        data.update({"gyros": imu_data[:, 4:7]})
-        data.update({"rads": False})
-        truth_data = np.loadtxt(os.path.join(path, 'groundtruth.txt'), delimiter=' ')
-        data.update({"time_truth": truth_data[:, 0]})
-        data.update({"qts": truth_data[:, 4:]})
-        return Data(data)
-    else:
-        sys.exit("Invalid path")
+    if not os.path.isdir(path):
+        print("Invalid path")
+        return None
+    data = {}
+    files = []
+    [files.append(f) for f in os.listdir(path) if f.endswith('.txt')]
+    missing = list(set(files).symmetric_difference([
+        'events.txt',
+        'images.txt',
+        'imu.txt',
+        'groundtruth.txt',
+        'calib.txt']))
+    if missing:
+        sys.exit("Incomplete data. Missing files:\n{}".format('\n'.join(missing)))
+    imu_data = np.loadtxt(os.path.join(path, 'imu.txt'), delimiter=' ')
+    data.update({"time_sensors": imu_data[:, 0]})
+    data.update({"accs": imu_data[:, 1:4]})
+    data.update({"gyros": imu_data[:, 4:7]})
+    data.update({"rads": False})
+    truth_data = np.loadtxt(os.path.join(path, 'groundtruth.txt'), delimiter=' ')
+    data.update({"time_truth": truth_data[:, 0]})
+    data.update({"qts": truth_data[:, 4:]})
+    return Data(data)
+
+def load_ETH_EuRoC(path):
+    """
+    Load data from the EuRoC MAV dataset of the ETH Zurich
+    (https://projects.asl.ethz.ch/datasets/doku.php?id=kmavvisualinertialdatasets)
+
+    Parameters
+    ----------
+    path : str
+        Path to the folder containing the dataset.
+
+    References
+    ----------
+    .. [ETH-EuRoC] M. Burri, J. Nikolic, P. Gohl, T. Schneider, J. Rehder, S.
+        Omari, M. Achtelik and R. Siegwart, The EuRoC micro aerial vehicle
+        datasets, International Journal of Robotic Research,
+        DOI: 10.1177/0278364915620033, early 2016.
+    """
+    if not os.path.isdir(path):
+        print("Invalid path")
+        return None
+    valid_folders = ["imu", "groundtruth", "vicon"]
+    # Find data.csv files in each folder
+    folders = os.listdir(path)
+    subfolders = {}
+    for f in valid_folders:
+        for s in folders:
+            if f in s:
+                subfolders.update({f: s})
+    # Build data dictionary
+    data = {}
+    files = []
+    for sf in subfolders.keys():
+        full_path = os.path.join(path, subfolders[sf])
+        contents = os.listdir(full_path)
+        if "data.csv" not in contents:
+            print("ERROR: File data.csv was not found in {}".format(subfolders[sf]))
+        if sf == "imu":
+            file_path = os.path.join(full_path, "data.csv")
+            with open(file_path, 'r') as f:
+                all_lines = f.readlines()
+            time_array = np.genfromtxt(all_lines[1:], dtype=int, comments='#', delimiter=',', usecols=0)
+            gyrs_array = np.genfromtxt(all_lines[1:], dtype=float, comments='#', delimiter=',', usecols=(1, 2, 3))
+            accs_array = np.genfromtxt(all_lines[1:], dtype=float, comments='#', delimiter=',', usecols=(4, 5, 6))
+            data.update({"time_imu": time_array})
+            data.update({"gyr": gyrs_array})
+            data.update({"acc": accs_array})
+        if sf == "vicon":
+            file_path = os.path.join(full_path, "data.csv")
+            with open(file_path, 'r') as f:
+                all_lines = f.readlines()
+            time_array = np.genfromtxt(all_lines[1:], dtype=int, comments='#', delimiter=',', usecols=0)
+            pos_array = np.genfromtxt(all_lines[1:], dtype=float, comments='#', delimiter=',', usecols=(1, 2, 3))
+            qts_array = np.genfromtxt(all_lines[1:], dtype=float, comments='#', delimiter=',', usecols=(4, 5, 6, 7))
+            data.update({"time_vicon": time_array})
+            data.update({"position": pos_array})
+            data.update({"quaternion": qts_array})
+        if sf == "groundtruth":
+            file_path = os.path.join(full_path, "data.csv")
+            # with open(file_path, 'r') as f:
+            #     all_lines = f.readlines()
+            # print("Split header:")
+            # print(all_lines[0].strip().split(','))
+    return data
+
 
 class Data:
     """
