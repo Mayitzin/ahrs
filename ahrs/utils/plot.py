@@ -56,8 +56,11 @@ def plot_sensors(*sensors, **kwargs):
         if subtitles:
             plt.subplot(len(sensors), 1, n+1, title=subtitles[n])
         x_axis = kwargs.get('x_axis', range(s.shape[0]))
-        for i in range(num_axes):
-            plt.plot(x_axis, s[:, i], c=COLORS[i+1], ls='-', lw=0.3)
+        if s.ndim < 2:
+            plt.plot(s, 'k-', lw=0.3)
+        else:
+            for i in range(num_axes):
+                plt.plot(x_axis, s[:, i], c=COLORS[i+1], ls='-', lw=0.3)
     plt.show()
 
 
