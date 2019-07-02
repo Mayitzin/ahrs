@@ -144,7 +144,7 @@ def load_ETH_EuRoC(path):
             file_path = os.path.join(full_path, "data.csv")
             with open(file_path, 'r') as f:
                 all_lines = f.readlines()
-            time_array = np.genfromtxt(all_lines[1:], dtype=int, comments='#', delimiter=',', usecols=0)
+            time_array = np.genfromtxt(all_lines[1:], dtype=float, comments='#', delimiter=',', usecols=0)
             gyrs_array = np.genfromtxt(all_lines[1:], dtype=float, comments='#', delimiter=',', usecols=(1, 2, 3))
             accs_array = np.genfromtxt(all_lines[1:], dtype=float, comments='#', delimiter=',', usecols=(4, 5, 6))
             data.update({"time_imu": time_array})
@@ -154,7 +154,7 @@ def load_ETH_EuRoC(path):
             file_path = os.path.join(full_path, "data.csv")
             with open(file_path, 'r') as f:
                 all_lines = f.readlines()
-            time_array = np.genfromtxt(all_lines[1:], dtype=int, comments='#', delimiter=',', usecols=0)
+            time_array = np.genfromtxt(all_lines[1:], dtype=float, comments='#', delimiter=',', usecols=0)
             pos_array = np.genfromtxt(all_lines[1:], dtype=float, comments='#', delimiter=',', usecols=(1, 2, 3))
             qts_array = np.genfromtxt(all_lines[1:], dtype=float, comments='#', delimiter=',', usecols=(4, 5, 6, 7))
             data.update({"time_vicon": time_array})
@@ -162,10 +162,20 @@ def load_ETH_EuRoC(path):
             data.update({"quaternion": qts_array})
         if sf == "groundtruth":
             file_path = os.path.join(full_path, "data.csv")
-            # with open(file_path, 'r') as f:
-            #     all_lines = f.readlines()
-            # print("Split header:")
-            # print(all_lines[0].strip().split(','))
+            with open(file_path, 'r') as f:
+                all_lines = f.readlines()
+            time_array = np.genfromtxt(all_lines[1:], dtype=float, comments='#', delimiter=',', usecols=0)
+            pos_array = np.genfromtxt(all_lines[1:], dtype=float, comments='#', delimiter=',', usecols=(1, 2, 3))
+            qts_array = np.genfromtxt(all_lines[1:], dtype=float, comments='#', delimiter=',', usecols=(4, 5, 6, 7))
+            vel_array = np.genfromtxt(all_lines[1:], dtype=float, comments='#', delimiter=',', usecols=(8, 9, 10))
+            ang_vel_array = np.genfromtxt(all_lines[1:], dtype=float, comments='#', delimiter=',', usecols=(11, 12, 13))
+            acc_array = np.genfromtxt(all_lines[1:], dtype=float, comments='#', delimiter=',', usecols=(14, 15, 16))
+            data.update({"truth_time": time_array})
+            data.update({"truth_position": pos_array})
+            data.update({"truth_quaternion": qts_array})
+            data.update({"truth_vel": vel_array})
+            data.update({"truth_ang_vel": ang_vel_array})
+            data.update({"truth_acc": acc_array})
     return data
 
 
