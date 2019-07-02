@@ -370,6 +370,40 @@ def quat2axang(q):
     axis = np.array([0.0, 0.0, 0.0]) if angle == 0.0 else axis/denom
     return axis, angle
 
+def q_correct(q):
+    """
+    Correct quaternion from flipping to its conjugate.
+
+    If a quaternion jumps to its conjugate, it will be corrected and brought
+    back to its original position.
+
+    Parameters
+    ----------
+    q : array
+        N-by-4 array of quaternions, where N is the number of continuous
+        quaternions.
+
+    Returns
+    -------
+    q : array
+        Corrected array of quaternions.
+    """
+    q_v = -1.0*q[:, 1:]
+    q_roll = np.roll(q_v, 1, axis=0)
+    q_diff = q_v - q_roll
+    q_diff[0] = np.zeros(3)
+    q_sums = abs(np.sum(q_diff, axis=1))
+    q_spikes = np.nonzero(q_sums>1.0)[0]
+    if len(q_spikes) < 1:
+        return q
+    if len(q_spikes)%2:
+        q_spikes = np.concatenate((q_spikes, [len(q_v)]))
+    spans = q_spikes.reshape((len(q_spikes)//2, 2))
+    q_corrected = q.copy()
+    for s in spans:
+        q_corrected[s[0]:s[1], 1:] = q_v[s[0]:s[1]]
+    return q_corrected
+
 def q2R(q):
     """
     Return a rotation matrix :math:`\\mathbf{R} \\in SO(3)` from a given unit
@@ -444,7 +478,6 @@ def q2euler(q):
         return np.zeros(3)
     if len(q) != 4:
         return None
-    R = np.zeros((3, 3))
     R_00 = 2.0*q[0]**2 - 1.0 + 2.0*q[1]**2
     R_10 = 2.0*(q[1]*q[2] - q[0]*q[3])
     R_20 = 2.0*(q[1]*q[3] + q[0]*q[2])
