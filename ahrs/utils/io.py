@@ -10,6 +10,17 @@ import sys
 import scipy.io as sio
 import numpy as np
 
+def get_freq(times, units='s'):
+    diffs = np.diff(times)
+    mean = np.nanmean(diffs)
+    if units == 'ms':
+        mean *= 1e-3
+    if units == 'us':
+        mean *= 1e-6
+    if units == 'ns':
+        mean *= 1e-9
+    return 1.0 / mean
+
 def find_index(header, s):
     for h in header:
         if s in h.lower():
@@ -147,9 +158,9 @@ def load_ETH_EuRoC(path):
             time_array = np.genfromtxt(all_lines[1:], dtype=float, comments='#', delimiter=',', usecols=0)
             gyrs_array = np.genfromtxt(all_lines[1:], dtype=float, comments='#', delimiter=',', usecols=(1, 2, 3))
             accs_array = np.genfromtxt(all_lines[1:], dtype=float, comments='#', delimiter=',', usecols=(4, 5, 6))
-            data.update({"time_imu": time_array})
-            data.update({"gyr": gyrs_array})
-            data.update({"acc": accs_array})
+            data.update({"imu_time": time_array})
+            data.update({"imu_gyr": gyrs_array})
+            data.update({"imu_acc": accs_array})
         if sf == "vicon":
             file_path = os.path.join(full_path, "data.csv")
             with open(file_path, 'r') as f:
@@ -157,9 +168,9 @@ def load_ETH_EuRoC(path):
             time_array = np.genfromtxt(all_lines[1:], dtype=float, comments='#', delimiter=',', usecols=0)
             pos_array = np.genfromtxt(all_lines[1:], dtype=float, comments='#', delimiter=',', usecols=(1, 2, 3))
             qts_array = np.genfromtxt(all_lines[1:], dtype=float, comments='#', delimiter=',', usecols=(4, 5, 6, 7))
-            data.update({"time_vicon": time_array})
-            data.update({"position": pos_array})
-            data.update({"quaternion": qts_array})
+            data.update({"vicon_time": time_array})
+            data.update({"vicon_position": pos_array})
+            data.update({"vicon_quaternion": qts_array})
         if sf == "groundtruth":
             file_path = os.path.join(full_path, "data.csv")
             with open(file_path, 'r') as f:
@@ -170,13 +181,14 @@ def load_ETH_EuRoC(path):
             vel_array = np.genfromtxt(all_lines[1:], dtype=float, comments='#', delimiter=',', usecols=(8, 9, 10))
             ang_vel_array = np.genfromtxt(all_lines[1:], dtype=float, comments='#', delimiter=',', usecols=(11, 12, 13))
             acc_array = np.genfromtxt(all_lines[1:], dtype=float, comments='#', delimiter=',', usecols=(14, 15, 16))
-            data.update({"truth_time": time_array})
-            data.update({"truth_position": pos_array})
-            data.update({"truth_quaternion": qts_array})
-            data.update({"truth_vel": vel_array})
-            data.update({"truth_ang_vel": ang_vel_array})
-            data.update({"truth_acc": acc_array})
-    return data
+            data.update({"time": time_array})
+            data.update({"position": pos_array})
+            data.update({"qts": qts_array})
+            data.update({"vel": vel_array})
+            data.update({"ang_vel": ang_vel_array})
+            data.update({"acc": acc_array})
+            data.update({'rads':True})
+    return Data(data)
 
 
 class Data:
