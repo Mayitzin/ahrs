@@ -75,12 +75,28 @@ def test_load(path):
     # ahrs.utils.plot_sensors(data.gyr, data.acc, x_axis=data.time)
     ahrs.utils.plot_quaternions(data.q_ref, x_axis=data.time_ref)
 
+def test_quat(path):
+    data = ahrs.utils.io.load_ETH_EuRoC(path)
+    q = data.q_ref
+    q_c = ahrs.common.orientation.q_correct(q)
+    freq = ahrs.utils.io.get_freq(data.time, units='ns')
+    # Estimate Quaternion
+    # orientation = ahrs.filters.AngularRate(data, frequency=freq)
+    orientation = ahrs.filters.Mahony(data, frequency=freq)
+    # Compute Euler Angles
+    num_samples = q.shape[0]
+    q_eul = np.zeros((num_samples, 3))
+    q_c_eul = np.zeros((num_samples, 3))
+    for i in range(num_samples):
+        q_eul[i] = ahrs.common.orientation.q2euler(q[i])
+        q_c_eul[i] = ahrs.common.orientation.q2euler(q_c[i])
+    ahrs.utils.plot_quaternions(q, q_c, orientation.Q)
+    # ahrs.utils.plot_euler(q_eul, q_c_eul)
+
 if __name__ == "__main__":
     # test_filters()
     # test_metrics()
     # test_plot(file="ExampleData.mat", freq=256.0)
     # test_plot(file="repoIMU.csv", freq=100.0)
     # test_load("../../Datasets/ETH-Event-Camera/shapes_6dof")
-    data = ahrs.utils.io.load_ETH_EuRoC('../../Datasets/V1_01_easy')
-    # ahrs.utils.plot_sensors(data['acc'], x_axis=data['time_imu'])
-    ahrs.utils.plot_quaternions(data['quaternion'])
+    test_quat('../../../sensorfusion/test/SensorFusion/data/EuRoC/V1_01')
