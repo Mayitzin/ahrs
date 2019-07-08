@@ -64,7 +64,7 @@ def plot_sensors(*sensors, **kwargs):
     plt.show()
 
 
-def plot_euler(angles, **kwargs):
+def plot_euler(*angles, **kwargs):
     """
     Plot Euler Angles.
 
@@ -72,7 +72,7 @@ def plot_euler(angles, **kwargs):
 
     Parameters
     ----------
-    sensors : arrays
+    angles : arrays
         Array of Euler Angles to plot. Each array is of size M-by-3.
     x_axis : array
         Optional. X-axis data array of the plot. Default is `range(M)`.
@@ -91,14 +91,17 @@ def plot_euler(angles, **kwargs):
     >>> ahrs.utils.plot_euler(data.euler_angles, x_axis=data.time, title="My Angles")
 
     """
-    sz = angles.shape
-    if sz[1] != 3:
-        return None
-    x_axis = kwargs.get('x_axis', range(sz[0]))
+    # x_axis = kwargs.get('x_axis', range(sz[0]))
     title = kwargs.get('title', "Euler Angles")
+    subtitles = kwargs.get('subtitles', None)
     fig = plt.figure(title)
-    for i in range(sz[1]):
-        plt.plot(x_axis, angles[:, i], c=COLORS[i+1], ls='-', lw=0.3)
+    for n, a in enumerate(angles):
+        fig.add_subplot(len(angles), 1, n+1)
+        if subtitles:
+            plt.subplot(len(angles), 1, n+1, title=subtitles[n])
+        x_axis = kwargs.get('x_axis', range(a.shape[0]))
+        for i in range(3):
+            plt.plot(x_axis, a[:, i], c=COLORS[i+1], ls='-', lw=0.3)
     plt.show()
 
 
