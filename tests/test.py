@@ -43,7 +43,7 @@ def test_filters(**kwargs):
     print("Filter testing results: {}".format("OK" if results else "FAILED"))
 
 def test_metrics(**kwargs):
-    result = test_dist()
+    print(test_dist())
 
 def test_plot(**kwargs):
     """
@@ -82,21 +82,24 @@ def test_quat(path):
     freq = ahrs.utils.io.get_freq(data.time, units='ns')
     # Estimate Quaternion
     # orientation = ahrs.filters.AngularRate(data, frequency=freq)
-    orientation = ahrs.filters.Mahony(data, frequency=freq)
+    # orientation = ahrs.filters.Mahony(data, frequency=freq)
+    orientation = ahrs.filters.Madgwick(data, frequency=freq, beta=0.00001)
+    # ahrs.utils.plot_quaternions(q, q_c, orientation.Q)
     # Compute Euler Angles
     num_samples = q.shape[0]
     q_eul = np.zeros((num_samples, 3))
     q_c_eul = np.zeros((num_samples, 3))
+    q_eul_est = np.zeros((num_samples, 3))
     for i in range(num_samples):
         q_eul[i] = ahrs.common.orientation.q2euler(q[i])
         q_c_eul[i] = ahrs.common.orientation.q2euler(q_c[i])
-    ahrs.utils.plot_quaternions(q, q_c, orientation.Q)
-    # ahrs.utils.plot_euler(q_eul, q_c_eul)
+        q_eul_est[i] = ahrs.common.orientation.q2euler(orientation.Q[i])
+    # ahrs.utils.plot_euler(q_eul, q_c_eul, q_eul_est, subtitles=["Reference", "Corrected", "Estimated"])
+    ahrs.utils.plot_sensors(data.acc, data.gyr, subtitles=["Acceleration", "Angular Rate"])
 
 if __name__ == "__main__":
     # test_filters()
-    # test_metrics()
     # test_plot(file="ExampleData.mat", freq=256.0)
     # test_plot(file="repoIMU.csv", freq=100.0)
     # test_load("../../Datasets/ETH-Event-Camera/shapes_6dof")
-    test_quat('../../../sensorfusion/test/SensorFusion/data/EuRoC/V1_01')
+    test_quat('../../Datasets/EuRoC/V1_01_easy')

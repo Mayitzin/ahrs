@@ -11,6 +11,35 @@ import scipy.io as sio
 import numpy as np
 
 def get_freq(times, units='s'):
+    """
+    Identify and return the frequency a dataset is sampled.
+
+    Given an array with timestamps, the step between times is estimated, then
+    a mean of its values is inverted to obtain the sampling frequency.
+
+    Parameters
+    ----------
+    times : array
+        1-D array with the timestamps of the file.
+    units : str
+        Time units of the array of timestamps. Default is 's' for seconds.
+        Possible options are: 's', 'ms', 'us' and 'ns'.
+
+    Returns
+    -------
+    frequency : float
+        Estimated sampling frequency in Herz.
+
+    Examples
+    --------
+    >>> t = np.arange(500) + np.random.randn(500)
+    >>> ahrs.utils.io.id_frequency(t)
+    0.9984740941199178
+    >>> t = np.array([0.1, 0.2, 0.3, 0.4, 0.5])
+    >>> ahrs.utils.io.id_frequency(t, 'ms')
+    10000.0
+
+    """
     diffs = np.diff(times)
     mean = np.nanmean(diffs)
     if units == 'ms':

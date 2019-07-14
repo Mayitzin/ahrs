@@ -59,6 +59,8 @@ class Mahony:
         data = self.input
         d2r = 1.0 if data.in_rads else DEG2RAD
         Q = np.tile([1., 0., 0., 0.], (data.num_samples, 1))
+        if data.q_ref is not None:
+            Q[0] = data.q_ref[0]
         if data.mag is None:
             for t in range(1, data.num_samples):
                 Q[t] = self.updateIMU(Q[t-1], d2r*data.gyr[t], data.acc[t])

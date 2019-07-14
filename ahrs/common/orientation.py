@@ -393,7 +393,7 @@ def q_correct(q):
     q_diff = q_v - q_roll
     q_diff[0] = np.zeros(3)
     q_sums = abs(np.sum(q_diff, axis=1))
-    q_spikes = np.nonzero(q_sums>1.0)[0]
+    q_spikes = np.nonzero(q_sums > 1.0)[0]
     if len(q_spikes) < 1:
         return q
     if len(q_spikes)%2:
