@@ -11,7 +11,7 @@ from .mathfuncs import *
 
 __all__ = ['q_conj', 'q_random', 'q_norm', 'q_prod', 'q_mult_L', 'q_mult_R',
 'q_rot', 'axang2quat', 'quat2axang', 'q2R', 'q2euler', 'rotation', 'rot_seq',
-'R2q', 'dcm2quat', 'am2q', 'acc2q']
+'R2q', 'dcm2quat', 'cardan2q', 'q2cardan', 'am2q', 'acc2q', 'slerp']
 
 def q_conj(q):
     """
@@ -735,17 +735,79 @@ def dcm2quat(R):
            Measurements.
 
     """
-    if(R.shape[0]!=R.shape[1]):
+    if(R.shape[0] != R.shape[1]):
         raise ValueError('Input is not a square matrix')
-    if(R.shape[0]!=3):
+    if(R.shape[0] != 3):
         raise ValueError('Input needs to be a 3x3 array or matrix')
-    qw = 0.5*np.sqrt(1.0 + R[0, 0] + R[1, 1] + R[2, 2])
-    qw4 = 4.0*qw
-    qx = (R[1, 2] - R[2, 1]) / qw4
-    qy = (R[2, 0] - R[0, 2]) / qw4
-    qz = (R[0, 1] - R[1, 0]) / qw4
-    q = np.array([qw, qx, qy, qz])
+    q = np.array([1., 0., 0., 0.])
+    q[0] = 0.5*np.sqrt(1.0 + R[0, 0] + R[1, 1] + R[2, 2])
+    # qw4 = 4.0*q[0]
+    q[1] = (R[1, 2] - R[2, 1]) / q[0]
+    q[2] = (R[2, 0] - R[0, 2]) / q[0]
+    q[3] = (R[0, 1] - R[1, 0]) / q[0]
+    q[1:] /= 4.0
     return q / np.linalg.norm(q)
+
+def cardan2q(angles, in_deg=False):
+    """
+    Return a Quaternion from given cardan angles with order: roll, pitch, yaw.
+    Where roll is the first rotation (about X-axis), pitch is the second
+    rotation (about Y-axis), and yaw is the last rotation (about Z-axis.)
+
+    Parameters
+    ----------
+    angles : array
+        Cardan angles.
+
+    Returns
+    -------
+    q : array
+        Quaternion.
+
+    """
+    if angles.shape[-1] != 3:
+        return None
+    if in_deg:
+        angles *= DEG2RAD
+    cr = np.cos(0.5*angles[0])
+    sr = np.sin(0.5*angles[0])
+    cp = np.cos(0.5*angles[1])
+    sp = np.sin(0.5*angles[1])
+    cy = np.cos(0.5*angles[2])
+    sy = np.sin(0.5*angles[2])
+    # To Quaternion
+    q = np.array([
+        cy*cp*cr + sy*sp*sr,
+        cy*cp*sr - sy*sp*cr,
+        sy*cp*sr + cy*sp*cr,
+        sy*cp*cr - cy*sp*sr])
+    q /= np.linalg.norm(q)
+    return q
+
+def q2cardan(q):
+    """
+    Return the cardan angles from a given quaternion, where the angles have the
+    order: roll, pitch, yaw.
+
+    Roll is the first rotation (about X-axis), pitch is the second
+    rotation (about Y-axis), and yaw is the last rotation (about Z-axis.)
+
+    Parameters
+    ----------
+    q : array
+        Quaternion.
+
+    Returns
+    -------
+    angles : array
+        Cardan angles.
+    """
+    if q.shape[-1] != 4:
+        return None
+    roll = np.arctan2(2.0*(q[0]*q[1] + q[2]*q[3]), 1.0 - 2.0*(q[1]**2 + q[2]**2))
+    pitch = np.arcsin(2.0*(q[0]*q[2] - q[3]*q[1]))
+    yaw = np.arctan2(2.0*(q[0]*q[3] + q[1]*q[2]), 1.0 - 2.0*(q[2]**2 + q[3]**2))
+    return np.array([roll, pitch, yaw])
 
 def am2q(a, m):
     """
@@ -867,3 +929,56 @@ def acc2q(a, return_euler=False):
         qy = qry/q_norm
         qz = qrz/q_norm
     return [qw, qx, qy, qz]
+
+def slerp(q0, q1, t_array, **kwgars):
+    """
+    Spherical Linear Interpolation between quaternions.
+
+    Return a valid quaternion rotation at a specified distance along the minor
+    arc of a great circle passing through any two existing quaternion endpoints
+    lying on the unit radius hypersphere.
+
+    Based on the method detailed in [Wiki_SLERP]_
+
+    Parameters
+    ----------
+    q0 : array
+        First endpoint quaternion.
+    q1 : array
+        Second endpoint quaternion.
+    t_array : array
+        Array of times to interpolate to.
+    threshold : float
+        Threshold to closeness of interpolation.
+
+    Returns
+    -------
+    q : array
+        New quaternion representing the interpolated rotation.
+
+    References
+    ----------
+    .. [Wiki_SLERP] https://en.wikipedia.org/wiki/Slerp
+
+    """
+    threshold = kwgars.get('threshold', 0.9995)
+    t_array = np.array(t_array)
+    v0 = np.array(v0)
+    v1 = np.array(v1)
+    qdot = np.sum(v0*v1)
+    # Ensure SLERP takes the shortest path
+    if qdot < 0.0:
+        v1 *= -1.0
+        qdot *= -1.0
+    # Interpolate linearly
+    if qdot > threshold:
+        result = v0[np.newaxis, :] + t_array[:, np.newaxis]*(v1 - v0)[np.newaxis, :]
+        return (result.T / np.linalg.norm(result, axis=1)).T
+    # Angle between vectors
+    theta_0 = np.arccos(qdot)
+    sin_theta_0 = np.sin(theta_0)
+    theta = theta_0*t_array
+    sin_theta = np.sin(theta)
+    s0 = np.cos(theta) - qdot*sin_theta/sin_theta_0
+    s1 = sin_theta/sin_theta_0
+    return s0[:,np.newaxis]*v0[np.newaxis,:] + s1[:,np.newaxis]*v1[np.newaxis,:]
