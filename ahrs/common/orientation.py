@@ -10,7 +10,7 @@ import numpy as np
 from .mathfuncs import *
 
 __all__ = ['q_conj', 'q_random', 'q_norm', 'q_prod', 'q_mult_L', 'q_mult_R',
-'q_rot', 'axang2quat', 'quat2axang', 'q2R', 'q2euler', 'rotation', 'rot_seq',
+'q_rot', 'axang2quat', 'quat2axang', 'q_correct', 'q2R', 'q2euler', 'rotation', 'rot_seq',
 'R2q', 'dcm2quat', 'cardan2q', 'q2cardan', 'am2q', 'acc2q', 'slerp']
 
 def q_conj(q):
@@ -370,7 +370,7 @@ def quat2axang(q):
     axis = np.array([0.0, 0.0, 0.0]) if angle == 0.0 else axis/denom
     return axis, angle
 
-def q_correct(q):
+def q_correct(q, full=True):
     """
     Correct quaternion from flipping to its conjugate.
 
@@ -382,18 +382,18 @@ def q_correct(q):
     q : array
         N-by-4 array of quaternions, where N is the number of continuous
         quaternions.
+    full : bool
+        Indiciates whether the flip is full (entirely negative) or only at the
+        conjugate (scalar part).
 
     Returns
     -------
     q : array
         Corrected array of quaternions.
     """
-    q_v = -1.0*q[:, 1:]
-    q_roll = np.roll(q_v, 1, axis=0)
-    q_diff = q_v - q_roll
-    q_diff[0] = np.zeros(3)
-    q_sums = abs(np.sum(q_diff, axis=1))
-    q_spikes = np.nonzero(q_sums > 1.0)[0]
+    q_v = -q.copy() if full else -1.0*q[:, 1:]
+    q_diff = np.diff(q_v, axis=0)
+    q_spikes = np.unique(np.where(abs(q_diff) > 1.0)[0]) + 1
     if len(q_spikes) < 1:
         return q
     if len(q_spikes)%2:
@@ -401,7 +401,10 @@ def q_correct(q):
     spans = q_spikes.reshape((len(q_spikes)//2, 2))
     q_corrected = q.copy()
     for s in spans:
-        q_corrected[s[0]:s[1], 1:] = q_v[s[0]:s[1]]
+        if full:
+            q_corrected[s[0]:s[1]] = q_v[s[0]:s[1]]
+        else:
+            q_corrected[s[0]:s[1], 1:] = q_v[s[0]:s[1]]
     return q_corrected
 
 def q2R(q):

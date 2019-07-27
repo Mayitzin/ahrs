@@ -91,7 +91,7 @@ def load(file_name):
         'gyr' : data[:, g_idx:g_idx+3],
         'mag' : data[:, m_idx:m_idx+3],
         'qts' : data[:, q_idx:q_idx+4]}
-        d.update({'rads':True})
+        d.update({'in_rads':True})
         return Data(d)
     return None
 
@@ -138,7 +138,7 @@ def load_ETH_EC(path):
     data.update({"time_sensors": imu_data[:, 0]})
     data.update({"accs": imu_data[:, 1:4]})
     data.update({"gyros": imu_data[:, 4:7]})
-    data.update({"rads": False})
+    data.update({"in_rads": False})
     truth_data = np.loadtxt(os.path.join(path, 'groundtruth.txt'), delimiter=' ')
     data.update({"time_truth": truth_data[:, 0]})
     data.update({"qts": truth_data[:, 4:]})
@@ -216,33 +216,109 @@ def load_ETH_EuRoC(path):
             data.update({"vel": vel_array})
             data.update({"ang_vel": ang_vel_array})
             data.update({"acc": acc_array})
-            data.update({'rads':True})
+            data.update({'in_rads':True})
     return Data(data)
 
+def load_OxIOD(path, sequence=1):
+    """
+    Load data from the Oxford Inertial Odometry Dataset
+    (http://deepio.cs.ox.ac.uk/)
+
+    The OxIOD has several sequences stored in CSV, composed of sensors and
+    vicon recordings, with the names and formats:
+
+    imu:
+        [0] Time
+        [1] attitude_roll(radians)
+        [2] attitude_pitch(radians)
+        [3] attitude_yaw(radians)
+        [4] rotation_rate_x(radians/s)
+        [5] rotation_rate_y(radians/s)
+        [6] rotation_rate_z(radians/s)
+        [7] gravity_x(G)
+        [8] gravity_y(G)
+        [9] gravity_z(G)
+        [10] user_acc_x(G)
+        [11] user_acc_y(G)
+        [12] user_acc_z(G)
+        [13] magnetic_field_x(microteslas)
+        [14] magnetic_field_y(microteslas)
+        [15] magnetic_field_z(microteslas)
+
+    vicon:
+        [0] Time
+        [1] Header
+        [2] translation.x
+        [3] translation.y
+        [4] translation.z
+        [5] rotation.x
+        [6] rotation.y
+        [7] rotation.z
+        [8] rotation.w
+
+    Parameters
+    ----------
+    path : str
+        Path to the folder containing the dataset.
+    sequence : int
+        Sequence to load. Default is 1.
+
+    References
+    ----------
+    .. [OxIOD] Changhao Chen, Peijun Zhao, Chris Xiaoxuan Lu, Wei Wang, Andrew
+        Markham, Niki Trigoni. OxIOD: The Dataset for Deep Inertial Odometry.
+        arXiv:1809.07491. September 2018.
+        (https://arxiv.org/pdf/1809.07491.pdf)
+    """
+    if not os.path.isdir(path):
+        print("Invalid path")
+        return None
+    imu_file = 'imu{}.csv'.format(sequence)
+    vicon_file = 'vi{}.csv'.format(sequence)
+    all_files = os.listdir(path)
+    # Assert exitence of required files
+    if imu_file not in all_files:
+        print("IMU Sequence does NOT exists.")
+        return None
+    if vicon_file not in all_files:
+        print("Vicon Sequence does NOT exists.")
+        return None
+    # Read files
+    base_path = os.path.relpath(path)
+    imu_file = os.path.join(base_path, imu_file)
+    vicon_file = os.path.join(base_path, vicon_file)
+    # Read Sensor information
+    data = {}
+    imu_data = np.genfromtxt(imu_file, dtype=np.float, delimiter=',', filling_values=np.nan)
+    data.update({"imu_time": imu_data[:, 0]})
+    data.update({"ang_pos": imu_data[:, 1:4]})
+    data.update({"gyr": imu_data[:, 4:7]})
+    data.update({"acc": imu_data[:, 7:10]})
+    data.update({"usr_acc": imu_data[:, 10:13]})
+    data.update({"mag": imu_data[:, 13:]})
+    data.update({'in_rads':True})
+    vicon_data = np.genfromtxt(vicon_file, dtype=np.float, delimiter=',', filling_values=np.nan)
+    data.update({"vicon_time": vicon_data[:, 0]})
+    data.update({"pos": vicon_data[:, 2:5]})
+    data.update({"q_ref": np.roll(vicon_data[:, 5:], 1, axis=1)}) # Roll data to fit standard quaternion notation
+    return Data(data)
 
 class Data:
     """
     Data to store the arrays of the most common variables.
     """
-    def __init__(self, data_dict, **kwargs):
-        # Create empty data attributes
-        self.qts = None
-        data_keys = list(data_dict.keys())
-        # Find possible data from keys of dictionary
-        time_labels = list(s for s in data_keys if 'time' in s.lower())
-        acc_labels = list(s for s in data_keys if 'acc' in s.lower())
-        gyr_labels = list(s for s in data_keys if 'gyr' in s.lower())
-        mag_labels = list(s for s in data_keys if 'mag' in s.lower())
-        qts_labels = list(s for s in data_keys if 'qts' in s.lower())
-        rad_labels = list(s for s in data_keys if 'rad' in s.lower())
-        self.in_rads = data_dict.get(rad_labels[0], False) if rad_labels else False
-        # Load data into each attribute
-        self.time = data_dict.get(time_labels[0], None) if time_labels else None
-        if len(time_labels) > 1:
-            self.time_ref = data_dict.get(time_labels[1], None) if time_labels else None
-        self.acc = data_dict.get(acc_labels[0], None) if acc_labels else None
-        self.gyr = data_dict.get(gyr_labels[0], None) if gyr_labels else None
-        self.mag = data_dict.get(mag_labels[0], None) if mag_labels else None
-        self.q_ref = data_dict.get(qts_labels[0], None) if qts_labels else None
-        self.num_samples = self.acc.shape[0] if np.ndim(self.acc) > 0 else 0
-        self.num_axes = self.acc.shape[1] if np.ndim(self.acc) > 1 else 0
+    time = None
+    acc = None
+    gyr = None
+    mag = None
+    q_ref = None
+    def __init__(self, *initial_data, **kwargs):
+        # def_attributes = ['time', 'acc', 'gyr', 'mag', 'q_ref', 'pos']
+        # for a in def_attributes:
+        #     setattr(self, a, None)
+        for dictionary in initial_data:
+            for key in dictionary:
+                setattr(self, key, dictionary[key])
+        for key in kwargs:
+            setattr(self, key, kwargs[key])
+        self.num_samples = len(self.acc) if self.acc is not None else 0

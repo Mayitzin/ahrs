@@ -56,7 +56,7 @@ array([[ 0.76811067,  0.3546719 ,  0.53311709],
        [-0.32712625,  0.93308888, -0.14944417]])
 ```
 
-`ahrs` also includes a module that simplifies data loading and visualization
+`ahrs` also includes a module that simplifies data loading and visualization using `matplotlib`.
 
 ```py
 >>> data = ahrs.utils.io.load("ExampleData.mat")
@@ -65,7 +65,7 @@ array([[ 0.76811067,  0.3546719 ,  0.53311709],
 
 ![Simple Sensor Plotting](plot_sensors_simple_screenshot.png)
 
-It is possible to render more sensors at different subplots, and even titling them.
+It is possible to render more sensors with different subplots, and even titling them.
 
 ```py
 >>> ahrs.utils.plot_sensors(data.gyr, data.acc, data.mag,
@@ -74,10 +74,10 @@ It is possible to render more sensors at different subplots, and even titling th
 
 ![Full Sensor Plotting](plot_sensors_screenshot.png)
 
-If you want to use the sensor data to estimate the attitude, use the `filters` module that includes various (more coming) algorithms for it.
+To use the sensor data to estimate the attitude, the `filters` module includes various (more coming) algorithms for it.
 
 ```py
->>> madgwick = ahrs.filters.Madgwick()
+>>> madgwick = ahrs.filters.Madgwick()    # Madgwick's attitude estimation using default values
 >>> Q = np.tile([1., 0., 0., 0.], (data.num_samples, 1)) # Allocate an array for all quaternions
 >>> d2g = ahrs.common.DEG2RAD   # Constant to convert degrees to radians
 >>> for t in range(1, data.num_samples):
@@ -88,11 +88,11 @@ If you want to use the sensor data to estimate the attitude, use the `filters` m
 
 ![Quaternion Plotting](plot_quaternions_screenshot.png)
 
-Also works by simply passing the data to a desired filter, and it will automatically estimate the quaternions with the given parameters.
+Also works by simply passing the data to a desired filter, and it will automatically try to load the sensor information and estimate the quaternions with the given parameters.
 
 ```py
->>> estimation = ahrs.filters.Madgwick(data, beta=0.1, frequency=100.0)
->>> estimation.Q.shape
+>>> orientation = ahrs.filters.Madgwick(data, beta=0.1, frequency=100.0)
+>>> orientation.Q.shape
 (6959, 4)
 ```
 
