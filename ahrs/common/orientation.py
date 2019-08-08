@@ -61,10 +61,7 @@ def q_conj(q):
     .. [2] https://en.wikipedia.org/wiki/Quaternion#Conjugation,_the_norm,_and_reciprocal
 
     """
-    sz = np.shape(q)
-    if len(sz) == 1 and sz[0] != 4:
-        return None
-    if len(sz) == 2 and sz[1] != 4:
+    if q.ndim > 2 or q.shape[-1] != 4:
         return None
     # I think that can be done better with some clever use of numpy.ndim
     return np.array([1., -1., -1., -1.])*np.array(q)
@@ -902,7 +899,7 @@ def acc2q(a, return_euler=False):
     qw, qx, qy, qz = 1.0, 0.0, 0.0, 0.0
     ex, ey, ez = 0.0, 0.0, 0.0
     if len(a) == 3:
-        ax, ay, az = a[0], a[1], a[2]
+        ax, ay, az = a
         # Normalize accelerometer measurements
         a_norm = np.linalg.norm(a)
         ax /= a_norm
