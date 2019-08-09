@@ -6,8 +6,8 @@ Quaternion
 References
 ----------
 .. [Dantam] Dantam, N. (2014) Quaternion Computation. Institute for Robotics
-    and Intelligent Machines. Georgia Tech.
-    (http://www.neil.dantam.name/note/dantam-quaternion.pdf)
+    and Intelligent Machines. Georgia Tech. (http://www.neil.dantam.name/note/dantam-quaternion.pdf)
+.. [Sarkka] Särkkä, S. (2007) Notes on Quaternions (https://users.aalto.fi/~ssarkka/pub/quat.pdf)
 .. [WikiQuat1] https://en.wikipedia.org/wiki/Quaternion
 .. [WikiQuat2] https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation
 .. [WikiQuat3] https://en.wikipedia.org/wiki/Versor
@@ -43,6 +43,12 @@ class Quaternion:
 
     def __str__(self):
         return "({:-.4f} {:+.4f}i {:+.4f}j {:+.4f}k)".format(self.w, self.x, self.y, self.z)
+
+    def __pow__(self, y, *args):
+        """
+        Power of Quaternion
+        """
+        return np.e**(y*self.logarithm())
 
     def is_pure(self):
         return self.w == 0.0
@@ -91,6 +97,16 @@ class Quaternion:
         if self.is_pure():
             return q_exp
         return np.e**self.w * q_exp
+
+    def logarithm(self):
+        """
+        Logarithm of Quaternion
+        """
+        qv_norm = np.linalg.norm(self.v)
+        phi = np.arctan2(qv_norm, self.w)
+        if self.is_pure():
+            return np.concatenate(([0.0], self.v*phi/np.sin(phi)))
+        return np.concatenate((np.log(np.linalg.norm(self.q)), self.v*phi/qv_norm))
 
     def product(self, q):
         """
