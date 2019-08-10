@@ -19,6 +19,8 @@ References
 .. [Sarabandi] Sarabandi, S. et al. (2018) Accurate Computation of Quaternions
     from Rotation Matrices.
     (http://www.iri.upc.edu/files/scidoc/2068-Accurate-Computation-of-Quaternions-from-Rotation-Matrices.pdf)
+.. [Eberly] Eberly, D. (2010) Quaternion Algebra and Calculus. Geometric Tools.
+    https://www.geometrictools.com/Documentation/Quaternions.pdf
 
 """
 
@@ -30,13 +32,13 @@ class Quaternion:
     """
     def __init__(self, q=None):
         if q is None:
-            q = np.array([1., 0., 0., 0.])
+            self.q = np.array([1., 0., 0., 0.])
         else:
             q = np.array(q)
             if q.ndim != 1 or q.shape[-1] not in [3, 4]:
                 raise ValueError("Expected `q` to have shape (4,) or (3,), got {}.".format(q.shape))
             self.q = np.concatenate(([0.0], q)) if q.shape[-1] == 3 else q
-            self.q /= np.linalg.norm(self.q)
+            self.q = self.normalize()
         self.w = self.q[0]
         self.v = self.q[1:]
         self.x, self.y, self.z = self.v
@@ -56,16 +58,15 @@ class Quaternion:
     def is_versor(self):
         return np.isclose(np.linalg.norm(self.q), 1.0)
 
+    def normalize(self):
+        return self.q/np.linalg.norm(self.q)
+
     def conjugate(self):
         """
         Return the conjugate of a quaternion
 
         A quaternion, whose form is :math:`\\mathbf{q} = (q_w, q_x, q_y, q_z)`,
         has a conjugate of the form :math:`\\mathbf{q}^* = (q_w, -q_x, -q_y, -q_z)`.
-
-        .. math::
-
-            \\|\\mathbf{q}\\| = \\sqrt{q_w^2+q_x^2+q_y^2+q_z^2} = 1.0
 
         Parameters
         ----------
@@ -117,7 +118,7 @@ class Quaternion:
         as:
 
         .. math::
-    
+
             \\begin{eqnarray}
             \\mathbf{pq} & = & \\big( (q_w p_w - \\mathbf{q}_v \\cdot \\mathbf{p}_v) \\; ,
             \\; \\mathbf{q}_v \\times \\mathbf{p}_v + q_w \\mathbf{p}_v + p_w \\mathbf{q}_v \\big) \\\\
@@ -152,7 +153,7 @@ class Quaternion:
 
         Returns
         -------
-        q'*q : array
+        self.q*q : array
             Product of quaternions
 
         Examples
@@ -254,10 +255,40 @@ class Quaternion:
         return self.to_DCM()@a
 
     def to_axang(self):
+        """
+        Return the equivalent axis-angle rotation of the quaternion.
+
+        Returns
+        -------
+        (axis, angle) : (ndarray, float)
+            Axis and angle.
+
+        Examples
+        --------
+        >>> q = ahrs.common.Quaternion([0.7071, 0.7071, 0.0, 0.0])
+        >>> q.to_axang()
+        (array([1., 0., 0.]), 1.5707963267948966)
+
+        """
         denom = np.linalg.norm(self.v)
         angle = 2.0*np.arctan2(denom, self.w)
         axis = np.array([0.0, 0.0, 0.0]) if angle == 0.0 else self.v/denom
         return axis, angle
+
+    def to_angles(self):
+        """
+        Return corresponding Euler angles of quaternion.
+
+        Returns
+        -------
+        angles : array
+            Euler angles of quaternion.
+
+        """
+        phi = np.arctan2(2.0*(self.w*self.x+self.y*self.z), 1.0-2.0*(self.x**2+self.y**2))
+        theta = np.arcsin(2.0*(self.w*self.y-self.z*self.x))
+        psi = np.arctan2(2.0*(self.w*self.z+self.x*self.y), 1.0-2.0*(self.y**2+self.z**2))
+        return np.array([phi, theta, psi])
 
     def to_DCM(self):
         """
@@ -281,11 +312,6 @@ class Quaternion:
 
         The default value is the unit Quaternion :math:`\\mathbf{q} = (1, 0, 0, 0)`,
         which produces a :math:`3 \\times 3` Identity matrix :math:`\\mathbf{I}_3`.
-
-        Parameters
-        ----------
-        q : array
-            Unit quaternion
 
         Returns
         -------
@@ -311,7 +337,34 @@ class Quaternion:
         sp = np.sin(0.5*pitch)
         cr = np.cos(0.5*roll)
         sr = np.sin(0.5*roll)
-        self.w = cy*cp*cr + sy*sp*sr
-        self.x = cy*cp*sr - sy*sp*cr
-        self.y = sy*cp*sr + cy*sp*cr
-        self.z = sy*cp*cr - cy*sp*sr
+        self.q[0] = cy*cp*cr + sy*sp*sr
+        self.q[1] = cy*cp*sr - sy*sp*cr
+        self.q[2] = sy*cp*sr + cy*sp*cr
+        self.q[3] = sy*cp*cr - cy*sp*sr
+        self.normalize()
+        self.w, self.x, self.y, self.z = self.q
+
+    def derivative(self, w):
+        """
+        Quaternion derivative from angular velocity.
+
+        Parameters
+        ----------
+        w : array
+            Angular velocity, in rad/s, about X-, Y- and Z-angle.
+
+        Returns
+        -------
+        dq/dt : array
+            Derivative of quaternion.
+
+        """
+        if w.ndim != 1 or w.shape[0] != 3:
+            raise ValueError("Expected `w` to have shape (3,), got {}.".format(w.shape))
+        w = np.concatenate(([0.0], w))
+        F = 0.5*np.array([
+            [0.0, -w[0], -w[1], -w[2]],
+            [w[0], 0.0, w[2], -w[1]],
+            [w[1], -w[2], 0.0, w[0]],
+            [w[2], w[1], -w[0], 0.0]])
+        return F@self.q
