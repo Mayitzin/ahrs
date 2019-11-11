@@ -27,6 +27,7 @@ class AngularRate:
         self.input = args[0] if args else None
         self.frequency = kwargs.get('frequency', 100.0)
         self.Dt = kwargs.get('Dt', 1.0/self.frequency)
+        self.q = np.array([1.0, 0.0, 0.0, 0.0])
         # Data is given
         if self.input:
             self.Q = self.estimate_all()
@@ -34,14 +35,14 @@ class AngularRate:
     def estimate_all(self):
         data = self.input
         d2r = 1.0 if data.in_rads else DEG2RAD
-        Q = np.tile([1., 0., 0., 0.], (data.num_samples, 1))
+        Q = np.tile(self.q, (data.num_samples, 1))
         if data.q_ref is not None:
             Q[0] = data.q_ref[0]
         for t in range(1, data.num_samples):
             Q[t] = self.update(Q[t-1], d2r*data.gyr[t])
         return Q
 
-    def update(self, q, g):
+    def update(self, g):
         """
         Update the quaternion
 
@@ -56,5 +57,4 @@ class AngularRate:
             Estimated quaternion.
 
         """
-        q += 0.5*q_prod(q, [0, g[0], g[1], g[2]])*self.Dt
-        return q
+        self.q += 0.5*q_prod(self.q, [0, g[0], g[1], g[2]])*self.Dt

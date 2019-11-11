@@ -35,12 +35,13 @@ def test_filters(**kwargs):
     """
     file_name = kwargs.get('file', "ExampleData.mat")
     test = Test_Filter(file_name, **kwargs)
-    results = True
-    results &= test.ekf()
-    results &= test.fourati()
-    results &= test.mahony()
-    results &= test.madgwick()
-    print("Filter testing results: {}".format("OK" if results else "FAILED"))
+    test.data.show_items()
+    # results = True
+    # results &= test.ekf()
+    # results &= test.fourati()
+    # results &= test.mahony()
+    # results &= test.madgwick()
+    # print("Filter testing results: {}".format("OK" if results else "FAILED"))
 
 def test_metrics(**kwargs):
     print(test_dist())
@@ -99,9 +100,21 @@ def test_quat(path):
     ahrs.utils.plot_euler(q_eul, q_c_eul, q_eul_est, subtitles=["Reference", "Corrected", "Estimated"])
     # ahrs.utils.plot_sensors(data.acc, data.gyr, subtitles=["Acceleration", "Angular Rate"])
 
+def test_quaternion_class():
+    v1 = np.random.random(4) - 0.5
+    q1 = ahrs.common.Quaternion(v1)
+    # print(v1)
+    # print(q1)
+    q = ahrs.common.Quaternion([0.7071, 0.7071, 0.0, 0.0])
+    w = np.pi*(np.random.random(3) - 0.5)
+    print(q1)
+    print(w)
+    print(q1.derivative(w))
+
 if __name__ == "__main__":
-    # test_filters()
+    test_filters()
     # test_plot(file="ExampleData.mat", freq=256.0)
     # test_plot(file="repoIMU.csv", freq=100.0)
-    test_load("../../Datasets/OxIOD/pocket/data1/raw")
+    # test_load("../../Datasets/OxIOD/pocket/data1/raw")
     # test_quat('../../Datasets/EuRoC/V1_01_easy')
+    # test_quaternion_class()

@@ -78,7 +78,7 @@ class Mahony:
         Parameters
         ----------
         gyr : array
-            Sample of tri-axial Gyroscope in radians.
+            Sample of tri-axial Gyroscope in radians per second.
         acc : array
             Sample of tri-axial Accelerometer.
         q : array
@@ -124,7 +124,7 @@ class Mahony:
         Parameters
         ----------
         gyr : array
-            Sample of tri-axial Gyroscope in radians.
+            Sample of tri-axial Gyroscope in radians per second.
         acc : array
             Sample of tri-axial Accelerometer.
         mag : array

@@ -322,3 +322,7 @@ class Data:
         for key in kwargs:
             setattr(self, key, kwargs[key])
         self.num_samples = len(self.acc) if self.acc is not None else 0
+
+    def show_items(self):
+        for k in self.__dict__.keys():
+            print("{}".format(k))
