@@ -5,6 +5,8 @@ Quaternion
 
 References
 ----------
+.. [Sola] Solà, Joan. Quaternion kinematics for the error-state Kalman Filter.
+    October 12, 2017. (http://www.iri.upc.edu/people/jsola/JoanSola/objectes/notes/kinematics.pdf)
 .. [Dantam] Dantam, N. (2014) Quaternion Computation. Institute for Robotics
     and Intelligent Machines. Georgia Tech. (http://www.neil.dantam.name/note/dantam-quaternion.pdf)
 .. [Sarkka] Särkkä, S. (2007) Notes on Quaternions (https://users.aalto.fi/~ssarkka/pub/quat.pdf)
@@ -30,21 +32,31 @@ class Quaternion:
     """
     Quaternion Class
     """
-    def __init__(self, q=None):
-        if q is None:
-            self.q = np.array([1., 0., 0., 0.])
+    q = np.array([1., 0., 0., 0.])
+    def __init__(self, q=None, **kwargs):
+        if "angles" in kwargs:
+            self.from_angles(kwargs["angles"])
         else:
-            q = np.array(q)
-            if q.ndim != 1 or q.shape[-1] not in [3, 4]:
-                raise ValueError("Expected `q` to have shape (4,) or (3,), got {}.".format(q.shape))
-            self.q = np.concatenate(([0.0], q)) if q.shape[-1] == 3 else q
-            self.q = self.normalize()
+            if q is None:
+                self.q = np.array([1., 0., 0., 0.])
+            else:
+                q = np.array(q)
+                if q.ndim != 1 or q.shape[-1] not in [3, 4]:
+                    raise ValueError("Expected `q` to have shape (4,) or (3,), got {}.".format(q.shape))
+                self.q = np.concatenate(([0.0], q)) if q.shape[-1] == 3 else q
+                self.q = self.normalize()
         self.w = self.q[0]
         self.v = self.q[1:]
         self.x, self.y, self.z = self.v
 
     def __str__(self):
         return "({:-.4f} {:+.4f}i {:+.4f}j {:+.4f}k)".format(self.w, self.x, self.y, self.z)
+
+    def __add__(self, p):
+        return Quaternion(self.q + p.q)
+
+    def __mul__(self, p):
+        return Quaternion(self.product(p.q))
 
     def __pow__(self, y, *args):
         """
@@ -57,6 +69,9 @@ class Quaternion:
 
     def is_versor(self):
         return np.isclose(np.linalg.norm(self.q), 1.0)
+
+    def is_identity(self):
+        return all(self.q == np.array([1.0, 0.0, 0.0, 0.0]))
 
     def normalize(self):
         return self.q/np.linalg.norm(self.q)
@@ -86,6 +101,17 @@ class Quaternion:
 
         """
         return self.q*np.array([1.0, -1.0, -1.0, -1.0])
+
+    def conj(self):
+        """
+        Synonym to method conjugate().
+        """
+        return self.conjugate()
+
+    def inverse(self):
+        if self.is_versor():
+            return self.conjugate()
+        return self.conjugate() / np.linalg.norm(self.q) 
 
     def exponential(self):
         """
@@ -165,11 +191,17 @@ class Quaternion:
         >>> q1.product([0.49753507, 0.50806522, 0.52711628, 0.4652709])
         array([-0.36348726,  0.38962514,  0.34188103,  0.77407146])
 
-        or with a Quaternion object
+        or with a Quaternion object...
 
         >>> q2 = Quaternion([0.49753507, 0.50806522, 0.52711628, 0.4652709 ])
         >>> q1.product(q2)
         array([-0.36348726,  0.38962514,  0.34188103,  0.77407146])
+
+        or with a Quaternion itself to return a Quaternion
+
+        >>> q3 = q1*q2
+        >>> q3.__str__()
+        (-0.3635 +0.3896i +0.3419j +0.7740k)
 
         It holds with the result after the cross and dot product definition
 
@@ -182,11 +214,13 @@ class Quaternion:
         if type(q) is Quaternion:
             q = q.q.copy()
         q /= np.linalg.norm(q)
+        if self.q[0] == 0.0 and q[0] == 0.0:
+            return np.concatenate(([-np.dot(self.v, q[1:])], np.cross(self.v, q[1:])))
         return np.array([
             self.w*q[0] - self.x*q[1] - self.y*q[2] - self.z*q[3],
-            self.w*q[1] + self.x*q[0] - self.y*q[3] + self.z*q[2],
-            self.w*q[2] + self.x*q[3] + self.y*q[0] - self.z*q[1],
-            self.w*q[3] - self.x*q[2] + self.y*q[1] + self.z*q[0]])
+            self.w*q[1] + self.x*q[0] + self.y*q[3] - self.z*q[2],
+            self.w*q[2] - self.x*q[3] + self.y*q[0] + self.z*q[1],
+            self.w*q[3] + self.x*q[2] - self.y*q[1] + self.z*q[0]])
 
     def mult_L(self):
         """
@@ -328,6 +362,7 @@ class Quaternion:
         """
         Create a quaternion from given Euler angles.
         """
+        angles = np.array(angles)
         if angles.ndim != 1 or angles.shape[0] != 3:
             raise ValueError("Expected `angles` to have shape (3,), got {}.".format(angles.shape))
         yaw, pitch, roll = angles
