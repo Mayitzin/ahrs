@@ -30,12 +30,66 @@ import numpy as np
 
 class Quaternion:
     """
-    Quaternion Class
+    Quaternion class
+    ================
+
+    Examples
+    --------
+    >>> from ahrs.common import Quaternion
+    >>> q = Quaternion([1., 2., 3., 4.])
+    >>> q
+    (0.1826 +0.3651i +0.5477j +0.7303k)
+    >>> x = [1., 2., 3.]
+    >>> q.rot(x)
+    [1.8 2.  2.6]
+    >>> R = q.to_DCM()
+    >>> R@x
+    [1.8 2.  2.6]
+
+    A call to method product() will return an array of a multiplied vector.
+
+    >>> q1 = Quaternion([1., 2., 3., 4.])
+    >>> q2 = Quaternion([5., 4., 3., 2.])
+    >>> q1.product(q2)
+    [-0.49690399  0.1987616   0.74535599  0.3975232 ]
+
+    But multiplication operators are overriden to return quaternions
+
+    >>> q1*q2
+    (-0.4969 +0.1988i +0.7454j +0.3975k)
+    >>> q1@q2
+    (-0.4969 +0.1988i +0.7454j +0.3975k)
+
+    Basic operators are also overriden and return quaternions
+
+    >>> q1+q2
+    (0.4619 +0.4868i +0.5117j +0.5366k)
+    >>> q1-q2
+    (-0.6976 -0.2511i +0.1954j +0.6420k)
+
+    Pure quaternions are built from 3-element arrays
+
+    >>> q = Quaternion([1., 2., 3.])
+    >>> q.is_pure()
+    True
+
+    And all basic properties can be fetched
+
+    >>> q.conj()
+    [ 0.         -0.26726124 -0.53452248 -0.80178373]
+    >>> q.exponential()
+    [0.54030231 0.22489258 0.44978516 0.67467774]
+    >>> q.logarithm()
+    [0.         0.41981298 0.83962595 1.25943893]
+    >>> q.to_axang()
+    (array([0.26726124, 0.53452248, 0.80178373]), 3.141592653589793)
+    >>> q.to_angles()
+    [ 1.24904577 -0.44291104  2.8198421 ]
     """
     q = np.array([1., 0., 0., 0.])
-    def __init__(self, q=None, **kwargs):
-        if "angles" in kwargs:
-            self.from_angles(kwargs["angles"])
+    def __init__(self, q=None, **kw):
+        if "angles" in kw:
+            self.from_angles(kw["angles"])
         else:
             if q is None:
                 self.q = np.array([1., 0., 0., 0.])
@@ -44,7 +98,7 @@ class Quaternion:
                 if q.ndim != 1 or q.shape[-1] not in [3, 4]:
                     raise ValueError("Expected `q` to have shape (4,) or (3,), got {}.".format(q.shape))
                 self.q = np.concatenate(([0.0], q)) if q.shape[-1] == 3 else q
-                self.normalize()
+        self.normalize()
         self.w = self.q[0]
         self.v = self.q[1:]
         self.x, self.y, self.z = self.v
@@ -55,9 +109,12 @@ class Quaternion:
     def __add__(self, p):
         return Quaternion(self.q + p.q)
 
+    def __sub__(self, p):
+        return Quaternion(self.q - p.q)
+
     def __mul__(self, p):
         if not hasattr(p, 'q'):
-            p = Quaternion(p)
+            p = Quaternion(p, normalize=False)
         return Quaternion(self.product(p.q))
 
     def __matmul__(self, p):
@@ -65,7 +122,7 @@ class Quaternion:
             p = Quaternion(p)
         return Quaternion(self.product(p.q))
 
-    def __pow__(self, y, *args):
+    def __pow__(self, y):
         """
         Power of Quaternion
         """
@@ -136,9 +193,9 @@ class Quaternion:
         """
         v_norm = np.linalg.norm(self.v)
         u = self.v / v_norm
-        t = np.arctan(v_norm/self.w)
         if self.is_pure():
-            return np.concatenate(([0.0], u*t))
+            return np.concatenate(([0.0], u))
+        t = np.arctan(v_norm/self.w)
         return np.concatenate((np.log(np.linalg.norm(self.q)), u*t))
 
     def product(self, q):
@@ -217,7 +274,7 @@ class Quaternion:
         (-0.36348726, array([0.38962514,  0.34188103,  0.77407146]))
 
         """
-        if type(q) is Quaternion:
+        if hasattr(q, 'q'):
             q = q.q.copy()
         q /= np.linalg.norm(q)
         if self.q[0] == 0.0 and q[0] == 0.0:
