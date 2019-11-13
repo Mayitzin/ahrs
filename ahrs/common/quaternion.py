@@ -44,7 +44,7 @@ class Quaternion:
                 if q.ndim != 1 or q.shape[-1] not in [3, 4]:
                     raise ValueError("Expected `q` to have shape (4,) or (3,), got {}.".format(q.shape))
                 self.q = np.concatenate(([0.0], q)) if q.shape[-1] == 3 else q
-                self.q = self.normalize()
+                self.normalize()
         self.w = self.q[0]
         self.v = self.q[1:]
         self.x, self.y, self.z = self.v
@@ -56,6 +56,13 @@ class Quaternion:
         return Quaternion(self.q + p.q)
 
     def __mul__(self, p):
+        if not hasattr(p, 'q'):
+            p = Quaternion(p)
+        return Quaternion(self.product(p.q))
+
+    def __matmul__(self, p):
+        if not hasattr(p, 'q'):
+            p = Quaternion(p)
         return Quaternion(self.product(p.q))
 
     def __pow__(self, y, *args):
@@ -74,7 +81,7 @@ class Quaternion:
         return all(self.q == np.array([1.0, 0.0, 0.0, 0.0]))
 
     def normalize(self):
-        return self.q/np.linalg.norm(self.q)
+        self.q /= np.linalg.norm(self.q)
 
     def conjugate(self):
         """
@@ -103,37 +110,36 @@ class Quaternion:
         return self.q*np.array([1.0, -1.0, -1.0, -1.0])
 
     def conj(self):
-        """
-        Synonym to method conjugate().
+        """Synonym to method conjugate()
         """
         return self.conjugate()
 
     def inverse(self):
+        """Inverse Quaternion
+        """
         if self.is_versor():
             return self.conjugate()
-        return self.conjugate() / np.linalg.norm(self.q) 
+        return self.conjugate() / np.linalg.norm(self.q)
 
     def exponential(self):
+        """Exponential of Quaternion
         """
-        Eponential of the Quaternion
-        """
-        qv_norm = np.linalg.norm(self.v)
-        scalar = np.cos(qv_norm)
-        vector = self.v*np.sin(qv_norm)/qv_norm
-        q_exp = np.concatenate(([scalar], vector))
+        t = np.linalg.norm(self.v)
+        u = self.v/t
+        q_exp = np.concatenate(([np.cos(t)], u*np.sin(t)))
         if self.is_pure():
             return q_exp
         return np.e**self.w * q_exp
 
     def logarithm(self):
+        """Logarithm of Quaternion
         """
-        Logarithm of Quaternion
-        """
-        qv_norm = np.linalg.norm(self.v)
-        phi = np.arctan2(qv_norm, self.w)
+        v_norm = np.linalg.norm(self.v)
+        u = self.v / v_norm
+        t = np.arctan(v_norm/self.w)
         if self.is_pure():
-            return np.concatenate(([0.0], self.v*phi/np.sin(phi)))
-        return np.concatenate((np.log(np.linalg.norm(self.q)), self.v*phi/qv_norm))
+            return np.concatenate(([0.0], u*t))
+        return np.concatenate((np.log(np.linalg.norm(self.q)), u*t))
 
     def product(self, q):
         """
@@ -282,8 +288,7 @@ class Quaternion:
                [-0.00284403 -0.29514739]])
 
         """
-        if type(a) != np.ndarray:
-            a = np.array(a)
+        a = np.array(a)
         if a.shape[0] != 3:
             raise ValueError("Expected `a` to have shape (3, N), got {}.".format(a.shape))
         return self.to_DCM()@a
