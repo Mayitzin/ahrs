@@ -23,10 +23,147 @@ References
     (http://www.iri.upc.edu/files/scidoc/2068-Accurate-Computation-of-Quaternions-from-Rotation-Matrices.pdf)
 .. [Eberly] Eberly, D. (2010) Quaternion Algebra and Calculus. Geometric Tools.
     https://www.geometrictools.com/Documentation/Quaternions.pdf
+.. [Itzhack] Y. Bar-Itzhack. New method for extracting the quaternion from a
+    rotation matrix. Journal of Guidance, Control, and Dynamics,
+    23(6):1085–1087, 2000. (https://arc.aiaa.org/doi/abs/10.2514/2.4654)
+.. [Hughes] P. Hughes. Spacecraft Attitude Dynamics. 1986.
+.. [Markley] F. Landis Markley. Unit Quaternion from Rotation Matrix. Journal
+    of Guidance, Control, and Dynamics. Vol 31, Num 2. 2008.
+    (https://arc.aiaa.org/doi/pdf/10.2514/1.31730)
 
 """
 
 import numpy as np
+
+def hughes(dcm):
+    """
+    Obtain a Quaternion from a Direction Cosine Matrix using Hughe's method [Hughes]_.
+
+    Parameters
+    ----------
+    dcm : array
+        3-by-3 Direction Cosine Matrix.
+
+    Returns
+    -------
+    q : array
+        Quaternion.
+    """
+    tr = dcm.trace()
+    if tr == 3.0:
+        # There is no rotation
+        return np.array([1., 0., 0., 0.])
+    n = 0.5*np.sqrt(1.0 + tr)
+    if n == 0:
+        e = np.sqrt((1.0+np.diag(R))/2.0)
+    else:
+        e = 0.25*np.array([dcm[1, 2]-dcm[2, 1], dcm[2, 0]-dcm[0, 2], dcm[0, 1]-dcm[1, 0]])/n
+    return np.concatenate(([n], e))
+
+def sarabandi(dcm, eta=0.0):
+    """
+    Obtain a Quaternion from a Direction Cosine Matrix using Sarabandi's method
+    [Sarabandi]_.
+
+    Parameters
+    ----------
+    dcm : array
+        3-by-3 Direction Cosine Matrix.
+    eta : float
+        Threshold
+
+    Returns
+    -------
+    q : array
+        Quaternion.
+    """
+    # Get elements of R
+    r11, r12, r13 = dcm[0, 0], dcm[0, 1], dcm[0, 2]
+    r21, r22, r23 = dcm[1, 0], dcm[1, 1], dcm[1, 2]
+    r31, r32, r33 = dcm[2, 0], dcm[2, 1], dcm[2, 2]
+    # Compute qw
+    dw = r11+r22+r33
+    if dw > eta:
+        qw = 0.5*np.sqrt(1.0+dw)
+    else:
+        nom = (r32-r23)**2+(r13-r31)**2+(r21-r12)**2
+        denom = 3.0-dw
+        qw = 0.5*np.sqrt(nom/denom)
+    # Compute qx
+    dx = r11-r22-r33
+    if dx > eta:
+        qx = 0.5*np.sqrt(1.0+dx)
+    else:
+        nom = (r32-r23)**2+(r12+r21)**2+(r31+r13)**2
+        denom = 3.0-dx
+        qx = 0.5*np.sqrt(nom/denom)
+    # Compute qy
+    dy = -r11+r22-r33
+    if dy > eta:
+        qy = 0.5*np.sqrt(1.0+dy)
+    else:
+        nom = (r13-r31)**2+(r12+r21)**2+(r23+r32)**2
+        denom = 3.0-dy
+        qy = 0.5*np.sqrt(nom/denom)
+    # Compute qz
+    dz = -r11-r22+r33
+    if dz > eta:
+        qz = 0.5*np.sqrt(1.0+dz)
+    else:
+        nom = (r21-r12)**2+(r31+r13)**2+(r23+r32)**2
+        denom = 3.0-dz
+        qz = 0.5*np.sqrt(nom/denom)
+    return np.array([qw, qx, qy, qz])
+
+def itzhack(dcm, version=3):
+    """
+    Obtain a Quaternion from a Direction Cosine Matrix using Bar-Itzhack's
+    method [Itzhack]_.
+
+    Versions 1 and 2 are used twith orthogonal matrices (which all rotation
+    matrices should be.)
+
+    Parameters
+    ----------
+    dcm : array
+        3-by-3 Direction Cosine Matrix.
+    version : int
+        Version used to compute the Quaternion. Defaults to 3.
+
+    Returns
+    -------
+    q : array
+        Quaternion.
+    """
+    is_orthogonal = np.isclose(np.linalg.det(dcm)**2, 1.0) and np.isclose(R@R.T, np.eye(3)).all()
+    if is_orthogonal:
+        if version == 1:
+            K2 = np.array([
+                [dcm[0, 0]-dcm[1, 1], dcm[1, 0]+dcm[0, 1], dcm[2, 0], -dcm[2, 1]],
+                [dcm[1, 0]+dcm[0, 1], dcm[1, 1]-dcm[0, 0], dcm[2, 1], dcm[2, 0]],
+                [dcm[2, 0], dcm[2, 1], -dcm[0, 0]-dcm[1, 1], dcm[0, 1]-dcm[1, 0]],
+                [-dcm[2, 1], dcm[2, 0], dcm[0, 1]-dcm[1, 0], dcm[0, 0]+dcm[1, 1]]])/2.0
+            eigval, eigvec = np.linalg.eig(K2)
+            q = eigvec[:, np.where(eigval == 1.0)[0]]
+            return np.roll(q, 1)
+        if version == 2:
+            K3 = np.array([
+                [dcm[0, 0]-dcm[1, 1]-dcm[2, 2], dcm[1, 0]+dcm[0, 1], dcm[2, 0]+dcm[0, 2], dcm[1, 2]-dcm[2, 1]],
+                [dcm[1, 0]+dcm[0, 1], dcm[1, 1]-dcm[0, 0]-dcm[2, 2], dcm[2, 1]+dcm[1, 2], dcm[2, 0]-dcm[0, 2]],
+                [dcm[2, 0]+dcm[0, 2], dcm[2, 1]+dcm[1, 2], dcm[2, 2]-dcm[0, 0]-dcm[1, 1], dcm[0, 1]-dcm[1, 0]],
+                [dcm[1, 2]-dcm[2, 1], dcm[2, 0]-dcm[0, 2], dcm[0, 1]-dcm[1, 0], dcm[0, 0]+dcm[1, 1]+dcm[2, 2]]])/3.0
+            eigval, eigvec = np.linalg.eig(K)
+            q = eigvec[:, np.where(eigval == 1.0)[0]]
+            return np.roll(q, 1)
+    # Non-orthogonal DCM. Use version 3
+    K3 = np.array([
+        [dcm[0, 0]-dcm[1, 1]-dcm[2, 2], dcm[1, 0]+dcm[0, 1], dcm[2, 0]+dcm[0, 2], dcm[1, 2]-dcm[2, 1]],
+        [dcm[1, 0]+dcm[0, 1], dcm[1, 1]-dcm[0, 0]-dcm[2, 2], dcm[2, 1]+dcm[1, 2], dcm[2, 0]-dcm[0, 2]],
+        [dcm[2, 0]+dcm[0, 2], dcm[2, 1]+dcm[1, 2], dcm[2, 2]-dcm[0, 0]-dcm[1, 1], dcm[0, 1]-dcm[1, 0]],
+        [dcm[1, 2]-dcm[2, 1], dcm[2, 0]-dcm[0, 2], dcm[0, 1]-dcm[1, 0], dcm[0, 0]+dcm[1, 1]+dcm[2, 2]]])/3.0
+    eigval, eigvec = np.linalg.eig(K)
+    q = eigvec[:, np.argmax(eigval)]
+    return np.roll(q, 1)
 
 class Quaternion:
     """
@@ -37,7 +174,7 @@ class Quaternion:
     --------
     >>> from ahrs.common import Quaternion
     >>> q = Quaternion([1., 2., 3., 4.])
-    >>> q
+    >>> str(q)
     (0.1826 +0.3651i +0.5477j +0.7303k)
     >>> x = [1., 2., 3.]
     >>> q.rot(x)
@@ -55,17 +192,17 @@ class Quaternion:
 
     But multiplication operators are overriden to return quaternions
 
-    >>> q1*q2
-    (-0.4969 +0.1988i +0.7454j +0.3975k)
-    >>> q1@q2
-    (-0.4969 +0.1988i +0.7454j +0.3975k)
+    >>> str(q1*q2)
+    '(-0.4969 +0.1988i +0.7454j +0.3975k)'
+    >>> str(q1@q2)
+    '(-0.4969 +0.1988i +0.7454j +0.3975k)'
 
     Basic operators are also overriden and return quaternions
 
-    >>> q1+q2
-    (0.4619 +0.4868i +0.5117j +0.5366k)
-    >>> q1-q2
-    (-0.6976 -0.2511i +0.1954j +0.6420k)
+    >>> str(q1+q2)
+    '(0.4619 +0.4868i +0.5117j +0.5366k)'
+    >>> str(q1-q2)
+    '(-0.6976 -0.2511i +0.1954j +0.6420k)'
 
     Pure quaternions are built from 3-element arrays
 
@@ -420,9 +557,44 @@ class Quaternion:
             [2.0*(self.x*self.y+self.w*self.z), 1.0-2.0*(self.x**2+self.z**2), 2.0*(self.y*self.z-self.w*self.x)],
             [2.0*(self.x*self.z-self.w*self.y), 2.0*(self.w*self.x+self.y*self.z), 1.0-2.0*(self.x**2+self.y**2)]])
 
+    def from_DCM(self, dcm, method='shepperd', **kw):
+        """
+        Set quaternion from given Direction Cosine Matrix.
+
+        Parameters
+        ----------
+        dcm : array
+            3-by-3 Direction Cosine Matrix.
+
+        References
+        ----------
+        .. [Curtis] H. D. Curtis. Orbital Mechanics for Engineering Students.
+          (https://en.wikipedia.org/wiki/Orbital_Mechanics_for_Engineering_Students)
+
+        """
+        dcm = np.array(dcm)
+        if dcm.shape != (3, 3):
+            return None
+
+        if method.lower() == 'hughes':
+            self.q = hughes(dcm)
+        if method.lower() == 'sarabandi':
+            self.q = sarabandi(dcm, eta=kw.get('threshold', 0.0))
+        if method.lower() == 'itzhack':
+            self.q = itzhack(dcm, version=kw.get('version', 3))
+
+        self.normalize()
+        self.w, self.x, self.y, self.z = self.q
+
     def from_angles(self, angles):
         """
-        Create a quaternion from given Euler angles.
+        Set quaternion from given Euler angles.
+
+        Parameters
+        ----------
+        angles : array
+            3 Euler angles in following order: roll -> pitch -> yaw.
+
         """
         angles = np.array(angles)
         if angles.ndim != 1 or angles.shape[0] != 3:
