@@ -23,13 +23,18 @@ References
     (http://www.iri.upc.edu/files/scidoc/2068-Accurate-Computation-of-Quaternions-from-Rotation-Matrices.pdf)
 .. [Eberly] Eberly, D. (2010) Quaternion Algebra and Calculus. Geometric Tools.
     https://www.geometrictools.com/Documentation/Quaternions.pdf
-.. [Itzhack] Y. Bar-Itzhack. New method for extracting the quaternion from a
-    rotation matrix. Journal of Guidance, Control, and Dynamics,
+.. [Itzhack] Y. Bar-Itzhack. New method for Extracting the Quaternion from a
+    Rotation Matrix. Journal of Guidance, Control, and Dynamics,
     23(6):1085–1087, 2000. (https://arc.aiaa.org/doi/abs/10.2514/2.4654)
 .. [Hughes] P. Hughes. Spacecraft Attitude Dynamics. 1986.
 .. [Markley] F. Landis Markley. Unit Quaternion from Rotation Matrix. Journal
     of Guidance, Control, and Dynamics. Vol 31, Num 2. 2008.
     (https://arc.aiaa.org/doi/pdf/10.2514/1.31730)
+.. [Curtis] H. D. Curtis. Orbital Mechanics for Engineering Students.
+    (https://en.wikipedia.org/wiki/Orbital_Mechanics_for_Engineering_Students)
+.. [Grosskatthoefer] K. Grosskatthoefer. Introduction into quaternions from
+    spacecraft attitude representation. TU Berlin. 2012.
+    (http://www.tu-berlin.de/fileadmin/fg169/miscellaneous/Quaternions.pdf)
 
 """
 
@@ -50,11 +55,12 @@ def hughes(dcm):
         Quaternion.
     """
     tr = dcm.trace()
-    if tr == 3.0:
-        # There is no rotation
+    if np.isclose(tr, 3.0):
+        # No rotation. DCM is identity.
         return np.array([1., 0., 0., 0.])
     n = 0.5*np.sqrt(1.0 + tr)
-    if n == 0:
+    if np.isclose(n, 0):
+        # trace = -1
         e = np.sqrt((1.0+np.diag(R))/2.0)
     else:
         e = 0.25*np.array([dcm[1, 2]-dcm[2, 1], dcm[2, 0]-dcm[0, 2], dcm[0, 1]-dcm[1, 0]])/n
@@ -135,7 +141,7 @@ def itzhack(dcm, version=3):
     q : array
         Quaternion.
     """
-    is_orthogonal = np.isclose(np.linalg.det(dcm)**2, 1.0) and np.isclose(R@R.T, np.eye(3)).all()
+    is_orthogonal = np.isclose(np.linalg.det(dcm)**2, 1.0) and np.isclose(dcm@dcm.T, np.eye(3)).all()
     if is_orthogonal:
         if version == 1:
             K2 = np.array([
@@ -152,7 +158,7 @@ def itzhack(dcm, version=3):
                 [dcm[1, 0]+dcm[0, 1], dcm[1, 1]-dcm[0, 0]-dcm[2, 2], dcm[2, 1]+dcm[1, 2], dcm[2, 0]-dcm[0, 2]],
                 [dcm[2, 0]+dcm[0, 2], dcm[2, 1]+dcm[1, 2], dcm[2, 2]-dcm[0, 0]-dcm[1, 1], dcm[0, 1]-dcm[1, 0]],
                 [dcm[1, 2]-dcm[2, 1], dcm[2, 0]-dcm[0, 2], dcm[0, 1]-dcm[1, 0], dcm[0, 0]+dcm[1, 1]+dcm[2, 2]]])/3.0
-            eigval, eigvec = np.linalg.eig(K)
+            eigval, eigvec = np.linalg.eig(K3)
             q = eigvec[:, np.where(eigval == 1.0)[0]]
             return np.roll(q, 1)
     # Non-orthogonal DCM. Use version 3
@@ -161,7 +167,7 @@ def itzhack(dcm, version=3):
         [dcm[1, 0]+dcm[0, 1], dcm[1, 1]-dcm[0, 0]-dcm[2, 2], dcm[2, 1]+dcm[1, 2], dcm[2, 0]-dcm[0, 2]],
         [dcm[2, 0]+dcm[0, 2], dcm[2, 1]+dcm[1, 2], dcm[2, 2]-dcm[0, 0]-dcm[1, 1], dcm[0, 1]-dcm[1, 0]],
         [dcm[1, 2]-dcm[2, 1], dcm[2, 0]-dcm[0, 2], dcm[0, 1]-dcm[1, 0], dcm[0, 0]+dcm[1, 1]+dcm[2, 2]]])/3.0
-    eigval, eigvec = np.linalg.eig(K)
+    eigval, eigvec = np.linalg.eig(K3)
     q = eigvec[:, np.argmax(eigval)]
     return np.roll(q, 1)
 
@@ -557,7 +563,7 @@ class Quaternion:
             [2.0*(self.x*self.y+self.w*self.z), 1.0-2.0*(self.x**2+self.z**2), 2.0*(self.y*self.z-self.w*self.x)],
             [2.0*(self.x*self.z-self.w*self.y), 2.0*(self.w*self.x+self.y*self.z), 1.0-2.0*(self.x**2+self.y**2)]])
 
-    def from_DCM(self, dcm, method='shepperd', **kw):
+    def from_DCM(self, dcm, method='itzhack', **kw):
         """
         Set quaternion from given Direction Cosine Matrix.
 
@@ -568,8 +574,6 @@ class Quaternion:
 
         References
         ----------
-        .. [Curtis] H. D. Curtis. Orbital Mechanics for Engineering Students.
-          (https://en.wikipedia.org/wiki/Orbital_Mechanics_for_Engineering_Students)
 
         """
         dcm = np.array(dcm)
