@@ -35,10 +35,39 @@ References
 .. [Grosskatthoefer] K. Grosskatthoefer. Introduction into quaternions from
     spacecraft attitude representation. TU Berlin. 2012.
     (http://www.tu-berlin.de/fileadmin/fg169/miscellaneous/Quaternions.pdf)
+.. [Shepperd] S.W. Shepperd. "Quaternion from rotation matrix." Journal of
+    Guidance and Control, Vol. 1, No. 3, pp. 223-224, 1978.
+    (https://arc.aiaa.org/doi/10.2514/3.55767b)
+.. [Chiaverini] S. Chiaverini & B. Siciliano. The Unit Quaternion: A Useful
+    Tool for Inverse Kinematics of Robot Manipulators. Systems Analysis
+    Modelling Simulation. May 1999.
+    (https://www.researchgate.net/publication/262391661)
 
 """
 
 import numpy as np
+
+def chiaverini(dcm):
+    """
+    Obtain a Quaternion from a Direction Cosine Matrix using Chiaverini's
+    algebraic method [Chiaverini]_.
+
+    Parameters
+    ----------
+    dcm : array
+        3-by-3 Direction Cosine Matrix.
+
+    Returns
+    -------
+    q : array
+        Quaternion.
+    """
+    tr = dcm.trace()
+    n = 0.5*np.sqrt(1.0 + tr)
+    e = np.array([0.5*np.sign(dcm[2, 1]-dcm[1, 2])*np.sqrt(dcm[0, 0]-dcm[1, 1]-dcm[2, 2]+1.0),
+                  0.5*np.sign(dcm[0, 2]-dcm[2, 0])*np.sqrt(dcm[1, 1]-dcm[2, 2]-dcm[0, 0]+1.0),
+                  0.5*np.sign(dcm[1, 0]-dcm[0, 1])*np.sqrt(dcm[2, 2]-dcm[0, 0]-dcm[1, 1]+1.0)])
+    return np.concatenate(([n], e))
 
 def hughes(dcm):
     """
@@ -59,8 +88,7 @@ def hughes(dcm):
         # No rotation. DCM is identity.
         return np.array([1., 0., 0., 0.])
     n = 0.5*np.sqrt(1.0 + tr)
-    if np.isclose(n, 0):
-        # trace = -1
+    if np.isclose(n, 0):    # trace = -1: q_w = 0 (Pure Quaternion)
         e = np.sqrt((1.0+np.diag(R))/2.0)
     else:
         e = 0.25*np.array([dcm[1, 2]-dcm[2, 1], dcm[2, 0]-dcm[0, 2], dcm[0, 1]-dcm[1, 0]])/n
@@ -150,7 +178,7 @@ def itzhack(dcm, version=3):
                 [dcm[2, 0], dcm[2, 1], -dcm[0, 0]-dcm[1, 1], dcm[0, 1]-dcm[1, 0]],
                 [-dcm[2, 1], dcm[2, 0], dcm[0, 1]-dcm[1, 0], dcm[0, 0]+dcm[1, 1]]])/2.0
             eigval, eigvec = np.linalg.eig(K2)
-            q = eigvec[:, np.where(eigval == 1.0)[0]]
+            q = eigvec[:, np.where(np.isclose(eigval, 1.0))[0]].flatten().real
             return np.roll(q, 1)
         if version == 2:
             K3 = np.array([
@@ -159,7 +187,7 @@ def itzhack(dcm, version=3):
                 [dcm[2, 0]+dcm[0, 2], dcm[2, 1]+dcm[1, 2], dcm[2, 2]-dcm[0, 0]-dcm[1, 1], dcm[0, 1]-dcm[1, 0]],
                 [dcm[1, 2]-dcm[2, 1], dcm[2, 0]-dcm[0, 2], dcm[0, 1]-dcm[1, 0], dcm[0, 0]+dcm[1, 1]+dcm[2, 2]]])/3.0
             eigval, eigvec = np.linalg.eig(K3)
-            q = eigvec[:, np.where(eigval == 1.0)[0]]
+            q = eigvec[:, np.where(np.isclose(eigval, 1.0))[0]].flatten().real
             return np.roll(q, 1)
     # Non-orthogonal DCM. Use version 3
     K3 = np.array([
@@ -168,8 +196,36 @@ def itzhack(dcm, version=3):
         [dcm[2, 0]+dcm[0, 2], dcm[2, 1]+dcm[1, 2], dcm[2, 2]-dcm[0, 0]-dcm[1, 1], dcm[0, 1]-dcm[1, 0]],
         [dcm[1, 2]-dcm[2, 1], dcm[2, 0]-dcm[0, 2], dcm[0, 1]-dcm[1, 0], dcm[0, 0]+dcm[1, 1]+dcm[2, 2]]])/3.0
     eigval, eigvec = np.linalg.eig(K3)
-    q = eigvec[:, np.argmax(eigval)]
+    q = eigvec[:, eigval.argmax()]
     return np.roll(q, 1)
+
+def shepperd(dcm):
+    """
+    Obtain a Quaternion from a Direction Cosine Matrix using Shepperd's
+    method [Shepperd]_.
+
+    Parameters
+    ----------
+    dcm : array
+        3-by-3 Direction Cosine Matrix.
+
+    Returns
+    -------
+    q : array
+        Quaternion.
+    """
+    b = np.concatenate(([dcm.trace()], np.diag(dcm)))
+    i = b.argmax()
+    if i == 0:
+        q = np.array([1.0+dcm[0, 0]+dcm[1, 1]+dcm[2, 2], dcm[1, 2]-dcm[2, 1], dcm[2, 0]-dcm[0, 2], dcm[0, 1]-dcm[1, 0]])
+    elif i == 1:
+        q = np.array([dcm[1, 2]-dcm[2, 1], 1.0+dcm[0, 0]-dcm[1, 1]-dcm[2, 2], dcm[1, 0]+dcm[0, 1], dcm[2, 0]+dcm[0, 2]])
+    elif i == 2:
+        q = np.array([dcm[2, 0]-dcm[0, 2], dcm[1, 0]+dcm[0, 1], 1.0-dcm[0, 0]+dcm[1, 1]-dcm[2, 2], dcm[2, 1]+dcm[1, 2]])
+    else:
+        q = np.array([dcm[0, 1]-dcm[1, 0], dcm[2, 0]+dcm[0, 2], dcm[2, 1]+dcm[1, 2], 1.0-dcm[0, 0]-dcm[1, 1]+dcm[2, 2]])
+    q /= 2.0*np.sqrt(q[i])
+    return q
 
 class Quaternion:
     """
@@ -257,7 +313,7 @@ class Quaternion:
 
     def __mul__(self, p):
         if not hasattr(p, 'q'):
-            p = Quaternion(p, normalize=False)
+            p = Quaternion(p)
         return Quaternion(self.product(p.q))
 
     def __matmul__(self, p):
@@ -563,7 +619,7 @@ class Quaternion:
             [2.0*(self.x*self.y+self.w*self.z), 1.0-2.0*(self.x**2+self.z**2), 2.0*(self.y*self.z-self.w*self.x)],
             [2.0*(self.x*self.z-self.w*self.y), 2.0*(self.w*self.x+self.y*self.z), 1.0-2.0*(self.x**2+self.y**2)]])
 
-    def from_DCM(self, dcm, method='itzhack', **kw):
+    def from_DCM(self, dcm, method='shepperd', **kw):
         """
         Set quaternion from given Direction Cosine Matrix.
 
@@ -578,15 +634,21 @@ class Quaternion:
         """
         dcm = np.array(dcm)
         if dcm.shape != (3, 3):
-            return None
-
+            raise TypeError("Expected matrix of size (3, 3). Got {}".format(X.shape))
+        q = np.array([1., 0., 0., 0.])
         if method.lower() == 'hughes':
-            self.q = hughes(dcm)
-        if method.lower() == 'sarabandi':
-            self.q = sarabandi(dcm, eta=kw.get('threshold', 0.0))
+            q = hughes(dcm)
+        if method.lower() == 'chiaverini':
+            q = chiaverini(dcm)
+        if method.lower() == 'shepperd':
+            q = shepperd(dcm)
         if method.lower() == 'itzhack':
-            self.q = itzhack(dcm, version=kw.get('version', 3))
-
+            q = itzhack(dcm, version=kw.get('version', 3))
+        if method.lower() == 'sarabandi':
+            q = sarabandi(dcm, eta=kw.get('threshold', 0.0))
+        if q is None:
+            raise KeyError("Given method '{}' is not implemented.".format(method))
+        self.q = q.copy()
         self.normalize()
         self.w, self.x, self.y, self.z = self.q
 
@@ -641,3 +703,24 @@ class Quaternion:
             [w[1], -w[2], 0.0, w[0]],
             [w[2], w[1], -w[0], 0.0]])
         return F@self.q
+
+if __name__ == "__main__":
+    # Test some Quaternion methods
+    print("Testing methods to obtain Quaternions from DCM")
+    q = Quaternion(np.random.random(4)*2.0-1.0)
+    R = q.to_DCM()
+    print("\n Original   = {}\n".format(q.q))
+    q.from_DCM(R, method='hughes')
+    print(" Hughes     = {}".format(q.q))
+    q.from_DCM(R, method='chiaverini')
+    print(" Chiaverini = {}".format(q.q))
+    q.from_DCM(R, method='itzhack', version=1)
+    print(" Itzhack(1) = {}".format(q.q))
+    q.from_DCM(R, method='itzhack', version=2)
+    print(" Itzhack(2) = {}".format(q.q))
+    q.from_DCM(R, method='itzhack', version=3)
+    print(" Itzhack(3) = {}".format(q.q))
+    q.from_DCM(R, method='shepperd')
+    print(" Shepperd   = {}".format(q.q))
+    q.from_DCM(R, method='sarabandi')
+    print(" Sarabandi  = {}".format(q.q))
