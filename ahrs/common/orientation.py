@@ -912,7 +912,7 @@ def acc2q(a, return_euler=False):
         ey = np.arctan2(-ax, np.sqrt(ay*ay + az*az))
         ez = 0.0
         if return_euler:
-            return [ex*RAD2DEG, ey*RAD2DEG, ez*RAD2DEG]
+            return np.array([ex, ey, ez])*RAD2DEG
         # Euler to Quaternion
         cx2 = np.cos(ex/2.0)
         sx2 = np.sin(ex/2.0)
@@ -928,7 +928,180 @@ def acc2q(a, return_euler=False):
         qx = qrx/q_norm
         qy = qry/q_norm
         qz = qrz/q_norm
-    return [qw, qx, qy, qz]
+    return np.array([qw, qx, qy, qz])
+
+def am2angles(a, m, in_deg=False):
+    """
+    Estimate pose from given acceleration and compass.
+
+    Parameters
+    ----------
+    a : array
+        N-by-3 array with N samples of 3 orthogonal accelerometers.
+    m : array
+        N-by-3 array with N samples of 3 orthogonal magnetometers.
+
+    Returns
+    -------
+    pose : array
+        Estimated Direct Cosine Matrix
+
+    References
+    ----------
+    .. [DT0058] A. Vitali. Computing tilt measurement and tilt-compensated
+      e-compass. ST Technical Document DT0058. October 2018.
+      (https://www.st.com/resource/en/design_tip/dm00269987.pdf)
+    """
+    # Normalization of 2D arrays
+    a /= np.linalg.norm(a, axis=1)[:, None]
+    m /= np.linalg.norm(m, axis=1)[:, None]
+    angles = np.zeros((len(a), 3))   # Allocation of angles array
+    # Estimate tilt angles
+    angles[:, 0] = np.arctan2(a[:, 1], a[:, 2])
+    angles[:, 1] = np.arctan2(-a[:, 0], np.sqrt(a[:, 1]**2 + a[:, 2]**2))
+    # Estimate heading angle
+    my2 = m[:, 2]*np.sin(angles[:, 0]) - m[:, 1]*np.cos(angles[:, 0])
+    mz2 = m[:, 1]*np.sin(angles[:, 0]) + m[:, 2]*np.cos(angles[:, 0])
+    mx3 = m[:, 0]*np.cos(angles[:, 1]) + mz2*np.sin(angles[:, 1])
+    angles[:, 2] = np.arctan2(my2, mx3)
+    # Return in degrees or in radians
+    if in_deg:
+        return angles*RAD2DEG
+    return angles
+
+def triad(a, m, V1=None, V2=None, **kw):
+    """
+    Estimate pose from given acceleration and compass using TRIAD method.
+
+    Parameters
+    ----------
+    a : array
+        First 3-by-1 observation vector in body frame. Usually is normalized
+        acceleration vector a = [ax ay az]^T
+    m : array
+        Second 3-by-1 observation vector in body frame. Usually is normalized
+        magnetic field vector m = [mx my mz]^T
+    V1 : array
+        3-by-1 Reference vector 1. Defaults to gravity in navigation frame
+        g = [0 0 1]^T
+    V2 : array
+        3-by-1 Reference vector 2. Defaults to magnetic field in navigation
+        frame m = [cos(dip) 0 sin(dip)]^T, where dip is the magnetic dip in
+        local latitude
+
+    Extra Parameters
+    ----------------
+    dip : float
+        Magnetic dip in local latitude. Defaults to 66.47° corresponding to
+        Germany.
+
+    Returns
+    -------
+    pose : array
+        Estimated Direct Cosine Matrix
+
+    References
+    ----------
+    .. [TRIAD] M.D. Shuster et al. Three-Axis Attitude Determination from
+      Vector Observations. Journal of Guidance and Control. Volume 4. Number 1.
+      1981. Page 70 (http://www.malcolmdshuster.com/Pub_1981a_J_TRIAD-QUEST_scan.pdf)
+    .. [Shuster] M.D. Shuster. Deterministic Three-Axis Attitude Determination.
+      The Journal of the Astronautical Sciences. Vol 52. Number 3. September
+      2004. Pages 405-419 (http://www.malcolmdshuster.com/Pub_2004c_J_dirangs_AAS.pdf)
+    .. [WikiTRIAD] Triad method in Wikipedia. (https://en.wikipedia.org/wiki/Triad_method)
+    .. [Garcia] H. Garcia de Marina et al. UAV attitude estimation using
+      Unscented Kalman Filter and TRIAD. IEE 2016. (https://arxiv.org/pdf/1609.07436.pdf)
+    .. [CHall4] Chris Hall. Spacecraft Attitude Dynamics and Control.
+      Chapter 4: Attitude Determination. 2003.
+      (http://www.dept.aoe.vt.edu/~cdhall/courses/aoe4140/attde.pdf)
+    .. [iitbTRIAD] IIT Bombay Student Satellite Team. Triad Algorithm.
+      (https://www.aero.iitb.ac.in/satelliteWiki/index.php/Triad_Algorithm)
+    .. [MarkleyTRIAD] F.L. Makley et al. Fundamentals of Spacecraft Attitude
+      Determination and Control. 2014. Pages 184-186.
+    """
+    if V1 is None:
+        V1 = np.array([[0.], [0.], [1.]])
+    if V2 is None:
+        dip = kw.get('dip', 66.47)
+        V2 = np.array([[cosd(dip)], [0.0], [sind(dip)]])
+    # Normalized Observations
+    W1 = np.array(a / np.linalg.norm(a)).reshape((3, 1))
+    W2 = np.array(m / np.linalg.norm(m)).reshape((3, 1))
+    # First Triad
+    s2 = np.cross(W1, W2, axis=0) / np.linalg.norm(np.cross(W1, W2, axis=0))
+    s3 = np.cross(W1, np.cross(W1, W2, axis=0), axis=0) / np.linalg.norm(np.cross(W1, W2, axis=0))
+    # Second Triad
+    r2 = np.cross(V1, V2, axis=0) / np.linalg.norm(np.cross(V1, V2, axis=0))
+    r3 = np.cross(V1, np.cross(V1, V2, axis=0), axis=0) / np.linalg.norm(np.cross(V1, V2, axis=0))
+    # Solve TRIAD
+    Mobs = np.hstack((W1, s2, s3))
+    Mref = np.hstack((V1, r2, r3))
+    # return Mref@Mobs.T
+    return Mobs@Mref.T
+
+def quest(fb, mb, fn, mn, wf=1.0, wm=1.0):
+    """
+    Estimate pose from given acceleration and compass using TRIAD method.
+
+    Parameters
+    ----------
+    fb : array
+        3-by-1 Observation vector 1 in body frame. Usually is gravity vector
+        g = [0 0 1]^T
+    mb : array
+        3-by-1 Observation vector 2 in body frame. Usually is magnetic field
+        m = [cos(dip) 0 sin(dip)]^T, where dip is the magnetic dip in local
+        latitude
+    fn : array
+        3-by-1 Reference vector 1. Defaults to gravity in navigation frame
+    mn : array
+        3-by-1 Reference vector 2. Defaults to magnetic field in navigation frame
+
+    Extra Parameters
+    ----------------
+    dip : float
+        Magnetic dip in local latitude. Defaults to 66.47° corresponding to
+        Germany.
+
+    Returns
+    -------
+    pose : array
+        Estimated Direct Cosine Matrix
+
+    References
+    ----------
+    .. [TRIAD] M.D. Shuster et al. Three-Axis Attitude Determination from
+      Vector Observations. Journal of Guidance and Control. Volume 4. Number 1.
+      1981. Page 70 (http://www.malcolmdshuster.com/Pub_1981a_J_TRIAD-QUEST_scan.pdf)
+    .. [Shuster] M.D. Shuster. Deterministic Three-Axis Attitude Determination.
+      The Journal of the Astronautical Sciences. Vol 52. Number 3. September
+      2004. Pages 405-419 (http://www.malcolmdshuster.com/Pub_2004c_J_dirangs_AAS.pdf)
+    .. [WikiTRIAD] Triad method in Wikipedia. (https://en.wikipedia.org/wiki/Triad_method)
+    .. [Garcia] H. Garcia de Marina et al. UAV attitude estimation using
+      Unscented Kalman Filter and TRIAD. IEE 2016. (https://arxiv.org/pdf/1609.07436.pdf)
+    .. [CHall4] Chris Hall. Spacecraft Attitude Dynamics and Control.
+      Chapter 4: Attitude Determination. 2003.
+      (http://www.dept.aoe.vt.edu/~cdhall/courses/aoe4140/attde.pdf)
+    .. [MarkleyQUEST] F.L. Makley et al. Fundamentals of Spacecraft Attitude
+      Determination and Control. 2014. Pages 189-191.
+    """
+    fb = np.array(fb / np.linalg.norm(fb)).reshape((3, 1))
+    mb = np.array(mb / np.linalg.norm(mb)).reshape((3, 1))
+    fn = np.array(fn / np.linalg.norm(fn)).reshape((3, 1))
+    mn = np.array(mn / np.linalg.norm(mn)).reshape((3, 1))
+    # K matrix
+    B = wf*(fb@fn.T) + wm*(mb@mn.T)
+    K11 = B + B.T - np.eye(3)*np.trace(B)
+    K22 = np.trace(B)
+    K12 = wf*np.cross(fb, fn, axis=0) + wm*np.cross(mb, mn, axis=0)
+    K21 = K12.T
+    K = np.vstack((np.hstack((K11, K12)), np.hstack((K21, [[K22]]))))
+    # Find eigenvalues and eigenvectors
+    eigvals, eigvecs = np.linalg.eig(K)
+    # Look for the largest eigenvalue
+    index = np.argmax(eigvals)
+    q = eigvecs[:, index]
+    return q/np.linalg.norm(q)
 
 def slerp(q0, q1, t_array, **kwgars):
     """

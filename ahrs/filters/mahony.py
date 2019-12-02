@@ -100,10 +100,10 @@ class Mahony:
         # Assert values
         q /= np.linalg.norm(q)
         qw, qx, qy, qz = q[0], q[1], q[2], q[3]
-        # Estimated direction of gravity and magnetic flux
+        # Estimate orientation error
         v = np.array([2.0*(qx*qz - qw*qy),
-                    2.0*(qw*qx + qy*qz),
-                    qw**2 - qx**2 - qy**2 + qz**2])
+                      2.0*(qw*qx + qy*qz),
+                      qw**2 - qx**2 - qy**2 + qz**2])
         e = np.cross(a, v)
         self.eInt = self.eInt + e*self.samplePeriod if self.Ki > 0 else np.array([0.0, 0.0, 0.0])
         # Apply feedback term
