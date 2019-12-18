@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-Mahony Algorithm as proposed by R. Mahony et al [1]_ in 2010.
+Mahony Algorithm as proposed by R. Mahony et al [Mahony]_ in 2010.
 
-This implementation is based in the one made by S. Madgwick.
+This implementation is based on the one made by S. Madgwick.
 
 References
 ----------
-.. [1] Nonlinear Complementary Filters on the Special Orthogonal Group; R.
-   Mahony et al. 2010. (https://hal.archives-ouvertes.fr/hal-00488376/document)
+.. [Mahony] Mahony et al. Nonlinear Complementary Filters on the Special
+   Orthogonal Group; R. 2010.
+   (https://hal.archives-ouvertes.fr/hal-00488376/document)
 
 """
 
@@ -174,3 +175,15 @@ class Mahony:
         q += qDot*self.samplePeriod
         q /= np.linalg.norm(q)
         return q
+
+if __name__ == '__main__':
+    from ahrs.utils import plot
+    data = np.genfromtxt('../../tests/repoIMU.csv', dtype=float, delimiter=';', skip_header=2)
+    acc = data[:, 5:8]
+    gyr = data[:, 8:11]
+    mahony = Mahony()
+    num_samples = data.shape[0]
+    qts = np.tile([1., 0., 0., 0.], (num_samples, 1))
+    for i in range(1, num_samples):
+        qts[i] = mahony.updateIMU(qts[i-1], gyr[i], acc[i])
+    plot(data[:, 1:5], qts, subtitles=["Reference Quaternions", "Estimated Quaternions"])

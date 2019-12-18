@@ -634,7 +634,7 @@ class Quaternion:
         """
         dcm = np.array(dcm)
         if dcm.shape != (3, 3):
-            raise TypeError("Expected matrix of size (3, 3). Got {}".format(X.shape))
+            raise TypeError("Expected matrix of size (3, 3). Got {}".format(dcm.shape))
         q = np.array([1., 0., 0., 0.])
         if method.lower() == 'hughes':
             q = hughes(dcm)

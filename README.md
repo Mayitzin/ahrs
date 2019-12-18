@@ -1,5 +1,10 @@
 # AHRS: Attitude and Heading Reference Systems
 
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/ahrs)
+![PyPI - License](https://img.shields.io/pypi/l/ahrs)
+![PyPI](https://img.shields.io/pypi/v/ahrs)
+[![Downloads](https://pepy.tech/badge/ahrs)](https://pepy.tech/project/ahrs)
+
 AHRS is a zoo of functions and objects written in Python helping you to estimate the orientation and position of robotic systems.
 
 Orginally, an [AHRS](https://en.wikipedia.org/wiki/Attitude_and_heading_reference_system) is defined as a set of orthogonal sensors providing attitude information about an aircraft. This field is now expanding to smaller devices, like wearables, automated transportation and all kinds of robots in motion.
@@ -95,7 +100,6 @@ Also works by simply passing the data to a desired filter, and it will automatic
 >>> orientation.Q.shape
 (6959, 4)
 ```
-
 
 ## Documentation
 

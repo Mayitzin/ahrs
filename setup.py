@@ -22,7 +22,7 @@ from setuptools import setup, find_packages
 from ahrs import get_version
 
 if sys.version_info < (3, 6):
-    raise RuntimeError("Python version >= 3.6 required.")
+    raise SystemError("Python version >= 3.6 required.")
 
 REPOSITORY_URL = 'https://github.com/Mayitzin/ahrs/'
 
@@ -52,7 +52,9 @@ metadata = dict(
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
+        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Topic :: Scientific/Engineering',
         'Topic :: Scientific/Engineering :: Physics',
         'Topic :: Software Development :: Embedded Systems',
