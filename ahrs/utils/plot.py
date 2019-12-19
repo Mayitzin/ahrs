@@ -11,15 +11,13 @@ Plotting tools
 import numpy as np
 import matplotlib.pyplot as plt
 
-__all__ = ['plot', 'plot_sensors', 'plot_euler', 'plot_quaternions']
-
-def hex_to_int(color):
+def _hex_to_int(color):
     """Convert hex value to tuple of type int with values between 0 and 255
     """
     a = color.lstrip('#')
     return tuple(int(a[i:i+2], 16) for i in (0, 2, 4, 6))
 
-def hex_to_float(color):
+def _hex_to_float(color):
     """Convert hex value to tuple of type float with values between 0.0 and 1.0
     """
     a = color.lstrip('#')
@@ -29,8 +27,8 @@ COLORS = [
     "#FF0000FF", "#00AA00FF", "#0000FFFF", "#999933FF",
     "#FF8888FF", "#88AA88FF", "#8888FFFF", "#999955FF",
     "#660000FF", "#005500FF", "#000088FF", "#666600FF"]
-COLORS_INTS = [hex_to_int(c) for c in COLORS]
-COLORS_FLOATS = [hex_to_float(c) for c in COLORS]
+COLORS_INTS = [_hex_to_int(c) for c in COLORS]
+COLORS_FLOATS = [_hex_to_float(c) for c in COLORS]
 
 def plot(*data, **kw):
     """
@@ -44,6 +42,22 @@ def plot(*data, **kw):
     data : array
         Arrays with the contents of data to plot.
 
+    Extra Parameters
+    ----------------
+    title : int or str
+        Window title setting figure number or label.
+    subtitles : list
+        List of strings of the titles of each subplot.
+    labels : list
+        List of labels that will be displayed in each subplot's legend.
+    xlabels : list
+        List of strings of the labels of each subplot's X-axis.
+    ylabels : list
+        List of strings of the labels of each subplot's Y-axis.
+    yscales : str
+        List of strings of the scales of each subplot's Y-axis. It supports
+        matlabs defaults values: "linear", "log", "symlog" and "logit"
+
     Examples
     --------
     >>> from ahrs.utils import plot
@@ -53,24 +67,29 @@ def plot(*data, **kw):
     >>> plot(data, data_2)
     >>> plot(data, data_2, subtitles=["data", "data 2"])
     """
-    title = kw.get("title", 0)
-    subtitles = kw.get("subtitles", None)
-    xlabels = kw.get("xlabels", None)
-    ylabels = kw.get("ylabels", None)
-    yscales = kw.get("yscales", None)
+    title = kw.get("title")
+    subtitles = kw.get("subtitles")
+    labels = kw.get("labels")
+    xlabels = kw.get("xlabels")
+    ylabels = kw.get("ylabels")
+    yscales = kw.get("yscales")
     num_subplots = len(data)
     fig, axs = plt.subplots(num_subplots, 1, num=title, squeeze=False)
     for i, d in enumerate(data):
         d = np.array(d)
-        # if isinstance(d, list):
         if d.ndim < 2:
-            axs[i, 0].plot(d, color=COLORS[0], lw=0.5, ls='-') # Plot a single red line in subplot
+            label = labels[i][0] if labels else None
+            axs[i, 0].plot(d, color=COLORS[0], lw=0.5, ls='-', label=label) # Plot a single red line in subplot
         else:
             d_sz = d.shape
             if d_sz[0] > d_sz[1]:
                 d = d.T
             for j, row in enumerate(d):
-                axs[i, 0].plot(row, color=COLORS[j], lw=0.5, ls='-')
+                label = None
+                if labels:
+                    if len(labels[i]) == len(d):
+                        label = labels[i][j]
+                axs[i, 0].plot(row, color=COLORS[j], lw=0.5, ls='-', label=label)
         if subtitles:
             axs[i, 0].set_title(subtitles[i])
         if xlabels:
@@ -79,6 +98,9 @@ def plot(*data, **kw):
             axs[i, 0].set_ylabel(ylabels[i])
         if yscales:
             axs[i, 0].set_yscale(yscales[i])
+        if labels:
+            if len(labels[i]) > 0:
+                axs[i, 0].legend(loc='lower right')
     fig.tight_layout()
     plt.show()
 
