@@ -17,51 +17,69 @@ AHRS is compatible with __Python 3.6__ and above.
 
 AHRS may be installed using [pip](https://pip.pypa.io):
 
-```sh
+```
 pip install ahrs
 ```
 
 Or directly from the repository:
 
-```sh
+```
 git clone https://github.com/Mayitzin/ahrs.git
 cd ahrs
 python setup.py install
 ```
 
-AHRS depends on the most distributed packages of Python. If you don't have them, they will be automatically downloaded and installed.
+AHRS depends on the most distributed packages of scientifc Python environments ([NumPy](https://numpy.org/), [SciPy](https://www.scipy.org/) and [matplotlib](https://matplotlib.org/)). If you don't have them, they will be automatically downloaded and installed.
 
 ## Using AHRS
 
 To play with orientations, for example, we can use the `orientation` module.
 
 ```py
->>> import ahrs
->>> # Rotation matrix of 30.0 degrees around X-axis
-... ahrs.common.orientation.rotation('x', 30.0)
-array([[ 1.       ,  0.       ,  0.       ],
-       [ 0.       ,  0.8660254, -0.5      ],
-       [ 0.       ,  0.5      ,  0.8660254]])
->>> # Rotation sequence of the form: R_y(10.0)@R_x(20.0)@R_y(30.0)
-... ahrs.common.orientation.rot_seq('yXy', [10.0, 20.0, 30.0])
-array([[ 0.77128058,  0.05939117,  0.63371836],
-       [ 0.17101007,  0.93969262, -0.29619813],
-       [-0.61309202,  0.33682409,  0.71461018]])
+>>> from ahrs.common import orientation
+>>> # Rotation product: R_y(10.0) @ R_x(20.0) @ R_y(30.0)
+... Rx = orientation.rotation('x', 10.0)
+>>> Ry = orientation.rotation('y', 20.0)
+>>> Rz = orientation.rotation('z', 30.0)
+>>> Rx@Ry@Rz
+array([[ 0.81379768 -0.46984631  0.34202014]
+       [ 0.54383814  0.82317294 -0.16317591]
+       [-0.20487413  0.31879578  0.92541658]])
+>>> # Same rotation sequence but with single call to rot_seq()
+... orientation.rot_seq('xyz', [10.0, 20.0, 30.0])
+array([[ 0.81379768 -0.46984631  0.34202014]
+       [ 0.54383814  0.82317294 -0.16317591]
+       [-0.20487413  0.31879578  0.92541658]])
 ```
 
-It also works nicely with Quaternions.
+It now includes the class `Quaternion` to easily handle the orientation estimation with quaternions.
 
 ```py
->>> import numpy as np
->>> q = np.random.random(4)
->>> # It automatically normalizes any given vector
-... ahrs.common.orientation.q2R(q)
-array([[ 0.76811067,  0.3546719 ,  0.53311709],
-       [ 0.55044928,  0.05960693, -0.83273802],
-       [-0.32712625,  0.93308888, -0.14944417]])
+>>> from ahrs import Quaternion
+>>> q1 = Quaternion()
+>>> str(q1)          # Empty quaternions default to identity quaternion
+'(1.0000 +0.0000i +0.0000j +0.0000k)'
+>>> q2 = Quaternion([1.0, 2.0, 3.0])
+>>> str(q2)          # 3-element vectors build pure quaternions
+'(0.0000 +0.2673i +0.5345j +0.8018k)'
+>>> q3 = Quaternion([1., 2., 3., 4.])
+>>> str(q3)          # All quaternions are normalized
+'(0.1826 +0.3651i +0.5477j +0.7303k)'
+>>> str(q2+q3)       # Use normal arithmetic operators to perform operations on quaternions
+'(0.0918 +0.3181i +0.5444j +0.7707k)'
+>>> q2.product(q3)   # Quaternion products are supported
+array([-0.97590007,  0.        ,  0.19518001,  0.09759001])
+>>> str(q2*q3)
+'(-0.9759 +0.0000i +0.1952j +0.0976k)'
+>>> q2.to_DCM()      # Conversions between representations are also implemented
+array([[-0.85714286,  0.28571429,  0.42857143],
+       [ 0.28571429, -0.42857143,  0.85714286],
+       [ 0.42857143,  0.85714286,  0.28571429]])
 ```
 
-`ahrs` also includes a module that simplifies data loading and visualization using `matplotlib`.
+And many other quaternion operations, properties and methods are also available.
+
+`ahrs` includes a sub-module that simplifies data loading and visualization using `matplotlib` as plot engine.
 
 ```py
 >>> data = ahrs.utils.io.load("ExampleData.mat")

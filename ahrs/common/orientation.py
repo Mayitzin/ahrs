@@ -7,11 +7,7 @@ Further description will follow.
 """
 
 import numpy as np
-from .mathfuncs import *
-
-__all__ = ['q_conj', 'q_random', 'q_norm', 'q_prod', 'q_mult_L', 'q_mult_R',
-'q_rot', 'axang2quat', 'quat2axang', 'q_correct', 'q2R', 'q2euler', 'rotation', 'rot_seq',
-'R2q', 'dcm2quat', 'cardan2q', 'q2cardan', 'am2q', 'acc2q', 'slerp']
+from ahrs.common.mathfuncs import cosd, sind, DEG2RAD, RAD2DEG
 
 def q_conj(q):
     """
@@ -654,67 +650,6 @@ def rot_seq(axes=None, angles=None):
             R = rotation(axes[i], angles[i])@R
     return R
 
-def R2q(R=None, eta=0.0):
-    """
-    Compute a Quaternion from a rotation matrix
-
-    Use Shepperd's voting scheme to compute the corresponding Quaternion q from
-    a given rotation matrix R. Optimized by Sarabandi et al.
-
-    References
-    ----------
-    .. [1] Sarabandi, S. et al. (2018) Accurate Computation of Quaternions
-           from Rotation Matrices.
-           (http://www.iri.upc.edu/files/scidoc/2068-Accurate-Computation-of-Quaternions-from-Rotation-Matrices.pdf)
-
-    """
-    if R is None:
-        R = np.identity(3)
-    # Get elements of R
-    r11, r12, r13 = R[0][0], R[0][1], R[0][2]
-    r21, r22, r23 = R[1][0], R[1][1], R[1][2]
-    r31, r32, r33 = R[2][0], R[2][1], R[2][2]
-    # Compute qw
-    d_w = r11+r22+r33
-    if d_w > eta:
-        q_w = 0.5*np.sqrt(1.0+d_w)
-    else:
-        nom = (r32-r23)**2+(r13-r31)**2+(r21-r12)**2
-        q_w = 0.5*np.sqrt(nom/(3.0-d_w))
-    # Compute qx
-    d_x = r11-r22-r33
-    if d_x > eta:
-        q_x = 0.5*np.sqrt(1.0+d_x)
-    else:
-        nom = (r32-r23)**2+(r12+r21)**2+(r31+r13)**2
-        q_x = 0.5*np.sqrt(nom/(3.0-d_x))
-    # Compute qy
-    d_y = -r11+r22-r33
-    if d_y > eta:
-        q_y = 0.5*np.sqrt(1.0+d_y)
-    else:
-        nom = (r13-r31)**2+(r12+r21)**2+(r23+r32)**2
-        q_y = 0.5*np.sqrt(nom/(3.0-d_y))
-    # Compute qz
-    d_z = -r11-r22+r33
-    if d_z > eta:
-        q_z = 0.5*np.sqrt(1.0+d_z)
-    else:
-        nom = (r21-r12)**2+(r31+r13)**2+(r23+r32)**2
-        q_z = 0.5*np.sqrt(nom/(3.0-d_z))
-    # Assign signs
-    if q_w >= 0.0:
-        q_x *= np.sign(r32-r23)
-        q_y *= np.sign(r13-r31)
-        q_z *= np.sign(r21-r12)
-    else:
-        q_w *= -1.0
-        q_x *= -np.sign(r32-r23)
-        q_y *= -np.sign(r13-r31)
-        q_z *= -np.sign(r21-r12)
-    # Return values of quaternion
-    return np.asarray([q_w, q_x, q_y, q_z])
-
 def dcm2quat(R):
     """
     Return a unit quaternion from a given Direct Cosine Matrix.
@@ -1155,3 +1090,13 @@ def slerp(q0, q1, t_array, **kwgars):
     s0 = np.cos(theta) - qdot*sin_theta/sin_theta_0
     s1 = sin_theta/sin_theta_0
     return s0[:,np.newaxis]*v0[np.newaxis,:] + s1[:,np.newaxis]*v1[np.newaxis,:]
+
+if __name__ == '__main__':
+    Rx = rotation('x', 10.0)
+    Ry = rotation('y', 20.0)
+    Rz = rotation('z', 30.0)
+    Rzyx = Rx@Ry@Rz
+    print(Rzyx)
+    R = rot_seq('xyz', [10.0, 20.0, 30.0])
+    print(R)
+    # print(np.isclose(Rzyx, R))

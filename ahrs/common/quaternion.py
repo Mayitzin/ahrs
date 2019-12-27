@@ -229,8 +229,27 @@ def shepperd(dcm):
 
 class Quaternion:
     """
-    Quaternion class
-    ================
+    Quaternion
+    ==========
+
+    Class to represent a quaternion. It can be built with 3- or 4-dimensional
+    vectors. The quaternion objects are always normalized to represent
+    rotations in 3D space.
+
+    Attributes
+    ----------
+    q : ndarray
+        Array with the 4 elements of quaternion of the form: q = [w, x, y, z]
+    w : float
+        Scalar part of the quaternion.
+    v : ndarray
+        Vector part of the quaternion.
+    x : float
+        First element of the vector part of the quaternion.
+    y : float
+        Second element of the vector part of the quaternion.
+    z : float
+        Third element of the vector part of the quaternion.
 
     Examples
     --------
@@ -269,6 +288,8 @@ class Quaternion:
     Pure quaternions are built from 3-element arrays
 
     >>> q = Quaternion([1., 2., 3.])
+    >>> str(q)
+    '(0.0000 +0.2673i +0.5345j +0.8018k)'
     >>> q.is_pure()
     True
 
@@ -303,40 +324,266 @@ class Quaternion:
         self.x, self.y, self.z = self.v
 
     def __str__(self):
+        """
+        Build 'printable' representation of quaternion
+
+        Returns
+        -------
+        q : str
+            Quaternion written as string.
+
+        Examples
+        --------
+        >>> q = Quaternion([0.55747131, 0.12956903, 0.5736954 , 0.58592763])
+        >>> str(q)
+        '(0.5575 +0.1296i +0.5737j +0.5859k)'
+        """
         return "({:-.4f} {:+.4f}i {:+.4f}j {:+.4f}k)".format(self.w, self.x, self.y, self.z)
 
     def __add__(self, p):
+        """
+        Add quaternions
+
+        Returns
+        -------
+        q : Quaternion
+            Normalized sum of quaternions
+
+        Examples
+        --------
+        >>> q1 = Quaternion([0.55747131, 0.12956903, 0.5736954 , 0.58592763])
+        >>> q2 = Quaternion([0.49753507, 0.50806522, 0.52711628, 0.4652709])
+        >>> q3 = q1+q2
+        >>> q3
+        <ahrs.common.quaternion.Quaternion object at 0x000001F379003748>
+        >>> str(q3)
+        '(0.5386 +0.3255i +0.5620j +0.5367k)'
+        """
         return Quaternion(self.q + p.q)
 
     def __sub__(self, p):
+        """
+        Difference of quaternions
+
+        Returns
+        -------
+        q : Quaternion
+            Normalized difference of quaternions
+
+        Examples
+        --------
+        >>> q1 = Quaternion([0.55747131, 0.12956903, 0.5736954 , 0.58592763])
+        >>> q2 = Quaternion([0.49753507, 0.50806522, 0.52711628, 0.4652709])
+        >>> q3 = q1-q2
+        >>> q3
+        <ahrs.common.quaternion.Quaternion object at 0x000001F379003748>
+        >>> str(q3)
+        '(0.1482 -0.9358i +0.1152j +0.2983k)'
+        """
         return Quaternion(self.q - p.q)
 
-    def __mul__(self, p):
-        if not hasattr(p, 'q'):
-            p = Quaternion(p)
-        return Quaternion(self.product(p.q))
-
-    def __matmul__(self, p):
-        if not hasattr(p, 'q'):
-            p = Quaternion(p)
-        return Quaternion(self.product(p.q))
-
-    def __pow__(self, y):
+    def __mul__(self, q):
         """
-        Power of Quaternion
+        Product between quaternions
+
+        Given two unit quaternions :math:`\\mathbf{p}=(p_w, p_x, p_y, p_z)` and
+        :math:`\\mathbf{q} = (q_w, q_x, q_y, q_z)`, their product is obtained
+        [Dantam]_ [MWQW]_ as:
+
+        .. math::
+
+            \\mathbf{pq} =
+            \\begin{bmatrix}
+            p_w q_w - p_x q_x - p_y q_y - p_z q_z \\\\
+            p_x q_w + p_w q_x - p_z q_y + p_y q_z \\\\
+            p_y q_w + p_z q_x + p_w q_y - p_x q_z \\\\
+            p_z q_w - p_y q_x + p_x q_y + p_w q_z
+            \\end{bmatrix}
+
+        Parameters
+        ----------
+        q : array, Quaternion
+            Second quaternion to multiply with.
+
+        Returns
+        -------
+        out : Quaternion
+            Product of quaternions.
+
+        Examples
+        --------
+        >>> q1 = Quaternion([0.55747131, 0.12956903, 0.5736954 , 0.58592763])
+        >>> q2 = Quaternion([0.49753507, 0.50806522, 0.52711628, 0.4652709])
+        >>> q3 = q1*q2
+        >>> q3
+        <ahrs.common.quaternion.Quaternion object at 0x000001F379003748>
+        >>> str(q3)
+        '(-0.3635 +0.3896i +0.3419j +0.7740k)'
         """
-        return np.e**(y*self.logarithm())
+        if not hasattr(q, 'q'):
+            q = Quaternion(q)
+        return Quaternion(self.product(q.q))
+
+    def __matmul__(self, q):
+        """
+        Product between quaternions using @ operator
+
+        Given two unit quaternions :math:`\\mathbf{p}=(p_w, p_x, p_y, p_z)` and
+        :math:`\\mathbf{q} = (q_w, q_x, q_y, q_z)`, their product is obtained
+        [Dantam]_ [MWQW]_ as:
+
+        .. math::
+
+            \\mathbf{pq} =
+            \\begin{bmatrix}
+            p_w q_w - p_x q_x - p_y q_y - p_z q_z \\\\
+            p_x q_w + p_w q_x - p_z q_y + p_y q_z \\\\
+            p_y q_w + p_z q_x + p_w q_y - p_x q_z \\\\
+            p_z q_w - p_y q_x + p_x q_y + p_w q_z
+            \\end{bmatrix}
+
+        Parameters
+        ----------
+        q : array, Quaternion
+            Second quaternion to multiply with.
+
+        Returns
+        -------
+        out : Quaternion
+            Product of quaternions.
+
+        Examples
+        --------
+        >>> q1 = Quaternion([0.55747131, 0.12956903, 0.5736954 , 0.58592763])
+        >>> q2 = Quaternion([0.49753507, 0.50806522, 0.52711628, 0.4652709])
+        >>> q1@q2
+        array([-0.36348726,  0.38962514,  0.34188103,  0.77407146])
+        >>> q3 = q1@q2
+        >>> q3
+        <ahrs.common.quaternion.Quaternion object at 0x000001F379003748>
+        >>> str(q3)
+        '(-0.3635 +0.3896i +0.3419j +0.7740k)'
+        """
+        if not hasattr(q, 'q'):
+            q = Quaternion(q)
+        return Quaternion(self.product(q.q))
+
+    def __pow__(self, a):
+        """
+        Returns a normalized `q` to the power of `a`
+
+        A Quaternion power can be dfined as:
+
+        .. math::
+
+            \\mathbf{q}^a = e^{a \\log(\\mathbf{q})}
+
+        Parameters
+        ----------
+        a : float
+            Value to which to calculate quaternion power.
+
+        Returns
+        -------
+        p : ndarray
+            Quaternion `q`to the power of `a`
+        """
+        p = np.e**(a*self.logarithm())
+        return p / np.linalg.norm(p)
 
     def is_pure(self):
+        """
+        Returns a bool value, where True if quaternion is pure.
+
+        A pure quaternion has a scalar part equal to zero: :math:`\\mathbf{q} = (0 + xi + yj + zk)`
+
+        .. math::
+
+        \\mathrm{.is_versor}() = \\left\\{
+        \\begin{array}{ll}
+            \\mathrm{True} & \\: w = 0 \\\\
+            \\mathrm{False} & \\: \\mathrm{otherwise}
+        \\end{array}
+        \\right.
+
+        Returns
+        -------
+        out : bool
+            Boolean equal to True if q_w is 0.
+        """
         return self.w == 0.0
 
+    def is_real(self):
+        """
+        Returns a bool value, where True if quaternion is real.
+
+        A real quaternion has all elements of its vector part equal to zero:
+        :math:`\\mathbf{q} = (w + 0i + 0j + 0k) = (q_w, 0)`
+
+        .. math::
+
+        \\mathrm{.is_versor}() = \\left\\{
+        \\begin{array}{ll}
+            \\mathrm{True} & \\: v = 0 \\\\
+            \\mathrm{False} & \\: \\mathrm{otherwise}
+        \\end{array}
+        \\right.
+
+        Returns
+        -------
+        out : bool
+            Boolean equal to True if q_v is 0.
+        """
+        return not any(self.v)
+
     def is_versor(self):
+        """
+        Returns a bool value, where True if quaternion is a versor.
+
+        A versor is a quaternion of norm equal to one:
+
+        .. math::
+
+        \\mathrm{.is_versor}() = \\left\\{
+        \\begin{array}{ll}
+            \\mathrm{True} & \\: \\|mathbf{q}\\| = 1 \\\\
+            \\mathrm{False} & \\: \\mathrm{otherwise}
+        \\end{array}
+        \\right.
+
+        Returns
+        -------
+        out : bool
+            Boolean equal to True if q_v is 0.
+        """
         return np.isclose(np.linalg.norm(self.q), 1.0)
 
     def is_identity(self):
-        return all(self.q == np.array([1.0, 0.0, 0.0, 0.0]))
+        """
+        Returns a bool value, where True if quaternion is identity quaternion.
+
+        A quaternion is a quaternion if its scalar part is equal to 1, and the
+        vector part is equal to 0:
+
+        .. math::
+
+        \\mathrm{.is_identity}() = \\left\\{
+        \\begin{array}{ll}
+            \\mathrm{True} & \\: \\mathbf{q}\\ = \\begin{bmatrix} 1 & 0 & 0 & 0 \\end{bmatrix} \\\\
+            \\mathrm{False} & \\: \\mathrm{otherwise}
+        \\end{array}
+        \\right.
+
+        Returns
+        -------
+        out : bool
+            Boolean equal to True if q_v is 0.
+        """
+        return np.allclose(self.q, np.array([1.0, 0.0, 0.0, 0.0]))
 
     def normalize(self):
+        """Normalize the quaternion
+        """
         self.q /= np.linalg.norm(self.q)
 
     def conjugate(self):
@@ -345,11 +592,6 @@ class Quaternion:
 
         A quaternion, whose form is :math:`\\mathbf{q} = (q_w, q_x, q_y, q_z)`,
         has a conjugate of the form :math:`\\mathbf{q}^* = (q_w, -q_x, -q_y, -q_z)`.
-
-        Parameters
-        ----------
-        q : array
-            Unit quaternion or 2D array of Quaternions.
 
         Returns
         -------
@@ -546,7 +788,7 @@ class Quaternion:
         """
         a = np.array(a)
         if a.shape[0] != 3:
-            raise ValueError("Expected `a` to have shape (3, N), got {}.".format(a.shape))
+            raise ValueError("Expected `a` to have shape (3, N) or (3,), got {}.".format(a.shape))
         return self.to_DCM()@a
 
     def to_axang(self):
@@ -587,14 +829,15 @@ class Quaternion:
 
     def to_DCM(self):
         """
-        Return a rotation matrix :math:`\\mathbf{R} \\in SO(3)` from a given unit
-        quaternion :math:`\\mathbf{q}`.
+        Return a Direction Cosine matrix :math:`\\mathbf{R} \\in SO(3)` from a
+        given unit quaternion :math:`\\mathbf{q}`.
 
         The given unit quaternion :math:`\\mathbf{q}` must have the form
         :math:`\\mathbf{q} = (q_w, q_x, q_y, q_z)`, where :math:`\\mathbf{q}_v = (q_x, q_y, q_z)`
         is the vector part, and :math:`q_w` is the scalar part.
 
-        The resulting rotation matrix :math:`\\mathbf{R}` has the form  [W1]_ [W2]_:
+        The resulting matrix :math:`\\mathbf{R}` [WikiQuat1]_ [WikiQuat2]_ has
+        the form:
 
         .. math::
 
@@ -605,13 +848,13 @@ class Quaternion:
             2(q_xq_z - q_wq_y) & 2(q_wq_x + q_yq_z) & 1 - 2(q_x^2 + q_y^2)
             \\end{bmatrix}
 
-        The default value is the unit Quaternion :math:`\\mathbf{q} = (1, 0, 0, 0)`,
-        which produces a :math:`3 \\times 3` Identity matrix :math:`\\mathbf{I}_3`.
+        The identity Quaternion :math:`\\mathbf{q} = (1, 0, 0, 0)`, produces a
+        a :math:`3 \\times 3` Identity matrix :math:`\\mathbf{I}_3`.
 
         Returns
         -------
         R : array
-            3-by-3 rotation matrix R
+            3-by-3 direction cosine matrix R
 
         """
         return np.array([
@@ -627,9 +870,6 @@ class Quaternion:
         ----------
         dcm : array
             3-by-3 Direction Cosine Matrix.
-
-        References
-        ----------
 
         """
         dcm = np.array(dcm)
