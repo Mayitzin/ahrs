@@ -15,8 +15,8 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
+        pip install setuptools wheel numpy scipy matplotlib
         pip install .
-        pip install setuptools wheel
     - name: Build binary wheel and source tarball
       run: |
         python setup.py sdist bdist_wheel
