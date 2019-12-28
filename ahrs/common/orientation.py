@@ -1071,16 +1071,16 @@ def slerp(q0, q1, t_array, **kwgars):
     """
     threshold = kwgars.get('threshold', 0.9995)
     t_array = np.array(t_array)
-    v0 = np.array(v0)
-    v1 = np.array(v1)
-    qdot = np.sum(v0*v1)
+    q0 = np.array(q0)
+    q1 = np.array(q1)
+    qdot = np.sum(q0*q1)
     # Ensure SLERP takes the shortest path
     if qdot < 0.0:
-        v1 *= -1.0
+        q1 *= -1.0
         qdot *= -1.0
-    # Interpolate linearly
+    # Interpolate linearly (LERP)
     if qdot > threshold:
-        result = v0[np.newaxis, :] + t_array[:, np.newaxis]*(v1 - v0)[np.newaxis, :]
+        result = q0[np.newaxis, :] + t_array[:, np.newaxis]*(q1 - q0)[np.newaxis, :]
         return (result.T / np.linalg.norm(result, axis=1)).T
     # Angle between vectors
     theta_0 = np.arccos(qdot)
@@ -1089,7 +1089,7 @@ def slerp(q0, q1, t_array, **kwgars):
     sin_theta = np.sin(theta)
     s0 = np.cos(theta) - qdot*sin_theta/sin_theta_0
     s1 = sin_theta/sin_theta_0
-    return s0[:,np.newaxis]*v0[np.newaxis,:] + s1[:,np.newaxis]*v1[np.newaxis,:]
+    return s0[:,np.newaxis]*q0[np.newaxis,:] + s1[:,np.newaxis]*q1[np.newaxis,:]
 
 if __name__ == '__main__':
     Rx = rotation('x', 10.0)

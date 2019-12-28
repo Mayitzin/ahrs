@@ -227,6 +227,59 @@ def shepperd(dcm):
     q /= 2.0*np.sqrt(q[i])
     return q
 
+def slerp(q0, q1, t_array, **kwgars):
+    """
+    Spherical Linear Interpolation between quaternions.
+
+    Return a valid quaternion rotation at a specified distance along the minor
+    arc of a great circle passing through any two existing quaternion endpoints
+    lying on the unit radius hypersphere.
+
+    Based on the method detailed in [Wiki_SLERP]_
+
+    Parameters
+    ----------
+    q0 : array
+        First endpoint quaternion.
+    q1 : array
+        Second endpoint quaternion.
+    t_array : array
+        Array of times to interpolate to.
+    threshold : float
+        Threshold to closeness of interpolation.
+
+    Returns
+    -------
+    q : array
+        New quaternion representing the interpolated rotation.
+
+    References
+    ----------
+    .. [Wiki_SLERP] https://en.wikipedia.org/wiki/Slerp
+
+    """
+    threshold = kwgars.get('threshold', 0.9995)
+    t_array = np.array(t_array)
+    q0 = np.array(q0)
+    q1 = np.array(q1)
+    qdot = np.sum(q0*q1)
+    # Ensure SLERP takes the shortest path
+    if qdot < 0.0:
+        q1 *= -1.0
+        qdot *= -1.0
+    # Interpolate linearly (LERP)
+    if qdot > threshold:
+        result = q0[np.newaxis, :] + t_array[:, np.newaxis]*(q1 - q0)[np.newaxis, :]
+        return (result.T / np.linalg.norm(result, axis=1)).T
+    # Angle between vectors
+    theta_0 = np.arccos(qdot)
+    sin_theta_0 = np.sin(theta_0)
+    theta = theta_0*t_array
+    sin_theta = np.sin(theta)
+    s0 = np.cos(theta) - qdot*sin_theta/sin_theta_0
+    s1 = sin_theta/sin_theta_0
+    return s0[:,np.newaxis]*q0[np.newaxis,:] + s1[:,np.newaxis]*q1[np.newaxis,:]
+
 class Quaternion:
     """
     Quaternion
@@ -472,11 +525,20 @@ class Quaternion:
         """
         Returns a normalized `q` to the power of `a`
 
-        A Quaternion power can be dfined as:
+        Assuming the quaternion is a versor, its power can be defined using the
+        exponential:
 
         .. math::
 
-            \\mathbf{q}^a = e^{a \\log(\\mathbf{q})}
+            \\begin{eqnarray}
+            \\mathbf{q}^a & = & e^{\\log(\\mathbf{q}^a)} \\\\
+            & = & e^{a \\log(\\mathbf{q})} \\\\
+            & = & e^{a \\mathbf{u}\\theta} \\\\
+            & = & \\begin{bmatrix}
+            \\cos(a\\theta) \\\\
+            \\mathbf{u} \\sin(a\\theta)
+            \\end{bmatrix}
+            \\end{eqnarray}
 
         Parameters
         ----------
@@ -486,10 +548,9 @@ class Quaternion:
         Returns
         -------
         p : ndarray
-            Quaternion `q`to the power of `a`
+            Quaternion `q` to the power of `a`
         """
-        p = np.e**(a*self.logarithm())
-        return p / np.linalg.norm(p)
+        return np.e**(a*self.logarithm())
 
     def is_pure(self):
         """
@@ -499,7 +560,7 @@ class Quaternion:
 
         .. math::
 
-        \\mathrm{.is_versor}() = \\left\\{
+        \\mathrm{is pure}() = \\left\\{
         \\begin{array}{ll}
             \\mathrm{True} & \\: w = 0 \\\\
             \\mathrm{False} & \\: \\mathrm{otherwise}
@@ -522,7 +583,7 @@ class Quaternion:
 
         .. math::
 
-        \\mathrm{.is_versor}() = \\left\\{
+        \\mathrm{is real}() = \\left\\{
         \\begin{array}{ll}
             \\mathrm{True} & \\: v = 0 \\\\
             \\mathrm{False} & \\: \\mathrm{otherwise}
@@ -544,7 +605,7 @@ class Quaternion:
 
         .. math::
 
-        \\mathrm{.is_versor}() = \\left\\{
+        \\mathrm{is versor} = \\left\\{
         \\begin{array}{ll}
             \\mathrm{True} & \\: \\|mathbf{q}\\| = 1 \\\\
             \\mathrm{False} & \\: \\mathrm{otherwise}
@@ -613,31 +674,158 @@ class Quaternion:
         return self.conjugate()
 
     def inverse(self):
-        """Inverse Quaternion
+        """
+        Return the inverse Quaternion
+
+        The inverse quaternion :math:`\\mathbf{q}^{-1}` is such that the
+        quaternion times its inverse gives the identity quaternion
+        :math:`\\mathbf{q}_I = (1, 0, 0, 0)`
+
+        It is obtained as:
+
+        .. math::
+
+            \\mathbf{q}^{-1} = \\mathbf{q}^* / \\|\\mathbf{q}\\|^2
+
+        Returns
+        -------
+        out : array
+            Inverse of quaternion
+
+        Examples
+        --------
+        >>> q = Quaternion([1., -2., 3., -4.])
+        >>> str(q)
+        '(0.1826 -0.3651i +0.5477j -0.7303k)'
+        >>> str(q.inverse())
+        '(0.1826 +0.3651i -0.5477j +0.7303k)'
+        >>> q2 = q@q.inverse()
+        >>> str(q2)
+        '(1.0000 +0.0000i +0.0000j +0.0000k)'
         """
         if self.is_versor():
             return self.conjugate()
         return self.conjugate() / np.linalg.norm(self.q)
 
-    def exponential(self):
-        """Exponential of Quaternion
+    def inv(self):
+        """Synonym to method inverse()
         """
+        return self.inverse()
+
+    def exponential(self):
+        """
+        Exponential of Quaternion
+
+        The quaternion exponential works as in the ordinary case, defined with
+        the absolute convergent power series:
+
+        .. math::
+
+            e^{\\mathbf{q}} = \\sum_{k=0}^{\\infty}\\frac{\\mathbf{q}^k}{k!}
+
+        The exponential of **pure quaternions** is, with the help of Euler
+        formula, redefined as:
+
+        .. math::
+
+            \\begin{eqnarray}
+            e^{\\mathbf{q}_v} & = & \\sum_{k=0}^{\\infty}\\frac{\\mathbf{q}_v^k}{k!} \\\\
+            & = &
+            \\begin{bmatrix}
+            \\cos \\theta \\\\
+            \\mathbf{u} \\sin \\theta
+            \\end{bmatrix}
+            \\end{eqnarray}
+
+        with :math:`\\mathbf{q}_v = \\mathbf{u}\\theta` and :math:`\\theta=\\|\mathbf{v}\\|`
+
+        Since :math:`\\|e^{\\mathbf{q}_v}\\|^2=\\cos^2\\theta+\\sin^2\\theta=1`,
+        the exponential of a pure quaternion is always a versor. Therefore, if
+        the quaternion is real, its exponential is the identity.
+
+        For **general quaternions** the exponential is defined using :math:`\\mathbf{u}\\theta=\\mathbf{q}_v`
+        and the exponential of the pure quaternion:
+
+        .. math::
+
+            \\begin{eqnarray}
+            e^{\\mathbf{q}} & = & e^{\\mathbf{q}_w+\\mathbf{q}_v} = e^{\\mathbf{q}_w}e^{\\mathbf{q}_v}\\\\
+            & = & e^{\\mathbf{q}_w}
+            \\begin{bmatrix}
+            \\cos \\|\\mathbf{q}_v\\| \\\\
+            \\frac{\\mathbf{q}}{\\|\\mathbf{q}_v\\|} \\sin \\|\\mathbf{q}_v\\|
+            \\end{bmatrix}
+            \\end{eqnarray}
+
+        Returns
+        -------
+        out : ndarray
+            Array with exponential of quaternion
+
+        Examples
+        --------
+        >>> q1 = Quaternion([0.0, -2.0, 3.0, -4.0])
+        >>> q2 = Quaternion([1.0, -2.0, 3.0, -4.0])
+        >>> str(q1)
+        '(0.0000 -0.3714i +0.5571j -0.7428k)'
+        >>> q1.exp()
+        [ 0.54030231 -0.31251448  0.46877172 -0.62502896]
+        >>> str(q2)
+        '(0.1826 -0.3651i +0.5477j -0.7303k)'
+        >>> q2.exp()
+        [ 0.66541052 -0.37101103  0.55651655 -0.74202206]
+        """
+        if self.is_real():
+            return np.array([1.0, 0.0, 0.0, 0.0])
         t = np.linalg.norm(self.v)
         u = self.v/t
         q_exp = np.concatenate(([np.cos(t)], u*np.sin(t)))
         if self.is_pure():
             return q_exp
-        return np.e**self.w * q_exp
+        q_exp *= np.e**self.w
+        return q_exp
+
+    def exp(self):
+        """Synonym to method exponential()
+        """
+        return self.exponential()
 
     def logarithm(self):
-        """Logarithm of Quaternion
+        """
+        Logarithm of Quaternion
+
+        Return logarithm of normalized quaternion, which can be defined with
+        the aid of the exponential of the quaternion.
+
+        The logarithm of **pure quaternions** is obtained as:
+
+        .. math::
+
+            \\log \\mathbf{q} = \\log(e^{\\mathbf{u}\\theta}) = \\begin{bmatrix} 0 \\\\ \\mathbf{u}\\theta \\end{bmatrix}
+
+        Similarly, for **general quaternions** the logarithm is:
+
+        .. math::
+
+            \\log \\mathbf{q} = \\log\\|\\mathbf{q}\\|+\\mathbf{u}\\theta
+            = \\begin{bmatrix} \\log\\|\\mathbf{q}\\| \\\\ \\mathbf{u}\\theta \\end{bmatrix}
+
+        Returns
+        -------
+        out : ndarray
+            Array with values of log(q)
         """
         v_norm = np.linalg.norm(self.v)
         u = self.v / v_norm
-        if self.is_pure():
+        if self.is_versor():
             return np.concatenate(([0.0], u))
         t = np.arctan(v_norm/self.w)
         return np.concatenate((np.log(np.linalg.norm(self.q)), u*t))
+
+    def log(self):
+        """Synonym to method logartihm()
+        """
+        return self.logarithm()
 
     def product(self, q):
         """
@@ -771,7 +959,7 @@ class Quaternion:
         Returns
         -------
         a' : array
-            3-by-N rotated array around current quaternion.
+            3-by-N rotated array by current quaternion.
 
         Examples
         --------
@@ -790,6 +978,50 @@ class Quaternion:
         if a.shape[0] != 3:
             raise ValueError("Expected `a` to have shape (3, N) or (3,), got {}.".format(a.shape))
         return self.to_DCM()@a
+
+    def to_array(self):
+        """
+        Return quaternion as ndarray
+
+        Quaternion values are stored in attribute `q`, which is a NumPy array.
+        This method simply returns such attribute.
+
+        Returns
+        -------
+        out : ndarray
+            Quaternion values in NumPy array
+
+        Examples
+        --------
+        >>> q = Quaternion([0.0, -2.0, 3.0, -4.0])
+        >>> str(q)
+        '(0.0000 -0.3714i +0.5571j -0.7428k)'
+        >>> print("{} : {}".format(q.to_array(), type(q.to_array())))
+        [ 0.         -0.37139068  0.55708601 -0.74278135] : <class 'numpy.ndarray'>
+        """
+        return self.q
+
+    def to_list(self):
+        """
+        Return quaternion as list
+
+        Quaternion values are stored in attribute `q`, which is a NumPy array.
+        This method reads such attribute and returns it as a list.
+
+        Returns
+        -------
+        out : list
+            Quaternion values in list
+
+        Examples
+        --------
+        >>> q = Quaternion([0.0, -2.0, 3.0, -4.0])
+        >>> str(q)
+        '(0.0000 -0.3714i +0.5571j -0.7428k)'
+        >>> print("{} : {}".format(q.to_list(), type(q.to_list())))
+        [0.0, -0.3713906763541037, 0.5570860145311556, -0.7427813527082074] : <class 'list'>
+        """
+        return self.q.tolist()
 
     def to_axang(self):
         """
@@ -944,23 +1176,87 @@ class Quaternion:
             [w[2], w[1], -w[0], 0.0]])
         return F@self.q
 
+class QuaternionArray:
+    """
+    Quaternion Array
+    ================
+
+    Class to represent quaternion arrays. It can be built with N-by-3 or N-by-4
+    NumPy arrays. The built objects are always normalized to represent
+    rotations in 3D space.
+    """
+    array = np.array([[1.0], [0.0], [0.0], [0.0]])
+    def __init__(self, q=None, **kw):
+        self.num_qts = 1
+        if q is not None:
+            sz = q.shape
+            if 2 < sz[-1] < 5:
+                self.num_qts = sz[0]
+                self.array = self._build_pure(q) if sz[-1] == 3 else q
+                # Normalize Quaternions
+                self.array /= np.linalg.norm(self.array, axis=1)[:, None]
+            else:
+                raise ValueError("Expected array to have shape (N, 3) or (N, 4), got {}.".format(q.shape))
+
+    def _build_pure(self, X):
+        """
+        Build pure quaternions from 3-dimensional vectors
+
+        Parameters
+        ----------
+        X : ndarray
+            N-by-3 array with values of vector part of pure quaternions.
+        """
+        return np.c_[np.zeros(X.shape[0]), X]
+
+    def conjugate(self):
+        """
+        Return the conjugate of all quaternion
+
+        Returns
+        -------
+        q* : array
+            Array of conjugated quaternions.
+        """
+        return self.array*np.array([1.0, -1.0, -1.0, -1.0])
+
+    def conj(self):
+        """Synonym to method conjugate()
+        """
+        return self.conjugate()
+
+    def to_DCM(self):
+        """
+        Return N direction cosine matrices in SO(3) from a given Quaternion
+        array, where N is the number of quaternions.
+
+        The default values are identity quaternions, which produce N 3-by-3
+        Identity matrices.
+
+        Parameters
+        ----------
+        q : array
+            N-by-4 array of Quaternions, where N is the number of quaternions.
+
+        References
+        ----------
+        - https://en.wikipedia.org/wiki/Rotation_matrix#Quaternion
+        """
+        R = np.zeros((self.num_qts, 3, 3))
+        R[:, 0, 0] = 1.0 - 2.0*(self.array[:, 2]**2 + self.array[:, 3]**2)
+        R[:, 1, 0] = 2.0*(self.array[:, 1]*self.array[:, 2]+self.array[:, 0]*self.array[:, 3])
+        R[:, 2, 0] = 2.0*(self.array[:, 1]*self.array[:, 3]-self.array[:, 0]*self.array[:, 2])
+        R[:, 0, 1] = 2.0*(self.array[:, 1]*self.array[:, 2]-self.array[:, 0]*self.array[:, 3])
+        R[:, 1, 1] = 1.0 - 2.0*(self.array[:, 1]**2 + self.array[:, 3]**2)
+        R[:, 2, 1] = 2.0*(self.array[:, 0]*self.array[:, 1]+self.array[:, 2]*self.array[:, 3])
+        R[:, 0, 2] = 2.0*(self.array[:, 1]*self.array[:, 3]+self.array[:, 0]*self.array[:, 2])
+        R[:, 1, 2] = 2.0*(self.array[:, 2]*self.array[:, 3]-self.array[:, 0]*self.array[:, 1])
+        R[:, 2, 2] = 1.0 - 2.0*(self.array[:, 1]**2 + self.array[:, 2]**2)
+        return R
+
 if __name__ == "__main__":
-    # Test some Quaternion methods
-    print("Testing methods to obtain Quaternions from DCM")
-    q = Quaternion(np.random.random(4)*2.0-1.0)
-    R = q.to_DCM()
-    print("\n Original   = {}\n".format(q.q))
-    q.from_DCM(R, method='hughes')
-    print(" Hughes     = {}".format(q.q))
-    q.from_DCM(R, method='chiaverini')
-    print(" Chiaverini = {}".format(q.q))
-    q.from_DCM(R, method='itzhack', version=1)
-    print(" Itzhack(1) = {}".format(q.q))
-    q.from_DCM(R, method='itzhack', version=2)
-    print(" Itzhack(2) = {}".format(q.q))
-    q.from_DCM(R, method='itzhack', version=3)
-    print(" Itzhack(3) = {}".format(q.q))
-    q.from_DCM(R, method='shepperd')
-    print(" Shepperd   = {}".format(q.q))
-    q.from_DCM(R, method='sarabandi')
-    print(" Sarabandi  = {}".format(q.q))
+    # Test Quaternions
+    Q = QuaternionArray(np.random.random((2, 4))*2.0-1.0)
+    print(Q.array)
+    print(Q.conjugate())
+    print(Q.to_DCM())
