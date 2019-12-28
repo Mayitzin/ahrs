@@ -1,14 +1,13 @@
 name: Build Python Package
 
-on:
-  release:
-    types: [created]
+on: push
 
 jobs:
-  deploy:
+  build:
+    name: Build Python distribution
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@master
     - name: Set up Python
       uses: actions/setup-python@v1
       with:
@@ -18,9 +17,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install .
         pip install setuptools wheel
-    - name: Build Python package
+    - name: Build binary wheel and source tarball
       run: |
         python setup.py sdist bdist_wheel
-    - name: Twine check
-      run: |
-        twine check dist/*
