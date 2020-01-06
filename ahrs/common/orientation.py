@@ -879,7 +879,7 @@ def am2angles(a, m, in_deg=False):
     Returns
     -------
     pose : array
-        Estimated Direct Cosine Matrix
+        Estimated Angles
 
     References
     ----------
@@ -963,15 +963,16 @@ def triad(a, m, V1=None, V2=None, **kw):
     W1 = np.array(a / np.linalg.norm(a)).reshape((3, 1))
     W2 = np.array(m / np.linalg.norm(m)).reshape((3, 1))
     # First Triad
-    s2 = np.cross(W1, W2, axis=0) / np.linalg.norm(np.cross(W1, W2, axis=0))
-    s3 = np.cross(W1, np.cross(W1, W2, axis=0), axis=0) / np.linalg.norm(np.cross(W1, W2, axis=0))
+    W1xW2 = np.cross(W1, W2, axis=0)
+    s2 = W1xW2 / np.linalg.norm(W1xW2)
+    s3 = np.cross(W1, W1xW2, axis=0) / np.linalg.norm(W1xW2)
     # Second Triad
-    r2 = np.cross(V1, V2, axis=0) / np.linalg.norm(np.cross(V1, V2, axis=0))
-    r3 = np.cross(V1, np.cross(V1, V2, axis=0), axis=0) / np.linalg.norm(np.cross(V1, V2, axis=0))
+    V1xV2 = np.cross(V1, V2, axis=0)
+    r2 = V1xV2 / np.linalg.norm(V1xV2)
+    r3 = np.cross(V1, V1xV2, axis=0) / np.linalg.norm(V1xV2)
     # Solve TRIAD
     Mobs = np.hstack((W1, s2, s3))
     Mref = np.hstack((V1, r2, r3))
-    # return Mref@Mobs.T
     return Mobs@Mref.T
 
 def quest(fb, mb, fn, mn, wf=1.0, wm=1.0):
@@ -1001,7 +1002,7 @@ def quest(fb, mb, fn, mn, wf=1.0, wm=1.0):
     Returns
     -------
     pose : array
-        Estimated Direct Cosine Matrix
+        Estimated Quaternion
 
     References
     ----------

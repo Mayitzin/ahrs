@@ -1,9 +1,10 @@
 # AHRS: Attitude and Heading Reference Systems
 
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/Mayitzin/ahrs/Build%20Python%20Package)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/ahrs)
 ![PyPI - License](https://img.shields.io/pypi/l/ahrs)
 ![PyPI](https://img.shields.io/pypi/v/ahrs)
-[![Downloads](https://pepy.tech/badge/ahrs)](https://pepy.tech/project/ahrs)
+![PyPI Downloads](https://pepy.tech/badge/ahrs)
 
 AHRS is a zoo of functions and objects written in Python helping you to estimate the orientation and position of robotic systems.
 
@@ -65,7 +66,7 @@ It now includes the class `Quaternion` to easily handle the orientation estimati
 >>> q3 = Quaternion([1., 2., 3., 4.])
 >>> str(q3)          # All quaternions are normalized
 '(0.1826 +0.3651i +0.5477j +0.7303k)'
->>> str(q2+q3)       # Use normal arithmetic operators to perform operations on quaternions
+>>> str(q2+q3)       # Use normal arithmetic operators
 '(0.0918 +0.3181i +0.5444j +0.7707k)'
 >>> q2.product(q3)   # Quaternion products are supported
 array([-0.97590007,  0.        ,  0.19518001,  0.09759001])

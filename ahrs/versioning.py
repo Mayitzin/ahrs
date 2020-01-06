@@ -7,7 +7,7 @@ AHRS: Versioning
 
 MAJOR = 0
 MINOR = 2
-PATCH = 1
+PATCH = 2
 RELEASE = "0"
 
 def get_version(short=False):

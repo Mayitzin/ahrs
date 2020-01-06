@@ -1,6 +1,9 @@
-name: Build Python Package
+name: Build and Publish Python Package
 
-on: push
+on:
+  push:
+    branches:
+      - master
 
 jobs:
   build:
@@ -20,3 +23,8 @@ jobs:
     - name: Build binary wheel and source tarball
       run: |
         python setup.py sdist bdist_wheel
+
+# For more information on changing these actions see:
+# - https://packaging.python.org/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/
+# - https://help.github.com/en/actions/automating-your-workflow-with-github-actions/configuring-workflows
+# - https://help.github.com/en/actions/automating-your-workflow-with-github-actions/events-that-trigger-workflows
