@@ -1163,17 +1163,16 @@ class Quaternion:
         Returns
         -------
         dq/dt : array
-            Derivative of quaternion.
+            Derivative of quaternion
 
         """
         if w.ndim != 1 or w.shape[0] != 3:
             raise ValueError("Expected `w` to have shape (3,), got {}.".format(w.shape))
-        w = np.concatenate(([0.0], w))
         F = 0.5*np.array([
             [0.0, -w[0], -w[1], -w[2]],
-            [w[0], 0.0, w[2], -w[1]],
-            [w[1], -w[2], 0.0, w[0]],
-            [w[2], w[1], -w[0], 0.0]])
+            [w[0], 0.0, -w[2], w[1]],
+            [w[1], w[2], 0.0, -w[0]],
+            [w[2], -w[1], w[0], 0.0]])
         return F@self.q
 
 class QuaternionArray:
