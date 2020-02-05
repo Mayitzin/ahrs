@@ -92,7 +92,7 @@ def q_random(size=1):
     array([1., 1., 1., 1., 1.])
 
     """
-    assert size > 0 and type(size) is int, "size must be a positive non-zero integer value."
+    assert size > 0 and isinstance(size, int), "size must be a positive non-zero integer value."
     q = np.random.random((size, 4))-0.5
     q /= np.linalg.norm(q, axis=1)[:, np.newaxis]
     if size == 1:
@@ -1038,6 +1038,41 @@ def quest(fb, mb, fn, mn, wf=1.0, wm=1.0):
     index = np.argmax(eigvals)
     q = eigvecs[:, index]
     return q/np.linalg.norm(q)
+
+def am2euler(a, m, in_deg=False):
+    """
+    Return Euler angles from gravity and geomagnetic field
+
+    Parameters
+    ----------
+    a : array
+        Gravitational acceleration
+    m : array
+        Geomagnetic field
+    in_deg : bool
+        Return angles in degrees.
+
+    Returns
+    -------
+    angles : array
+        Euler angles
+    """
+    # Normalization of 2D arrays
+    a /= np.linalg.norm(a, axis=1)[:, None]
+    m /= np.linalg.norm(m, axis=1)[:, None]
+    angles = np.zeros((len(a), 3))   # Allocation of angles array
+    # Estimate tilt angles
+    angles[:, 0] = np.arctan2(a[:, 1], a[:, 2])
+    angles[:, 1] = np.arctan2(-a[:, 0], np.sqrt(a[:, 1]**2 + a[:, 2]**2))
+    # Estimate heading angle
+    my2 = m[:, 2]*np.sin(angles[:, 0]) - m[:, 1]*np.cos(angles[:, 0])
+    mz2 = m[:, 1]*np.sin(angles[:, 0]) + m[:, 2]*np.cos(angles[:, 0])
+    mx3 = m[:, 0]*np.cos(angles[:, 1]) + mz2*np.sin(angles[:, 1])
+    angles[:, 2] = np.arctan2(my2, mx3)
+    # Return in degrees or in radians
+    if in_deg:
+        return angles*RAD2DEG
+    return angles
 
 def slerp(q0, q1, t_array, **kwgars):
     """

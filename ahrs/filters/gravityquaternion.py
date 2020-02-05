@@ -35,10 +35,6 @@ from ahrs.common import DEG2RAD
 class GravityQuaternion:
     """
     Class of Gravity-based estimation of quaternion.
-
-    Parameters
-    ----------
-
     """
     def __init__(self, *args, **kwargs):
         self.input = args[0] if args else None
@@ -82,11 +78,6 @@ class GravityQuaternion:
         ex = np.arctan2( ay, az)
         ey = np.arctan2(-ax, np.sqrt(ay**2 + az**2))
         ez = 0.0
-        # ex = np.arctan(ax/ay)
-        # ey = np.arccos(az/np.linalg.norm(a))
-        # ex = np.arctan(ax/np.sqrt(ay**2+az**2))
-        # ey = np.arctan(ay/np.sqrt(ax**2+az**2))
-        # ez = np.arctan(np.sqrt(ax**2+ay**2)/az)
         # Euler to Quaternion
         q = np.array([1.0, 0.0, 0.0, 0.0])
         # Roll
