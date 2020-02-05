@@ -56,7 +56,7 @@ def find_index(header, s):
             return header.index(h)
     return None
 
-def load(file_name):
+def load(file_name, separator=';'):
     """
     Load the contents of a file into a dictionary.
 
@@ -67,8 +67,16 @@ def load(file_name):
 
     Parameters
     ----------
-    file_name : string
+    file_name : str
         Name of the file
+    separator : str, default: ';'
+        String used to split values. Normally using a single character. Default
+        is the semicolon.
+
+    Returns
+    -------
+    data : Data
+        Read information stored in class Data.
     """
     if not os.path.isfile(file_name):
         sys.exit("[ERROR] The file {} does not exist.".format(file_name))
@@ -80,12 +88,12 @@ def load(file_name):
     if file_ext == 'csv':
         with open(file_name, 'r') as f:
             all_lines = f.readlines()
-        split_header = all_lines[0].strip().split(';')
+        split_header = all_lines[0].strip().split(separator)
         a_idx = find_index(split_header, 'acc')
         g_idx = find_index(split_header, 'gyr')
         m_idx = find_index(split_header, 'mag')
         q_idx = find_index(split_header, 'orient')
-        data = np.genfromtxt(all_lines[2:], delimiter=';')
+        data = np.genfromtxt(all_lines[2:], delimiter=separator)
         d = {'time' : data[:, 0],
         'acc' : data[:, a_idx:a_idx+3],
         'gyr' : data[:, g_idx:g_idx+3],
