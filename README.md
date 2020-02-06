@@ -1,5 +1,7 @@
 # AHRS: Attitude and Heading Reference Systems
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/6faade3871f64098a3a52901dba9d8bc)](https://app.codacy.com/manual/Mayitzin/ahrs?utm_source=github.com&utm_medium=referral&utm_content=Mayitzin/ahrs&utm_campaign=Badge_Grade_Dashboard)
+
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/Mayitzin/ahrs/Build%20Python%20Package)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/ahrs)
 ![PyPI - License](https://img.shields.io/pypi/l/ahrs)
