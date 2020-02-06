@@ -13,7 +13,7 @@ References
 """
 
 import numpy as np
-from ahrs.common.orientation import *
+from ahrs.common.orientation import q_prod, q_conj
 from ahrs.common import DEG2RAD
 
 class Mahony:

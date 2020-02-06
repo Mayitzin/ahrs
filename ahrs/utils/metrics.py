@@ -46,39 +46,3 @@ def euclidean(x, y, **kwargs):
 
     """
     return np.linalg.norm(x-y, **kwargs)
-
-def id_frequency(timestamps, units='s'):
-    """
-    Estimate the sampling frequency from an array of timestamps.
-
-    Parameters
-    ----------
-    timestamps : array
-        Array with timestamps.
-    units : str, default: 's'
-        Abreviated time units of the timestamps. Valid units are: 's', 'ms',
-        'us' and 'ns'. Defaults to seconds ('s')
-
-    Returns
-    -------
-    f : float
-        Estimated sampling frequency in Hz.
-
-    Examples
-    --------
-    >>> t = [0.1, 0.2, 0.3, 0.4, 0.5]
-    >>> ahrs.utils.id_frequency(t)
-    10.0
-    >>> ahrs.utils.id_frequency(t, 'ms')
-    10000.0
-
-    """
-    diffs = np.diff(timestamps)
-    mean = np.nanmean(diffs)
-    if units == 'ms':
-        mean *= 1e-3
-    if units == 'us':
-        mean *= 1e-6
-    if units == 'ns':
-        mean *= 1e-9
-    return 1.0 / mean

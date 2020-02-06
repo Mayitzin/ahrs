@@ -5,6 +5,7 @@
 ![PyPI - License](https://img.shields.io/pypi/l/ahrs)
 ![PyPI](https://img.shields.io/pypi/v/ahrs)
 ![PyPI Downloads](https://pepy.tech/badge/ahrs)
+![Codacy Badge](https://api.codacy.com/project/badge/Grade/bc366c601ed44e12b233218dd37cd32c)
 
 AHRS is a zoo of functions and objects written in Python helping you to estimate the orientation and position of robotic systems.
 
@@ -18,13 +19,13 @@ AHRS is compatible with __Python 3.6__ and above.
 
 AHRS may be installed using [pip](https://pip.pypa.io):
 
-```
+```shell
 pip install ahrs
 ```
 
 Or directly from the repository:
 
-```
+```shell
 git clone https://github.com/Mayitzin/ahrs.git
 cd ahrs
 python setup.py install
@@ -53,6 +54,8 @@ array([[ 0.81379768 -0.46984631  0.34202014]
        [-0.20487413  0.31879578  0.92541658]])
 ```
 
+### New in version 0.2.0
+
 It now includes the class `Quaternion` to easily handle the orientation estimation with quaternions.
 
 ```py
@@ -80,24 +83,6 @@ array([[-0.85714286,  0.28571429,  0.42857143],
 
 And many other quaternion operations, properties and methods are also available.
 
-`ahrs` includes a sub-module that simplifies data loading and visualization using `matplotlib` as plot engine.
-
-```py
->>> data = ahrs.utils.io.load("ExampleData.mat")
->>> ahrs.utils.plot_sensors(data.gyr)
-```
-
-![Simple Sensor Plotting](plot_sensors_simple_screenshot.png)
-
-It is possible to render more sensors with different subplots, and even titling them.
-
-```py
->>> ahrs.utils.plot_sensors(data.gyr, data.acc, data.mag,
-        x_axis=data.time, subtitles=["Gyroscopes", "Accelerometers", "Magnetometers"])
-```
-
-![Full Sensor Plotting](plot_sensors_screenshot.png)
-
 To use the sensor data to estimate the attitude, the `filters` module includes various (more coming) algorithms for it.
 
 ```py
@@ -107,10 +92,9 @@ To use the sensor data to estimate the attitude, the `filters` module includes v
 >>> for t in range(1, data.num_samples):
 ...     Q[t] = madgwick.updateMARG(Q[t-1], d2g*data.gyr[t], data.acc[t], data.mag[t])
 ...
->>> ahrs.utils.plot_quaternions(Q)
+>>> Q.shape
+(6959, 4)
 ```
-
-![Quaternion Plotting](plot_quaternions_screenshot.png)
 
 Also works by simply passing the data to a desired filter, and it will automatically try to load the sensor information and estimate the quaternions with the given parameters.
 
@@ -119,6 +103,12 @@ Also works by simply passing the data to a desired filter, and it will automatic
 >>> orientation.Q.shape
 (6959, 4)
 ```
+
+## Notes for future versions
+
+`ahrs` will start to move away from plotting and data parsing submodules to better focus in the algorithmic parts. This means, the submodule `io` and `plot`-related functions will not be further developed and become obsolete.
+
+This way you can also choose your favorite libraries for data loading and visualization.
 
 ## Documentation
 

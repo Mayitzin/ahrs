@@ -38,7 +38,7 @@ metadata = dict(
     url=REPOSITORY_URL,
     download_url=REPOSITORY_URL+'archive/master/ahrs-master.zip',
     author='Mario Garcia',
-    author_email='mario.garcia@tum.de',
+    author_email='mario@mayitzin.com',
     project_urls={
         "Bug Tracker": REPOSITORY_URL+"issues"
     },

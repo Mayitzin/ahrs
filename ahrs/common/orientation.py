@@ -4,6 +4,11 @@ Routines for orientation estimation.
 
 Further description will follow.
 
+Notes
+-----
+- The functions involving quaternions are now better implemented, controlled
+  and documented in the class Quaternion.
+
 """
 
 import numpy as np
@@ -92,7 +97,8 @@ def q_random(size=1):
     array([1., 1., 1., 1., 1.])
 
     """
-    assert size > 0 and isinstance(size, int), "size must be a positive non-zero integer value."
+    if not(size > 0 and isinstance(size, int)):
+        raise ValueError("size must be a positive non-zero integer value.")
     q = np.random.random((size, 4))-0.5
     q /= np.linalg.norm(q, axis=1)[:, np.newaxis]
     if size == 1:
@@ -443,7 +449,7 @@ def q2R(q):
         return np.identity(3)
     if len(q) != 4:
         return None
-    if type(q) is not np.ndarray:
+    if not isinstance(q, np.ndarray):
         q = np.asarray(q)
     q /= np.linalg.norm(q)
     return np.array([
@@ -571,7 +577,7 @@ def rotation(ax=None, ang=0.0):
         if ang == 0.0:
             return I_3
         ax = "z"
-    if type(ax) is int:
+    if isinstance(ax, int):
         if ax < 0:
             ax = 2      # Negative axes default to 2 (Z-axis)
         ax = valid_axes[ax] if ax < 3 else "z"
@@ -638,13 +644,12 @@ def rot_seq(axes=None, angles=None):
     """
     accepted_axes = list('xyzXYZ')
     R = np.identity(3)
-    if type(axes) is not list:
+    if not isinstance(axes, list):
         axes = list(axes)
     num_rotations = len(axes)
     if num_rotations < 1:
         return R
-    valid_given_axes = set(axes).issubset(set(accepted_axes))
-    if valid_given_axes:
+    if set(axes).issubset(set(accepted_axes)):
         # Perform the matrix multiplications
         for i in range(num_rotations-1, -1, -1):
             R = rotation(axes[i], angles[i])@R
@@ -773,9 +778,9 @@ def am2q(a, m):
     """
     if m is None:
         m = np.array([0.0, 0.0, 0.0])
-    if type(a) != np.ndarray:
+    if not isinstance(a, np.ndarray):
         a = np.array(a)
-    if type(m) != np.ndarray:
+    if not isinstance(m, np.ndarray):
         m = np.array(m)
     H = np.cross(m, a)
     H /= np.linalg.norm(H)
@@ -1128,11 +1133,4 @@ def slerp(q0, q1, t_array, **kwgars):
     return s0[:,np.newaxis]*q0[np.newaxis,:] + s1[:,np.newaxis]*q1[np.newaxis,:]
 
 if __name__ == '__main__':
-    Rx = rotation('x', 10.0)
-    Ry = rotation('y', 20.0)
-    Rz = rotation('z', 30.0)
-    Rzyx = Rx@Ry@Rz
-    print(Rzyx)
-    R = rot_seq('xyz', [10.0, 20.0, 30.0])
-    print(R)
-    # print(np.isclose(Rzyx, R))
+    q = q_random(-1)

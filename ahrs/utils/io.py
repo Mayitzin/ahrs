@@ -35,8 +35,10 @@ def get_freq(times, units='s'):
     >>> t = np.arange(500) + np.random.randn(500)
     >>> ahrs.utils.io.id_frequency(t)
     0.9984740941199178
-    >>> t = np.array([0.1, 0.2, 0.3, 0.4, 0.5])
-    >>> ahrs.utils.io.id_frequency(t, 'ms')
+    >>> t = [0.1, 0.2, 0.3, 0.4, 0.5]
+    >>> ahrs.utils.id_frequency(t)
+    10.0
+    >>> ahrs.utils.id_frequency(t, 'ms')
     10000.0
 
     """
@@ -312,9 +314,7 @@ def load_OxIOD(path, sequence=1):
     return Data(data)
 
 class Data:
-    """
-    Data to store the arrays of the most common variables.
-    """
+    """Data to store the arrays of the most common variables."""
     time = None
     acc = None
     gyr = None

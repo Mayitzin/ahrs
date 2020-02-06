@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2-dev1] - 2020-02-06
+### Added
+- Support for other characters as separators in function `load` of submodule `io`.
+- Function `am2euler` to obtain Euler angles from gravity and geomagnetic measurements.
+- Notice of discontinuation of `io` and `plotting` submodules.
+- Add badge of code quality.
+
+### Changed
+- Using `isinstance(x, y)` instead of `type(x)==y` to confirm types of variables.
+- Update setup information.
+
 ## [0.2.2] - 2020-01-06
 ### Added
 - This changelog.
@@ -15,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Simplify building triads in function `triad` of submodule `orientation`.
 - Fix documentation of `am2angles` and `quest` of submodule `orientation`.
 
-## [0.2.1] - 2020-01-06
+## [0.2.1] - 2020-12-28
 ### Added
 - Class `QuaternionArray` to handle several quaternions at once.
 - Add methods `log()`, `exp()`, `inv()`, `to_array()` and `to_list()` to class `Quaternion`.

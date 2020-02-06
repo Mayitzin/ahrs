@@ -6,8 +6,6 @@ Common mathematical routines.
 
 import numpy as np
 
-__all__ = ['cosd', 'sind', 'skew', 'M_PI', 'DEG2RAD', 'RAD2DEG']
-
 M_PI = np.pi
 DEG2RAD = M_PI / 180.0
 RAD2DEG = 180.0 / M_PI
@@ -40,7 +38,7 @@ def cosd(x):
     -0.5
 
     """
-    if type(x) == list:
+    if isinstance(x, list):
         x = np.asarray(x)
     return np.cos(x*DEG2RAD)
 
@@ -72,7 +70,7 @@ def sind(x):
     -0.86602540378
 
     """
-    if type(x) == list:
+    if isinstance(x, list):
         x = np.asarray(x)
     return np.sin(x*DEG2RAD)
 
