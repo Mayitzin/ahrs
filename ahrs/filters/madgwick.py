@@ -20,12 +20,18 @@ References
 """
 
 import numpy as np
-from ahrs.common.orientation import q_prod, q_conj
+from ahrs.common.orientation import q_prod, q_conj, acc2q, am2q
 from ahrs.common import DEG2RAD
 
 class Madgwick:
     """
     Class of Madgwick filter algorithm
+
+    If acc and gyr are given as parameters, the orientations will be
+    immediately computed with the IMU method.
+
+    If acc, gyr and mag are given as parameters, the orientations will be
+    immediately computed with the MARG method.
 
     Parameters
     ----------
@@ -36,15 +42,63 @@ class Madgwick:
     Dt : float
         Sampling rate in seconds. Inverse of sampling frequency.
 
+    Extra Parameters
+    ----------------
+    acc : array
+        N-by-3 array with measurements of acceleration in g.
+    gyr : array
+        N-by-3 array with measurements of angular velocity in rad/s.
+    mag : array
+        N-by-3 array with measurements of magnetic field in mT.
+
     """
     def __init__(self, *args, **kwargs):
         self.input = args[0] if args else None
         self.beta = kwargs.get('beta', 0.1)
         self.frequency = kwargs.get('frequency', 100.0)
         self.Dt = kwargs.get('Dt', 1.0/self.frequency)
+        self.acc = kwargs.get('acc')
+        self.gyr = kwargs.get('gyr')
+        self.mag = kwargs.get('mag')
+        if self.acc is not None and self.gyr is not None:
+            self.Q = self.compute_MARG() if self.mag is not None else self.compute_IMU()
         # Process of data is given
         if self.input:
             self.Q = self.estimate_all()
+
+    def compute_IMU(self):
+        if not isinstance(self.acc, np.ndarray):
+            self.acc = np.array(self.acc)
+        if not isinstance(self.gyr, np.ndarray):
+            self.gyr = np.array(self.gyr)
+        if self.acc.shape != self.gyr.shape:
+            raise ValueError("acc and gyr are not the same size")
+        # Estimate orientations
+        num_samples = len(self.acc)
+        Q = np.zeros((num_samples, 4))
+        Q[0] = acc2q(self.acc[0])
+        for t in range(1, num_samples):
+            Q[t] = self.updateIMU(Q[t-1], self.gyr[t], self.acc[t])
+        return Q
+
+    def compute_MARG(self):
+        if not isinstance(self.acc, np.ndarray):
+            self.acc = np.array(self.acc)
+        if not isinstance(self.gyr, np.ndarray):
+            self.gyr = np.array(self.gyr)
+        if not isinstance(self.mag, np.ndarray):
+            self.mag = np.array(self.mag)
+        if self.acc.shape != self.gyr.shape:
+            raise ValueError("acc and gyr are not the same size")
+        if self.acc.shape != self.mag.shape:
+            raise ValueError("acc and mag are not the same size")
+        # Estimate orientations
+        num_samples = len(self.acc)
+        Q = np.zeros((num_samples, 4))
+        Q[0] = am2q(self.acc[0], self.mag[0])
+        for t in range(1, num_samples):
+            Q[t] = self.updateMARG(Q[t-1], self.gyr[t], self.acc[t], self.mag[t])
+        return Q
 
     def estimate_all(self):
         """
@@ -191,15 +245,11 @@ if __name__ == '__main__':
     mag = data[:, 11:14]
     num_samples = data.shape[0]
     # Estimate Orientations with IMU
-    q_imu = np.tile([1., 0., 0., 0.], (num_samples, 1))
-    madgwick = Madgwick()
-    for i in range(1, num_samples):
-        q_imu[i] = madgwick.updateIMU(q_imu[i-1], gyr[i], acc[i])
+    madgwick = Madgwick(acc=acc, gyr=gyr)
+    q_imu = madgwick.Q
     # Estimate Orientations with MARG
-    q_marg = np.tile([1., 0., 0., 0.], (num_samples, 1))
-    madgwick = Madgwick()
-    for i in range(1, num_samples):
-        q_marg[i] = madgwick.updateMARG(q_marg[i-1], gyr[i], acc[i], mag[i])
+    madgwick = Madgwick(acc=acc, gyr=gyr, mag=mag)
+    q_marg = madgwick.Q
     # Compute Error
     sqe_imu = abs(q_ref - q_imu).sum(axis=1)**2
     sqe_marg = abs(q_ref - q_marg).sum(axis=1)**2

@@ -661,12 +661,12 @@ def dcm2quat(R):
 
     Parameters
     ----------
-    R : array
-        Direct Cosine Matrix.
+    R : ndarray
+        Direction Cosine Matrix.
 
     Returns
     -------
-    q : array
+    q : ndarray
         Unit Quaternion.
 
     References
@@ -681,7 +681,6 @@ def dcm2quat(R):
         raise ValueError('Input needs to be a 3x3 array or matrix')
     q = np.array([1., 0., 0., 0.])
     q[0] = 0.5*np.sqrt(1.0 + R[0, 0] + R[1, 1] + R[2, 2])
-    # qw4 = 4.0*q[0]
     q[1] = (R[1, 2] - R[2, 1]) / q[0]
     q[2] = (R[2, 0] - R[0, 2]) / q[0]
     q[3] = (R[0, 1] - R[1, 0]) / q[0]
@@ -751,7 +750,8 @@ def q2cardan(q):
 
 def am2q(a, m):
     """
-    Estimate pose from given acceleration and/or compass using Michel-method.
+    Estimate pose from given acceleration and/or compass using the TRIAD
+    method.
 
     Parameters
     ----------
@@ -795,21 +795,19 @@ def am2q(a, m):
 
 def acc2q(a, return_euler=False):
     """
-    Estimate pose from given acceleration and/or compass.
+    Estimate pose from given acceleration.
 
     Parameters
     ----------
     a : array
         A sample of 3 orthogonal accelerometers.
-    m : array
-        A sample of 3 orthogonal magnetometers.
-    return_euler : bool
+    return_euler : bool, default: False
         Return pose as Euler angles
 
     Returns
     -------
     pose : array
-        Estimated Quaternion or Euler Angles
+        Estimated Quaternion or Euler Angles.
 
     References
     ----------
@@ -836,7 +834,7 @@ def acc2q(a, return_euler=False):
            (http://www.idsc.ethz.ch/content/dam/ethz/special-interest/mavt/dynamic-systems-n-control/idsc-dam/Research_DAndrea/Balancing%20Cube/ICRA10_1597_web.pdf)
 
     """
-    qw, qx, qy, qz = 1.0, 0.0, 0.0, 0.0
+    q = np.array([1.0, 0.0, 0.0, 0.0])
     ex, ey, ez = 0.0, 0.0, 0.0
     if len(a) == 3:
         ax, ay, az = a
@@ -846,10 +844,8 @@ def acc2q(a, return_euler=False):
         ay /= a_norm
         az /= a_norm
         # Euler Angles from Gravity vector
-        ex = np.arctan2(ay, az) - np.pi
-        if ex*RAD2DEG < -180.0:
-            ex += 2.0*np.pi
-        ey = np.arctan2(-ax, np.sqrt(ay*ay + az*az))
+        ex = np.arctan2(ay, az)
+        ey = np.arctan2(-ax, np.sqrt(ay**2 + az**2))
         ez = 0.0
         if return_euler:
             return np.array([ex, ey, ez])*RAD2DEG
@@ -858,17 +854,13 @@ def acc2q(a, return_euler=False):
         sx2 = np.sin(ex/2.0)
         cy2 = np.cos(ey/2.0)
         sy2 = np.sin(ey/2.0)
-        qrw =  cx2*cy2
-        qrx =  sx2*cy2
-        qry =  cx2*sy2
-        qrz = -sx2*sy2
+        q[0] =  cx2*cy2
+        q[1] =  sx2*cy2
+        q[2] =  cx2*sy2
+        q[3] = -sx2*sy2
         # Normalize reference Quaternion
-        q_norm = np.linalg.norm([qrw, qrx, qry, qrz])
-        qw = qrw/q_norm
-        qx = qrx/q_norm
-        qy = qry/q_norm
-        qz = qrz/q_norm
-    return np.array([qw, qx, qy, qz])
+        q /= np.linalg.norm(q)
+    return q
 
 def am2angles(a, m, in_deg=False):
     """
