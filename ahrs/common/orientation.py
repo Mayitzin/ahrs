@@ -884,6 +884,10 @@ def am2angles(a, m, in_deg=False):
       e-compass. ST Technical Document DT0058. October 2018.
       (https://www.st.com/resource/en/design_tip/dm00269987.pdf)
     """
+    if a.ndim<2:
+        a = np.atleast_2d(a)
+    if m.ndim<2:
+        m = np.atleast_2d(m)
     # Normalization of 2D arrays
     a /= np.linalg.norm(a, axis=1)[:, None]
     m /= np.linalg.norm(m, axis=1)[:, None]

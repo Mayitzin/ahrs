@@ -20,7 +20,7 @@ References
 """
 
 import numpy as np
-from ahrs.common.orientation import q_prod, q_conj, acc2q, am2q
+from ahrs.common.orientation import q_prod, q_conj, acc2q, am2q, am2angles, cardan2q
 from ahrs.common import DEG2RAD
 
 class Madgwick:
@@ -95,7 +95,9 @@ class Madgwick:
         # Estimate orientations
         num_samples = len(self.acc)
         Q = np.zeros((num_samples, 4))
-        Q[0] = am2q(self.acc[0], self.mag[0])
+        angles = np.squeeze(am2angles(self.acc[0], self.mag[0]))
+        Q[0] = cardan2q(angles)
+        # Q[0] = am2q(self.acc[0], self.mag[0])
         for t in range(1, num_samples):
             Q[t] = self.updateMARG(Q[t-1], self.gyr[t], self.acc[t], self.mag[t])
         return Q
@@ -238,7 +240,9 @@ class Madgwick:
         return q
 
 if __name__ == '__main__':
-    data = np.genfromtxt('../../tests/repoIMU.csv', dtype=float, delimiter=';', skip_header=2)
+    test_file = '../../tests/repoIMU.csv'
+    print("Testing Madgwick with {}".format(test_file))
+    data = np.genfromtxt(test_file, dtype=float, delimiter=';', skip_header=2)
     q_ref = data[:, 1:5]
     acc = data[:, 5:8]
     gyr = data[:, 8:11]
