@@ -113,8 +113,3 @@ def test_quaternion_class():
 
 if __name__ == "__main__":
     test_filters()
-    # test_plot(file="ExampleData.mat", freq=256.0)
-    # test_plot(file="repoIMU.csv", freq=100.0)
-    # test_load("../../Datasets/OxIOD/pocket/data1/raw")
-    # test_quat('../../Datasets/EuRoC/V1_01_easy')
-    # test_quaternion_class()

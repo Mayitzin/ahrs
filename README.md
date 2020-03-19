@@ -13,7 +13,7 @@ Orginally, an [AHRS](https://en.wikipedia.org/wiki/Attitude_and_heading_referenc
 
 The module __AHRS__ is developed with a focus on fast prototyping and easy modularity.
 
-AHRS is compatible with __Python 3.6__ and above.
+AHRS is compatible with __Python 3.6__ and newer.
 
 ## Installation
 
@@ -87,10 +87,10 @@ To use the sensor data to estimate the attitude, the `filters` module includes v
 
 ```py
 >>> madgwick = ahrs.filters.Madgwick()    # Madgwick's attitude estimation using default values
->>> Q = np.tile([1., 0., 0., 0.], (data.num_samples, 1)) # Allocate an array for all quaternions
+>>> Q = np.tile([1., 0., 0., 0.], (num_samples, 1)) # Allocate an array for all quaternions
 >>> d2g = ahrs.common.DEG2RAD   # Constant to convert degrees to radians
->>> for t in range(1, data.num_samples):
-...     Q[t] = madgwick.updateMARG(Q[t-1], d2g*data.gyr[t], data.acc[t], data.mag[t])
+>>> for t in range(1, num_samples):
+...     Q[t] = madgwick.updateMARG(Q[t-1], d2g*gyr[t], acc[t], mag[t])
 ...
 >>> Q.shape
 (6959, 4)
@@ -99,7 +99,7 @@ To use the sensor data to estimate the attitude, the `filters` module includes v
 Also works by simply passing the data to a desired filter, and it will automatically try to load the sensor information and estimate the quaternions with the given parameters.
 
 ```py
->>> orientation = ahrs.filters.Madgwick(data, beta=0.1, frequency=100.0)
+>>> orientation = ahrs.filters.Madgwick(acc=accelerations, gyr=gyros, beta=0.1, frequency=100.0)
 >>> orientation.Q.shape
 (6959, 4)
 ```

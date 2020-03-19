@@ -89,7 +89,7 @@ def hughes(dcm):
         return np.array([1., 0., 0., 0.])
     n = 0.5*np.sqrt(1.0 + tr)
     if np.isclose(n, 0):    # trace = -1: q_w = 0 (Pure Quaternion)
-        e = np.sqrt((1.0+np.diag(R))/2.0)
+        e = np.sqrt((1.0+np.diag(dcm))/2.0)
     else:
         e = 0.25*np.array([dcm[1, 2]-dcm[2, 1], dcm[2, 0]-dcm[0, 2], dcm[0, 1]-dcm[1, 0]])/n
     return np.concatenate(([n], e))
@@ -227,7 +227,7 @@ def shepperd(dcm):
     q /= 2.0*np.sqrt(q[i])
     return q
 
-def slerp(q0, q1, t_array, **kwgars):
+def slerp(q0, q1, t_array, threshold=0.9995):
     """
     Spherical Linear Interpolation between quaternions.
 
@@ -258,7 +258,6 @@ def slerp(q0, q1, t_array, **kwgars):
     .. [Wiki_SLERP] https://en.wikipedia.org/wiki/Slerp
 
     """
-    threshold = kwgars.get('threshold', 0.9995)
     t_array = np.array(t_array)
     q0 = np.array(q0)
     q1 = np.array(q1)
@@ -1124,14 +1123,14 @@ class Quaternion:
         self.normalize()
         self.w, self.x, self.y, self.z = self.q
 
-    def from_angles(self, angles):
+    def from_rpy(self, angles):
         """
-        Set quaternion from given Euler angles.
+        Set quaternion from given RPY angles.
 
         Parameters
         ----------
         angles : array
-            3 Euler angles in following order: roll -> pitch -> yaw.
+            3 cardanian angles in following order: roll -> pitch -> yaw.
 
         """
         angles = np.array(angles)
@@ -1150,6 +1149,10 @@ class Quaternion:
         self.q[3] = sy*cp*cr - cy*sp*sr
         self.normalize()
         self.w, self.x, self.y, self.z = self.q
+
+    def from_angles(self, angles):
+        """Synonym to method from_rpy()"""
+        return self.from_rpy(angles)
 
     def derivative(self, w):
         """

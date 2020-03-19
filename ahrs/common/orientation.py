@@ -687,16 +687,18 @@ def dcm2quat(R):
     q[1:] /= 4.0
     return q / np.linalg.norm(q)
 
-def cardan2q(angles, in_deg=False):
+def rpy2q(angles, in_deg=False):
     """
-    Return a Quaternion from given cardan angles with order: roll, pitch, yaw.
-    Where roll is the first rotation (about X-axis), pitch is the second
-    rotation (about Y-axis), and yaw is the last rotation (about Z-axis.)
+    Return a Quaternion from given roll-pitch-yaw angles, where roll is the
+    first rotation (about X-axis), pitch is the second rotation (about Y-axis),
+    and yaw is the last rotation (about Z-axis.)
 
     Parameters
     ----------
     angles : array
-        Cardan angles.
+        roll-pitch-yaw angles.
+    in_deg : bool, default: False
+        Angles are given in degrees.
 
     Returns
     -------
@@ -708,12 +710,13 @@ def cardan2q(angles, in_deg=False):
         return None
     if in_deg:
         angles *= DEG2RAD
-    cr = np.cos(0.5*angles[0])
-    sr = np.sin(0.5*angles[0])
-    cp = np.cos(0.5*angles[1])
-    sp = np.sin(0.5*angles[1])
-    cy = np.cos(0.5*angles[2])
-    sy = np.sin(0.5*angles[2])
+    yaw, pitch, roll = angles
+    cr = np.cos(0.5*roll)
+    sr = np.sin(0.5*roll)
+    cp = np.cos(0.5*pitch)
+    sp = np.sin(0.5*pitch)
+    cy = np.cos(0.5*yaw)
+    sy = np.sin(0.5*yaw)
     # To Quaternion
     q = np.array([
         cy*cp*cr + sy*sp*sr,
@@ -723,30 +726,42 @@ def cardan2q(angles, in_deg=False):
     q /= np.linalg.norm(q)
     return q
 
-def q2cardan(q):
-    """
-    Return the cardan angles from a given quaternion, where the angles have the
-    order: roll, pitch, yaw.
+def cardan2q(angles, in_deg=False):
+    """synonym to function rpy2q()"""
+    return rpy2q(angles, in_deg=in_deg)
 
-    Roll is the first rotation (about X-axis), pitch is the second
-    rotation (about Y-axis), and yaw is the last rotation (about Z-axis.)
+def q2rpy(q, in_deg=False):
+    """
+    Return the roll-pitch-yaw angles from a given quaternion.
+
+    Roll is the first rotation (about X-axis), pitch is the second rotation
+    (about Y-axis), and yaw is the last rotation (about Z-axis.)
 
     Parameters
     ----------
     q : array
         Quaternion.
+    in_deg : bool, default: False
+        Return the angles in degrees.
 
     Returns
     -------
     angles : array
-        Cardan angles.
+        roll-pitch-yaw angles.
     """
     if q.shape[-1] != 4:
         return None
     roll = np.arctan2(2.0*(q[0]*q[1] + q[2]*q[3]), 1.0 - 2.0*(q[1]**2 + q[2]**2))
     pitch = np.arcsin(2.0*(q[0]*q[2] - q[3]*q[1]))
     yaw = np.arctan2(2.0*(q[0]*q[3] + q[1]*q[2]), 1.0 - 2.0*(q[2]**2 + q[3]**2))
-    return np.array([roll, pitch, yaw])
+    angles = np.array([roll, pitch, yaw])
+    if in_deg:
+        return angles*RAD2DEG
+    return angles
+
+def q2cardan(q, in_deg=False):
+    """synonym to function q2rpy()"""
+    return q2rpy(q, in_deg=in_deg)
 
 def am2q(a, m):
     """
@@ -864,7 +879,7 @@ def acc2q(a, return_euler=False):
 
 def am2angles(a, m, in_deg=False):
     """
-    Estimate pose from given acceleration and compass.
+    Estimate roll-pitch-yaw angles from given acceleration and compass.
 
     Parameters
     ----------
@@ -876,7 +891,7 @@ def am2angles(a, m, in_deg=False):
     Returns
     -------
     pose : array
-        Estimated Angles
+        Estimated roll-pitch-yaw angles
 
     References
     ----------
@@ -983,12 +998,12 @@ def quest(fb, mb, fn, mn, wf=1.0, wm=1.0):
     Parameters
     ----------
     fb : array
-        3-by-1 Observation vector 1 in body frame. Usually is gravity vector
-        g = [0 0 1]^T
+        Three-dimensional observation vector 1 in body frame. Usually gravity
+        vector g = [0 0 1]^T
     mb : array
-        3-by-1 Observation vector 2 in body frame. Usually is magnetic field
-        m = [cos(dip) 0 sin(dip)]^T, where dip is the magnetic dip in local
-        latitude
+        Three-dimensional observation vector 2 in body frame. Usually magnetic
+        field m = [cos(dip) 0 sin(dip)]^T, where dip is the magnetic dip in
+        local latitude
     fn : array
         3-by-1 Reference vector 1. Defaults to gravity in navigation frame
     mn : array
@@ -996,9 +1011,10 @@ def quest(fb, mb, fn, mn, wf=1.0, wm=1.0):
 
     Extra Parameters
     ----------------
-    dip : float
-        Magnetic dip in local latitude. Defaults to 66.47° corresponding to
-        Germany.
+    wf : float
+        Weights of f
+    wm : float
+        Weights of m
 
     Returns
     -------
@@ -1039,41 +1055,6 @@ def quest(fb, mb, fn, mn, wf=1.0, wm=1.0):
     index = np.argmax(eigvals)
     q = eigvecs[:, index]
     return q/np.linalg.norm(q)
-
-def am2euler(a, m, in_deg=False):
-    """
-    Return Euler angles from gravity and geomagnetic field
-
-    Parameters
-    ----------
-    a : array
-        Gravitational acceleration
-    m : array
-        Geomagnetic field
-    in_deg : bool
-        Return angles in degrees.
-
-    Returns
-    -------
-    angles : array
-        Euler angles
-    """
-    # Normalization of 2D arrays
-    a /= np.linalg.norm(a, axis=1)[:, None]
-    m /= np.linalg.norm(m, axis=1)[:, None]
-    angles = np.zeros((len(a), 3))   # Allocation of angles array
-    # Estimate tilt angles
-    angles[:, 0] = np.arctan2(a[:, 1], a[:, 2])
-    angles[:, 1] = np.arctan2(-a[:, 0], np.sqrt(a[:, 1]**2 + a[:, 2]**2))
-    # Estimate heading angle
-    my2 = m[:, 2]*np.sin(angles[:, 0]) - m[:, 1]*np.cos(angles[:, 0])
-    mz2 = m[:, 1]*np.sin(angles[:, 0]) + m[:, 2]*np.cos(angles[:, 0])
-    mx3 = m[:, 0]*np.cos(angles[:, 1]) + mz2*np.sin(angles[:, 1])
-    angles[:, 2] = np.arctan2(my2, mx3)
-    # Return in degrees or in radians
-    if in_deg:
-        return angles*RAD2DEG
-    return angles
 
 def slerp(q0, q1, t_array, **kwgars):
     """

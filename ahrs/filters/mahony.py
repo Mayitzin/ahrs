@@ -13,7 +13,7 @@ References
 """
 
 import numpy as np
-from ahrs.common.orientation import q_prod, q_conj
+from ahrs.common.orientation import q_prod, q_conj, acc2q
 from ahrs.common import DEG2RAD
 
 class Mahony:
@@ -36,13 +36,50 @@ class Mahony:
         self.input = args[0] if args else None
         self.Kp = kwargs.get('Kp', 1.0)
         self.Ki = kwargs.get('Ki', 0.0)
+        self.eInt = np.array([0.0, 0.0, 0.0])   # Integral Error
         self.frequency = kwargs.get('frequency', 100.0)
         self.samplePeriod = kwargs.get('samplePeriod', 1.0/self.frequency)
-        # Integral Error
-        self.eInt = np.array([0.0, 0.0, 0.0])
+        self.acc = kwargs.get('acc')
+        self.gyr = kwargs.get('gyr')
+        self.mag = kwargs.get('mag')
+        if self.acc is not None and self.gyr is not None:
+            self.Q = self.compute_MARG() if self.mag is not None else self.compute_IMU()
         # Process of data is given
-        if self.input:
+        if self.input is not None:
             self.Q = self.estimate_all()
+
+    def compute_IMU(self):
+        """Estimate all quaternions with given accelerations and angular velocities
+        """
+        self.acc = np.array(self.acc)
+        self.gyr = np.array(self.gyr)
+        if self.acc.shape != self.gyr.shape:
+            raise ValueError("acc and gyr are not the same size")
+        # Estimate orientations
+        num_samples = len(self.acc)
+        Q = np.zeros((num_samples, 4))
+        Q[0] = acc2q(self.acc[0])
+        for t in range(1, num_samples):
+            Q[t] = self.updateIMU(Q[t-1], self.gyr[t], self.acc[t])
+        return Q
+
+    def compute_MARG(self):
+        """Estimate all quaternions with given accelerations, angular velocities and magnetic intensities
+        """
+        self.acc = np.array(self.acc)
+        self.gyr = np.array(self.gyr)
+        self.mag = np.array(self.mag)
+        if self.acc.shape != self.gyr.shape:
+            raise ValueError("acc and gyr are not the same size")
+        if self.mag.shape != self.gyr.shape:
+            raise ValueError("mag and gyr are not the same size")
+        # Estimate orientations
+        num_samples = len(self.acc)
+        Q = np.zeros((num_samples, 4))
+        Q[0] = acc2q(self.acc[0])
+        for t in range(1, num_samples):
+            Q[t] = self.updateMARG(Q[t-1], self.gyr[t], self.acc[t], self.mag[t])
+        return Q
 
     def estimate_all(self):
         """
@@ -177,29 +214,26 @@ class Mahony:
         return q
 
 if __name__ == '__main__':
-    from ahrs.utils import plot
-    data = np.genfromtxt('../../tests/repoIMU.csv', dtype=float, delimiter=';', skip_header=2)
+    test_file = '../../tests/repoIMU.csv'
+    print("Testing Mahony with {}".format(test_file))
+    # Read and split data
+    data = np.genfromtxt(test_file, dtype=float, delimiter=';', skip_header=2)
     q_ref = data[:, 1:5]
     acc = data[:, 5:8]
     gyr = data[:, 8:11]
     mag = data[:, 11:14]
     num_samples = data.shape[0]
     # Estimate Orientations with IMU
-    q_imu = np.tile([1., 0., 0., 0.], (num_samples, 1))
-    mahony = Mahony()
-    for i in range(1, num_samples):
-        q_imu[i] = mahony.updateIMU(q_imu[i-1], gyr[i], acc[i])
+    mahony_imu = Mahony(acc=acc, gyr=gyr)
     # Estimate Orientations with MARG
-    q_marg = np.tile([1., 0., 0., 0.], (num_samples, 1))
-    mahony = Mahony()
-    for i in range(1, num_samples):
-        q_marg[i] = mahony.updateMARG(q_marg[i-1], gyr[i], acc[i], mag[i])
-    # Compute Error
-    sqe_imu = abs(q_ref - q_imu).sum(axis=1)**2
-    sqe_marg = abs(q_ref - q_marg).sum(axis=1)**2
+    mahony_marg = Mahony(acc=acc, gyr=gyr, mag=mag, Kp=0.0001)
+    # Squared Errors
+    se_imu = abs(q_ref - mahony_imu.Q).sum(axis=1)**2
+    se_marg = abs(q_ref - mahony_marg.Q).sum(axis=1)**2
     # Plot results
-    plot(data[:, 1:5], q_imu, q_marg, [sqe_imu, sqe_marg],
+    from ahrs.utils import plot
+    plot(data[:, 1:5], mahony_imu.Q, mahony_marg.Q, [se_imu, se_marg],
         title="Mahony's algorithm",
         subtitles=["Reference Quaternions", "Estimated Quaternions (IMU)", "Estimated Quaternions (MARG)", "Squared Errors"],
         yscales=["linear", "linear", "linear", "log"],
-        labels=[[], [], [], ["MSE (IMU) = {:.3e}".format(sqe_imu.mean()), "MSE (MARG) = {:.3e}".format(sqe_marg.mean())]])
+        labels=[[], [], [], ["MSE (IMU) = {:.3e}".format(se_imu.mean()), "MSE (MARG) = {:.3e}".format(se_marg.mean())]])
