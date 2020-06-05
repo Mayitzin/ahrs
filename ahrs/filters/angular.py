@@ -1,81 +1,84 @@
 # -*- coding: utf-8 -*-
 """
-Quaternion from angular rate.
+Quaternion from angular rate
+============================
 
 Attitude quaternion obtained via angular rate measurements.
 
 References
 ----------
-.. [Wu] Yan-Bin Jia. Quaternions. 2018.
+.. [1] Yan-Bin Jia. Quaternions. 2018.
     http://web.cs.iastate.edu/~cs577/handouts/quaternion.pdf
 
 """
 
 import numpy as np
-from ahrs.common.orientation import *
-from ahrs.common import DEG2RAD
+from ..common.orientation import q_prod
 
 class AngularRate:
-    """
-    Class of Angular rate based estimation of quaternion.
+    """Quaternion Estimation based on angular velocity
+
+    Attributes
+    ----------
+    gyr : numpy.ndarray
+        N-by-3 array with N gyroscope samples.
+
+    Methods
+    -------
+    update(q, gyr)
+        Update orientation `q` using a gyroscope sample.
 
     Parameters
     ----------
+    gyr : numpy.ndarray, default: None
+        N-by-3 array with measurements of angular velocity in rad/s
+
+    Extra Parameters
+    ----------------
+    frequency : float, default: 100.0
+        Sampling frequency in Herz.
+    Dt : float, default: 0.01
+        Sampling step in seconds. Inverse of sampling frequency. Not required
+        if `frequency` value is given.
+    q0 : numpy.ndarray
+        Initial orientation, as a versor (normalized quaternion).
 
     """
-    def __init__(self, *args, **kwargs):
-        self.input = args[0] if args else None
-        self.frequency = kwargs.get('frequency', 100.0)
-        self.Dt = kwargs.get('Dt', 1.0/self.frequency)
-        self.q = np.array([1.0, 0.0, 0.0, 0.0])
-        # Data is given
-        if self.input:
-            self.Q = self.estimate_all()
+    def __init__(self, gyr: np.ndarray = None, **kw):
+        self.gyr = gyr
+        self.frequency = kw.get('frequency', 100.0)
+        self.Dt = kw.get('Dt', 1.0/self.frequency)
+        self.q0 = kw.get('q0')
+        if self.gyr is not None:
+            self.Q = self._compute_all()
 
-    def estimate_all(self):
-        data = self.input
-        d2r = 1.0 if data.in_rads else DEG2RAD
-        Q = np.tile(self.q, (data.num_samples, 1))
-        if data.q_ref is not None:
-            Q[0] = data.q_ref[0]
-        for t in range(1, data.num_samples):
-            Q[t] = self.update(Q[t-1], d2r*data.gyr[t])
+    def _compute_all(self):
+        """Estimate all quaternions with given sensor values"""
+        num_samples = len(self.gyr)
+        Q = np.zeros((num_samples, 4))
+        Q[0] = np.array([1.0, 0.0, 0.0, 0.0]) if self.q0 is None else self.q0.copy()
+        for t in range(1, num_samples):
+            Q[t] = self.update(Q[t-1], self.gyr[t])
         return Q
 
-    def update(self, q, g):
-        """
-        Update the quaternion
+    def update(self, q: np.ndarray, gyr: np.ndarray):
+        """Update the quaternion estimation
 
         Parameters
         ----------
-        g : array
-            Sample of tri-axial Gyroscope in radians.
+        q : numpy.ndarray
+            A-priori quaternion.
+        gyr : numpy.ndarray, default: None
+            N-by-3 array with measurements of angular velocity in rad/s
 
         Returns
         -------
-        q : array
+        q : numpy.ndarray
             Estimated quaternion.
 
         """
-        q += 0.5*q_prod(q, [0, g[0], g[1], g[2]])*self.Dt
-        return q
+        if gyr is None or not np.linalg.norm(gyr)>0:
+            return q
+        q += 0.5*q_prod(q, [0, *gyr])*self.Dt
+        return q/np.linalg.norm(q)
 
-if __name__ == '__main__':
-    from ahrs.utils import plot
-    data = np.genfromtxt('../../tests/repoIMU.csv', dtype=float, delimiter=';', skip_header=2)
-    q_ref = data[:, 1:5]
-    gyr = data[:, 8:11]
-    num_samples = data.shape[0]
-    # Estimate Orientations with IMU
-    q = np.tile([1., 0., 0., 0.], (num_samples, 1))
-    angular = AngularRate()
-    for i in range(1, num_samples):
-        q[i] = angular.update(q[i-1], gyr[i])
-    # Compute Error
-    sqe = abs(q_ref - q).sum(axis=1)**2
-    # Plot results
-    plot(q_ref, q, sqe,
-        title="Angular rate integration",
-        subtitles=["Reference Quaternions", "Estimated Quaternions", "Squared Errors"],
-        yscales=["linear", "linear", "log"],
-        labels=[[], [], ["MSE = {:.3e}".format(sqe.mean())]])

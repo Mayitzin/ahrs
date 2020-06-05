@@ -1,126 +1,178 @@
 # -*- coding: utf-8 -*-
 """
-Mahony Algorithm as proposed by R. Mahony et al [Mahony]_ in 2010.
+Mahony Orientation Filter
+=========================
 
-This implementation is based on the one made by S. Madgwick.
+The filter designed by Robert Mahony [1]_ is formulated as a deterministic
+observer in SO(3) mainly driven by angular velocity measurements and
+reconstructed attitude.
+
+This observer, termed "explicit complementary filter" (ECF), uses an inertial
+measurement :math:`a` and an angular velocity measurement :math:`\\omega`. The
+inertial direction obtained from the gravity is a low-frequency normalized
+measurement:
+
+.. math::
+
+    a = \\frac{a}{\\|a\\|}
+
+A predicted direction of gravity :math:`v` is expected to be colinear with the
+Z-axis of the inertial frame:
+
+.. math::
+
+    \\begin{eqnarray}
+    v & = & R(q)^T \\begin{bmatrix}0 & 0 & 1 \\end{bmatrix}^T\\\\
+    & = &
+    \\begin{bmatrix}
+    1 - 2(q_y^2 + q_z^2) & 2(q_xq_y + q_wq_z) & 2(q_xq_z - q_wq_y) \\
+    2(q_xq_y - q_wq_z) & 1 - 2(q_x^2 + q_z^2) & 2(q_wq_x + q_yq_z) \\
+    2(q_xq_z + q_wq_y) & 2(q_yq_z - q_wq_x) & 1 - 2(q_x^2 + q_y^2)
+    \\end{bmatrix}
+    \\begin{bmatrix}0 \\ 0 \\ 1\\end{bmatrix} \\\\
+    & = &
+    \\begin{bmatrix}
+    2(q_xq_z - q_wq_y) \\ 2(q_wq_x + q_yq_z) \\ 1 - 2(q_x^2 + q_y^2)
+    \\end{bmatrix}
+    \\end{eqnarray}
+
+Considering the basic model of a gyroscope :math:`g`:
+
+.. math::
+
+    g = \\omega + b + \\mu
+
+where :math:`\\omega` is the real angular velocity, :math:`b` is a varying
+deterministic bias, and :math:`\\mu` is a Gaussian noise.
+
+This implementation is based on simplifications by Mark Euston [2]_ and Tarek
+Hamel [3]_ for low-cost inertial measurement units in UAVs.
 
 References
 ----------
-.. [Mahony] Mahony et al. Nonlinear Complementary Filters on the Special
-   Orthogonal Group; R. 2010.
+.. [1] Robert Mahony, Tarek Hamel, and Jean-Michel Pflimlin. Non-linear
+   complementary filters on the special orthogonal group. IEEE Trans-actions
+   on Automatic Control, Institute of Electrical and Electronics Engineers,
+   2008, 53 (5), pp.1203-1217.
    (https://hal.archives-ouvertes.fr/hal-00488376/document)
+.. [2] Mark Euston, Paul W. Coote, Robert E. Mahony, Jonghyuk Kim, and Tarek
+   Hamel. A complementary filter for attitude estimation of a fixed-wing UAV.
+   IEEE/RSJ International Conference on Intelligent Robots and Systems,
+   340-345. 2008.
+   (http://users.cecs.anu.edu.au/~Jonghyuk.Kim/pdf/2008_Euston_iros_v1.04.pdf)
+.. [3] Tarek Hamel and Robert Mahony. Attitude estimation on SO(3) based on
+   direct inertial measurements. IEEE International Conference on Robotics and
+   Automation. ICRA 2006. pp. 2170-2175
+   (http://users.cecs.anu.edu.au/~Robert.Mahony/Mahony_Robert/2006_MahHamPfl-C68.pdf)
 
 """
 
 import numpy as np
-from ahrs.common.orientation import q_prod, q_conj, acc2q
-from ahrs.common import DEG2RAD
+from ..common.orientation import q_prod, q_conj, acc2q, am2q, q2R
 
 class Mahony:
-    """
-    Class of Mahony algorithm
+    """Mahony's Nonlinear Complementary Filter on SO(3)
+
+    Attributes
+    ----------
+    gyr : numpy.ndarray, default: None
+        N-by-3 array with N gyroscope samples
+    acc : numpy.ndarray, default: None
+        N-by-3 array with N accelerometer samples
+    mag : numpy.ndarray, default: None
+        N-by-3 array with N magnetometer samples
+    frequency : float
+        Sampling frequency in Herz
+    Dt : float
+        Sampling step in seconds. Inverse of sampling frequency.
+    Kp : float
+        Proportional filter gain
+    Ki : float
+        Integral filter gain
+    q0 : numpy.ndarray
+        Initial orientation, as a versor (normalized quaternion)
+
+    Methods
+    -------
+    updateIMU(q, gyr, acc)
+        Update given orientation using a gyroscope and an accelerometer sample
+    updateMARG(q, gyr, acc, mag)
+        Update given orientation using a gyroscope, an accelerometer, and a
+        magnetometer gyroscope sample
 
     Parameters
     ----------
-    Kp : float
-        Proportional filter gain.
-    Ki : float
-        Integral filter gain.
-    frequency : float
-        Sampling frequency in Herz.
-    samplePeriod : float
-        Sampling rate in seconds. Inverse of sampling frequency.
+    acc : numpy.ndarray
+        N-by-3 array with measurements of acceleration in m/s^2
+    gyr : numpy.ndarray
+        N-by-3 array with measurements of angular velocity in rad/s
+    mag : numpy.ndarray
+        N-by-3 array with measurements of magnetic field in mT
+
+    Extra Parameters
+    ----------------
+    frequency : float, default: 100.0
+        Sampling frequency in Herz
+    Dt : float, default: 0.01
+        Sampling step in seconds. Inverse of sampling frequency. Not required
+        if `frequency` value is given
+    Kp : float, default: 1.0
+        Proportional filter gain
+    Ki : float, default: 0.0
+        Integral filter gain
+    q0 : numpy.ndarray
+        Initial orientation, as a versor (normalized quaternion).
+
+    Raises
+    ------
+    ValueError
+        When dimension of input array(s) `acc`, `gyr`, or `mag` are not equal.
 
     """
-    def __init__(self, *args, **kwargs):
-        self.input = args[0] if args else None
-        self.Kp = kwargs.get('Kp', 1.0)
-        self.Ki = kwargs.get('Ki', 0.0)
-        self.eInt = np.array([0.0, 0.0, 0.0])   # Integral Error
-        self.frequency = kwargs.get('frequency', 100.0)
-        self.samplePeriod = kwargs.get('samplePeriod', 1.0/self.frequency)
-        self.acc = kwargs.get('acc')
-        self.gyr = kwargs.get('gyr')
-        self.mag = kwargs.get('mag')
-        if self.acc is not None and self.gyr is not None:
-            self.Q = self.compute_MARG() if self.mag is not None else self.compute_IMU()
-        # Process of data is given
-        if self.input is not None:
-            self.Q = self.estimate_all()
+    def __init__(self, gyr: np.ndarray = None, acc: np.ndarray = None, mag: np.ndarray = None, **kw):
+        self.gyr = gyr
+        self.acc = acc
+        self.mag = mag
+        self.frequency = kw.get('frequency', 100.0)
+        self.Dt = kw.get('Dt', 1.0/self.frequency)
+        self.Kp = kw.get('Kp', 1.0)
+        self.Ki = kw.get('Ki', 0.0)
+        self.q0 = kw.get('q0')
+        self.eInt = np.zeros(3)
+        if self.gyr is not None and self.acc is not None:
+            self.Q = self._compute_all()
 
-    def compute_IMU(self):
-        """Estimate all quaternions with given accelerations and angular velocities
-        """
-        self.acc = np.array(self.acc)
-        self.gyr = np.array(self.gyr)
+    def _compute_all(self):
+        """Estimate all quaternions with given sensor values"""
         if self.acc.shape != self.gyr.shape:
             raise ValueError("acc and gyr are not the same size")
-        # Estimate orientations
-        num_samples = len(self.acc)
+        num_samples = len(self.gyr)
         Q = np.zeros((num_samples, 4))
-        Q[0] = acc2q(self.acc[0])
-        for t in range(1, num_samples):
-            Q[t] = self.updateIMU(Q[t-1], self.gyr[t], self.acc[t])
-        return Q
-
-    def compute_MARG(self):
-        """Estimate all quaternions with given accelerations, angular velocities and magnetic intensities
-        """
-        self.acc = np.array(self.acc)
-        self.gyr = np.array(self.gyr)
-        self.mag = np.array(self.mag)
-        if self.acc.shape != self.gyr.shape:
-            raise ValueError("acc and gyr are not the same size")
+        # Compute with IMU Architecture
+        if self.mag is None:
+            Q[0] = acc2q(self.acc[0]) if self.q0 is None else self.q0.copy()
+            for t in range(1, num_samples):
+                Q[t] = self.updateIMU(Q[t-1], self.gyr[t], self.acc[t])
+            return Q
+        # Compute with MARG Architecture
         if self.mag.shape != self.gyr.shape:
             raise ValueError("mag and gyr are not the same size")
-        # Estimate orientations
-        num_samples = len(self.acc)
-        Q = np.zeros((num_samples, 4))
-        Q[0] = acc2q(self.acc[0])
+        Q[0] = am2q(self.acc[0], self.mag[0]) if self.q0 is None else self.q0.copy()
         for t in range(1, num_samples):
             Q[t] = self.updateMARG(Q[t-1], self.gyr[t], self.acc[t], self.mag[t])
         return Q
 
-    def estimate_all(self):
-        """
-        Estimate the quaternions given all data in class Data.
-
-        Class Data must have, at least, `acc` and `mag` attributes.
-
-        Returns
-        -------
-        Q : array
-            M-by-4 Array with all estimated quaternions, where M is the number
-            of samples.
-
-        """
-        data = self.input
-        d2r = 1.0 if data.in_rads else DEG2RAD
-        Q = np.tile([1., 0., 0., 0.], (data.num_samples, 1))
-        if data.q_ref is not None:
-            Q[0] = data.q_ref[0]
-        if data.mag is None:
-            for t in range(1, data.num_samples):
-                Q[t] = self.updateIMU(Q[t-1], d2r*data.gyr[t], data.acc[t])
-        else:
-            for t in range(1, data.num_samples):
-                Q[t] = self.updateMARG(Q[t-1], d2r*data.gyr[t], data.acc[t], data.mag[t])
-        return Q
-
-    def updateIMU(self, q, gyr, acc):
-        """
-        Mahony's AHRS algorithm with an IMU architecture.
-
-        Adapted to Python from original implementation by Sebastian Madgwick.
+    def updateIMU(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray) -> np.ndarray:
+        """Quaternion Estimation with a IMU architecture.
 
         Parameters
         ----------
-        gyr : array
-            Sample of tri-axial Gyroscope in radians per second.
-        acc : array
-            Sample of tri-axial Accelerometer.
-        q : array
+        q : numpy.ndarray
             A-priori quaternion.
+        gyr : numpy.ndarray
+            Sample of tri-axial Gyroscope in rad/s
+        acc : numpy.ndarray
+            Sample of tri-axial Accelerometer in m/s^2
 
         Returns
         -------
@@ -128,47 +180,35 @@ class Mahony:
             Estimated quaternion.
 
         """
-        g = gyr.copy()
-        a = acc.copy()
-        # Normalise accelerometer measurement
-        a_norm = np.linalg.norm(a)
-        if a_norm == 0:     # handle NaN
+        if gyr is None or not np.linalg.norm(gyr)>0:
             return q
-        a /= a_norm
-        # Assert values
-        q /= np.linalg.norm(q)
-        qw, qx, qy, qz = q[0], q[1], q[2], q[3]
-        # Estimate orientation error
-        v = np.array([2.0*(qx*qz - qw*qy),
-                      2.0*(qw*qx + qy*qz),
-                      qw**2 - qx**2 - qy**2 + qz**2])
-        e = np.cross(a, v)
-        self.eInt = self.eInt + e*self.samplePeriod if self.Ki > 0 else np.array([0.0, 0.0, 0.0])
-        # Apply feedback term
-        g += self.Kp*e + self.Ki*self.eInt
-        # Compute rate of change of quaternion
-        qDot = 0.5*q_prod(q, [0.0, g[0], g[1], g[2]])
-        # Integrate to yield Quaternion
-        q += qDot*self.samplePeriod
+        g = gyr.copy()
+        a_norm = np.linalg.norm(acc)
+        if a_norm>0:
+            v = q2R(q).T@np.array([0.0, 0.0, 1.0])      # Expected Earth's gravity
+            e = np.cross(acc/a_norm, v)                 # Difference between expected and measured acceleration (Error)
+            self.eInt += e*self.Dt                      # Integrate error
+            b = -self.Ki*self.eInt                      # Estimated Gyro bias (eq. 48c)
+            d = self.Kp*e + b                           # Innovation
+            g += d                                      # Gyro correction
+        qDot = 0.5*q_prod(q, [0.0, *g])                 # Rate of change of quaternion (eq. 48b)
+        q += qDot*self.Dt                               # Update orientation
         q /= np.linalg.norm(q)
         return q
 
-    def updateMARG(self, q, gyr, acc, mag):
-        """
-        Mahony's AHRS algorithm with a MARG architecture.
-
-        Adapted to Python from original implementation by Sebastian Madgwick.
+    def updateMARG(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, mag: np.ndarray) -> np.ndarray:
+        """Quaternion Estimation with a MARG architecture.
 
         Parameters
         ----------
-        gyr : array
-            Sample of tri-axial Gyroscope in radians per second.
-        acc : array
-            Sample of tri-axial Accelerometer.
-        mag : array
-            Sample of tri-axial Magnetometer.
-        q : array
+        q : numpy.ndarray
             A-priori quaternion.
+        gyr : numpy.ndarray
+            Sample of tri-axial Gyroscope in radians.
+        acc : numpy.ndarray
+            Sample of tri-axial Accelerometer in m/s^2
+        mag : numpy.ndarray
+            Sample of tri-axial Magnetometer in T
 
         Returns
         -------
@@ -176,64 +216,24 @@ class Mahony:
             Estimated quaternion.
 
         """
+        if gyr is None or not np.linalg.norm(gyr)>0:
+            return q
         g = gyr.copy()
-        a = acc.copy()
-        m = mag.copy()
-        # Normalise accelerometer measurement
-        a_norm = np.linalg.norm(a)
-        if a_norm == 0:     # handle NaN
-            return q
-        a /= a_norm
-        # Normalise magnetometer measurement
-        m_norm = np.linalg.norm(m)
-        if m_norm == 0:     # handle NaN
-            return q
-        m /= m_norm
-        # Assert values
-        qw, qx, qy, qz = q[0], q[1], q[2], q[3]
-        # Reference direction of Earth's magnetic feild
-        h = q_prod(q, q_prod([0, m[0], m[1], m[2]], q_conj(q)))
-        b = [0.0, np.linalg.norm([h[1], h[2]]), 0.0, h[3]]
-        # Estimated direction of gravity and magnetic flux
-        v = np.array([2.0*(qx*qz - qw*qy),
-                      2.0*(qw*qx + qy*qz),
-                      qw**2 - qx**2 - qy**2 + qz**2])
-        w = np.array([b[1]*(0.5 - qy**2 - qz**2) + b[3]*(qx*qz - qw*qy),
-                      b[1]*(qx*qy - qw*qz)       + b[3]*(qw*qx + qy*qz),
-                      b[1]*(qw*qy + qx*qz)       + b[3]*(0.5 - qx**2 - qy**2)])
-        # Error is sum of cross product between estimated direction and measured direction of fields
-        e = np.cross(a, v) + np.cross(m, 2.0*w)
-        self.eInt = self.eInt + e*self.samplePeriod if self.Ki > 0 else np.array([0.0, 0.0, 0.0])
-        # Apply feedback term
-        g += self.Kp*e + self.Ki*self.eInt
-        # Compute rate of change of quaternion
-        qDot = 0.5*q_prod(q, [0.0, g[0], g[1], g[2]])
-        # Integrate to yield Quaternion
-        q += qDot*self.samplePeriod
+        a_norm = np.linalg.norm(acc)
+        if a_norm>0:
+            m = mag.copy()
+            m_norm = np.linalg.norm(m)
+            if not m_norm>0:
+                return self.updateIMU(q, gyr, acc)
+            m /= m_norm
+            v = q2R(q).T@np.array([0.0, 0.0, 1.0])              # Expected Earth's gravity
+            h = q_prod(q, q_prod([0, *m], q_conj(q)))           # Rotate magnetic measurements to inertial frame
+            w = q2R(q).T@np.array([np.sqrt(h[1]**2+h[2]**2), 0.0, h[3]])     # Expected Earth's magnetic field
+            e = np.cross(acc/a_norm, v) + np.cross(m, w)        # Difference between expected and measured values
+            self.eInt += e*self.Dt                              # Add error
+            b = -self.Ki*self.eInt                              # Estimated Gyro bias (eq. 48c)
+            g = g - b + self.Kp*e                               # Gyro correction
+        qDot = 0.5*q_prod(q, [0.0, *g])                         # Rate of change of quaternion (eq. 48b)
+        q += qDot*self.Dt                                       # Update orientation
         q /= np.linalg.norm(q)
         return q
-
-if __name__ == '__main__':
-    test_file = '../../tests/repoIMU.csv'
-    print("Testing Mahony with {}".format(test_file))
-    # Read and split data
-    data = np.genfromtxt(test_file, dtype=float, delimiter=';', skip_header=2)
-    q_ref = data[:, 1:5]
-    acc = data[:, 5:8]
-    gyr = data[:, 8:11]
-    mag = data[:, 11:14]
-    num_samples = data.shape[0]
-    # Estimate Orientations with IMU
-    mahony_imu = Mahony(acc=acc, gyr=gyr)
-    # Estimate Orientations with MARG
-    mahony_marg = Mahony(acc=acc, gyr=gyr, mag=mag, Kp=0.0001)
-    # Squared Errors
-    se_imu = abs(q_ref - mahony_imu.Q).sum(axis=1)**2
-    se_marg = abs(q_ref - mahony_marg.Q).sum(axis=1)**2
-    # Plot results
-    from ahrs.utils import plot
-    plot(data[:, 1:5], mahony_imu.Q, mahony_marg.Q, [se_imu, se_marg],
-        title="Mahony's algorithm",
-        subtitles=["Reference Quaternions", "Estimated Quaternions (IMU)", "Estimated Quaternions (MARG)", "Squared Errors"],
-        yscales=["linear", "linear", "linear", "log"],
-        labels=[[], [], [], ["MSE (IMU) = {:.3e}".format(se_imu.mean()), "MSE (MARG) = {:.3e}".format(se_marg.mean())]])
