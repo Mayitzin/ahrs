@@ -23,15 +23,52 @@ from ..common.orientation import q_prod, q2R
 GRAVITY = 9.80665
 
 class AQUA:
-    """
-    Class of Algebraic Quaternion Algorithm
+    """Algebraic Quaternion Algorithm
+
+    Attributes
+    ----------
+    gyr : numpy.ndarray, default: None
+        N-by-3 array with N gyroscope samples
+    acc : numpy.ndarray, default: None
+        N-by-3 array with N accelerometer samples
+    mag : numpy.ndarray, default: None
+        N-by-3 array with N magnetometer samples
+
+    Methods
+    -------
+    init_q(acc, mag=None)
+        Set initial orientation with an acceleration and/or magnetometer sample
+    updateIMU(q, gyr, acc)
+        Update orientation using an accelerometer and a gyroscope sample
+    updateMARG(q, gyr, acc, mag)
+        Update orientation using an accelerometer, a magnetometer and a
+        gyroscope sample
 
     Parameters
     ----------
+    acc : numpy.ndarray
+        N-by-3 array with measurements of acceleration in g
+    gyr : numpy.ndarray
+        N-by-3 array with measurements of angular velocity in rad/s
+    mag : numpy.ndarray
+        N-by-3 array with measurements of magnetic field in mT
+
+    Extra Parameters
+    ----------------
     frequency : float
-        Sampling frequency in Herz.
+        Sampling frequency in Herz
     samplePeriod : float
-        Sampling rate in seconds. Inverse of sampling frequency.
+        Sampling rate in seconds. Inverse of sampling frequency
+    q0 : numpy.ndarray
+        Initial orientation, as a quaternion
+    alpha : float, default: 0.01
+        Gain characterizing cut-off frequency for accelerometer quaternion
+    beta : float, default: 0.01
+        Gain characterizing cut-off frequency for magnetometer quaternion
+    threshold : float, default: 0.9
+        Threshold to discern between LERP and SLERP interpolation
+    adaptive : bool, default: False
+        Whether to use an adaptive gain for each sample
 
     """
     def __init__(self, gyr: np.ndarray = None, acc: np.ndarray = None, mag: np.ndarray = None, **kw):
@@ -44,6 +81,7 @@ class AQUA:
         self.alpha = kw.get('alpha', 0.01)
         self.beta = kw.get('beta', 0.01)
         self.threshold = kw.get('threshold', 0.9)
+        self.adaptive = kw.get('adaptive', False)
         if self.acc is not None and self.gyr is not None:
             self.Q = self._compute_all()
 
@@ -67,26 +105,6 @@ class AQUA:
             Q[t] = self.updateMARG(Q[t-1], self.gyr[t], self.acc[t], self.mag[t])
         return Q
 
-    def init_q(self, acc, mag: np.ndarray = None):
-        ax, ay, az = acc.copy()/np.linalg.norm(acc)
-        # Quaternion from Accelerometer Readings (eq. 25)
-        if az>=0:
-            q_acc = np.array([np.sqrt((az+1)/2), -ay/np.sqrt(2*(1-ax)), ax/np.sqrt(2*(az+1)), 0.0])
-        else:
-            q_acc = np.array([-ay/np.sqrt(2*(1-az)), np.sqrt((1-az)/2.0), 0.0, ax/np.sqrt(2*(1-az))])
-        if mag is not None:
-            lx, ly, lz = q2R(q_acc).T@mag
-            Gamma = lx**2 + ly**2
-            # Quaternion from Magnetometer Readings (eq. 35)
-            if lx>=0:
-                q_mag = np.array([np.sqrt(Gamma+lx*np.sqrt(Gamma))/np.sqrt(2*Gamma), 0.0, 0.0, ly/np.sqrt(2)*np.sqrt(Gamma+lx*np.sqrt(Gamma))])
-            else:
-                q_mag = np.array([ly/np.sqrt(2)*np.sqrt(Gamma-lx*np.sqrt(Gamma)), 0.0, 0.0, np.sqrt(Gamma-lx*np.sqrt(Gamma))/np.sqrt(2*Gamma)])
-            # Generalized Quaternion Orientation (eq. 36)
-            q = q_prod(q_acc, q_mag)
-            return q/np.linalg.norm(q)
-        return q_acc
-
     def _slerp(self, q, ratio, t):
         q_I = np.array([1.0, 0.0, 0.0, 0.0])
         if q[0]>t:
@@ -100,14 +118,34 @@ class AQUA:
         return q
 
     def _adaptive_gain(self, gain, norm):
-        error = abs(norm-GRAVITY)/GRAVITY
+        error = abs(norm-GRAVITY)/GRAVITY   # (eq. 60)
         e1, e2 = 0.1, 0.2
         factor = 0.0
-        if error<e1:
+        if e1<error<e2:
+            factor = (e2-error)/e1
+        if error<=e1:
             factor = 1.0
-        if error<e2:
-            factor = (error-e1)/(e1-e2) + 1.0
-        return factor*gain
+        return factor*gain                  # (eq. 61)
+
+    def init_q(self, acc, mag: np.ndarray = None):
+        ax, ay, az = acc.copy()/np.linalg.norm(acc)
+        # Quaternion from Accelerometer Readings (eq. 25)
+        if az>=0:
+            q_acc = np.array([np.sqrt((az+1)/2), -ay/np.sqrt(2*(1-ax)), ax/np.sqrt(2*(az+1)), 0.0])
+        else:
+            q_acc = np.array([-ay/np.sqrt(2*(1-az)), np.sqrt((1-az)/2.0), 0.0, ax/np.sqrt(2*(1-az))])
+        if mag is not None:
+            lx, ly, lz = q2R(q_acc).T@mag/np.linalg.norm(mag)   # (eq. 26)
+            Gamma = lx**2 + ly**2           # (eq. 28)
+            # Quaternion from Magnetometer Readings (eq. 35)
+            if lx>=0:
+                q_mag = np.array([np.sqrt(Gamma+lx*np.sqrt(Gamma))/np.sqrt(2*Gamma), 0.0, 0.0, ly/np.sqrt(2)*np.sqrt(Gamma+lx*np.sqrt(Gamma))])
+            else:
+                q_mag = np.array([ly/np.sqrt(2)*np.sqrt(Gamma-lx*np.sqrt(Gamma)), 0.0, 0.0, np.sqrt(Gamma-lx*np.sqrt(Gamma))/np.sqrt(2*Gamma)])
+            # Generalized Quaternion Orientation (eq. 36)
+            q = q_prod(q_acc, q_mag)
+            return q/np.linalg.norm(q)
+        return q_acc
 
     def updateIMU(self, q, gyr, acc):
         """Update Quaternion
@@ -140,7 +178,8 @@ class AQUA:
         a = acc.copy()/a_norm
         gx, gy, gz = q2R(qInt).T@a                          # Predicted gravity (eq. 44)
         q_acc = np.array([np.sqrt((gz+1)/2.0), -gy/np.sqrt(2.0*(gz+1)), gx/np.sqrt(2.0*(gz+1)), 0.0])     # Delta Quaternion (eq. 47)
-        # self.alpha = self._adaptive_gain(self.alpha, a_norm)
+        if self.adaptive:
+            self.alpha = self._adaptive_gain(self.alpha, a_norm)
         q_acc = self._slerp(q_acc, self.alpha, self.threshold)
         q_prime = q_prod(qInt, q_acc)                       # (eq. 53)
         return q_prime/np.linalg.norm(q_prime)
@@ -180,7 +219,8 @@ class AQUA:
         a = acc.copy()/a_norm
         gx, gy, gz = q2R(qInt).T@a                          # Predicted gravity (eq. 44)
         q_acc = np.array([np.sqrt((gz+1)/2.0), -gy/np.sqrt(2.0*(gz+1)), gx/np.sqrt(2.0*(gz+1)), 0.0])     # Delta Quaternion (eq. 47)
-        # self.alpha = self._adaptive_gain(self.alpha, a_norm)
+        if self.adaptive:
+            self.alpha = self._adaptive_gain(self.alpha, a_norm)
         q_acc = self._slerp(q_acc, self.alpha, self.threshold)
         q_prime = q_prod(qInt, q_acc)                       # (eq. 53)
         q_prime /= np.linalg.norm(q_prime)
