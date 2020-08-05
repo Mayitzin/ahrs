@@ -5,9 +5,9 @@ Heading Reference Systems.
 
 It provides:
 
-- classes to organize and easily identify large amounts of data.
 - useful linear algebra, statistical and arithmetic functions.
-- interfacing functions and classes for visualizations.
+- classes to organize and easily identify specialized data.
+- algorithms to estimate attitude and heading.
 - and much more.
 
 AHRS is compatible with Python 3.6 and above. Using an older version is highly
@@ -19,7 +19,7 @@ All AHRS wheels distributed on PyPI are MIT licensed.
 
 import sys
 from setuptools import setup, find_packages
-from ahrs import get_version
+from .ahrs import get_version
 
 if sys.version_info < (3, 6):
     raise SystemError("Python version >= 3.6 required.")
@@ -38,13 +38,14 @@ metadata = dict(
     url=REPOSITORY_URL,
     download_url=REPOSITORY_URL+'archive/master/ahrs-master.zip',
     author='Mario Garcia',
-    author_email='mario@mayitzin.com',
+    author_email='mariogc@protonmail.com',
     project_urls={
+        "Source Code": REPOSITORY_URL,
         "Bug Tracker": REPOSITORY_URL+"issues"
     },
-    install_requires=['numpy',
-                      'scipy',
-                      'matplotlib'],
+    install_requires=[
+        'numpy',
+        'scipy'],
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
@@ -60,7 +61,7 @@ metadata = dict(
         'Topic :: Software Development :: Embedded Systems',
         'Topic :: Software Development :: Libraries',
         'Topic :: Software Development :: Libraries :: Python Modules'
-],
+    ],
     packages=find_packages()
 )
 

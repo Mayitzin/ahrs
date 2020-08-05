@@ -20,7 +20,12 @@ References
 """
 
 import numpy as np
+from scipy import sqrt
 from ..common.mathfuncs import *
+
+# Reference Observations in Munich, Germany
+from ..utils.wmm import WMM
+MAG = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT).magnetic_elements
 
 class FLAE:
     """Fast Linear Attitude Estimator algorithm
@@ -41,15 +46,17 @@ class FLAE:
             print(f"Given method '{self.method}' is not valid. Setting to 'symbolic'")
             self.method = 'symbolic'
         self.w = kw.get('weights', np.array([0.5, 0.5]))    # Weights of sensors
-        mdip = kw.get('magnetic_dip', 64.22)                # Magnetic dip, in degrees, in Munich, Germany.
-        self.m_ref = np.array([cosd(mdip), 0.0, -sind(mdip)])
+        # Reference measurements
+        mdip = kw.get('magnetic_dip')                       # Magnetic dip, in degrees
+        self.m_ref = np.array([MAG['X'], MAG['Y'], MAG['Z']]) if mdip is None else np.array([cosd(mdip), 0., sind(mdip)])
+        # self.m_ref = np.array([cosd(mdip), 0.0, -sind(mdip)])
         self.m_ref /= np.linalg.norm(self.m_ref)
         self.a_ref = np.array([0.0, 0.0, 1.0])
         self.ref = np.vstack((self.a_ref, self.m_ref))
         if self.acc is not None and self.mag is not None:
             self.Q = self._compute_all()
 
-    def _compute_all(self):
+    def _compute_all(self) -> np.ndarray:
         """
         Estimate the quaternions given all data in class Data.
 
@@ -70,7 +77,7 @@ class FLAE:
             Q[t] = self.estimate(self.acc[t], self.mag[t])
         return Q
 
-    def row_reduction(self, A: np.ndarray):
+    def row_reduction(self, A: np.ndarray) -> np.ndarray:
         """Gaussian elimination
         """
         for i in range(3):
@@ -80,28 +87,28 @@ class FLAE:
                     A[j] -= A[j, i]*A[i]
         return A
 
-    def Hx(self, h: np.ndarray):
+    def Hx(self, h: np.ndarray) -> np.ndarray:
         return np.array([
             [ h[0],   0.0, -h[2],  h[1]],
             [ 0.0,   h[0],  h[1],  h[2]],
             [-h[2],  h[1], -h[0],  0.0],
             [ h[1],  h[2],  0.0,  -h[0]]])
 
-    def Hy(self, h: np.ndarray):
+    def Hy(self, h: np.ndarray) -> np.ndarray:
         return np.array([
             [ h[1],  h[2],  0.0, -h[0]],
             [ h[2], -h[1],  h[0],  0.0],
             [ 0.0,  h[0],  h[1],  h[2]],
             [-h[0],  0.0,  h[2], -h[1]]])
 
-    def Hz(self, h: np.ndarray):
+    def Hz(self, h: np.ndarray) -> np.ndarray:
         return np.array([
             [ h[2], -h[1],  h[0],  0.0],
             [-h[1], -h[2],  0.0,  h[0]],
             [ h[0],  0.0, -h[2],  h[1]],
             [ 0.0,  h[0],  h[1],  h[2]]])
 
-    def estimate(self, acc: np.ndarray, mag: np.ndarray):
+    def estimate(self, acc: np.ndarray, mag: np.ndarray) -> np.ndarray:
         """
         Estimate a quaternion with th given measurements and weights.
 
@@ -125,7 +132,7 @@ class FLAE:
         W = self.Hx(mm[0, :]) + self.Hy(mm[1, :]) + self.Hz(mm[2, :])   # (eq. 44)
         if self.method.lower()=='eig':
             V, D = np.linalg.eig(W)
-            q = D[:, 3]
+            q = D[:, np.argmax(V)]
             return q/np.linalg.norm(q)
         # Polynomial parameters                             (eq. 49)
         t1 = -2*np.trace(mm@mm.T)
@@ -134,21 +141,22 @@ class FLAE:
         if self.method.lower()=='symbolic':
             # Parameters                                    (eq. 53)
             T0 = 2*t1**3 + 27*t2**2 - 72*t1*t3
-            T1 = np.cbrt(T0+np.sqrt(abs(-4*(t1**2 + 12*t3)**3 + T0**2)))
-            T2 = np.sqrt(-4*t1+2**(4/3)*(t1**2+12*t3)/T1 + 2**(2/3)*T1)
+            T1 = np.cbrt(T0 + np.sqrt(abs(-4*(t1**2 + 12*t3)**3 + T0**2)))
+            T2 = np.sqrt(abs(-4*t1 + 2**(4/3)*(t1**2 + 12*t3)/T1 + 2**(2/3)*T1))
             # Solutions to polynomial                       (eq. 52)
             L = np.zeros(4)
-            k = 12*np.sqrt(6)
-            L[0] = T2 - np.sqrt(-T2**2 - 12*t1 - k*t2/T2)
-            L[1] = T2 + np.sqrt(-T2**2 - 12*t1 - k*t2/T2)
-            L[2] = -(T2 + np.sqrt(-T2**2 - 12*t1 + k*t2/T2))
-            L[3] = -(T2 - np.sqrt(-T2**2 - 12*t1 + k*t2/T2))
+            k1 = -T2**2 - 12*t1
+            k2 = 12*np.sqrt(6)*t2/T2
+            L[0] =   T2 - sqrt(abs(k1 - k2))
+            L[1] =   T2 + sqrt(abs(k1 - k2))
+            L[2] = -(T2 + sqrt(abs(k1 + k2)))
+            L[3] = -(T2 - sqrt(abs(k1 + k2)))
             L /= 2*np.sqrt(6)
             lam = max(L)                    # Choose eigenvalue closest to 1
         if self.method.lower()=='newton':
             lam = lam_old = 1.0
             i = 0
-            while abs(lam_old-lam)>1e-8 and i<=50:
+            while abs(lam_old-lam)>1e-8 or i<=30:
                 lam_old = lam
                 f = lam**4 + t1*lam**2 + t2*lam + t3        # (eq. 48)
                 fp = 4*lam**3 + 2*t1*lam + t2               # (eq. 50)

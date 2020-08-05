@@ -8,7 +8,7 @@ from . import mathfuncs
 from . import orientation
 from . import geometry
 from . import frames
-from .constants import *
 
 from .mathfuncs import M_PI, DEG2RAD, RAD2DEG
 from .quaternion import Quaternion
+from .dcm import DCM

@@ -18,9 +18,9 @@ from ..common.mathfuncs import *
 
 # Reference Observations in Munich, Germany
 from ..utils.wmm import WMM
-from ..utils.wgs84 import normal_gravity
-MAGNETIC_DIP = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT).magnetic_elements['I']
-GRAVITY = normal_gravity(MUNICH_LATITUDE, MUNICH_HEIGHT)
+from ..utils.wgs84 import WGS
+MAG = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT).magnetic_elements
+GRAVITY = WGS().normal_gravity(MUNICH_LATITUDE, MUNICH_HEIGHT)
 
 class Davenport:
     """Davenport's q-Method for attitude estimation
@@ -49,6 +49,8 @@ class Davenport:
 
     Extra Parameters
     ----------------
+    weights : array-like
+        Array with two weights used in each observation.
     magnetic_dip : float
         Magnetic Inclination angle, in degrees.
     gravity : float
@@ -65,9 +67,9 @@ class Davenport:
         self.mag = mag
         self.w = kw.get('weights', np.ones(2))
         # Reference measurements
-        mdip = kw.get('magnetic_dip', MAGNETIC_DIP)             # Magnetic dip, in degrees
+        mdip = kw.get('magnetic_dip')             # Magnetic dip, in degrees
+        self.m_q = np.array([MAG['X'], MAG['Y'], MAG['Z']]) if mdip is None else np.array([cosd(mdip), 0., sind(mdip)])
         g = kw.get('gravity', GRAVITY)                          # Earth's normal gravity, in m/s^2
-        self.m_q = np.array([cosd(mdip), 0., sind(mdip)])       # Earth's Magnetic Field vector
         self.g_q = np.array([0.0, 0.0, g])                      # Normal Gravity vector
         if self.acc is not None and self.mag is not None:
             self.Q = self._compute_all()
@@ -108,12 +110,13 @@ class Davenport:
             Estimated attitude as a quaternion.
 
         """
-        B = self.w[0]*np.outer(acc, self.g_q) + self.w[1]*np.outer(mag, self.m_q)
+        B = self.w[0]*np.outer(acc, self.g_q) + self.w[1]*np.outer(mag, self.m_q)   # Attitude profile matrix
         sigma = B.trace()
         z = np.array([B[1, 2]-B[2, 1], B[2, 0]-B[0, 2], B[0, 1]-B[1, 0]])
+        S = B+B.T
         K = np.zeros((4, 4))
         K[0, 0] = sigma
-        K[1:, 1:] = B+B.T - sigma*np.eye(3)
+        K[1:, 1:] = S - sigma*np.eye(3)
         K[0, 1:] = K[1:, 0] = z
         w, v = np.linalg.eig(K)
-        return v[:, np.argmax(w)]
+        return v[:, np.argmax(w)]       # Eigenvector associated to largest eigenvalue is normalized quaternion

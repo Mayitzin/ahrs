@@ -114,26 +114,30 @@ class QUEST:
 
         """
         B = self.w[0]*np.outer(acc, self.g_q) + self.w[1]*np.outer(mag, self.m_q)   # Attitude profile matrix
-        sigma = B.trace()
         S = B + B.T
         z = np.array([B[1, 2]-B[2, 1], B[2, 0]-B[0, 2], B[0, 1]-B[1, 0]])   # Pseudovector (Axial vector)
-        detS = np.linalg.det(S)
-        adjS = detS*np.linalg.inv(S)
-        a = sigma**2 - adjS.trace()
+        # Parameters of characeristic equation (eq. 63)
+        sigma = B.trace()
+        Delta = np.linalg.det(S)
+        kappa = (Delta*np.linalg.inv(S)).trace()
+        # (eq. 71)
+        a = sigma**2 - kappa
         b = sigma**2 + z@z
-        c = detS + z@S@z
+        c = Delta + z@S@z
         d = z@S**2@z
+        # Newton-Raphson method (eq. 70)
         k = a*b + c*sigma - d
         lam = lam_0 = self.w.sum()
-        while abs(lam-lam_0) >= 1e-12:
+        while abs(lam-lam_0)>=1e-12:
             lam_0 = lam
             phi = lam**4 - (a+b)*lam**2 - c*lam + k
             phi_prime = 4*lam**3 - 2*(a+b)*lam - c
             lam -= phi/phi_prime
-        # Optimal Quaternion
-        alpha = lam**2 - sigma**2 + adjS.trace()
+        # (eq. 66)
+        alpha = lam**2 - sigma**2 + kappa
         beta = lam - sigma
-        gamma = alpha*(lam+sigma) - detS
-        x = (alpha*np.eye(3) + beta*S + S*S)@z
-        q = np.array([-gamma, *x])
+        gamma = alpha*(lam+sigma) - Delta
+        Chi = (alpha*np.eye(3) + beta*S + S**2)@z       # (eq. 68)
+        # Optimal Quaternion (eq. 69)
+        q = np.array([gamma, *Chi])
         return q/np.linalg.norm(q)

@@ -5,10 +5,7 @@ Common mathematical routines.
 """
 
 import numpy as np
-
-M_PI = np.pi
-DEG2RAD = M_PI / 180.0
-RAD2DEG = 180.0 / M_PI
+from .constants import *
 
 def cosd(x):
     """
@@ -29,7 +26,7 @@ def cosd(x):
 
     Examples
     --------
-    >>> from ahrs.common.mathfuncs import *
+    >>> from ahrs.common.mathfuncs import cosd
     >>> cosd(0.0)
     1.0
     >>> cosd(90.0)
@@ -61,7 +58,7 @@ def sind(x):
 
     Examples
     --------
-    >>> from ahrs.common.mathfuncs import *
+    >>> from ahrs.common.mathfuncs import sind
     >>> sind(0.0)
     0.0
     >>> sind(90.0)
@@ -90,14 +87,14 @@ def skew(x):
 
     Examples
     --------
-    >>> from ahrs.common.mathfuncs import skew_matrix
+    >>> from ahrs.common.mathfuncs import skew
     >>> a = [1, 2, 3]
-    >>> skew_matrix(a)
+    >>> skew(a)
     [[ 0. -3.  2.]
      [ 3.  0. -1.]
      [-2.  1.  0.]]
     >>> a = np.array([[4.0], [5.0], [6.0]])
-    >>> skew_matrix(a)
+    >>> skew(a)
     [[ 0. -6.  5.]
      [ 6.  0. -4.]
      [-5.  4.  0.]]
@@ -108,5 +105,5 @@ def skew(x):
 
     """
     if len(x) != 3:
-        return None
+        raise ValueError("Input must be an array with three elements")
     return np.array([[0, -x[2], x[1]], [x[2], 0, -x[0]], [-x[1], x[0], 0.0]])

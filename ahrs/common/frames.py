@@ -51,31 +51,35 @@ of the ellipsoid and the point of interest.
 
 References
 ----------
-.. [Noureldin] Fundamentals of Inertial Navigation, Satellite-based Position
-    and their Integration.
+.. [1] Aboelmagd Noureldin, Tashfeen B. Karamat, Jacques Georgy. Fundamentals
+       of Inertial Navigation, Satellite-based Position and their Integration.
+       Springer-Verlag Berlin Heidelberg. 2013.
+.. [2] World Geodetic System 1984. Its Definition and Relationships with Local
+       Geodetic Systems. National Geospatial-Intelligence Agency (NGA)
+       Standarization Document. 2014.
+       ftp://ftp.nga.mil/pub2/gandg/website/wgs84/NGA.STND.0036_1.0.0_WGS84.pdf
 
 """
 
 import numpy as np
-from ahrs.common.constants import *
+from .constants import *
 
-def geo2rect(r, h, long, lat, ecc):
-    """
-    Conversion from Geodetic to Rectangular Coordinates in the Earth-Centered
-    Earth-Fixed Frame (ECEF.)
+def geo2rect(lon, lat, h, r, ecc=EARTH_SECOND_ECCENTRICITY_2):
+    """Geodetic to Rectangular Coordinates converstion in the Earth-Centered
+    Earth-Fixed Frame (ECEF)
 
     Parameters
     ----------
-    r : float
-        Normal radius
-    h : float
-        Ellipsoidal height
-    long : float
+    lon : float
         Longitude
     lat : float
         Latitude
+    h : float
+        Height above ellipsoidal surface
+    r : float
+        Normal radius
     ecc : float
-        Eccentricity
+        Second Eccentricity Squared
 
     Returns
     -------
@@ -83,120 +87,32 @@ def geo2rect(r, h, long, lat, ecc):
         ECEF rectangular coordinates
     """
     X = np.zeros(3)
-    X[0] = (r+h)*np.cos(lat)*np.cos(long)
-    X[1] = (r+h)*np.cos(lat)*np.sin(long)
-    X[2] = (r*(1.0-ecc**2)+h)*np.sin(lat)
+    X[0] = (r+h)*np.cos(lat)*np.cos(lon)
+    X[1] = (r+h)*np.cos(lat)*np.sin(lon)
+    X[2] = (r*(1.0-ecc)+h)*np.sin(lat)
     return X
 
-def normal_radius(lat, **kwargs):
-    """
-    The normal radius, a.k.a the radius of curvature of the prime vertical,
-    defined for the East-West direction.
+def rec2geo(X, ecc=EARTH_SECOND_ECCENTRICITY_2):
+    x, y, z = X
+    p = np.linalg.norm([x, y])
+    theta = np.arctan(z*a/(p*b))
+    lon = 2*np.arctan(y/(x+p))
+    lat = np.arctan((z+ecc*b*np.sin(theta)**3)/(p-e*a*np.cos(theta)**3))
+    N = a**2/np.sqrt(a**2*np.cos(lat)**2 + b**2*np.sin(lat)**2)
+    h = p/np.cos(lat) - N
+
+def eci2ecef(w, t=0):
+    """Transformation between ECI and ECEF
 
     Parameters
     ----------
-    lat : float
-        Geodetic latitude
-
-    Extra Parameters
-    ----------------
-    a : float
-        Semi-major axis of Earth, in meters (Equatorial Radius)
-    e : float
-        Spheroids' eccentricity.
-
-    Returns
-    -------
-    r : float
-        Normal radius
+    w : float
+        Rotation rate in rad/s
+    t : float, default: 0.0
+        Time since reference epoch.
     """
-    a = kwargs.get('a', EQUATOR_RADIUS)
-    e = kwargs.get('e', EARTH_ECCENTRICITY)
-    return a / np.sqrt(1.0-e**2*np.sin(lat)**2)
+    return np.array([[np.cos(w)*t, np.sin(w)*t, 0.0],
+                      [-np.sin(w)*t, np.cos(w)*t, 0.0],
+                      [0.0, 0.0, 1.0]])
 
-def meridian_radius(lat, **kwargs):
-    """
-    The meridian radius is the Earth's radius of curvature in the (north-south)
-    meridian at a given latitude `lat`.
 
-    Parameters
-    ----------
-    lat : float
-        Geodetic latitude
-
-    Extra Parameters
-    ----------------
-    a : float
-        Semi-major axis of Earth, in meters (Equatorial Radius)
-    e : float
-        Spheroids' eccentricity.
-
-    Returns
-    -------
-    r : float
-        Normal radius
-    """
-    a = kwargs.get('a', EQUATOR_RADIUS)
-    e = kwargs.get('e', EARTH_ECCENTRICITY)
-    return a*(1.0-e**2) / (1.0-e**2*np.sin(lat)**2)**1.5
-
-def gravity(lat, h=0.0, **kwargs):
-    """
-    Estimate acceleration due to gravity with Somigliana's formula.
-
-    Parameters
-    ----------
-    lat : float
-        Geodetic Latitude, in degrees.
-
-    Extra Parameters
-    ----------------
-    h : float
-        Height above Earth's surface, in meters.
-    a : float
-        Semi-major axis of Earth, in meters (Equatorial Radius)
-    b : float
-        Semi-minor axis of Earth, in meters (Polar Radius)
-    ga : float
-        Normal gravity at Equator, in m/s^2.
-    gb : float
-        Normal gravity at Poles, in m/s^2.
-    e : float
-        Spheroids' eccentricity.
-    m : float
-        Constant defined for Earth in [WGS84]_ as:
-
-    .. math::
-
-        m = \\frac{\\omega^2a^2b}{GM} = 0.00344978600313
-
-    Returns
-    -------
-    g : float
-        Ellipsoidal gravity.
-
-    References
-    ----------
-    .. [WGS84] World Geodetic System 1984. Department of Defense. DMA Technical
-        Report. Second Edition. September 1991.
-    """
-    # Set default parameters for Earth's properties
-    a = kwargs.get('a', EQUATOR_RADIUS)
-    b = kwargs.get('b', POLAR_RADIUS)
-    ga = kwargs.get('ga', EQUATOR_GRAVITY)
-    gb = kwargs.get('gb', POLAR_GRAVITY)
-    e = kwargs.get('e', EARTH_ECCENTRICITY)
-    f = kwargs.get('f', EARTH_FLATNESS)
-    m = kwargs.get('m', EARTH_M)
-    # Set variables
-    lat *= np.pi/180.0
-    k = (b*gb)/(a*ga)-1.0
-    # Compute gravity at sea-level
-    g = ga*(1.0+k*np.sin(lat)**2)/np.sqrt(1.0-e**2*np.sin(lat)**2)
-    # Improve precision at a different height.
-    if h != 0.0:
-        k1 = 2.0*(1.0+f+m)/a
-        k2 = 4.0*f/a
-        k3 = 3/a**2
-        g *= 1.0-(k1-k2*np.sin(lat)**2)*h + k3*h**2
-    return g

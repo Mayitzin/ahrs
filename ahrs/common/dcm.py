@@ -3,35 +3,53 @@
 Direction Cosine Matrix
 =======================
 
-Rotations are linear transformations in Euclidean three-dimensional spaces
-about the origin. They have several representations. The most common to use and
-easier to understand are the Direction Cosine Matrices, or Rotation Matrices.
-
 An orientation (attitude) is the difference between two coordinate frames. This
-difference is determined by the coordinates of its orthonormal vectors. For
+difference is determined by the coordinates of its _orthonormal_ vectors. For
 three dimensions the discrepancy between any given frame and the base
 coordinate frame is the orientation.
 
 Three vectors :math:`r_1`, :math:`r_2` and :math:`r_3` are the unit vectors
-along the principal axes :math:`X`, :math:`Y` and :math:`Z`. An orientation is
-defined by a :math:`3\times 3` matrix:
+along the principal axes :math:`X`, :math:`Y` and :math:`Z`. The orientation is
+formally defined by a :math:`3\\times 3` matrix:
 
 .. math::
 
-    R = \\begin{bmatrix}r_1 & r_2 & r_3\\end{bmatrix} \\in \\mathbb{R}^{3\times 3}
+    R = \\begin{bmatrix}r_1 & r_2 & r_3\\end{bmatrix} \\in \\mathbb{R}^{3\\times 3}
 
 where :math:`r_1`, :math:`r_2` and :math:`r_3` are unit vectors stacked as
-columns and represent an orthonormal frame. Thus, :math:`RR^{-1}=RR^T=R^TR=I`,
-indicating that the inverse of :math:`R` is its transpose. All matrices
-satisfying this condition are called _orthogonal matrices_ .
+columns and represent an orthonormal frame. Thanks to this orthonormality,
+:math:`RR^{-1}=RR^T=R^TR=I`, indicating that the inverse of :math:`R` is its
+transpose. All matrices satisfying this condition are called _orthogonal matrices_ .
 
-Its determinant is always +1, so its product with any vector will leave the
-vector's length unchanged.
+Its determinant is always :math:`+1`, so its product with any vector will leave the
+vector's length unchanged. Matrices conforming to this properties belong to the
+special orthogonal group :math:`SO(3)`.
+
+Even better, the product of two or more rotation matrices yields another
+rotation matrix in :math:`SO(3)`
 
 Direction cosines are cosines of angles between a vector and a base coordinate
 frame. In this case, the difference between orthogonal vectors :math:`r_i` and
 the base frame are describing the Direction Cosines. This orientation matrix is
 commonly named the "Direction Cosine Matrix."
+
+DCMs are, therefore, the most common representation of rotations, especially in
+real applications of spacecraft tracking and location.
+
+Rotational Motion
+-----------------
+
+Rotations are linear transformations in Euclidean three-dimensional spaces
+about the origin. They have several representations. The most common to use and
+easier to understand are the Direction Cosine Matrices, or Rotation Matrices.
+
+Strictly speaking, a **rotation matrix** is the matrix that when pre-multiplied
+by a vector expressed in the world coordinates yields the same vector expressed
+in the body-fixed coordinates.
+
+A rotation matrix can also be referred to as a _direction cosine matrix_,
+because its elements are the cosines of the unsigned angles between body-fixed
+axes and the world axes.
 
 References
 ----------
@@ -47,14 +65,20 @@ References
        Imaging Vis 35, 155–164 (2009).
 .. [5] Howard D Curtis. Orbital Mechanics for Engineering Students (Third
        Edition) Butterworth-Heinemann. 2014.
+.. [6] Kuipers, Jack B. Quaternions and Rotation Sequences: A Primer with
+       Applications to Orbits, Aerospace and Virtual Reality. Princeton;
+       Oxford: Princeton University Press, 1999.
+.. [7] Diebel, James. Representing Attitude; Euler Angles, Unit Quaternions,
+       and Rotation. Stanford University. 20 October 2006.
 
 """
 
-from typing import NoReturn, Tuple
+from typing import Tuple
 import numpy as np
 from .mathfuncs import *
 from .orientation import rotation
 from .orientation import rot_seq
+# Functions to convert DCM to quaternion representation
 from .orientation import shepperd
 from .orientation import hughes
 from .orientation import chiaverini
@@ -65,7 +89,7 @@ class DCM(np.ndarray):
     """Direction Cosine Matrix in SO(3)
 
     """
-    def __new__(subtype, array=None, *args, **kwargs):
+    def __new__(subtype, array: np.ndarray = None, *args, **kwargs):
         if array is None:
             array = np.identity(3)
             if 'q' in kwargs:
@@ -94,10 +118,6 @@ class DCM(np.ndarray):
         obj = super(DCM, subtype).__new__(subtype, array.shape, float, array)
         obj.A = array
         return obj
-
-    # def __array_finalize__(self, obj):
-    #     if obj is None: return
-    #     self.A = getattr(obj, 'A', None)
 
     @property
     def I(self) -> np.ndarray:
@@ -241,7 +261,7 @@ class DCM(np.ndarray):
         """
         return self.from_quaternion(self, q)
 
-    def to_quaternion(self, method: str = 'shepperd', **kw) -> np.ndarray:
+    def to_quaternion(self, method: str = 'chiaverini', **kw) -> np.ndarray:
         """
         Set quaternion from given Direction Cosine Matrix.
 
@@ -265,9 +285,20 @@ class DCM(np.ndarray):
             q = sarabandi(self.A, eta=kw.get('threshold', 0.0))
         return q/np.linalg.norm(q)
 
-    def to_q(self, method: str = 'shepperd', **kw) -> np.ndarray:
+    def to_q(self, method: str = 'chiaverini', **kw) -> np.ndarray:
         """Synonym of method `to_quaternion`
         """
         return self.to_quaternion(method=method, **kw)
 
+    def to_angles(self) -> np.ndarray:
+        """Euler Angles from DCM
 
+        Returns
+        -------
+        e : numpy.ndarray
+            Euler angles
+        """
+        phi = np.arctan2(self.A[1, 2], self.A[2, 2])    # Bank Angle
+        theta = -np.sin(self.A[0, 2])                   # Elevation Angle
+        psi = np.arctan2(self.A[0, 1], self.A[0, 0])    # Heading Angle
+        return np.array([phi, theta, psi])

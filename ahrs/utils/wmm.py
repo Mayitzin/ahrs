@@ -2,14 +2,14 @@
 World Magnetic Model
 ====================
 
-The main utility of the World Magnetic Model (WMM) is to provide magnetic
-declination for any desired location on the globe.
+The main utility of the World Magnetic Model (WMM) [WMM]_ is to provide
+magnetic declination for any desired location on the globe.
 
 In addition to the magnetic declination, the WMM also provides the complete
 geometry of the field from 1 km below the World Geodetic System (WGS 84)
-ellipsoid surface to approximately 850 km above it. The magnetic field extends
-deep into the Earth and far out into space, but the WMM is not valid at these
-extremes.
+[WGS84]_ ellipsoid surface to approximately 850 km above it. The magnetic field
+extends deep into the Earth and far out into space, but the WMM is not valid at
+these extremes.
 
 Earth's magnetic field is viewed as a magnetic dipole produced by a sphere of
 uniform magnetization. The "south" of the dipole lies on the northern
@@ -32,32 +32,32 @@ core-mantle producing local magnetic dipoles. These dipoles are superimposed to
 approximate the observed multipole nature of the magnetic field. The creation
 and decay of these inner convections are suspected to yield the magnetic drift.
 
-The magnetic field B can be expressed as the gradient of a potential, `V`:
+The magnetic flux density (magnetic field) :math:`B` can be expressed as the
+gradient of a potential, :math:`V`:
 
 .. math::
-
     B = -\\nabla V
 
-This has a convenient solution expressed in spherical harmonics of `n` degrees:
+This has a convenient solution expressed in spherical harmonics of :math:`n`
+degrees:
 
 .. math::
-
-    V(r, \\theta, \\phi) = a \\sum_{n=1}^k\\frac{a}{r}^{n+1}\\sum_{m=0}^{n}(g_n^m \\cos(m\\phi) + h_n^m \\sin(m\\phi)) P_n^m(\\theta)
+    V(r, \\theta, \\phi) = a \\sum_{n=1}^k\\Big(\\frac{a}{r}\\Big)^{n+1}\\sum_{m=0}^{n}(g_n^m \\cos(m\\phi) + h_n^m \\sin(m\\phi)) P_n^m(\\theta)
 
 where :math:`a` is Earth's mean radius; :math:`g_n^m` and :math:`h_n^m` are
-_Gaussian coefficients_ of degree :math:`n` and order :math:`m`; :math:`r`,
+*Gaussian coefficients* of degree :math:`n` and order :math:`m`; :math:`r`,
 :math:`\\theta`, and :math:`\\phi` are the geocentric radius, coelevation and
-longitude (spherical polar coordinates); and :math:`P_n^m(\\theta)` are the
-associated Legendre functions.
+longitude in spherical polar coordinates; and :math:`P_n^m(\\theta)` are the
+associated Legendre functions [Heiskanen]_.
 
 The time-dependent Gauss coefficients are estimated empirically from a
-least-squares fit using satellite magnetic measurements. These coefficients are
-provided by the NCEI Geomagnetic Modeling Team and British Geological Survey in
-a file with extension COF.
+least-squares fit using satellite magnetic measurements [Langel]_. These
+coefficients are provided by the NCEI Geomagnetic Modeling Team and British
+Geological Survey in a file with extension COF [WMM2020]_.
 
-With degree `n=1` only dipoles are considered. For `n=2` the quadrupoles, `n=3`
-the octuploles, and so on. The method of this WMM expands to degree and order
-12.
+With degree :math:`n=1` only dipoles are considered. For :math:`n=2` the
+quadrupoles, :math:`n=3` the octuploles, and so on. The method of this WMM
+expands to *degree* and *order* 12.
 
 The secular variation (SV) is the yearly change of the core field, which is
 also accounted in the WMM by a linear model. Due to unpredictable changes in
@@ -72,33 +72,41 @@ The geomagnetic field vector B is described by 7 elements:
 |         |                                               |        | Min    | Max   |
 +=========+===============================================+========+========+=======+
 | X       | Northerly intensity                           | nT     | -17000 | 43000 |
++---------+-----------------------------------------------+--------+--------+-------+
 | Y       | Easterly intensity                            | nT     | -18000 | 17000 |
++---------+-----------------------------------------------+--------+--------+-------+
 | Z       | Vertical intensity (Positive downwards)       | nT     | -67000 | 62000 |
++---------+-----------------------------------------------+--------+--------+-------+
 | H       | Horizontal intensity                          | nT     |      0 | 43000 |
++---------+-----------------------------------------------+--------+--------+-------+
 | F       | Total intensity                               | nT     |  23000 | 67000 |
++---------+-----------------------------------------------+--------+--------+-------+
 | I       | Inclination angle (a.k.a. dip angle)          | degree |    -90 | 90    |
++---------+-----------------------------------------------+--------+--------+-------+
 | D       | Declination angle (a.k.a. magnetic variation) | degree |   -180 | 180   |
 +---------+-----------------------------------------------+--------+--------+-------+
 
-The quantities X, Y and Z are perpendicular vectors and can be used to
-determine the quantities F, I and D, and viceversa.
+The quantities ``X``, ``Y`` and ``Z`` are perpendicular vectors and can be used
+to determine the quantities ``F``, ``I`` and ``D``, and viceversa.
 
 The vertical direction is perpendicular to the horizontal plane of the WGS 84
 ellipsoid model of the Earth.
 
-At a location on the plane of a chosen horizontal coordinate system, grivation
-is the angle between grid north and magnetic north, i.e., the angle measured
-clockwise from the direction parallel to the grid's Northing axis to the
-horizontal component of the magnetic field at the observer's location.
+At a location on the plane of a chosen horizontal coordinate system,
+**grivation** is the angle between grid north and magnetic north, i.e., the
+angle measured clockwise from the direction parallel to the grid's Northing
+axis to the horizontal component of the magnetic field at the observer's
+location.
 
 Grivation is useful for local surveys, where location is given by grid
 coordinates rather than by longitude and latitude. It is dependent on the map
 projection used to define the grid coordinates. In general, it is estimated as:
 
+.. math::
     GV = D - C
 
-where C is the "convergence-of-meridians" defined as the clockwise angle from
-the northward meridional arc to the grid Northing direction.
+where :math:`C` is the "convergence-of-meridians" defined as the clockwise
+angle from the northward meridional arc to the grid Northing direction.
 
 The WMM was developed jointly by the National Centers for Environmental
 Information (NCEI, Boulder CO, USA) (formerly National Geophysical Data Center
@@ -107,9 +115,9 @@ of the regular update cycle of the World Magnetic Model both institutions have
 released the latest model on December 10th, 2019.
 
 This script is based on the originally conceived one by Christopher Weiss
-(cmweiss@gmail.com), who adapted it from the geomagc software and World
-Magnetic Model of the NOAA Satellite and Information Service, National
-Geophysical Data Center.
+(cmweiss@gmail.com) [Weiss]_, who adapted it from the geomagc software and
+World Magnetic Model of the NOAA Satellite and Information Service, National
+Geophysical Data Center [Chulliat]_.
 
 License
 -------
@@ -121,40 +129,43 @@ must provide notice with such work(s) identifying the U.S. Government material
 incorporated and stating that such material is not subject to copyright
 protection.
 
-References
-----------
-.. [1] The World Magnetic Model (https://www.ngdc.noaa.gov/geomag/WMM/DoDWMM.shtml)
-.. [2] Chulliat, A., W. Brown, P. Alken, C. Beggan, M. Nair, G. Cox, A. Woods,
-    S. Macmillan, B. Meyer and M. Paniccia, The US/UK World Magnetic Model for
-    2020­-2025: Technical Report, National Centers for Environmental
+Reference
+---------
+.. [Chulliat] Chulliat, A., W. Brown, P. Alken, C. Beggan, M. Nair, G. Cox, A.
+    Woods, S. Macmillan, B. Meyer and M. Paniccia, The US/UK World Magnetic
+    Model for 2020­-2025: Technical Report, National Centers for Environmental
     Information, NOAA, doi:10.25923/ytk1-yx35, 2020.
     (https://www.ngdc.noaa.gov/geomag/WMM/data/WMM2020/WMM2020_Report.pdf)
-.. [3] WMM2020 Model values: NCEI Geomagnetic Modeling Team and British
+.. [Heiskanen] W. A. Heiskanen and H. Moritz. Physical Geodesy. TU Graz. 1993.
+.. [Langel] R. A. Langel and W. J. Hinze. The Magnetic Field of Earth's
+    Lithosphere: The Satellite Perspective. Cambridge University Press. 1998.
+.. [Weiss] Christopher Weiss' GeoMag repository (https://github.com/cmweiss/geomag)
+.. [Wertz] James R. Wertz. Spacecraft Attitude Determination and Control.
+    Kluwer Academics. 1978.
+.. [WGS84] World Geodetic System 1984. Its Definition and Relationships with
+    Local Geodetic Systems. National Geospatial-Intelligence Agency (NGA)
+    Standarization Document. 2014.
+    ftp://ftp.nga.mil/pub2/gandg/website/wgs84/NGA.STND.0036_1.0.0_WGS84.pdf
+.. [WMM] The World Magnetic Model (https://www.ngdc.noaa.gov/geomag/WMM/DoDWMM.shtml)
+.. [WMM2020] WMM2020 Model values: NCEI Geomagnetic Modeling Team and British
     Geological Survey. 2019. World Magnetic Model 2020. NOAA National Centers
     for Environmental Information. doi: 10.25921/11v3-da71, 2020.
-.. [4] Christopher Weiss' GeoMag repository (https://github.com/cmweiss/geomag)
-.. [5] World Geodetic System 84 (https://en.wikipedia.org/wiki/World_Geodetic_System#A_new_World_Geodetic_System:_WGS_84)
-.. [6] W. A. Heiskanen and H. Moritz. Physical Geodesy. TU Graz reprint. 1993.
-.. [7] James R. Wertz. Spacecraft Attitude Determination and Control. Kluwer
-    Academics. 1978.
-.. [8] R. A. Langel and W. J. Hinze. The Magnetic Field of Earth's Lithosphere:
-    The Satellite Perspective. Cambridge University Press. 1998.
 
 """
 
+# PSL
 import unittest
 import datetime
-from typing import Union, NoReturn, Tuple
+import pkgutil
+from io import StringIO
+from typing import Union, NoReturn, Tuple, Dict
+# Third-Party Dependencies
 import numpy as np
+from ..common.constants import *
 
-EQUATOR_RADIUS = 6_378_137.0      # Semi-major axis of Earth, in meters (Equatorial Radius)
-POLAR_RADIUS = 6_356_752.314245   # Semi-minor axis of Earth, in meters (Polar Radius)
-MEAN_EARTH_RADIUS = 6_371_200.0   # Mean of Earth's radii, in meters
-DEG2RAD = np.pi/180.0
-RAD2DEG = 180.0/np.pi
-
-def geodetic2spherical(lat: float, lon: float, h: float, a: float = EQUATOR_RADIUS/1000.0, b: float = POLAR_RADIUS/1000.0) -> Tuple[float, float, float]:
-    """Transform geodetic coordinates into spherical geocentric coordinates
+def geodetic2spherical(lat: float, lon: float, h: float, a: float = EARTH_EQUATOR_RADIUS/1000.0, b: float = EARTH_POLAR_RADIUS/1000.0) -> Tuple[float, float, float]:
+    """
+    Transform geodetic coordinates into spherical geocentric coordinates
 
     The transformation cannot be a simple cylindric to spherical conversion, as
     we must also consider a planet's ellipsoid form. With the aid of its
@@ -189,10 +200,10 @@ def geodetic2spherical(lat: float, lon: float, h: float, a: float = EQUATOR_RADI
     r : float
         Radial distance of point in spherical coordinates.
     """
-    # Transform geodetic coordinates into spherical geocentric coordinates
+    # Estimate Spheroid's Flatness and First Eccentricity
     f = (a-b)/a                             # Flatness
     e2 = f*(2.0-f)                          # First Eccentricity
-    #########
+    # Transform geodetic coordinates into spherical geocentric coordinates
     Rc = a/np.sqrt(1.0-e2*np.sin(lat)**2)   # Radius of curvature of prime vertical
     rho = (Rc+h)*np.cos(lat)
     z = (Rc*(1-e2)+h)*np.sin(lat)
@@ -201,16 +212,16 @@ def geodetic2spherical(lat: float, lon: float, h: float, a: float = EQUATOR_RADI
     return lat_spheric, lon, r
 
 class WMM:
-    """Top class for the World Magnetic Model
+    """World Magnetic Model
 
     It is mainly used to compute all elements of the World Magnetic Model (WMM)
     at any given point on Earth.
 
     The main magnetic field :math:`B` is a potential field defined, in
     geocentric spherical coordinates (longitude :math:`\\lambda`, latitude
-    :math:`phi '` and radius :math;`r`), as the negative spatial gradient of a
-    scalar potential. This potential can be expanded in terms of spherical
-    harmonics:
+    :math:`\\phi '` and radius :math:`r`), as the negative spatial gradient of a
+    scalar potential at a time :math:`t`. This potential can be expanded in
+    terms of spherical harmonics:
 
     .. math::
 
@@ -225,6 +236,8 @@ class WMM:
     and the Schmidt semi-normalized associated Legendre functions :math:`P_n^m(\\phi')`
     are defined as:
 
+    .. math::
+
         P_n^m(\\mu) = \\left\\{
         \\begin{array}{ll}
             \\sqrt{2\\frac{(n-m)!}{(n+m)!}}P_{n, m}(\\mu) & \\mathrm{if} m > 0 \\\\
@@ -236,13 +249,27 @@ class WMM:
     determined by the given date. If no date is given, it is assumed for the
     day of the object's creation.
 
-    Once the user creates the WMM object, the estimation of the geomagnetic
-    elements is carried out with a call to the method `magnetic_field` giving
-    the location on Earth at which the magnetic elements will be calculated.
-    This location is given in decimal geodetic coordinates. See examples.
+    Once the WMM object is created, the estimation of the geomagnetic elements
+    is carried out with a call to the method `magnetic_field` giving the
+    location on Earth at which the magnetic elements will be calculated. This
+    location is given in decimal geodetic coordinates. See examples.
 
-    First, the location is converted from geodetic coordinates to spherical
-    geocentric coordinates
+    Every WMM object is created with a set of coefficients read from a COF
+    file, defined by the desired working date of the model. The latest
+    model available is WMM2020 corresponding to the lustrum 2020-2024.
+
+    This class can create models with dates between 2015 and 2024.
+
+    Parameters
+    ----------
+    date : datetime.date, int or float, default: current day
+        Date of desired magnetic field estimation.
+    latitude : float, default: None
+        Latitude, in decimal degrees, in geodetic coordinates
+    longitude : float, default: None
+        Longitude in decimal degrees, in geodetic coordinates
+    height : float, default: 0.0
+        Mean Sea Level Height in kilometers
 
     Attributes
     ----------
@@ -260,9 +287,9 @@ class WMM:
         COF File used to build Model
     degree : int
         Degree of model
-    latitude : float, default: None
+    latitude : float
         Latitude, in decimal degrees, in geodetic coordinates
-    longitude : float, default: None
+    longitude : float
         Longitude in decimal degrees, in geodetic coordinates
     height : float, default: 0.0
         Mean Sea Level Height in kilometers
@@ -277,14 +304,16 @@ class WMM:
     F : float, default: None
         Total intensity, in nT
     I : float, default: None
-        Inclination angle, in nT
+        Inclination angle (dip), in degrees
+    D : float, default: None
+        Declination angle, in degrees
     GV : float, default: None
         Grivation, in degrees
 
     Examples
     --------
-    >>> wmm = WMM()         # Magnetic model today
-    >>> wmm.magnetic_field(10.0, -20.0)      # latitude = 10 deg, longitude = -20 deg
+    >>> wmm = ahrs.WMM()         # Create today's magnetic model
+    >>> wmm.magnetic_field(10.0, -20.0)      # Magnetic field at latitude = 10 deg, longitude = -20 deg
     >>> wmm.D               # Magnetic declination [degrees]
     -9.122361367239034
     >>> wmm.magnetic_field(10.0, -20.0, height=10.5)     # 10.5 km above sea level
@@ -294,7 +323,7 @@ class WMM:
     >>> wmm.D
     -9.73078560629778
 
-    All main elements are computed and accessed independently
+    All main elements are computed at the same time and accessed independently
 
     >>> wmm.X
     30499.640469609083
@@ -321,7 +350,7 @@ class WMM:
     The magnetic field can be computed at the creation of the WMM object by
     passing the main parameters to its constructor:
 
-    >>> wmm = WMM(datetime.date(2017, 5, 12), latitude=10.0, longitude=-20.0, height=10.5)
+    >>> wmm = ahrs.WMM(datetime.date(2017, 5, 12), latitude=10.0, longitude=-20.0, height=10.5)
     >>> wmm.magnetic_elements
     {'X': 30499.640469609083, 'Y': -5230.267158472566, 'Z': -1716.633311360368,
     'H': 30944.850352270452, 'F': 30992.427998627096, 'I': -3.1751692563622993,
@@ -329,27 +358,8 @@ class WMM:
 
     """
     def __init__(self, date: Union[datetime.date, int, float] = None, **kw) -> NoReturn:
-        """
-        Every WMM object is created with a set of coefficients read from a COF
-        file, defined by the desired working date of the model. The latest
-        model available is WMM2020 corresponding to the lustrum 2020-2024.
-
-        Parameters
-        ----------
-        date : datetime.date, int or float, default: current day
-            Date of desired magnetic field estimation.
-
-        Extra Parameters
-        ----------------
-        latitude : float, default: None
-            Latitude, in decimal degrees, in geodetic coordinates
-        longitude : float, default: None
-            Longitude in decimal degrees, in geodetic coordinates
-        height : float, default: 0.0
-            Mean Sea Level Height in kilometers
-        """
         self.reset_coefficients(date)
-        self.__dict__.update(dict.fromkeys(['X', 'Y', 'Z', 'H', 'F', 'I', 'D', 'GV'], None))
+        self.__dict__.update(dict.fromkeys(['X', 'Y', 'Z', 'H', 'F', 'I', 'D', 'GV']))
         self.latitude = kw.get("latitude")
         self.longitude = kw.get("longitude")
         self.height = kw.get("height", 0.0)
@@ -357,7 +367,7 @@ class WMM:
             self.magnetic_field(self.latitude, self.longitude, self.height, date=self.date)
 
     def reset_coefficients(self, date: Union[datetime.date, int, float] = None) -> NoReturn:
-        """Reset Gauss coefficients to given date
+        """Reset Gauss coefficients to given date.
 
         Given the date, the corresponding coefficients are updated. Basic
         properties (epoch, release date, and model id) are read and updated in
@@ -367,44 +377,44 @@ class WMM:
         attribute `c` contains the Gaussian coefficients, while the attribute
         `cd` contains the secular Gaussian coefficients.
 
-        The lenght of the Gaussian coefficient array determines the degree `n`
-        of the model. This property updated the value of attribute `degree`
+        The lenght of the Gaussian coefficient array determines the degree
+        :math:`n` of the model. This property updates the value of attribute
+        ``degree``.
 
         Parameters
         ----------
         date : datetime.date, int or float, default: current day
             Date of desired magnetic field estimation.
+
         """
-        self.set_date(date)
+        self.reset_date(date)
         self.__dict__.update(self.get_properties(self.wmm_filename))
         self.load_coefficients(self.wmm_filename)
 
     def load_coefficients(self, cof_file: str) -> NoReturn:
-        """Return model coefficients in NumPy array
+        """Load model coefficients from COF file.
 
         The model coefficients, also referred to as Gauss coefficients, are
-        listed in a COF file. These coefficients can be used to copmute values
-        for the fields elements and their annual rates of change at any
+        listed in a COF file. These coefficients can be used to compute values
+        of the fields elements and their annual rates of change at any
         location near the surface of the Earth.
 
         The COF file has 6 columns:
 
-        1 : `n` is the degree.
-        2 : `m` is the order.
-        3 : `g` are time-dependent Gauss coefficients of degree `n` and order `m`.
-        4 : `h` are time-dependent Gauss coefficients of degree `n` and order `m`.
-        5 : `gd` are secular variations of coefficient g.
-        6 : `hd` are secular variations of coefficient h.
+        * ``n`` is the degree.
+        * ``m`` is the order.
+        * ``g`` are time-dependent Gauss coefficients of degree ``n`` and order ``m``.
+        * ``h`` are time-dependent Gauss coefficients of degree ``n`` and order ``m``.
+        * ``gd`` are secular variations of coefficient ``g``.
+        * ``hd`` are secular variations of coefficient ``h``.
 
-        which constitute the _model_ of the field. The first-order time
-        derivatives are called _secular terms_ . The units are nT for the main
-        field, and nT/year for the secular variation.
+        which constitute the *model* of the field. The first-order time
+        derivatives are called *secular terms*. The units are ``nT`` for the
+        main field, and ``nT/year`` for the secular variation.
 
-        The Gauss coefficients :math:`g_n^m(t_0)`, :math:`h_n^m(t_0)`, :math:`\\dot{g}_n^m(t_0)`
-        and :math:`\\dot{h}_n^m(t_0)` are defined for a time :math:`t` as:
+        The Gauss coefficients are defined for a time :math:`t` as:
 
         .. math::
-
             \\begin{eqnarray}
             g_n^m(t) & = & g_n^m(t_0) + (t-t_0) \\dot{g}_n^m(t_0) \\\\
             h_n^m(t) & = & h_n^m(t_0) + (t-t_0) \\dot{h}_n^m(t_0)
@@ -419,7 +429,8 @@ class WMM:
             Path to COF file with the coefficients of the WMM
 
         """
-        data = np.genfromtxt(cof_file, comments="999999", skip_header=1)
+        file_data = pkgutil.get_data(__name__, self.wmm_filename).decode()
+        data = np.genfromtxt(StringIO(file_data), comments="999999", skip_header=1)
         self.degree = int(max(data[:, 0]))
         self.c = np.zeros((self.degree+1, self.degree+1))
         self.cd = np.zeros((self.degree+1, self.degree+1))
@@ -431,14 +442,14 @@ class WMM:
                 self.c[n, m-1] = row[3]     # h_n^m
                 self.cd[n, m-1] = row[5]    # h_n^m secular
 
-    def get_properties(self, cof_file: str) -> dict:
-        """Return dictionary of WMM properties from COF file
+    def get_properties(self, cof_file: str) -> Dict[str, Union[str, float]]:
+        """Return dictionary of WMM properties from COF file.
 
-        Three properties are read and return in a dictionary:
+        Three properties are read and returned in a dictionary:
 
-        * `epoch` is the initial time t_0 as a `float`.
-        * `model` is a string of model used for the required lustrum.
-        * `modeldate` is the release date of used magnetic model.
+        * ``epoch`` is the initial time :math:`t_0` as a `float`.
+        * ``model`` is a string of model used for the required lustrum.
+        * ``modeldate`` is the release date of used magnetic model.
 
         Parameters
         ----------
@@ -450,21 +461,26 @@ class WMM:
         properties : dictionary
             Dictionary with the three WMM properties.
 
+        Examples
+        --------
+        >>> wmm = ahrs.WMM()
+        >>> wmm.get_properties('my_coefficients.COF')
+        {'model': 'WMM-2020', 'modeldate': '12/10/2019', 'epoch': 2020.0}
+
         """
         if not cof_file.endswith(".COF"):
             raise TypeError("File must have extension 'COF'")
-        with open(cof_file, 'r') as f:
-            line = f.readline()
-        v = line.strip().split()
+        first_line = pkgutil.get_data(__name__, self.wmm_filename).decode().split('\n')[0]
+        v = first_line.strip().split()
         properties = dict(zip(["model", "modeldate"], v[1:]))
         properties.update({"epoch": float(v[0])})
         return properties
 
-    def set_date(self, date: Union[datetime.date, int, float]) -> NoReturn:
+    def reset_date(self, date: Union[datetime.date, int, float]) -> NoReturn:
         """Set date to use with the model.
 
         The WMM requires a date. This date can be given as an instance of
-        `datetime.date` or as a decimalized date of the format `YYYY.d`.
+        `datetime.date` or as a decimalized date of the format ``YYYY.d``.
 
         If None is given it sets the date to the present day. In addition, the
         corresponding COF file is also set.
@@ -472,8 +488,8 @@ class WMM:
         Please note that only coefficents from year 2015 and later are provided
         with this module.
 
-        Parameter
-        ---------
+        Parameters
+        ----------
         date : datetime.date, int or float, default: current day
             Date of desired magnetic field estimation.
         """
@@ -488,30 +504,29 @@ class WMM:
             self.date_dec = self.date.year + self.date.timetuple().tm_yday/365.0
         if self.date.year < 2015:
             raise ValueError("No available coefficients for dates before 2015.")
-        self.wmm_filename = './WMM2015/WMM.COF' if self.date_dec < 2020.0 else './WMM2020/WMM.COF'
+        self.wmm_filename = 'WMM2015/WMM.COF' if self.date_dec < 2020.0 else 'WMM2020/WMM.COF'
 
     def denormalize_coefficients(self, latitude: float) -> NoReturn:
         """Recursively estimate associated Legendre polynomials and derivatives
+        done in a recursive way as described by Michael Plett in [Wertz]_ for
+        an efficient computation.
 
         Given the Gaussian coefficients, it is possible to estimate the
         magnetic field at any latitude on Earth for a certain date.
-
-        For an efficient computation, the estimation of the coefficients is
-        done in a recursive way as described by Michael Plett in [7]_
 
         First, it is assumed that :math:`P_n^m(x)` are the Schmidt
         semi-normalized functions. A normalization is made so that the
         relative strength of terms of same degree :math:`n` but order :math:`m`
         are used by comparing their respective Gauss coefficients.
 
-        For :math:`m=0` they are called _Legendre Polynomials_ and can be
+        For :math:`m=0` they are called *Legendre Polynomials* and can be
         computed recursively with:
 
         .. math::
 
             P_n(x) = \\frac{2n-1}{n} x P_{n-1}(x) - \\frac{n-1}{n}P_{n-2}(x)
 
-        For :math:`m>0` they are known as _associated Legendre functions_
+        For :math:`m>0` they are known as *associated Legendre functions*
         of degree :math:`n` and order :math:`m` and reduced to:
 
         .. math::
@@ -556,7 +571,7 @@ class WMM:
 
         .. math::
 
-            \\begin{array}{llr}
+            \\begin{array}{rlr}
                 S_{0,0} & = 1 & \\\\
                 S_{n,0} & = S_{n-1, 0} \\frac{2n-1}{n} & n\\geq 1 \\\\
                 S_{n,m} & = S_{n-1, m}\\sqrt{\\frac{(n-m+1)(\\delta _m^1+1)}{n+m}} & m\\geq 1
@@ -587,14 +602,14 @@ class WMM:
 
         .. math::
 
-            \\K^{n, m} = \\left\\{
+            K^{n, m} = \\left\\{
             \\begin{array}{ll}
                 \\frac{(n-1)^2-m^2}{(2n-1)(2n-3)} & \\: n>1 \\\\
                 0 & \\: n=1
             \\end{array}
             \\right.
 
-        Likewise, the gradient \\frac{dP^{n, m}}{dx} is estimated as:
+        Likewise, the gradient :math:`\\frac{dP^{n, m}}{dx}` is estimated as:
 
         .. math::
 
@@ -647,23 +662,23 @@ class WMM:
         .. math::
 
             \\begin{array}{ll}
-                g_n^m(t) & = g_n^m(t_0) + \\Delta t \\dot{g}_n^m (t_0) \\\\
-                h_n^m(t) & = h_n^m(t_0) + \\Delta t \\dot{h}_n^m (t_0)
+                g_n^m(t) & = g_n^m(t_0) + \\Delta_t \\dot{g}_n^m (t_0) \\\\
+                h_n^m(t) & = h_n^m(t_0) + \\Delta_t \\dot{h}_n^m (t_0)
             \\end{array}
 
-        where :math:`\\Delta t = t-t_0` is the difference between the required
-        time :math:`t` and the reference epoch model :math:`t_0` (2020.0 for
-        the newest version)
+        where :math:`\\Delta_t = t-t_0` is the difference between the time
+        :math:`t` and the reference epoch model :math:`t_0` (``2020.0`` for the
+        newest version.)
 
-        The vector components of the main magnetic field B are then calculated
-        with:
+        The vector components of the main magnetic field :math:`B` are then
+        calculated with:
 
         .. math::
 
             \\begin{array}{ll}
                 X' & = -\\sum_{n=1}^N\\Big(\\frac{a}{r}\\Big)^{n+2} \\sum_{m=0}^n\\big(g_n^m(t) \\cos(m\\lambda)+h_n^m(t)\\sin(m\\lambda)\\big) \\frac{dP_n^m(\\sin \\phi ')}{d\\phi '} \\\\
                 Y' & = \\frac{1}{\\cos\\phi '}\\sum_{n=1}^N\\Big(\\frac{a}{r}\\Big)^{n+2} \\sum_{m=0}^n m\\big(g_n^m(t) \\sin(m\\lambda)-h_n^m(t)\\cos(m\\lambda)\\big)P_n^m(\\sin \\phi ') \\\\
-                X' & = -\\sum_{n=1}^N(n+1)\\Big(\\frac{a}{r}\\Big)^{n+2} \\sum_{m=0}^n\\big(g_n^m(t) \\cos(m\\lambda)+h_n^m(t)\\sin(m\\lambda)\\big)P_n^m(\\sin \\phi ')
+                Z' & = -\\sum_{n=1}^N(n+1)\\Big(\\frac{a}{r}\\Big)^{n+2} \\sum_{m=0}^n\\big(g_n^m(t) \\cos(m\\lambda)+h_n^m(t)\\sin(m\\lambda)\\big)P_n^m(\\sin \\phi ')
             \\end{array}
 
         Finally, the geomagnetic vector components are rotated into ellipsoidal
@@ -674,7 +689,7 @@ class WMM:
             \\begin{array}{ll}
                 X & = X'\\cos(\\phi ' - \\phi) - Z' \\sin(\\phi ' - \\phi) \\\\
                 Y & = Y' \\\\
-                X & = X'\\sin(\\phi ' - \\phi) + Z' \\cos(\\phi ' - \\phi)
+                Z & = X'\\sin(\\phi ' - \\phi) + Z' \\cos(\\phi ' - \\phi)
             \\end{array}
 
         These components are used to compute the rest of the magnetic elements:
@@ -684,12 +699,13 @@ class WMM:
             \\begin{array}{ll}
                 H & = \\sqrt{X^2 + Y^2} \\\\
                 F & = \\sqrt{H^2 + Z^2} \\\\
-                I & = \\arctan(Z, H) \\\\
-                D & = \\arctan(Y, X)
+                I & = \\arctan(\\frac{Z}{H}) \\\\
+                D & = \\arctan(\\frac{Y}{X})
             \\end{array}
 
-        Notice that the use of `atan2` yields a more precise result than `atan`,
-        because it estimates the angle exploring all quadrants.
+        .. note::
+            The use of ``arctan2`` yields a more precise result than ``arctan``,
+            because it estimates the angle exploring all quadrants.
 
         For polar regions, where the declination changes drastically, the WMM
         defines two different grivations (one for each pole) defined as:
@@ -737,7 +753,7 @@ class WMM:
         cos_lat = np.cos(lat_prime)                     # cos(phi')
         sin_lat = np.sin(lat_prime)                     # sin(phi')
         Zp = Xp = Yp = Bp = 0.0
-        a = MEAN_EARTH_RADIUS/1000.0                    # Mean earth radius in km
+        a = EARTH_MEAN_RADIUS/1000.0                    # Mean earth radius in km
         ar = a/r
         # Spherical Harmonics (eq. 4)
         for n in range(1, self.degree+1):   #### !! According to report it must be equal to defined degree (12 not 13)
@@ -760,7 +776,7 @@ class WMM:
                     Bp += arn2 * gshc
                     if n>1:
                         Bp *= sin_lat - self.k[m, n]
-            Xp += arn2 * x_p                            # (eq. 10)  #### !! According to report must be a substraction
+            Xp += arn2 * x_p                            # (eq. 10)  #### !! According to report must be a substraction. Must re-check this
             Yp += arn2 * y_p                            # (eq. 11)
             Zp -= (n+1) * arn2 * z_p                    # (eq. 12)
         Yp = Bp if cos_lat==0.0 else Yp/cos_lat
@@ -781,9 +797,38 @@ class WMM:
             self.GV += self.longitude
 
     @property
-    def magnetic_elements(self):
-        """Main geomagnetic elements"""
-        return {k: self.__dict__[k] for k in ["X", "Y", "Z", "H", "F", "I", "D", "GV"]}
+    def magnetic_elements(self) -> Dict[str, float]:
+        """Main geomagnetic elements in a dictionary
+
+        +---------+-----------------------------------------------+
+        | Element | Definition                                    |
+        +=========+===============================================+
+        | X       | Northerly intensity                           |
+        +---------+-----------------------------------------------+
+        | Y       | Easterly intensity                            |
+        +---------+-----------------------------------------------+
+        | Z       | Vertical intensity (Positive downwards)       |
+        +---------+-----------------------------------------------+
+        | H       | Horizontal intensity                          |
+        +---------+-----------------------------------------------+
+        | F       | Total intensity                               |
+        +---------+-----------------------------------------------+
+        | I       | Inclination angle (a.k.a. dip angle)          |
+        +---------+-----------------------------------------------+
+        | D       | Declination angle (a.k.a. magnetic variation) |
+        +---------+-----------------------------------------------+
+        | GV      | Grivation                                     |
+        +---------+-----------------------------------------------+
+
+        Example
+        -------
+        >>> wmm = WMM(datetime.date(2017, 5, 12), latitude=10.0, longitude=-20.0, height=10.5)
+        >>> wmm.magnetic_elements
+        {'X': 30499.640469609083, 'Y': -5230.267158472566, 'Z': -1716.633311360368,
+        'H': 30944.850352270452, 'F': 30992.427998627096, 'I': -3.1751692563622993,
+        'D': -9.73078560629778, 'GV': -9.73078560629778}
+        """
+        return {k: self.__dict__[k] for k in ['X', 'Y', 'Z', 'H', 'F', 'I', 'D', 'GV']}
 
 
 class GeoMagTest(unittest.TestCase):
@@ -797,23 +842,41 @@ class GeoMagTest(unittest.TestCase):
     | Index | CSV File (WM2015) | TXT File (WM2020) |
     +=======+===================+===================+
     | 0     | date              | date              |
+    +-------+-------------------+-------------------+
     | 1     | height (km)       | height (km)       |
+    +-------+-------------------+-------------------+
     | 2     | latitude (deg)    | latitude (deg)    |
+    +-------+-------------------+-------------------+
     | 3     | longitude (deg)   | longitude (deg)   |
+    +-------+-------------------+-------------------+
     | 4     | X (nT)            | D (deg)           |
+    +-------+-------------------+-------------------+
     | 5     | Y (nT)            | I (deg)           |
+    +-------+-------------------+-------------------+
     | 6     | Z (nT)            | H (nT)            |
+    +-------+-------------------+-------------------+
     | 7     | H (nT)            | X (nT)            |
+    +-------+-------------------+-------------------+
     | 8     | F (nT)            | Y (nT)            |
+    +-------+-------------------+-------------------+
     | 9     | I (deg)           | Z (nT)            |
+    +-------+-------------------+-------------------+
     | 10    | D (deg)           | F (nT)            |
+    +-------+-------------------+-------------------+
     | 11    | GV (deg)          | dD/dt (deg/year)  |
+    +-------+-------------------+-------------------+
     | 12    | Xdot (nT/yr)      | dI/dt (deg/year)  |
+    +-------+-------------------+-------------------+
     | 13    | Ydot (nT/yr)      | dH/dt (nT/year)   |
+    +-------+-------------------+-------------------+
     | 14    | Zdot (nT/yr)      | dX/dt (nT/year)   |
+    +-------+-------------------+-------------------+
     | 15    | Hdot (nT/yr)      | dY/dt (nT/year)   |
+    +-------+-------------------+-------------------+
     | 16    | Fdot (nT/yr)      | dZ/dt (nT/year)   |
+    +-------+-------------------+-------------------+
     | 17    | dI/dt (deg/year)  | dF/dt (nT/year)   |
+    +-------+-------------------+-------------------+
     | 18    | dD/dt (deg/year)  |                   |
     +-------+-------------------+-------------------+
 

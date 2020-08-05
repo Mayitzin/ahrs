@@ -14,9 +14,9 @@ References
 """
 
 import numpy as np
+from ..common.mathfuncs import *        # Import constants and special functions
 
 # Reference Observations in Munich, Germany
-from ..common.constants import *
 from ..utils.wmm import WMM
 from ..utils.wgs84 import WGS
 MAG = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT).magnetic_elements
@@ -59,7 +59,7 @@ class OLEQ:
     ((1000, 3), (1000, 3))
     >>> from ahrs.filters import OLEQ
     >>> orientation = OLEQ(acc=acc_data, mag=mag_data)
-    >>> orientation.Q.shape                 # Estimated
+    >>> orientation.Q.shape                 # Estimated attitude
     (1000, 4)
 
     """
@@ -96,11 +96,26 @@ class OLEQ:
         return Q
 
     def WW(self, b, r):
-        return np.array([
-            [ b[0]*r[0] + b[1]*r[1] + b[2]*r[2], -b[2]*r[1] + b[1]*r[2],              b[2]*r[0] - b[0]*r[2],             -b[1]*r[0] + b[0]*r[1]],
-            [-b[2]*r[1] + b[1]*r[2],              b[0]*r[0] - b[1]*r[1] - b[2]*r[2],  b[1]*r[0] + b[0]*r[1],              b[2]*r[0] + b[0]*r[2]],
-            [ b[2]*r[0] - b[0]*r[2],              b[1]*r[0] + b[0]*r[1],             -b[0]*r[0] + b[1]*r[1] - b[2]*r[2],  b[2]*r[1] + b[1]*r[2]],
-            [-b[1]*r[0] + b[0]*r[1],              b[2]*r[0] + b[0]*r[2],              b[2]*r[1] + b[1]*r[2],             -b[0]*r[0] - b[1]*r[1] + b[2]*r[2]]])
+        """W Matrix
+
+        Parameters
+        ----------
+        b : numpy.ndarray
+            Normalized observations vector
+        r : numpy.ndarray
+            Normalized vector of reference frame
+
+        Returns
+        -------
+        W_matrix : numpy.ndarray
+            W Matrix of equation K^T b = W q
+        """
+        bx, by, bz = b
+        rx, ry, rz = r
+        M1 = np.array([[bx, 0.0, bz, -by], [0.0, bx, by, bz], [bz, by, -bx, 0.0], [-by, bz, 0.0, -bx]]) # (eq. 18a)
+        M2 = np.array([[by, -bz, 0.0, bx], [-bz, -by, bx, 0.0], [0.0, bx, by, bz], [bx, 0.0, bz, -by]]) # (eq. 18b)
+        M3 = np.array([[bz, by, -bx, 0.0], [by, -bz, 0.0, bx], [-bx, 0.0, -bz, by], [0.0, bx, by, bz]]) # (eq. 18c)
+        return rx*M1 + ry*M2 + rz*M3    # (eq. 20)
 
     def estimate(self, acc: np.ndarray = None, mag: np.ndarray = None) -> np.ndarray:
         """Attitude Estimation
@@ -125,9 +140,9 @@ class OLEQ:
             return None
         a = acc/a_norm
         m = mag/m_norm
-        W = self.w[0]*self.WW(a, self.g_ref) + self.w[1]*self.WW(m, self.m_ref)
+        W = self.w[0]*self.WW(a, self.g_ref) + self.w[1]*self.WW(m, self.m_ref) # (eq. 20)
         G = 0.5*(W + np.eye(4))
-        q = np.ones(4)
+        q = np.ones(4)      # "random" quaternion
         last_q = np.array([1., 0., 0., 0.])
         i = 0
         while np.linalg.norm(q-last_q)>1e-8 and i<=20:

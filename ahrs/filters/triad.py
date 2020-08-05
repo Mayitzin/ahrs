@@ -3,7 +3,7 @@
 TRIAD
 =====
 
-The Three-Axis Attitude Determination was first described by Gerald M. Lerner
+The Tri-Axial Attitude Determination was first described by Gerald M. Lerner
 in [1]_ to algebraically estimate an attitude represented as a Direction Cosine
 Matrix directly from two orthogonal vector observations.
 
@@ -30,11 +30,15 @@ References
 """
 
 import numpy as np
-from ..common.quaternion import shepperd
+from ..common.orientation import chiaverini
 from ..common.mathfuncs import *
 
+# Reference Observations in Munich, Germany
+from ..utils.wmm import WMM
+MAG = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT).magnetic_elements
+
 class TRIAD:
-    """Attitude estimation using TRIAD
+    """Tri-Axial Attitude Determination
 
     Originally TRIAD estimates the Direction Cosine Matrix describing the
     attitude. This implementation, however, will return its equivalent
@@ -44,44 +48,36 @@ class TRIAD:
     ----------
     acc : numpy.ndarray
         First 3-by-1 observation vector in body frame. Usually is normalized
-        acceleration vector a = [ax ay az]^T
+        acceleration vector a = [ax ay az]
     mag : numpy.ndarray
         Second 3-by-1 observation vector in body frame. Usually is normalized
-        magnetic field vector m = [mx my mz]^T
+        magnetic field vector m = [mx my mz]
     V1 : numpy.ndarray, optional.
-        3-by-1 Reference vector 1. Defaults to gravity in navigation frame
-        g = [0 0 1]^T
+        3-by-1 Reference vector 1. Defaults to gravity g = [0 0 1]
     V2 : numpy.ndarray, optional.
-        3-by-1 Reference vector 2. Defaults to magnetic field in navigation
-        frame m = [cos(dip) 0 sin(dip)]^T, where dip is the magnetic dip in
-        local latitude
+        3-by-1 Reference vector 2. Defaults to normalized geomagnetic field
+        h = [hx, hy, hz]
 
     Extra Parameters
     ----------------
-    magnetic_dip : float
-        Magnetic dip in local latitude. Defaults to 66.47° corresponding to
-        Munich, Germany.
-    as_dcm : bool, False
+    as_dcm : bool, default: False
         Whether to return attitude as a Direction Cosine Matrix.
     """
     def __init__(self, acc: np.ndarray = None, mag: np.ndarray = None, **kw):
         self.acc = acc
         self.mag = mag
-        self.frequency = kw.get('frequency', 100.0)
-        self.Dt = kw.get('Dt', 1.0/self.frequency)
         self.V1 = kw.get('V1', np.array([0.0, 0.0, 1.0]))
-        mdip = kw.get('magnetic_dip', 64.22)                # Magnetic dip, in degrees, in Munich, Germany.
-        self.V2 = kw.get('V2', np.array([cosd(mdip), 0.0, sind(mdip)]))
+        self.V2 = kw.get('V2', np.array([MAG['X'], MAG['Y'], MAG['Z']]))
         self.V2 /= np.linalg.norm(self.V2)
         self.as_dcm = kw.get('as_dcm', False)
         if self.acc is not None and self.mag is not None:
             self.Q = self._compute_all()
 
-    def _compute_all(self):
+    def _compute_all(self) -> np.ndarray:
         """
-        Estimate the quaternions given all data in class Data.
+        Estimate the quaternions given all data.
 
-        Class Data must have, at least, `acc` and `mag` attributes.
+        Attributes `gyr`, `acc` and `mag` must contain data.
 
         Returns
         -------
@@ -98,7 +94,7 @@ class TRIAD:
             Q[t] = self.estimate(self.acc[t], self.mag[t])
         return Q
 
-    def estimate(self, acc: np.ndarray, mag: np.ndarray):
+    def estimate(self, acc: np.ndarray, mag: np.ndarray) -> np.ndarray:
         """Attitude Estimation.
 
         Parameters
@@ -132,4 +128,4 @@ class TRIAD:
         dcm = Mb@Mr.T                                       # (eq. 12-45)
         if self.as_dcm:
             return dcm
-        return shepperd(dcm)
+        return chiaverini(dcm)

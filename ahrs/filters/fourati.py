@@ -1,62 +1,111 @@
 # -*- coding: utf-8 -*-
 """
-Fourati Fiter Algorithm as proposed by Hassen Fourati et al [1]_.
+Fourati's nonlinear attitude estimation
+=======================================
 
-Based on the implementation by T. Michel for his project "On Attitude Estimation
-with Smartphones" (http://tyrex.inria.fr/mobile/benchmarks-attitude).
+Fourati Filter Algorithm as proposed by Hassen Fourati et al [1]_.
 
 References
 ----------
 .. [1] Hassen Fourati, Noureddine Manamanni, Lissan Afilal, Yves Handrich. A
-   Nonlinear Filtering Approach for the Attitude and Dynamic Body Acceleration
-   Estimation Based on Inertial and MagneticSensors: Bio-Logging Application.
-   IEEE Sensors Journal, Institute of Electrical and Electronics Engineers,
-   2011, 11 (1), pp. 233-244. 10.1109/JSEN.2010.2053353. hal-00624142
-   (https://hal.archives-ouvertes.fr/hal-00624142/file/Papier_IEEE_Sensors_Journal.pdf)
+       Nonlinear Filtering Approach for the Attitude and Dynamic Body
+       Acceleration Estimation Based on Inertial and Magnetic Sensors:
+       Bio-Logging Application. IEEE Sensors Journal, Institute of Electrical
+       and Electronics Engineers,2011, 11 (1), pp. 233-244.
+       10.1109/JSEN.2010.2053353. hal-00624142
+       (https://hal.archives-ouvertes.fr/hal-00624142/file/Papier_IEEE_Sensors_Journal.pdf)
 
 """
 
 import numpy as np
-from ahrs.common.orientation import *
-from ahrs.common.mathfuncs import *
-from ahrs.common import DEG2RAD
+from ..common.orientation import q_prod, q_conj, am2q
+from ..common.mathfuncs import *
+
+# Reference Observations in Munich, Germany
+from ..utils.wmm import WMM
+from ..utils.wgs84 import WGS
+MAG = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT).magnetic_elements
+MAGNETIC_DIP = MAG['I']
+GRAVITY = WGS().normal_gravity(MUNICH_LATITUDE, MUNICH_HEIGHT)
 
 class Fourati:
-    """
-    Fourati filter algorithm
+    """Fourati's attitude estimation
+
+    Attributes
+    ----------
+    gyr : numpy.ndarray
+        N-by-3 array with N gyroscope samples.
+    acc : numpy.ndarray
+        N-by-3 array with N accelerometer samples.
+    mag : numpy.ndarray
+        N-by-3 array with N magnetometer samples.
+    frequency : float
+        Sampling frequency in Herz
+    Dt : float
+        Sampling step in seconds. Inverse of sampling frequency.
+    gain : float
+        Filter gain factor.
+    q0 : numpy.ndarray
+        Initial orientation, as a versor (normalized quaternion).
+
+    Methods
+    -------
+    update(q, gyr, acc, mag)
+        Update orientation `q` using a gyroscope, an accelerometer, and a
+        magnetometer sample.
 
     Parameters
     ----------
-    k : float
-        Filter gain for convergence
-    ka : float
-        Filter gain of the accelerometers.
-    km : float
-        Filter gain of the magnetometers.
-    samplePeriod : float
-        Sampling rate in seconds. Inverse of sampling frequency.
+    acc : numpy.ndarray, default: None
+        N-by-3 array with measurements of acceleration in in m/s^2
+    gyr : numpy.ndarray, default: None
+        N-by-3 array with measurements of angular velocity in rad/s
+    mag : numpy.ndarray, default: None
+        N-by-3 array with measurements of magnetic field in mT
+
+    Extra Parameters
+    ----------------
+    frequency : float, default: 100.0
+        Sampling frequency in Herz.
+    Dt : float, default: 0.01
+        Sampling step in seconds. Inverse of sampling frequency. Not required
+        if `frequency` value is given.
+    gain : float, default: 0.1
+        Filter gain factor.
+    q0 : numpy.ndarray, default: None
+        Initial orientation, as a versor (normalized quaternion).
+    magnetic_dip : float
+        Magnetic Inclination angle, in degrees.
+    gravity : float
+        Normal gravity, in m/s^2.
+
+    Raises
+    ------
+    ValueError
+        When dimension of input array(s) `acc`, `gyr`, or `mag` are not equal.
 
     """
-    def __init__(self, *args, **kwargs):
-        self.input = args[0] if args else None
-        self.k = kwargs.get('k', 0.3)
-        self.ka = kwargs.get('ka', 2.0)
-        self.km = kwargs.get('km', 1.0)
+    def __init__(self, gyr: np.ndarray = None, acc: np.ndarray = None, mag: np.ndarray = None, **kwargs):
+        self.gyr = gyr
+        self.acc = acc
+        self.mag = mag
         self.frequency = kwargs.get('frequency', 100.0)
-        self.samplePeriod = kwargs.get('samplePeriod', 1.0/self.frequency)
-        # Vector Representation of references measurements
-        self.aq = np.array([0., 0., 1.0])       # Acceleration assumed 1g n Z-axis
-        self.mq = np.array([0.5*cosd(64.0), 0., 0.5*sind(64.0)]) # Using UK's magnetic reference
-        self.mq /= np.linalg.norm(self.mq)
-        # Process of data is given
-        if self.input:
-            self.Q = self.estimate_all()
+        self.Dt = kwargs.get('Dt', 1.0/self.frequency)
+        self.gain = kwargs.get('gain', 0.1)
+        self.q0 = kwargs.get('q0')
+        # Reference measurements
+        mdip = kwargs.get('magnetic_dip')             # Magnetic dip, in degrees
+        self.m_q = np.array([0.0, MAG['X'], MAG['Y'], MAG['Z']]) if mdip is None else np.array([0.0, cosd(mdip), 0.0, sind(mdip)])
+        self.m_q /= np.linalg.norm(self.m_q)
+        self.g_q = np.array([0.0, 0.0, 0.0, 1.0])     # Normalized Gravity vector
+        # Process of given data
+        if self.acc is not None and self.gyr is not None and self.mag is not None:
+            self.Q = self._compute_all()
 
-    def estimate_all(self):
-        """
-        Estimate the quaternions given all data in class Data.
+    def _compute_all(self):
+        """Estimate the quaternions given all data
 
-        Class Data must have, at least, `acc` and `mag` attributes.
+        Attributes `gyr`, `acc` and `mag` must contain data.
 
         Returns
         -------
@@ -65,27 +114,30 @@ class Fourati:
             of samples.
 
         """
-        data = self.input
-        d2r = 1.0 if data.in_rads else DEG2RAD
-        Q = np.tile([1., 0., 0., 0.], (data.num_samples, 1))
-        for t in range(1, data.num_samples):
-            Q[t] = self.update(d2r*data.gyr[t], data.acc[t], data.mag[t], Q[t-1])
+        if self.acc.shape != self.gyr.shape:
+            raise ValueError("acc and gyr are not the same size")
+        if self.mag.shape != self.gyr.shape:
+            raise ValueError("mag and gyr are not the same size")
+        num_samples = len(self.gyr)
+        Q = np.zeros((num_samples, 4))
+        Q[0] = am2q(self.acc[0], self.mag[0]) if self.q0 is None else self.q0.copy()
+        for t in range(1, num_samples):
+            Q[t] = self.update(Q[t-1], self.gyr[t], self.acc[t], self.mag[t])
         return Q
 
-    def update(self, gyr, acc, mag, q):
-        """
-        Fourati's AHRS algorithm with a MARG architecture.
-
-        Adapted to Python from original implementation by T. Michel.
+    def update(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, mag: np.ndarray) -> np.ndarray:
+        """Quaternion Estimation with a MARG architecture.
 
         Parameters
         ----------
-        g : array
-            Sample of tri-axial Gyroscope in radians.
-        a : array
-            Sample of tri-axial Accelerometer.
-        q : array
+        q : numpy.ndarray
             A-priori quaternion.
+        gyr : numpy.ndarray
+            Sample of tri-axial Gyroscope in rad/s
+        acc : numpy.ndarray
+            Sample of tri-axial Accelerometer in m/s^2
+        mag : numpy.ndarray
+            Sample of tri-axial Magnetometer in T
 
         Returns
         -------
@@ -93,30 +145,22 @@ class Fourati:
             Estimated quaternion.
 
         """
-        g = gyr.copy()
-        a = acc.copy()
-        m = mag.copy()
-        # handle NaNs
-        a_norm = np.linalg.norm(a)
-        if a_norm == 0:
+        if gyr is None or not np.linalg.norm(gyr)>0:
             return q
-        m_norm = np.linalg.norm(m)
-        if m_norm == 0:
-            return q
-        # Normalize vectors
-        a /= a_norm
-        m /= m_norm
-        q /= np.linalg.norm(q)
-        # Levenberg Marquardt
-        measurement = np.concatenate((a, m))
-        estimation = np.concatenate((self.aq, self.mq))
-        # Jacobian Matrix
-        delta = 2.0*np.vstack((self.ka*skew(self.aq), self.km*skew(self.mq))).T
-        # Gradient Descent correction
-        d = 1.0e-5  # Guarantees a non-singular inverted term
-        dq = (measurement-estimation)@(np.linalg.inv(delta@delta.T+d*np.identity(3))@delta).T
-        # qDot = 0.5*q_prod(q, np.concatenate(([0.0], g))) + self.k*q_prod(q, np.concatenate(([0.0], dq)))
-        qDot = 0.5*q_prod(q, np.insert(g, 0, 0.0)) + self.k*q_prod(q, np.insert(dq, 0, 0.0))
-        q += qDot*self.samplePeriod
-        q /= np.linalg.norm(q)
-        return q
+        qDot = 0.5 * q_prod(q, [0, *gyr])                           # (eq. 5)
+        a_norm = np.linalg.norm(acc)
+        m_norm = np.linalg.norm(mag)
+        if a_norm>0 and m_norm>0 and self.gain>0:
+            # Levenberg Marquardt Algorithm
+            fhat = q_prod(q_conj(q), q_prod(self.g_q, q))           # (eq. 21)
+            hhat = q_prod(q_conj(q), q_prod(self.m_q, q))           # (eq. 22)
+            y = np.r_[acc/a_norm, mag/m_norm]                       # Measurements (eq. 6)
+            yhat = np.r_[fhat[1:], hhat[1:]]                        # Estimated values (eq. 8)
+            dq = y - yhat                                           # Modeling Error
+            X = -2*np.c_[skew(fhat[1:]), skew(hhat[1:])].T          # Jacobian Matrix (eq. 23)
+            lam = 1e-8                                              # Deviation to guarantee inversion
+            K = self.gain*np.linalg.inv(X.T@X + lam*np.eye(3))@X.T  # Filter gain (eq. 24)
+            Delta = [1, *K@dq]                                      # Correction term (eq. 25)
+            qDot = q_prod(qDot, Delta)                              # Corrected quaternion rate (eq. 7)
+        q += qDot*self.Dt
+        return q/np.linalg.norm(q)

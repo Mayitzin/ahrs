@@ -5,9 +5,12 @@ Quaternion from angular rate
 
 Attitude quaternion obtained via angular rate measurements.
 
+Integrate the given angular veolcity to obtain the angular position as a
+quaternion representation [Jia]_.
+
 References
 ----------
-.. [1] Yan-Bin Jia. Quaternions. 2018.
+.. [Jia] Yan-Bin Jia. Quaternions. 2018.
     http://web.cs.iastate.edu/~cs577/handouts/quaternion.pdf
 
 """
@@ -18,23 +21,10 @@ from ..common.orientation import q_prod
 class AngularRate:
     """Quaternion Estimation based on angular velocity
 
-    Attributes
-    ----------
-    gyr : numpy.ndarray
-        N-by-3 array with N gyroscope samples.
-
-    Methods
-    -------
-    update(q, gyr)
-        Update orientation `q` using a gyroscope sample.
-
     Parameters
     ----------
     gyr : numpy.ndarray, default: None
         N-by-3 array with measurements of angular velocity in rad/s
-
-    Extra Parameters
-    ----------------
     frequency : float, default: 100.0
         Sampling frequency in Herz.
     Dt : float, default: 0.01
@@ -42,6 +32,11 @@ class AngularRate:
         if `frequency` value is given.
     q0 : numpy.ndarray
         Initial orientation, as a versor (normalized quaternion).
+
+    Attributes
+    ----------
+    gyr : numpy.ndarray
+        N-by-3 array with N gyroscope samples.
 
     """
     def __init__(self, gyr: np.ndarray = None, **kw):

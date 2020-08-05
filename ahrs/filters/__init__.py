@@ -1,21 +1,26 @@
 # -*- coding: utf-8 -*-
 """
-These are the most common attitude filters.
+Attitude Estimators
+===================
 
-References
-----------
-.. [1] http://www.olliw.eu/2013/imu-data-fusing/
-.. [2] https://motsai.com/omid-vs-madgwick-low-power-orientation-filters/
+These are the most common attitude filters.
 
 """
 
-from .madgwick import Madgwick
-from .mahony import Mahony
+from .angular import AngularRate
+from .aqua import AQUA
+from .complementary import ComplementaryQ
+from .davenport import Davenport
 from .ekf import EKF
+from .famc import FAMC
+from .flae import FLAE
 from .fourati import Fourati
 from .fqa import FQA
-from .aqua import AQUA
-from .angular import AngularRate
-from .flae import FLAE
-from .gravityquaternion import GravityQuaternion
-from .complementary import Complementary
+from .tilt import Tilt
+from .madgwick import Madgwick
+from .mahony import Mahony
+from .oleq import OLEQ
+from .quest import QUEST
+from .roleq import ROLEQ
+from .saam import SAAM
+from .triad import TRIAD
