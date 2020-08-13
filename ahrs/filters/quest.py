@@ -3,16 +3,16 @@
 QUEST
 =====
 
-QUaternion ESTimator as proposed by Shuster and Oh [1]_
+QUaternion ESTimator as described by Shuster in [Shuster1978]_ and [Shuster1981]_.
 
 References
 ----------
-.. [1] Shuster, M.D. and Oh, S.D. "Three-Axis Attitude Determination from
-       Vector Observations," Journal of Guidance and Control, Vol.4, No.1,
-       Jan.-Feb. 1981, pp. 70-77.
-.. [2] Shuster, Malcom D. Approximate Algorithms for Fast Optimal Attitude
-       Computation, AIAA Guidance and Control Conference. August 1978.
-       (http://www.malcolmdshuster.com/Pub_1978b_C_PaloAlto_scan.pdf)
+.. [Shuster1978] Shuster, Malcom D. Approximate Algorithms for Fast Optimal
+    Attitude Computation, AIAA Guidance and Control Conference. August 1978.
+    (http://www.malcolmdshuster.com/Pub_1978b_C_PaloAlto_scan.pdf)
+.. [Shuster1981] Shuster, M.D. and Oh, S.D. "Three-Axis Attitude Determination
+    from Vector Observations," Journal of Guidance and Control, Vol.4, No.1,
+    Jan.-Feb. 1981, pp. 70-77.
 
 """
 
@@ -26,7 +26,21 @@ MAG = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HE
 GRAVITY = WGS().normal_gravity(MUNICH_LATITUDE, MUNICH_HEIGHT)
 
 class QUEST:
-    """QUaternion ESTimator
+    """
+    QUaternion ESTimator
+
+    Parameters
+    ----------
+    acc : numpy.ndarray, default: None
+        N-by-3 array with measurements of acceleration in in m/s^2
+    mag : numpy.ndarray, default: None
+        N-by-3 array with measurements of magnetic field in mT
+    weights : array-like
+        Array with two weights used in each observation.
+    magnetic_dip : float
+        Magnetic Inclination angle, in degrees.
+    gravity : float
+        Normal gravity, in m/s^2.
 
     Attributes
     ----------
@@ -37,32 +51,10 @@ class QUEST:
     w : numpy.ndarray
         Weights for each observation.
 
-    Methods
-    -------
-    estimate(acc, mag)
-        Estimate orientation `q` using an accelerometer, and a magnetometer
-        sample.
-
-    Parameters
-    ----------
-    acc : numpy.ndarray, default: None
-        N-by-3 array with measurements of acceleration in in m/s^2
-    mag : numpy.ndarray, default: None
-        N-by-3 array with measurements of magnetic field in mT
-
-    Extra Parameters
-    ----------------
-    weights : array-like
-        Array with two weights used in each observation.
-    magnetic_dip : float
-        Magnetic Inclination angle, in degrees.
-    gravity : float
-        Normal gravity, in m/s^2.
-
     Raises
     ------
     ValueError
-        When dimension of input arrays `acc` and `mag` are not equal.
+        When dimension of input arrays ``acc`` and ``mag`` are not equal.
 
     """
     def __init__(self, acc: np.ndarray = None, mag: np.ndarray = None, **kw):
@@ -80,11 +72,11 @@ class QUEST:
     def _compute_all(self) -> np.ndarray:
         """Estimate the quaternions given all data.
 
-        Attributes `acc` and `mag` must contain data.
+        Attributes ``acc`` and ``mag`` must contain data.
 
         Returns
         -------
-        Q : array
+        Q : numpy.ndarray
             M-by-4 Array with all estimated quaternions, where M is the number
             of samples.
 

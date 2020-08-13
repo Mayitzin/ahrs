@@ -5,35 +5,20 @@ Super-fast Attitude of Accelerometer and Magnetometer
 
 References
 ----------
-.. [1] Jin Wu, Zebo Zhou, Hassen Fourati, Yuhua Cheng. A Super Fast Attitude
-       Determination Algorithm for Consumer-Level Accelerometer and
-       Magnetometer. IEEE Transactions on Con-sumer Electronics, Institute of
-       Electrical and Electronics Engineers, 2018, 64 (3), pp.375
-       381.10.1109/tce.2018.2859625. hal-01922922
-       (https://hal.inria.fr/hal-01922922/document)
+.. [Wu] Jin Wu, Zebo Zhou, Hassen Fourati, Yuhua Cheng. A Super Fast Attitude
+    Determination Algorithm for Consumer-Level Accelerometer and Magnetometer.
+    IEEE Transactions on Con-sumer Electronics, Institute of Electrical and
+    Electronics Engineers, 2018, 64 (3), pp. 375. 381.10.1109/tce.2018.2859625.
+    hal-01922922
+    (https://hal.inria.fr/hal-01922922/document)
 
 """
 
 import numpy as np
 
 class SAAM:
-    """Super-fast Attitude of Accelerometer and Magnetometer
-
-    Attributes
-    ----------
-    acc : numpy.ndarray
-        N-by-3 array with N accelerometer samples.
-    mag : numpy.ndarray
-        N-by-3 array with N magnetometer samples.
-    Q : numpy.array, default: None
-        M-by-4 Array with all estimated quaternions, where M is the number of
-        samples. Equal to None when no estimation is performed.
-
-    Methods
-    -------
-    estimate(acc, mag)
-        Estimate orientation `q` using an accelerometer, and a magnetometer
-        sample.
+    """
+    Super-fast Attitude of Accelerometer and Magnetometer
 
     Parameters
     ----------
@@ -42,10 +27,20 @@ class SAAM:
     mag : numpy.ndarray, default: None
         N-by-3 array with measurements of magnetic field in mT
 
+    Attributes
+    ----------
+    acc : numpy.ndarray
+        N-by-3 array with N accelerometer samples.
+    mag : numpy.ndarray
+        N-by-3 array with N magnetometer samples.
+    Q : numpy.ndarray, default: None
+        M-by-4 Array with all estimated quaternions, where M is the number of
+        samples. Equal to None when no estimation is performed.
+
     Raises
     ------
     ValueError
-        When dimension of input arrays `acc` and `mag` are not equal.
+        When dimension of input arrays ``acc`` and ``mag`` are not equal.
 
     Examples
     --------
@@ -67,11 +62,11 @@ class SAAM:
     def _compute_all(self) -> np.ndarray:
         """Estimate the quaternions given all data.
 
-        Attributes `acc` and `mag` must contain data.
+        Attributes ``acc`` and ``mag`` must contain data.
 
         Returns
         -------
-        Q : array
+        Q : numpy.ndarray
             M-by-4 Array with all estimated quaternions, where M is the number
             of samples.
 
@@ -89,14 +84,14 @@ class SAAM:
 
         Parameters
         ----------
-        a : array
+        a : numpy.ndarray
             Sample of tri-axial Accelerometer.
-        m : array
+        m : numpy.ndarray
             Sample of tri-axial Magnetometer.
 
         Returns
         -------
-        q : array
+        q : numpy.ndarray
             Estimated quaternion.
 
         """

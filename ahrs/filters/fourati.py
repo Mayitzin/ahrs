@@ -3,17 +3,16 @@
 Fourati's nonlinear attitude estimation
 =======================================
 
-Fourati Filter Algorithm as proposed by Hassen Fourati et al [1]_.
+Fourati Filter Algorithm as proposed by Hassen Fourati et al [Fourati]_.
 
 References
 ----------
-.. [1] Hassen Fourati, Noureddine Manamanni, Lissan Afilal, Yves Handrich. A
-       Nonlinear Filtering Approach for the Attitude and Dynamic Body
-       Acceleration Estimation Based on Inertial and Magnetic Sensors:
-       Bio-Logging Application. IEEE Sensors Journal, Institute of Electrical
-       and Electronics Engineers,2011, 11 (1), pp. 233-244.
-       10.1109/JSEN.2010.2053353. hal-00624142
-       (https://hal.archives-ouvertes.fr/hal-00624142/file/Papier_IEEE_Sensors_Journal.pdf)
+.. [Fourati] Hassen Fourati, Noureddine Manamanni, Lissan Afilal, Yves
+    Handrich. A Nonlinear Filtering Approach for the Attitude and Dynamic Body
+    Acceleration Estimation Based on Inertial and Magnetic Sensors: Bio-Logging
+    Application. IEEE Sensors Journal, Institute of Electrical and Electronics
+    Engineers, 2011, 11 (1), pp. 233-244. 10.1109/JSEN.2010.2053353.
+    (https://hal.archives-ouvertes.fr/hal-00624142/file/Papier_IEEE_Sensors_Journal.pdf)
 
 """
 
@@ -25,11 +24,33 @@ from ..common.mathfuncs import *
 from ..utils.wmm import WMM
 from ..utils.wgs84 import WGS
 MAG = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT).magnetic_elements
-MAGNETIC_DIP = MAG['I']
 GRAVITY = WGS().normal_gravity(MUNICH_LATITUDE, MUNICH_HEIGHT)
 
 class Fourati:
-    """Fourati's attitude estimation
+    """
+    Fourati's attitude estimation
+
+    Parameters
+    ----------
+    acc : numpy.ndarray, default: None
+        N-by-3 array with measurements of acceleration in in m/s^2
+    gyr : numpy.ndarray, default: None
+        N-by-3 array with measurements of angular velocity in rad/s
+    mag : numpy.ndarray, default: None
+        N-by-3 array with measurements of magnetic field in mT
+    frequency : float, default: 100.0
+        Sampling frequency in Herz.
+    Dt : float, default: 0.01
+        Sampling step in seconds. Inverse of sampling frequency. Not required
+        if `frequency` value is given.
+    gain : float, default: 0.1
+        Filter gain factor.
+    q0 : numpy.ndarray, default: None
+        Initial orientation, as a versor (normalized quaternion).
+    magnetic_dip : float
+        Magnetic Inclination angle, in degrees.
+    gravity : float
+        Normal gravity, in m/s^2.
 
     Attributes
     ----------
@@ -48,41 +69,10 @@ class Fourati:
     q0 : numpy.ndarray
         Initial orientation, as a versor (normalized quaternion).
 
-    Methods
-    -------
-    update(q, gyr, acc, mag)
-        Update orientation `q` using a gyroscope, an accelerometer, and a
-        magnetometer sample.
-
-    Parameters
-    ----------
-    acc : numpy.ndarray, default: None
-        N-by-3 array with measurements of acceleration in in m/s^2
-    gyr : numpy.ndarray, default: None
-        N-by-3 array with measurements of angular velocity in rad/s
-    mag : numpy.ndarray, default: None
-        N-by-3 array with measurements of magnetic field in mT
-
-    Extra Parameters
-    ----------------
-    frequency : float, default: 100.0
-        Sampling frequency in Herz.
-    Dt : float, default: 0.01
-        Sampling step in seconds. Inverse of sampling frequency. Not required
-        if `frequency` value is given.
-    gain : float, default: 0.1
-        Filter gain factor.
-    q0 : numpy.ndarray, default: None
-        Initial orientation, as a versor (normalized quaternion).
-    magnetic_dip : float
-        Magnetic Inclination angle, in degrees.
-    gravity : float
-        Normal gravity, in m/s^2.
-
     Raises
     ------
     ValueError
-        When dimension of input array(s) `acc`, `gyr`, or `mag` are not equal.
+        When dimension of input array(s) ``acc``, ``gyr``, or ``mag`` are not equal.
 
     """
     def __init__(self, gyr: np.ndarray = None, acc: np.ndarray = None, mag: np.ndarray = None, **kwargs):
@@ -103,9 +93,10 @@ class Fourati:
             self.Q = self._compute_all()
 
     def _compute_all(self):
-        """Estimate the quaternions given all data
+        """
+        Estimate the quaternions given all data
 
-        Attributes `gyr`, `acc` and `mag` must contain data.
+        Attributes ``gyr``, ``acc`` and ``mag`` must contain data.
 
         Returns
         -------
@@ -126,7 +117,8 @@ class Fourati:
         return Q
 
     def update(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, mag: np.ndarray) -> np.ndarray:
-        """Quaternion Estimation with a MARG architecture.
+        """
+        Quaternion Estimation with a MARG architecture.
 
         Parameters
         ----------
@@ -137,11 +129,11 @@ class Fourati:
         acc : numpy.ndarray
             Sample of tri-axial Accelerometer in m/s^2
         mag : numpy.ndarray
-            Sample of tri-axial Magnetometer in T
+            Sample of tri-axial Magnetometer in mT
 
         Returns
         -------
-        q : array
+        q : numpy.ndarray
             Estimated quaternion.
 
         """

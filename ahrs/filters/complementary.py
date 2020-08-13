@@ -4,14 +4,14 @@ Complementary filter for Quaternion estimation
 ==============================================
 
 Attitude quaternion obtained with gyroscope and acceleration measurements, via
-complementary filter.
+complementary filter as described by [Wu]_.
 
 References
 ----------
-.. [1] Jin Wu. Generalized Linear Quaternion Complementary Filter for Attitude
-       Estimation from Multi-Sensor Observations: An Optimization Approach.
-       IEEE Transactions on Automation Science and Engineering. 2019.
-       https://ram-lab.com/papers/2018/tase_2018.pdf
+.. [Wu] Jin Wu. Generalized Linear Quaternion Complementary Filter for Attitude
+    Estimation from Multi-Sensor Observations: An Optimization Approach. IEEE
+    Transactions on Automation Science and Engineering. 2019.
+    (https://ram-lab.com/papers/2018/tase_2018.pdf)
 
 """
 
@@ -21,6 +21,24 @@ from ..common.orientation import acc2q, q_prod, am2q
 class ComplementaryQ:
     """
     Class of complementary filter for quaternion estimation.
+
+    Parameters
+    ----------
+    gyr : numpy.ndarray, default: None
+        N-by-3 array with measurements of angular velocity in rad/s
+    acc : numpy.ndarray, default: None
+        N-by-3 array with measurements of acceleration in in m/s^2
+    mag : numpy.ndarray, default: None
+        N-by-3 array with measurements of magnetic field in mT
+    frequency : float, default: 100.0
+        Sampling frequency in Herz.
+    Dt : float, default: 0.01
+        Sampling step in seconds. Inverse of sampling frequency. Not required
+        if ``frequency`` value is given.
+    gain : float, default: 0.9
+        Filter gain.
+    q0 : numpy.ndarray, default: None
+        Initial orientation, as a versor (normalized quaternion).
 
     Attributes
     ----------
@@ -37,35 +55,6 @@ class ComplementaryQ:
     gain : float
         Filter gain.
     q0 : numpy.ndarray
-        Initial orientation, as a versor (normalized quaternion).
-
-    Methods
-    -------
-    updateIMU(q, gyr, acc)
-        Update orientation `q` using a gyroscope and an accelerometer sample.
-    updateMARG(q, gyr, acc, mag)
-        Update orientation `q` using a gyroscope, an accelerometer, and a
-        magnetometer gyroscope sample.
-
-    Parameters
-    ----------
-    gyr : numpy.ndarray, default: None
-        N-by-3 array with measurements of angular velocity in rad/s
-    acc : numpy.ndarray, default: None
-        N-by-3 array with measurements of acceleration in in m/s^2
-    mag : numpy.ndarray, default: None
-        N-by-3 array with measurements of magnetic field in mT
-
-    Extra Parameters
-    ----------------
-    frequency : float, default: 100.0
-        Sampling frequency in Herz.
-    Dt : float, default: 0.01
-        Sampling step in seconds. Inverse of sampling frequency. Not required
-        if `frequency` value is given.
-    gain : float, default: 0.9
-        Filter gain.
-    q0 : numpy.ndarray, default: None
         Initial orientation, as a versor (normalized quaternion).
 
     Raises

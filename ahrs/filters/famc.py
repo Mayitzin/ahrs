@@ -5,7 +5,7 @@ Fast Accelerometer-Magnetometer Combination
 
 References
 ----------
-.. [1] Zhuohua Liu, Wei Liu, Xiangyang Gong, and Jin Wu, "Simplified Attitude
+.. [Liu] Zhuohua Liu, Wei Liu, Xiangyang Gong, and Jin Wu, "Simplified Attitude
     Determination Algorithm Using Accelerometer and Magnetometer with Extremely
     Low Execution Time," Journal of Sensors, vol. 2018, Article ID 8787236,
     11 pages, 2018. https://doi.org/10.1155/2018/8787236.
@@ -17,6 +17,13 @@ import numpy as np
 class FAMC:
     """Fast Accelerometer-Magnetometer Combination
 
+    Parameters
+    ----------
+    acc : numpy.ndarray, default: None
+        N-by-3 array with measurements of acceleration in in m/s^2
+    mag : numpy.ndarray, default: None
+        N-by-3 array with measurements of magnetic field in mT
+
     Attributes
     ----------
     acc : numpy.ndarray
@@ -27,23 +34,10 @@ class FAMC:
         M-by-4 Array with all estimated quaternions, where M is the number of
         samples. Equal to None when no estimation is performed.
 
-    Methods
-    -------
-    estimate(acc, mag)
-        Estimate orientation `q` using an accelerometer, and a magnetometer
-        sample.
-
-    Parameters
-    ----------
-    acc : numpy.ndarray, default: None
-        N-by-3 array with measurements of acceleration in in m/s^2
-    mag : numpy.ndarray, default: None
-        N-by-3 array with measurements of magnetic field in mT
-
     Raises
     ------
     ValueError
-        When dimension of input arrays `acc` and `mag` are not equal.
+        When dimension of input arrays ``acc`` and ``mag`` are not equal.
 
     Examples
     --------

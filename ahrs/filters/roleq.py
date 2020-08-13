@@ -5,11 +5,11 @@ Recursive Optimal Linear Estimator of Quaternion
 
 References
 ----------
-.. [1] Zhou, Z.; Wu, J.; Wang, J.; Fourati, H. Optimal, Recursive and
-       Sub-Optimal Linear Solutions to Attitude Determination from Vector
-       Observations for GNSS/Accelerometer/Magnetometer Orientation Measurement.
-       Remote Sens. 2018, 10, 377.
-       (https://www.mdpi.com/2072-4292/10/3/377)
+.. [Zhou] Zhou, Z.; Wu, J.; Wang, J.; Fourati, H. Optimal, Recursive and
+    Sub-Optimal Linear Solutions to Attitude Determination from Vector
+    Observations for GNSS/Accelerometer/Magnetometer Orientation Measurement.
+    Remote Sens. 2018, 10, 377.
+    (https://www.mdpi.com/2072-4292/10/3/377)
 
 """
 
@@ -23,9 +23,19 @@ MAG = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HE
 GRAVITY = WGS().normal_gravity(MUNICH_LATITUDE, MUNICH_HEIGHT)
 
 class ROLEQ:
-    """Recursive Optimal Linear Estimator of Quaternion
+    """
+    Recursive Optimal Linear Estimator of Quaternion
 
     Uses OLEQ to estimate the initial attitude.
+
+    Parameters
+    ----------
+    gyr : numpy.ndarray, default: None
+        N-by-3 array with measurements of angular velocity in rad/s
+    acc : numpy.ndarray, default: None
+        N-by-3 array with measurements of acceleration in in m/s^2
+    mag : numpy.ndarray, default: None
+        N-by-3 array with measurements of magnetic field in mT
 
     Attributes
     ----------
@@ -43,28 +53,11 @@ class ROLEQ:
         M-by-4 Array with all estimated quaternions, where M is the number of
         samples. Equal to None when no estimation is performed.
 
-    Methods
-    -------
-    estimate(acc, mag)
-        Estimate orientation `q` using an accelerometer, and a magnetometer
-        sample.
-    update(q, gyr, acc, mag)
-        Update orientation `q` using the previous attitude (as quaternion), a
-        gyroscope, an accelerometer, and a magnetometer sample.
-
-    Parameters
-    ----------
-    gyr : numpy.ndarray, default: None
-        N-by-3 array with measurements of angular velocity in rad/s
-    acc : numpy.ndarray, default: None
-        N-by-3 array with measurements of acceleration in in m/s^2
-    mag : numpy.ndarray, default: None
-        N-by-3 array with measurements of magnetic field in mT
-
     Raises
     ------
     ValueError
-        When dimension of input arrays `gyr`, `acc` or `mag` are not equal.
+        When dimension of input arrays ``gyr``, ``acc`` or ``mag`` are not
+        equal.
 
     Examples
     --------
@@ -97,7 +90,7 @@ class ROLEQ:
     def _compute_all(self) -> np.ndarray:
         """Estimate the quaternions given all data.
 
-        Attributes `gyr`, `acc` and `mag` must contain data.
+        Attributes ``gyr``, ``acc`` and ``mag`` must contain data.
 
         Returns
         -------
@@ -117,7 +110,7 @@ class ROLEQ:
             Q[t] = self.update(Q[t-1], self.gyr[t], self.acc[t], self.mag[t])
         return Q
 
-    def WW(self, b, r):
+    def WW(self, b: np.ndarray, r: np.ndarray) -> np.ndarray:
         """W Matrix
 
         Parameters
@@ -144,9 +137,9 @@ class ROLEQ:
 
         Parameters
         ----------
-        a : array
+        a : numpy.ndarray
             Sample of tri-axial Accelerometer.
-        m : array
+        m : numpy.ndarray
             Sample of tri-axial Magnetometer.
 
         Returns
@@ -182,15 +175,15 @@ class ROLEQ:
         q : numpy.ndarray
             A-priori quaternion.
         gyr : numpy.ndarray, default: None
-            N-by-3 array with measurements of angular velocity in rad/s
-        acc : array
-            Sample of tri-axial Accelerometer.
-        mag : array
-            Sample of tri-axial Magnetometer.
+            Sample of angular velocity in rad/s
+        acc : numpy.ndarray
+            Sample of tri-axial Accelerometer in m/s^2
+        mag : numpy.ndarray
+            Sample of tri-axial Magnetometer in mT
 
         Returns
         -------
-        q : array
+        q : numpy.ndarray
             Estimated quaternion.
 
         """

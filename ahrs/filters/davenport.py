@@ -3,13 +3,13 @@
 Davenport's q-Method
 ====================
 
-Attitude estimation as proposed by Paul B Davenport [1]_.
+Attitude estimation as proposed by Paul Davenport [Davenport]_.
 
 References
 ----------
-.. [1] Paul B. Davenport. A Vector Approach to the Algebra of Rotations with
-       Applications. NASA Technical Note D-4696. August 1968.
-       (https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/19680021122.pdf)
+.. [Davenport] Paul B. Davenport. A Vector Approach to the Algebra of Rotations
+    with Applications. NASA Technical Note D-4696. August 1968.
+    (https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/19680021122.pdf)
 
 """
 
@@ -23,7 +23,23 @@ MAG = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HE
 GRAVITY = WGS().normal_gravity(MUNICH_LATITUDE, MUNICH_HEIGHT)
 
 class Davenport:
-    """Davenport's q-Method for attitude estimation
+    """
+    Davenport's q-Method for attitude estimation
+
+    Parameters
+    ----------
+    acc : numpy.ndarray, default: None
+        N-by-3 array with measurements of acceleration in in m/s^2
+    mag : numpy.ndarray, default: None
+        N-by-3 array with measurements of magnetic field in mT
+    weights : array-like
+        Array with two weights used in each observation.
+    magnetic_dip : float
+        Magnetic Inclination angle, in degrees. Defaults to magnetic dip of
+        Munich, Germany.
+    gravity : float
+        Normal gravity, in m/s^2. Defaults to normal gravity of Munich,
+        Germany.
 
     Attributes
     ----------
@@ -32,34 +48,12 @@ class Davenport:
     mag : numpy.ndarray
         N-by-3 array with N magnetometer samples.
     w : numpy.ndarray
-        Weights for each observation.
-
-    Methods
-    -------
-    estimate(acc, mag)
-        Estimate orientation `q` using an accelerometer, and a magnetometer
-        sample.
-
-    Parameters
-    ----------
-    acc : numpy.ndarray, default: None
-        N-by-3 array with measurements of acceleration in in m/s^2
-    mag : numpy.ndarray, default: None
-        N-by-3 array with measurements of magnetic field in mT
-
-    Extra Parameters
-    ----------------
-    weights : array-like
-        Array with two weights used in each observation.
-    magnetic_dip : float
-        Magnetic Inclination angle, in degrees.
-    gravity : float
-        Normal gravity, in m/s^2.
+        Weights of each observation.
 
     Raises
     ------
     ValueError
-        When dimension of input arrays `acc` and `mag` are not equal.
+        When dimension of input arrays ``acc`` and ``mag`` are not equal.
 
     """
     def __init__(self, acc: np.ndarray = None, mag: np.ndarray = None, **kw):
@@ -67,17 +61,18 @@ class Davenport:
         self.mag = mag
         self.w = kw.get('weights', np.ones(2))
         # Reference measurements
-        mdip = kw.get('magnetic_dip')             # Magnetic dip, in degrees
+        mdip = kw.get('magnetic_dip')           # Magnetic dip, in degrees
         self.m_q = np.array([MAG['X'], MAG['Y'], MAG['Z']]) if mdip is None else np.array([cosd(mdip), 0., sind(mdip)])
-        g = kw.get('gravity', GRAVITY)                          # Earth's normal gravity, in m/s^2
-        self.g_q = np.array([0.0, 0.0, g])                      # Normal Gravity vector
+        g = kw.get('gravity', GRAVITY)          # Earth's normal gravity, in m/s^2
+        self.g_q = np.array([0.0, 0.0, g])      # Normal Gravity vector
         if self.acc is not None and self.mag is not None:
             self.Q = self._compute_all()
 
     def _compute_all(self) -> np.ndarray:
-        """Estimate the quaternions given all data.
+        """
+        Estimate all quaternions given all data.
 
-        Attributes `acc` and `mag` must contain data.
+        Attributes ``acc`` and ``mag`` must contain data.
 
         Returns
         -------
@@ -95,7 +90,8 @@ class Davenport:
         return Q
 
     def estimate(self, acc: np.ndarray = None, mag: np.ndarray = None) -> np.ndarray:
-        """Attitude Estimation.
+        """
+        Attitude Estimation
 
         Parameters
         ----------

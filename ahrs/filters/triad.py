@@ -4,28 +4,20 @@ TRIAD
 =====
 
 The Tri-Axial Attitude Determination was first described by Gerald M. Lerner
-in [1]_ to algebraically estimate an attitude represented as a Direction Cosine
-Matrix directly from two orthogonal vector observations.
+in [Lerner]_ to algebraically estimate an attitude represented as a Direction
+Cosine Matrix directly from two orthogonal vector observations.
 
 References
 ----------
-.. [1] Lerner, G.M. "Three-Axis Attitude Determination" in Spacecraft Attitude
-       Determination and Control, edited by J.R. Wertz. 1978. p. 420-428.
-.. [2] M.D. Shuster et al. Three-Axis Attitude Determination from Vector
-       Observations. Journal of Guidance and Control. Vol 4 Num 1. 1981 Page 70
-       (http://www.malcolmdshuster.com/Pub_1981a_J_TRIAD-QUEST_scan.pdf)
-.. [3] M.D. Shuster. Deterministic Three-Axis Attitude Determination. The
-       Journal of the Astronautical Sciences. Vol 52. Number 3. September 2004
-       Pages 405-419 (http://www.malcolmdshuster.com/Pub_2004c_J_dirangs_AAS.pdf)
-.. [4] H. Garcia de Marina et al. UAV attitude estimation using Unscented
-       Kalman Filter and TRIAD. IEE 2016. (https://arxiv.org/pdf/1609.07436.pdf)
-.. [5] Chris Hall. Spacecraft Attitude Dynamics and Control. Chapter 4:
-       Attitude Determination. 2003.
-       (http://www.dept.aoe.vt.edu/~cdhall/courses/aoe4140/attde.pdf)
-.. [6] IIT Bombay Student Satellite Team. Triad Algorithm.
-       (https://www.aero.iitb.ac.in/satelliteWiki/index.php/Triad_Algorithm)
-.. [7] F.L. Makley et al. Fundamentals of Spacecraft Attitude
-       Determination and Control. 2014. Pages 184-186.
+.. [Lerner] Lerner, G.M. "Three-Axis Attitude Determination" in Spacecraft
+    Attitude Determination and Control, edited by J.R. Wertz. 1978. p. 420-428.
+.. [Garcia] H. Garcia de Marina et al. UAV attitude estimation using Unscented
+    Kalman Filter and TRIAD. IEE 2016. (https://arxiv.org/pdf/1609.07436.pdf)
+.. [Hall] Chris Hall. Spacecraft Attitude Dynamics and Control. Chapter 4:
+    Attitude Determination. 2003.
+    (http://www.dept.aoe.vt.edu/~cdhall/courses/aoe4140/attde.pdf)
+.. [Makley] F.L. Makley et al. Fundamentals of Spacecraft Attitude
+    Determination and Control. 2014. Pages 184-186.
 
 """
 

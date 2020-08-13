@@ -5,11 +5,11 @@ Optimal Linear Estimator of Quaternion
 
 References
 ----------
-.. [1] Zhou, Z.; Wu, J.; Wang, J.; Fourati, H. Optimal, Recursive and
-       Sub-Optimal Linear Solutions to Attitude Determination from Vector
-       Observations for GNSS/Accelerometer/Magnetometer Orientation Measurement.
-       Remote Sens. 2018, 10, 377.
-       (https://www.mdpi.com/2072-4292/10/3/377)
+.. [Zhou] Zhou, Z.; Wu, J.; Wang, J.; Fourati, H. Optimal, Recursive and
+    Sub-Optimal Linear Solutions to Attitude Determination from Vector
+    Observations for GNSS/Accelerometer/Magnetometer Orientation Measurement.
+    Remote Sens. 2018, 10, 377.
+    (https://www.mdpi.com/2072-4292/10/3/377)
 
 """
 
@@ -23,7 +23,15 @@ MAG = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HE
 GRAVITY = WGS().normal_gravity(MUNICH_LATITUDE, MUNICH_HEIGHT)
 
 class OLEQ:
-    """Optimal Linear Estimator of Quaternion
+    """
+    Optimal Linear Estimator of Quaternion
+
+    Parameters
+    ----------
+    acc : numpy.ndarray, default: None
+        N-by-3 array with measurements of acceleration in in m/s^2
+    mag : numpy.ndarray, default: None
+        N-by-3 array with measurements of magnetic field in mT
 
     Attributes
     ----------
@@ -35,23 +43,10 @@ class OLEQ:
         M-by-4 Array with all estimated quaternions, where M is the number of
         samples. Equal to None when no estimation is performed.
 
-    Methods
-    -------
-    estimate(acc, mag)
-        Estimate orientation `q` using an accelerometer, and a magnetometer
-        sample.
-
-    Parameters
-    ----------
-    acc : numpy.ndarray, default: None
-        N-by-3 array with measurements of acceleration in in m/s^2
-    mag : numpy.ndarray, default: None
-        N-by-3 array with measurements of magnetic field in mT
-
     Raises
     ------
     ValueError
-        When dimension of input arrays `acc` and `mag` are not equal.
+        When dimension of input arrays ``acc`` and ``mag`` are not equal.
 
     Examples
     --------
@@ -78,7 +73,7 @@ class OLEQ:
     def _compute_all(self) -> np.ndarray:
         """Estimate the quaternions given all data.
 
-        Attributes `acc` and `mag` must contain data.
+        Attributes ``acc`` and ``mag`` must contain data.
 
         Returns
         -------

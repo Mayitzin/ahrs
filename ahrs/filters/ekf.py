@@ -6,13 +6,14 @@ Extended Kalman Filter
 References
 ----------
 .. [Marins] João Luís Marins, Xiaoping Yun, Eric R. Bachmann, Robert B. McGhee,
-    and Michael J.Zyda. An Extended Kalman Filter for Quaternion-Based Orientation
-    Estimation Using MARG Sensors. Proceedings of the 2001 IEEE/RSJ International
-    Conference on Intelligent Robots and Systems, Maui, Hawaii, USA, Oct. 29 -
-    Nov. 03, 2001, pp. 2003-2011.
+    and Michael J.Zyda. An Extended Kalman Filter for Quaternion-Based
+    Orientation Estimation Using MARG Sensors. Proceedings of the 2001 IEEE/RSJ
+    International Conference on Intelligent Robots and Systems, Maui, Hawaii,
+    USA, Oct. 29 - Nov. 03, 2001, pp. 2003-2011.
     (https://calhoun.nps.edu/handle/10945/41567)
 .. [Sarkka] Simo Särkkä (2013). Bayesian Filtering and Smoothing. Cambridge
-    University Press. (https://users.aalto.fi/~ssarkka/pub/cup_book_online_20131111.pdf)
+    University Press.
+    (https://users.aalto.fi/~ssarkka/pub/cup_book_online_20131111.pdf)
 .. [WikiEKF] Wikipedia: Extended Kalman Filter.
     (https://en.wikipedia.org/wiki/Extended_Kalman_filter)
 .. [Michel] Thibaud Michel (2016). On Attitude Estimation with Smartphones.

@@ -145,10 +145,10 @@ Implemented attitude estimators are checked:
 - [x] Mahony (Nonlinear Explicit Complementary Filter)
 - [x] Naïve Angular velocity integration
 - [ ] OLAE (Optimal Linear Attitude Estimator)
-- [ ] OLEQ (Optimal Linear Estimator of Quaternion)
+- [x] OLEQ (Optimal Linear Estimator of Quaternion)
 - [x] QUEST (QUaternion ESTimator)
 - [ ] REQUEST (Recursive QUEST)
-- [ ] ROLEQ (Recursive Optimal Linear Estimator of Quaternion)
+- [x] ROLEQ (Recursive Optimal Linear Estimator of Quaternion)
 - [x] SAAM (Super-fast Attitude of Accelerometer and Magnetometer)
 - [ ] Sabatini (EKF-Based Quaternion Estimator)
 - [ ] SOLEQ (Sub-Optimal Linear Estimator of Quaternion)
@@ -174,7 +174,7 @@ Implemented attitude estimators are checked:
 | Tilt           | NO        | YES           | YES          |
 | TRIAD          | NO        | YES           | YES          |
 
-## Notes for future versions
+## Note for future versions
 
 `ahrs` is still moving away from plotting and data parsing submodules to better focus in the algorithmic parts. Submodules `io` and `plot` will not be further developed and, eventually, will be removed.
 
