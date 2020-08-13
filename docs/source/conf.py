@@ -9,11 +9,10 @@
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#
+
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../../ahrs'))
-
 
 # -- Project information -----------------------------------------------------
 
@@ -23,7 +22,6 @@ author = 'Mario Garcia'
 
 # The full version, including alpha/beta/rc tags
 release = '0.3'
-
 
 # -- General configuration ---------------------------------------------------
 
@@ -54,7 +52,6 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-#
 html_theme = 'sphinx_rtd_theme'
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -64,3 +61,5 @@ html_static_path = ['_static']
 
 # Explicitly assign master document
 master_doc = 'index'
+
+needs_sphinx = '3.1'
