@@ -1,0 +1,5 @@
+include README.md
+include LICENSE
+include MANIFEST.in
+include ahrs/utils/WMM2015/WMM.COF
+include ahrs/utils/WMM2020/WMM.COF
