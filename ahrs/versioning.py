@@ -11,6 +11,6 @@ PATCH = 0
 RELEASE = "rc1"
 
 def get_version(short=False):
-    if short or RELEASE == "0":
+    if short or RELEASE=="0":
         return "{}.{}.{}".format(MAJOR, MINOR, PATCH)
     return "{}.{}.{}-{}".format(MAJOR, MINOR, PATCH, RELEASE)

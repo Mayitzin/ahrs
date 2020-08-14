@@ -19,7 +19,7 @@ All AHRS wheels distributed on PyPI are MIT licensed.
 
 import sys
 from setuptools import setup, find_packages
-from .ahrs import get_version
+from ahrs.versioning import get_version
 
 if sys.version_info < (3, 6):
     raise SystemError("Python version >= 3.6 required.")
