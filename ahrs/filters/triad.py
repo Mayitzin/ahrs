@@ -11,13 +11,13 @@ References
 ----------
 .. [Lerner] Lerner, G.M. "Three-Axis Attitude Determination" in Spacecraft
     Attitude Determination and Control, edited by J.R. Wertz. 1978. p. 420-428.
-.. [Garcia] H. Garcia de Marina et al. UAV attitude estimation using Unscented
-    Kalman Filter and TRIAD. IEE 2016. (https://arxiv.org/pdf/1609.07436.pdf)
 .. [Hall] Chris Hall. Spacecraft Attitude Dynamics and Control. Chapter 4:
     Attitude Determination. 2003.
     (http://www.dept.aoe.vt.edu/~cdhall/courses/aoe4140/attde.pdf)
 .. [Makley] F.L. Makley et al. Fundamentals of Spacecraft Attitude
     Determination and Control. 2014. Pages 184-186.
+.. [Garcia] H. Garcia de Marina et al. UAV attitude estimation using Unscented
+    Kalman Filter and TRIAD. IEE 2016. (https://arxiv.org/pdf/1609.07436.pdf)
 
 """
 
@@ -30,30 +30,31 @@ from ..utils.wmm import WMM
 MAG = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT).magnetic_elements
 
 class TRIAD:
-    """Tri-Axial Attitude Determination
+    """
+    Tri-Axial Attitude Determination
 
     Originally TRIAD estimates the Direction Cosine Matrix describing the
     attitude. This implementation, however, will return its equivalent
-    quaternion by default. To return it as DCM, set the flag `as_dcm` to True.
+    quaternion by default. To return it as DCM, set the parameter ``as_dcm`` to
+    True.
 
     Parameters
     ----------
     acc : numpy.ndarray
         First 3-by-1 observation vector in body frame. Usually is normalized
-        acceleration vector a = [ax ay az]
+        acceleration vector :math:`\\mathbf{a} = \\begin{bmatrix}a_x & a_y & a_z \\end{bmatrix}`
     mag : numpy.ndarray
         Second 3-by-1 observation vector in body frame. Usually is normalized
-        magnetic field vector m = [mx my mz]
+        magnetic field vector :math:`\\mathbf{m} = \\begin{bmatrix}m_x & m_y & m_z \\end{bmatrix}`
     V1 : numpy.ndarray, optional.
-        3-by-1 Reference vector 1. Defaults to gravity g = [0 0 1]
+        3-by-1 Reference vector 1. Defaults to normalized gravity vector
+        :math:`\\mathbf{g} = \\begin{bmatrix}0 & 0 & 1 \\end{bmatrix}`
     V2 : numpy.ndarray, optional.
         3-by-1 Reference vector 2. Defaults to normalized geomagnetic field
-        h = [hx, hy, hz]
-
-    Extra Parameters
-    ----------------
+        :math:`\\mathbf{h} = \\begin{bmatrix}h_x & h_y & h_z \\end{bmatrix}`
     as_dcm : bool, default: False
-        Whether to return attitude as a Direction Cosine Matrix.
+        Whether to return attitude as a 3-by-3 Direction Cosine Matrix.
+
     """
     def __init__(self, acc: np.ndarray = None, mag: np.ndarray = None, **kw):
         self.acc = acc
@@ -69,7 +70,7 @@ class TRIAD:
         """
         Estimate the quaternions given all data.
 
-        Attributes `gyr`, `acc` and `mag` must contain data.
+        Attributes ``acc`` and ``mag`` must contain data.
 
         Returns
         -------
@@ -87,20 +88,21 @@ class TRIAD:
         return Q
 
     def estimate(self, acc: np.ndarray, mag: np.ndarray) -> np.ndarray:
-        """Attitude Estimation.
+        """
+        Attitude Estimation.
 
         Parameters
         ----------
         acc : numpy.ndarray
             Sample of tri-axial Accelerometer in m/s^2
         mag : numpy.ndarray
-            Sample of tri-axial Magnetometer in T
+            Sample of tri-axial Magnetometer in mT
 
         Returns
         -------
         attitude : numpy.ndarray
-            Estimated attitude as 3-by-3 Direction Cosine Matrix if `as_dcm` is
-            set to True. Otherwise as a quaternion.
+            Estimated attitude as 3-by-3 Direction Cosine Matrix if ``as_dcm``
+            is set to True. Otherwise as a quaternion.
 
         """
         # Normalized Observations

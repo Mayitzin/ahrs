@@ -61,5 +61,3 @@ html_static_path = ['_static']
 
 # Explicitly assign master document
 master_doc = 'index'
-
-needs_sphinx = '3'

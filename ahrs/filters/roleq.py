@@ -31,11 +31,11 @@ class ROLEQ:
     Parameters
     ----------
     gyr : numpy.ndarray, default: None
-        N-by-3 array with measurements of angular velocity in rad/s
+        N-by-3 array with measurements of angular velocity in rad/s.
     acc : numpy.ndarray, default: None
-        N-by-3 array with measurements of acceleration in in m/s^2
+        N-by-3 array with measurements of acceleration in in m/s^2.
     mag : numpy.ndarray, default: None
-        N-by-3 array with measurements of magnetic field in mT
+        N-by-3 array with measurements of magnetic field in mT.
 
     Attributes
     ----------
@@ -122,8 +122,8 @@ class ROLEQ:
 
         Returns
         -------
-        W_matrix : numpy.ndarray
-            W Matrix of equation K^T b = W q
+        W : numpy.ndarray
+            Matrix :math:`\\mathbf{W}` of equation :math:`\\mathbf{K}^T \\mathbf{b} = \\mathbf{Wq}`
         """
         bx, by, bz = b
         rx, ry, rz = r
@@ -137,9 +137,9 @@ class ROLEQ:
 
         Parameters
         ----------
-        a : numpy.ndarray
+        acc : numpy.ndarray
             Sample of tri-axial Accelerometer.
-        m : numpy.ndarray
+        mag : numpy.ndarray
             Sample of tri-axial Magnetometer.
 
         Returns

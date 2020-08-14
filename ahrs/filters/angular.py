@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Quaternion from angular rate
-============================
+Attitude from angular rate
+==========================
 
 Attitude quaternion obtained via angular rate measurements.
 
@@ -19,7 +19,8 @@ import numpy as np
 from ..common.orientation import q_prod
 
 class AngularRate:
-    """Quaternion Estimation based on angular velocity
+    """
+    Quaternion Estimation based on angular velocity
 
     Parameters
     ----------
@@ -64,7 +65,7 @@ class AngularRate:
         q : numpy.ndarray
             A-priori quaternion.
         gyr : numpy.ndarray, default: None
-            N-by-3 array with measurements of angular velocity in rad/s
+            Array with triaxial measurements of angular velocity in rad/s
 
         Returns
         -------

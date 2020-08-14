@@ -224,24 +224,21 @@ class WMM:
     terms of spherical harmonics:
 
     .. math::
-
         V(\\lambda, \\phi', r, t) = a\\sum_{n=1}^{N}(\\frac{a}{r})^{n+1}\\sum_{m=0}^{n}f(n, m, \\lambda, t)P_n^m(\\phi')
 
     where
 
     .. math::
-
         f(n, m, \\lambda, t) = g_n^m(t) \\cos(m\\lambda) + h_n^m(t) \\sin(m\\lambda)
 
     and the Schmidt semi-normalized associated Legendre functions :math:`P_n^m(\\phi')`
     are defined as:
 
     .. math::
-
         P_n^m(\\mu) = \\left\\{
         \\begin{array}{ll}
-            \\sqrt{2\\frac{(n-m)!}{(n+m)!}}P_{n, m}(\\mu) & \\mathrm{if} m > 0 \\\\
-            P_{n, m}(\\mu) & \\mathrm{if} m = 0
+            \\sqrt{2\\frac{(n-m)!}{(n+m)!}}P_{n, m}(\\mu) & \\mathrm{if} \, m > 0 \\\\
+            P_{n, m}(\\mu) & \\mathrm{if} \, m = 0
         \\end{array}
         \\right.
 

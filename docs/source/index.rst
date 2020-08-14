@@ -9,6 +9,7 @@ Welcome to AHRS's documentation!
    quaternion
    wmm
    wgs84
+   constants
 
 Indices and tables
 ==================

@@ -61,8 +61,8 @@ rotational ellipsoid, while the other two parameters (:math:`GM`, :math:`\\omega
 permit the unique determination of its associated normal gravity field.
 
 Having these 4 elements defined, it is possible to estimate most of the WGS84
-parameters directly. The class `WGS` already sets these values by default (and
-estimates the semi-minor axis), but with slightly different notation:
+parameters directly. The class ``WGS`` already sets these values by default
+(and estimates the semi-minor axis ``b``), but with slightly different notation:
 
 .. code:: python
 
@@ -119,7 +119,7 @@ its gravity field is easier to handle assuming it its an allipsoid. The
 deviations of the field are so small that they are considered linear for this
 model.
 
-Defining the **potential of the normal gravity field** :math:`U` as [Heiskanen]_ :
+Defining the **potential of the normal gravity field** :math:`U` [Heiskanen]_ :
 
 .. math::
     U = V + \\Phi
@@ -199,7 +199,7 @@ latitude on the surface of the ellipsoid, but we need to do it in geographical
 coordinates.
 
 Using the property :math:`\\tan\\beta=\\frac{b}{a}\\tan\\phi`, we define a
-closed form formula to find the normal gravity :math:`g` at a any latitude
+closed form formula to find the normal gravity :math:`g` at any given latitude
 :math:`\\phi` [Somigliana1929]_:
 
 .. math::
@@ -546,10 +546,7 @@ class WGS:
         First Eccentricity Squared :math:`e^2` of the ellipsoid, computed as:
 
         .. math::
-            \\begin{array}{ll}
-            e^2 &= \\frac{a^2-b^2}{a^2} \\\\
-            &= 2f - f^2
-            \\end{array}
+            e^2 = 2f - f^2
 
         Example
         -------
@@ -565,10 +562,7 @@ class WGS:
         Second Eccentricity Squared :math:`e'^2`, computed as:
 
         .. math::
-            \\begin{array}{ll}
-            e'^2 &= \\frac{a^2-b^2}{b^2} \\\\
-            &= \\frac{e^2}{1-e^2}
-            \\end{array}
+            e'^2 = \\frac{a^2-b^2}{b^2}
 
         Example
         -------

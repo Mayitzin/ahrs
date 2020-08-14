@@ -41,10 +41,10 @@ GRAVITY = WGS().normal_gravity(MUNICH_LATITUDE, MUNICH_HEIGHT)
 
 def slerp_I(q: np.ndarray, ratio: float, t: float) -> np.ndarray:
     """
-    Quaternion Interpolation with Identity
+    Interpolation with identity quaternion
 
-    Interpolate a given quaternion with identity quaternion
-    :math:`\\mathbf{q}=\\begin{bmatrix}1 & 0 & 0 & 0\\end{bmatrix}` to
+    Interpolate a given quaternion with the identity quaternion
+    :math:`\\mathbf{q}_I=\\begin{pmatrix}1 & 0 & 0 & 0\\end{pmatrix}` to
     scale it to closest versor.
 
     The interpolation can be with either LERP (Linear) or SLERP (Spherical
@@ -62,7 +62,6 @@ def slerp_I(q: np.ndarray, ratio: float, t: float) -> np.ndarray:
     For LERP, a simple equation is implemented:
 
     .. math::
-
         \\hat{\\mathbf{q}} = (1-\\alpha)\\mathbf{q}_I + \\alpha\\Delta \\mathbf{q}
 
     where :math:`\\alpha\\in [0, 1]` is the gain characterizing the cut-off
@@ -85,7 +84,8 @@ def slerp_I(q: np.ndarray, ratio: float, t: float) -> np.ndarray:
     ratio : float
         Gain characterizing the cut-off frequency of the filter.
     t : float
-        Threshold deciding interpolation method. LERP when q_w>t or SLERP
+        Threshold deciding interpolation method. LERP when qw>t, otherwise
+        SLERP.
 
     Returns
     -------
@@ -120,6 +120,7 @@ def adaptive_gain(a: float, a_norm: float, t1: float = 0.1, t2: float = 0.2, g: 
 
     The gain factor is constant and equal to 1 when the magnitude of the
     nongravitational acceleration is not high enough to overcome gravity.
+
     If nongravitational acceleration rises and :math:`e_m` exceeds the
     first threshold, the gain factor :math:`f` decreases linearly with the
     increase of the magnitude until reaching zero at the second threshold
@@ -295,11 +296,12 @@ class AQUA:
         return q_acc
 
     def updateIMU(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray) -> np.ndarray:
-        """Quaternion Estimation with a IMU architecture.
+        """
+        Quaternion Estimation with a IMU architecture.
 
-        The estimation is made in two steps: a _prediction_ is done with the
+        The estimation is made in two steps: a *prediction* is done with the
         angular rate (gyroscope) to integrate and estimate the current
-        orientation; then a _correction_ step uses the measured accelerometer
+        orientation; then a *correction* step uses the measured accelerometer
         to infer the expected gravity vector and use it to correct the
         predicted quaternion.
 
@@ -342,11 +344,12 @@ class AQUA:
         return q_prime/np.linalg.norm(q_prime)
 
     def updateMARG(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, mag: np.ndarray) -> np.ndarray:
-        """Quaternion Estimation with a MARG architecture.
+        """
+        Quaternion Estimation with a MARG architecture.
 
-        The estimation is made in two steps: a _prediction_ is done with the
+        The estimation is made in two steps: a *prediction* is done with the
         angular rate (gyroscope) to integrate and estimate the current
-        orientation; then a _correction_ step uses the measured accelerometer
+        orientation; then a *correction* step uses the measured accelerometer
         and magnetic field to infer the expected geodetic values. Its
         divergence is used to correct the predicted quaternion.
 
@@ -365,7 +368,7 @@ class AQUA:
         acc : numpy.ndarray
             Sample of tri-axial Accelerometer in m/s^2
         mag : numpy.ndarray
-            Sample of tri-axial Magnetometer in T
+            Sample of tri-axial Magnetometer in mT
 
         Returns
         -------

@@ -3,7 +3,7 @@
 Fourati's nonlinear attitude estimation
 =======================================
 
-Fourati Filter Algorithm as proposed by Hassen Fourati et al [Fourati]_.
+Attitude estimation algorithm as proposed by [Fourati]_.
 
 References
 ----------

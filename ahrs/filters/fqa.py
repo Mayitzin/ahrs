@@ -28,7 +28,8 @@ from ..utils.wmm import WMM
 MAG = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT).magnetic_elements
 
 class FQA:
-    """Factored Quaternion Algorithm
+    """
+    Factored Quaternion Algorithm
 
     Attributes
     ----------
@@ -45,16 +46,13 @@ class FQA:
         N-by-3 array with measurements of acceleration in in m/s^2
     mag : numpy.ndarray, default: None
         N-by-3 array with measurements of magnetic field in mT
-
-    Extra Parameters
-    ----------------
     magnetic_dip : float
         Magnetic Inclination angle, in degrees.
 
     Raises
     ------
     ValueError
-        When dimension of input arrays `acc` and `mag` are not equal.
+        When dimension of input arrays ``acc`` and ``mag`` are not equal.
 
     """
     def __init__(self, acc: np.ndarray = None, mag: np.ndarray = None, **kw):
@@ -68,13 +66,14 @@ class FQA:
             self.Q = self._compute_all()
 
     def _compute_all(self) -> np.ndarray:
-        """Estimate the quaternions given all data.
+        """
+        Estimate the quaternions given all data.
 
-        Attributes `acc` and `mag` must contain data.
+        Attributes ``acc`` and ``mag`` must contain data.
 
         Returns
         -------
-        Q : array
+        Q : numpy.ndarray
             M-by-4 Array with all estimated quaternions, where M is the number
             of samples.
 
@@ -92,14 +91,14 @@ class FQA:
 
         Parameters
         ----------
-        a : array
+        acc : numpy.ndarray
             Sample of tri-axial Accelerometer.
-        m : array
+        mag : numpy.ndarray
             Sample of tri-axial Magnetometer.
 
         Returns
         -------
-        q : array
+        q : numpy.ndarray
             Estimated quaternion.
 
         """
@@ -136,7 +135,7 @@ class FQA:
             em = q_prod(q_e, q_prod(q_r, q_prod(bm, q_prod(q_conj(q_r), q_conj(q_e)))))     # (eq. 34)
             # em = [0.0, *q2R(q_e)@q2R(q_r)@m]
             # N = self.m_ref[:2].copy()                               # (eq. 36)
-            N = self.m_ref.copy()                               # (eq. 36)
+            N = self.m_ref.copy()                                   # (eq. 36)
             _, Mx, My, _ = em/np.linalg.norm(em)                    # (eq. 37)
             c_psi, s_psi = np.array([[Mx, My], [-My, Mx]])@N        # (eq. 39)
             s_psi_2 = np.sign(s_psi)*np.sqrt((1.0-c_psi)/2.0)

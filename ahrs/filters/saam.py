@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Super-fast Attitude of Accelerometer and Magnetometer
-=====================================================
+Super-fast Attitude from Accelerometer and Magnetometer
+=======================================================
 
 References
 ----------
@@ -18,7 +18,7 @@ import numpy as np
 
 class SAAM:
     """
-    Super-fast Attitude of Accelerometer and Magnetometer
+    Super-fast Attitude from Accelerometer and Magnetometer
 
     Parameters
     ----------

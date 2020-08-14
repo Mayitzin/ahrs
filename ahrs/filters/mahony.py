@@ -176,7 +176,7 @@ class Mahony:
 
     >>> orientation = Mahony(gyr=gyro_data, acc=acc_data, Dt=1/150)
 
-    This specially useful for situations where the sampling rate is variable:
+    This is specially useful for situations where the sampling rate is variable:
 
     .. code:: python
 
@@ -190,7 +190,7 @@ class Mahony:
     :math:`k_P` and :math:`k_I` to correct the estimation of the attitude.
     These gains can be set in the parameters too:
 
-    >>> orientation = Mahony(gyr=gyro_data, acc=acc_data, Kp=0.5, Ki=0.1)
+    >>> orientation = Mahony(gyr=gyro_data, acc=acc_data, kp=0.5, ki=0.1)
 
     Following the experimental settings of the original article, the gains are,
     by default, :math:`k_P=1` and :math:`k_I=0.3`.

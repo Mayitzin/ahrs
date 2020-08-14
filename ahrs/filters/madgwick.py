@@ -137,7 +137,7 @@ class Madgwick:
 
     >>> orientation = Madgwick(gyr=gyro_data, acc=acc_data, Dt=1/150)
 
-    This specially useful for situations where the sampling rate is variable:
+    This is specially useful for situations where the sampling rate is variable:
 
     .. code:: python
 
@@ -154,8 +154,8 @@ class Madgwick:
 
     >>> orientation = Madgwick(gyr=gyro_data, acc=acc_data, gain=0.01)
 
-    Following the original article, the gain is equal to ``0.033`` for IMU
-    arrays, and equal to ``0.041`` for MARG arrays.
+    Following the original article, the gain defaults to ``0.033`` for IMU
+    arrays, and to ``0.041`` for MARG arrays.
 
     """
     def __init__(self, gyr: np.ndarray = None, acc: np.ndarray = None, mag: np.ndarray = None, **kwargs):

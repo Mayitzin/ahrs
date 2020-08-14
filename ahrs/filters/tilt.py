@@ -14,16 +14,16 @@ it is preferred to use ``arctan2`` to explore all quadrants estimating the tilt
 angles.
 
 First, we normalize the gravity vector, so that it has magnitude equal to 1.
-Then we the angles to the main axes with `arctan2 <https://en.wikipedia.org/wiki/Atan2>`_
+Then, we get the angles to the main axes with `arctan2 <https://en.wikipedia.org/wiki/Atan2>`_
 [FS-AN3461]_ [Trimpe]_:
 
 .. math::
     \\begin{array}{ll}
     \\theta &= \\mathrm{arctan2}(a_y, a_z) \\\\
-    \\psi &= \\mathrm{arctan2}\\big(-a_z, \\sqrt{a_y^2+a_z^2}\\big)
+    \\phi &= \\mathrm{arctan2}\\big(-a_x, \\sqrt{a_y^2+a_z^2}\\big)
     \\end{array}
 
-where :math:`\\beta` is the **roll** angle, :math:`\\psi` is the **pitch**
+where :math:`\\theta` is the **roll** angle, :math:`\\phi` is the **pitch**
 angle, and :math:`\\mathbf{a}=\\begin{bmatrix}a_x & a_y & a_z\\end{bmatrix}^T`
 is the normalized vector of measured accelerations, which means
 :math:`\\|\\mathbf{a}\\|=1`.
@@ -38,23 +38,34 @@ common is the use of the geomagnetic information, in other words, `Earth's
 magnetic field <https://en.wikipedia.org/wiki/Earth%27s_magnetic_field>`_.
 
 With the pitch and roll angles estimated from the accelerometer, we can rotate
-a magnetometer reading :math:`\\mathbf{m}`, and estimate the yaw angle
-:math:`\\psi` to update the orientation.
+a magnetometer reading :math:`\\mathbf{m}=\\begin{bmatrix}m_x & m_y & m_z\\end{bmatrix}^T`,
+and estimate the yaw angle :math:`\\psi` to update the orientation.
 
 The vector :math:`\\mathbf{b}=\\begin{bmatrix}b_x & b_y & b_z\\end{bmatrix}^T`
 represents the magnetometer readings after *rotating them back* to the plane,
 where :math:`\\theta = \\phi = 0`.
 
 .. math::
-    \\begin{bmatrix}b_x \\\\ b_y \\\\ b_z\\end{bmatrix} =
+    \\begin{array}{cl}
+    \\mathbf{b} &=
+    R_y(-\\theta)R_x(-\\phi)\\mathbf{m} = R_y(\\theta)^TR_x(\\phi)^T\\mathbf{m} \\\\
+    \\begin{bmatrix}b_x \\\\ b_y \\\\ b_z\\end{bmatrix} &=
+    \\begin{bmatrix}
+        \\cos\\theta & \\sin\\theta\\sin\\phi & \\sin\\theta\\cos\\phi \\\\
+        0 & \\cos\\phi & -\\sin\\phi \\\\
+        -\\sin\\theta & \\cos\\theta\\sin\\phi & \\cos\\theta\\cos\\phi
+    \\end{bmatrix}
+    \\begin{bmatrix}m_x \\\\ m_y \\\\ m_z\\end{bmatrix} \\\\
+    &=
     \\begin{bmatrix}
         m_x\\cos\\theta + m_y\\sin\\theta\\sin\\phi + m_z\\sin\\theta\\cos\\phi \\\\
         m_y\\cos\\phi - m_z\\sin\\phi \\\\
         -m_x\\sin\\theta + m_y\\cos\\theta\\sin\\phi + m_z\\cos\\theta\\cos\\phi
     \\end{bmatrix}
+    \\end{array}
 
 Where :math:`\\mathbf{m}=\\begin{bmatrix}m_x & m_y & m_z\\end{bmatrix}^T` is
-the normalized vector of the measured magnetometic field, which means
+the *normalized* vector of the measured magnetic field, which means
 :math:`\\|\\mathbf{m}\\|=1`.
 
 The yaw angle :math:`\\psi` is the tilt-compensated heading angle relative to
@@ -78,7 +89,7 @@ Finally, we transform the roll-pitch-yaw angles to a quaternion representation:
     \\end{bmatrix}
 
 Setting the property ``as_angles`` to ``True`` will avoid this last conversion
-and return the attitude as angles.
+returning the attitude as angles.
 
 References
 ----------
@@ -262,26 +273,20 @@ class Tilt:
         """
         a_norm = np.linalg.norm(acc)
         if not a_norm>0:
+            if self.as_angles:
+                return np.zeros(3)
             return np.array([1.0, 0.0, 0.0, 0.0])
         ax, ay, az = acc/a_norm
         ### Tilt from Accelerometer
-        # Roll
-        ex = np.arctan2( ay, az)
-        cx = np.cos(0.5*ex)
-        sx = np.sin(0.5*ex)
-        # Pitch
-        ey = np.arctan2(-ax, np.sqrt(ay**2 + az**2))
-        cy = np.cos(0.5*ey)
-        sy = np.sin(0.5*ey)
-        # Yaw
-        ez = 0.0
-        # m_norm = np.linalg.norm(self.mag)
+        ex = np.arctan2( ay, az)                        # Roll
+        ey = np.arctan2(-ax, np.sqrt(ay**2 + az**2))    # Pitch
+        ez = 0.0                                        # Yaw
         if mag is not None and np.linalg.norm(mag)>0:
             mx, my, mz = mag/np.linalg.norm(mag)
             # Get tilted reference frame
-            my2 = mz*np.sin(ex) - my*np.cos(ex)
-            mx3 = mx*np.cos(ey) + np.sin(ey)*(my*np.sin(ex) + mz*np.cos(ex))
-            ez = np.arctan2(my2, mx3)
+            by = my*np.cos(ex) - mz*np.sin(ex)
+            bx = mx*np.cos(ey) + np.sin(ey)*(my*np.sin(ex) + mz*np.cos(ex))
+            ez = np.arctan2(-by, bx)
         if self.as_angles:
             return np.array([ex, ey, ez])*RAD2DEG
         #### Euler to Quaternion

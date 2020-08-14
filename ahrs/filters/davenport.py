@@ -3,11 +3,11 @@
 Davenport's q-Method
 ====================
 
-Attitude estimation as proposed by Paul Davenport [Davenport]_.
+Paul Davenport's q-method to estimate attitude as proposed in [Davenport1968]_.
 
 References
 ----------
-.. [Davenport] Paul B. Davenport. A Vector Approach to the Algebra of Rotations
+.. [Davenport1968] Paul B. Davenport. A Vector Approach to the Algebra of Rotations
     with Applications. NASA Technical Note D-4696. August 1968.
     (https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/19680021122.pdf)
 

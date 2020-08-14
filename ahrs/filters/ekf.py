@@ -11,9 +11,6 @@ References
     International Conference on Intelligent Robots and Systems, Maui, Hawaii,
     USA, Oct. 29 - Nov. 03, 2001, pp. 2003-2011.
     (https://calhoun.nps.edu/handle/10945/41567)
-.. [Sarkka] Simo Särkkä (2013). Bayesian Filtering and Smoothing. Cambridge
-    University Press.
-    (https://users.aalto.fi/~ssarkka/pub/cup_book_online_20131111.pdf)
 .. [WikiEKF] Wikipedia: Extended Kalman Filter.
     (https://en.wikipedia.org/wiki/Extended_Kalman_filter)
 .. [Michel] Thibaud Michel (2016). On Attitude Estimation with Smartphones.
@@ -34,64 +31,60 @@ class EKF:
     ----------
     Dt : float
         Sampling rate in seconds. Inverse of sampling frequency.
-    noises : array
+    noises : numpy.ndarray
         List of noise variances :math:`\\sigma` for each type of sensor.
-        Default values:
-
-    .. math::
-
-        \\sigma =
-        \\begin{bmatrix}
-        \\sigma_\\mathrm{acc} \\\\
-        \\sigma_\\mathrm{gyr} \\\\
-        \\sigma_\\mathrm{mag}
-        \\end{bmatrix} =
-        \\begin{bmatrix} 0.3^2 \\\\ 0.5^2 \\\\ 0.8^2 \\end{bmatrix}
+        Default values: :math:`\\sigma = \\begin{bmatrix} 0.3^2 & 0.5^2 & 0.8^2 \\end{bmatrix}`
 
     """
-    def __init__(self, *args, **kwargs):
-        self.input = args[0] if args else None
+    def __init__(self, gyr: np.ndarray = None, acc: np.ndarray = None, mag: np.ndarray = None, **kwargs):
+        self.gyr = gyr
+        self.acc = acc
+        self.mag = mag
         self.frequency = kwargs.get('frequency', 100.0)
         self.Dt = kwargs.get('Dt', 1.0/self.frequency)
+        self.q0 = kwargs.get('q0')
         self.noises = kwargs.get('noises', [0.3**2, 0.5**2, 0.8**2])
         self.g_noise = self.noises[0]*np.identity(3)
         self.a_noise = self.noises[1]*np.identity(3)
         self.m_noise = self.noises[2]*np.identity(3)
-        self.q = np.array([1., 0., 0., 0.])
         self.P = np.identity(4)
         # Process of data is given
-        if self.input:
-            self.Q = self.estimate_all()
+        if self.acc is not None and self.gyr is not None:
+            self.Q = self._compute_all()
 
-    def estimate_all(self):
+    def _compute_all(self):
         """
         Estimate the quaternions given all data in class Data.
 
-        Class Data must have, at least, `acc` and `mag` attributes.
+        Class Data must have, at least, ``acc`` and ``mag`` attributes.
 
         Returns
         -------
-        Q : array
+        Q : numpy.ndarray
             M-by-4 Array with all estimated quaternions, where M is the number
             of samples.
 
         """
-        data = self.input
-        d2r = 1.0 if data.in_rads else DEG2RAD
-        Q = np.tile([1., 0., 0., 0.], (data.num_samples, 1))
-        for t in range(1, data.num_samples):
-            Q[t] = self.update(d2r*data.gyr[t], data.acc[t], data.mag[t], Q[t-1])
+        if self.acc.shape != self.gyr.shape:
+            raise ValueError("acc and gyr are not the same size")
+        if self.mag.shape != self.gyr.shape:
+            raise ValueError("mag and gyr are not the same size")
+        num_samples = len(self.acc)
+        Q = np.zeros((num_samples, 4))
+        Q[0] = am2q(self.acc[0], self.mag[0]) if self.q0 is None else self.q0/np.linalg.norm(self.q0)
+        for t in range(1, num_samples):
+            Q[t] = self.update(Q[t-1], self.gyr[t], self.acc[t], self.mag[t])
         return Q
 
-    def jacobian(self, q, v):
+    def jacobian(self, q: np.ndarray, v: np.ndarray) -> np.ndarray:
         """
         Jacobian of vector :math:`\\mathbf{v}` with respect to quaternion :math:`\\mathbf{q}`.
 
         Parameters
         ----------
-        q : array
+        q : numpy.ndarray
             Quaternion.
-        v : array
+        v : numpy.ndarray
             vector to build a Jacobian from.
 
         """
@@ -102,24 +95,24 @@ class EKF:
                           [qx*vy - qy*vx, qw*vy - 2.0*qx*vz + qz*vx, qz*vy - 2.0*qy*vz - qw*vx,             qx*vx + qy*vy]])
         return J
 
-    def update(self, gyr, acc, mag, q):
+    def update(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, mag: np.ndarray) -> np.ndarray:
         """
         Perform an update of the state.
 
         Parameters
         ----------
-        gyr : array
-            Sample of tri-axial Gyroscope in radians.
-        aacc : array
-            Sample of tri-axial Accelerometer.
-        mag : array
-            Sample of tri-axial Magnetometer.
-        q : array
+        q : numpy.ndarray
             A-priori quaternion.
+        gyr : numpy.ndarray
+            Sample of tri-axial Gyroscope in rad/s.
+        acc : numpy.ndarray
+            Sample of tri-axial Accelerometer in m/s^2.
+        mag : numpy.ndarray
+            Sample of tri-axial Magnetometer in mT.
 
         Returns
         -------
-        q : array
+        q : numpy.ndarray
             Estimated (A-posteriori) quaternion.
 
         """
