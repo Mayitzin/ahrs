@@ -47,7 +47,34 @@ quaternion [#]_:
     \\begin{bmatrix}q_w \\\\ \\mathbf{q}_v\\end{bmatrix} = 
     \\begin{bmatrix}q_w \\\\ q_x \\\\ q_y \\\\ q_z\\end{bmatrix}
 
-**As Rotation Operators**
+Sadly, many authors use different notations for the same type of quaternions.
+Some even invert their order, with the vector part first followed by the scalar
+part, increasing the confusion among readers. Here, the definition above will
+be used throughout the package.
+
+Let's say, for example, we want to use the quaternion :math:`\\mathbf{q}=\\begin{pmatrix}0.7071 & 0 & 0.7071 & 0\\end{pmatrix}`
+with this class:
+
+.. code:: python
+
+    >>> from ahrs import Quaternion
+    >>> q = Quaternion([0.7071, 0.0, 0.7071, 0.0])
+    >>> q
+    Quaternion([0.70710678, 0.        , 0.70710678, 0.        ])
+
+This will *extend* the values of the quaternion, because it is handled as a
+rotation operator. Something explained in a moment.
+
+By the way, if you want, you can have a *pretty* formatting of the quaternion
+if typecasted as a string:
+
+.. code:: python
+
+    >>> str(q)
+    '(0.7071 +0.0000i +0.7071j +0.0000k)'
+
+As Rotation Operators
+---------------------
 
 Quaternions can be defined in the geometric space as an alternative form of a
 **rotation operator**, so that we can find the image :math:`\\mathbf{a}'` of
@@ -84,12 +111,13 @@ represents the vector of rotation as half angles:
 
 .. math::
     \\vec{\\mathbf{v}} =
+    \\mathbf{v}\\sin\\frac{\\theta}{2} =
     \\begin{bmatrix}
     v_x \\sin\\frac{\\theta}{2} \\\\ v_y \\sin\\frac{\\theta}{2} \\\\ v_z \\sin\\frac{\\theta}{2}
     \\end{bmatrix}
 
 This rotation is defined by a *scalar* and *vector* pair. Now we can see that
-the structure of a quaternion can be used to describe a rotation as an
+the structure of a quaternion can be used to describe a rotation with an
 `axis-angle representation <https://en.wikipedia.org/wiki/Axis%E2%80%93angle_representation>`_
 such that:
 
@@ -113,41 +141,158 @@ the versor, we normalize the quaternion:
 .. math::
     \\mathbf{q} = \\frac{1}{\\sqrt{q_w^2+q_x^2+q_y^2+q_z^2}}\\begin{bmatrix}q_w \\\\ q_x \\\\ q_y \\\\ q_z\\end{bmatrix}
 
-In this module we will use the quaternions as rotation operators, so we will
-**always** consider them to be normalized.
+In this module the quaternions are considered rotation operators, so they will
+**always** be normalized. From the example above:
+
+.. code::
+
+    >>> q = Quaternion([0.7071, 0.0, 0.7071, 0.0])
+    >>> q
+    Quaternion([0.70710678, 0.        , 0.70710678, 0.        ])
+    >>> import numpy as np
+    >>> np.linalg.norm(q)
+    1.0
+
+Very convenient conversion methods are reachable in this class. One of them is
+the representation of `direction cosine matrices <https://en.wikipedia.org/wiki/Direction_cosine>`_
+from the created quaternion.
+
+.. code:: python
+
+    >>> q.to_DCM()
+    array([[-2.22044605e-16,  0.00000000e+00,  1.00000000e+00],
+           [ 0.00000000e+00,  1.00000000e+00,  0.00000000e+00],
+           [-1.00000000e+00,  0.00000000e+00, -2.22044605e-16]])
 
 Some important observations here help us to clarify this further:
 
-* The negative values of a versor, (:math:`-q_w`, :math:`-q_x`, :math:`-q_y`, :math:`-q_z`)
-  represent the *same rotation* [Grosskatthoefer]_.
 * When :math:`\\theta=0` (no rotation) the parametrization becomes
-  :math:`\\mathbf{q} = \\begin{bmatrix}1 & 0 & 0 & 0\\end{bmatrix}`. This is
+  :math:`\\mathbf{q} = \\begin{pmatrix}1 & 0 & 0 & 0\\end{pmatrix}`. This is
   identified as an **identity quaternion**.
 * When :math:`\\theta=180` (half-circle), then :math:`q_w=0`, making
-  :math:`\\mathbf{q}` a *pure quaternion*.
+  :math:`\\mathbf{q}` a **pure quaternion**.
+* The negative values of a versor, :math:`\\begin{pmatrix}-q_w & -q_x & -q_y & -q_z\\end{pmatrix}`
+  represent the *same rotation* [Grosskatthoefer]_.
 
-To summarize, unit quaternions can be defined using Euler's rotation theorem [#]_
-in the form [Kuipers]_:
+.. code:: python
+
+    >>> q = Quaternion([1.0, 0.0, 0.0, 0.0])
+    >>> q.is_identity()
+    True
+    >>> q = Quaternion([0.0, 1.0, 2.0, 3.0])
+    >>> q
+    Quaternion([0.        , 0.26726124, 0.53452248, 0.80178373])
+    >>> q.is_pure()
+    True
+    >>> q1 = Quaternion([1.0, 2.0, 3.0, 4.0])
+    >>> q2 = Quaternion([-1.0, -2.0, -3.0, -4.0])
+    >>> np.all(q1.to_DCM()==q2.to_DCM())
+    True
+
+To summarize, unit quaternions can also be defined using Euler's rotation
+theorem [#]_ in the form [Kuipers]_:
 
 .. math::
     \\mathbf{q} = \\begin{bmatrix}\\cos\\theta \\\\ \\mathbf{v}\\sin\\theta\\end{bmatrix}
 
-And they have similar algebraic characteristics as normal vectors [Sola]_ [Eberly]_. For example,
-given two quaternions :math:`\\mathbf{p}` and :math:`\\mathbf{q}`:
+And they have similar algebraic characteristics as normal vectors [Sola]_ [Eberly]_.
+For example, given two quaternions :math:`\\mathbf{p}` and :math:`\\mathbf{q}`:
 
 .. math::
     \\mathbf{p} \\pm \\mathbf{q} = \\begin{bmatrix}p_w\\pm q_w \\\\ \\mathbf{p}_v \\pm \\mathbf{q}_v \\end{bmatrix}
 
+.. code:: python
+
+    >>> p = Quaternion([1., 2., 3., 4.])
+    >>> p
+    Quaternion([0.18257419, 0.36514837, 0.54772256, 0.73029674])
+    >>> q = Quaternion([-5., 4., -3., 2.])
+    >>> q
+    Quaternion([-0.68041382,  0.54433105, -0.40824829,  0.27216553])
+    >>> p+q
+    Quaternion([-0.34359264,  0.62769298,  0.09626058,  0.6918667 ])
+    >>> p-q
+    Quaternion([ 0.62597531, -0.1299716 ,  0.69342116,  0.33230917])
+
+The **quaternion product** uses the `Hamilton product <https://en.wikipedia.org/wiki/Quaternion#Hamilton_product>`_
+to perform their multiplication [#]_, which can be represented in vector form,
+as a known scalar-vector form, or even as a matrix multiplication:
+
+.. math::
+    \\begin{array}{rl}
+    \\mathbf{pq} &=
+    \\begin{bmatrix}
+        p_wq_w-\\mathbf{p}_v^T\\mathbf{q}_v \\\\
+        p_w\\mathbf{q}_v + q_w\\mathbf{p}_v + \\mathbf{p}_v\\times\\mathbf{q}_v
+    \\end{bmatrix} \\\\ &=
+    \\begin{bmatrix}
+        p_w q_w - p_x q_x - p_y q_y - p_z q_z \\\\
+        p_w q_x + p_x q_w + p_y q_z - p_z q_y \\\\
+        p_w q_y - p_x q_z + p_y q_w + p_z q_x \\\\
+        p_w q_z + p_x q_y - p_y q_x + p_z q_w
+    \\end{bmatrix} \\\\ &=
+    \\begin{bmatrix}
+        p_w & -p_x & -p_y & -p_z \\\\
+        p_x &  p_w & -p_z &  p_y \\\\
+        p_y &  p_z &  p_w & -p_x \\\\
+        p_z & -p_y &  p_x &  p_w
+    \\end{bmatrix}
+    \\begin{bmatrix} q_w \\\\ q_x \\\\ q_y \\\\ q_z \\end{bmatrix} \\\\ &=
+    \\begin{bmatrix}
+        p_w & -\\mathbf{p}_v^T \\\\ \\mathbf{p}_v & p_w \\mathbf{I}_3 + \\lfloor \\mathbf{p}_v \\rfloor_\\times
+    \\end{bmatrix}
+    \\begin{bmatrix} q_w \\\\ \\mathbf{q}_v \\end{bmatrix}
+    \\end{array}
+
+which is **not commutative**
+
+.. math::
+    \\mathbf{pq} \\neq \\mathbf{qp}
+
+.. code:: python
+
+    >>> p*q
+    array([-0.2981424 ,  0.2981424 , -0.1490712 , -0.89442719])
+    >>> q*p
+    array([-2.98142397e-01, -5.96284794e-01, -7.45355992e-01,  4.16333634e-17])
+
+The **conjugate** of the quaternion, defined as :math:`\\mathbf{q}^*=\\begin{pmatrix}q_w & -\\mathbf{q}_v\\end{pmatrix}`,
+has the interesting property of:
+
+.. math::
+    \\mathbf{qq}^* = \\mathbf{q}^*\\mathbf{q} = \\begin{bmatrix}q_w^2+q_x^2+q_y^2+q_z^2 \\\\ \\mathbf{0}_v\\end{bmatrix}
+
+But for the case, where the quaternion is a versor, like in this module, the
+conjugate is actually the same as the inverse :math:`\\mathbf{q}^{-1}`, where:
+
+.. math::
+    \\mathbf{qq}^* = \\mathbf{qq}^{-1} = \\mathbf{q}^{-1}\\mathbf{q} = \\begin{pmatrix}1 & 0 & 0 & 0\\end{pmatrix}
+
+.. code::
+
+    >>> q*q.conj
+    array([1., 0., 0., 0.])
+    >>> q*q.inv
+    array([1., 0., 0., 0.])
+
+Rotation groups are normally represented with direction cosine matrices. It is
+undeniable that they are the best way to express any rotation operation.
+However, quaternions are also a good representation of it, and even a better
+ally for numerical operations.
+
 Footnotes
 ---------
-.. [#] Some authors use different subscripts, but here we deal with geometric
-    transformations and (w, x, y, z) is preferred.
+.. [#] Some authors use different subscripts, but here we mainly deal with
+    geometric transformations and the notation (w, x, y, z) is preferred.
 .. [#] Any unit vector :math:`\\mathbf{v}\\in\\mathbb{R}^3` has, per definition,
-    a magnitude equal to 1, which means :math:`|\\mathbf{v}|=1`.
-.. [#] This is the reason why some early authors call them *Euler Parameters*.
+    a magnitude equal to 1, which means :math:`\\|\\mathbf{v}\\|=1`.
+.. [#] This is the reason why some early authors call the quaternions *Euler Parameters*.
+.. [#] Many authors decide to use the symbol :math:`\\otimes` to indicate a
+    quaternion product, but here is not used in order to avoid any confusions
+    with the `outer product <https://en.wikipedia.org/wiki/Outer_product>`_.
 
-Reference
----------
+References
+----------
 .. [Bar-Itzhack] Y. Bar-Itzhack. New method for Extracting the Quaternion from
     a Rotation Matrix. Journal of Guidance, Control, and Dynamics,
     23(6):1085–1087, 2000. (https://arc.aiaa.org/doi/abs/10.2514/2.4654)
@@ -242,26 +387,38 @@ def slerp(q0: np.ndarray, q1: np.ndarray, t_array: np.ndarray, threshold: float 
     return s0[:,np.newaxis]*q0[np.newaxis,:] + s1[:,np.newaxis]*q1[np.newaxis,:]
 
 class Quaternion(np.ndarray):
-    """Top level container of Quaternion class
+    """
+    Quaternion object
 
     Class to represent a quaternion. It can be built with 3- or 4-dimensional
     vectors. The quaternion objects are always normalized to represent
-    rotations in 3D space.
+    rotations in 3D space, also known as versors.
+
+    Parameters
+    ----------
+    q : array-like, default: None
+        Vector to build the quaternion with. It can be either 3- or
+        4-dimensional.
 
     Attributes
     ----------
-    q : numpy.ndarray
-        Array with the 4 elements of quaternion of the form: q = [w, x, y, z]
+    A : numpy.ndarray
+        Array with the 4 elements of quaternion of the form [w, x, y, z]
     w : float
         Scalar part of the quaternion.
-    v : numpy.ndarray
-        Vector part of the quaternion.
     x : float
         First element of the vector part of the quaternion.
     y : float
         Second element of the vector part of the quaternion.
     z : float
         Third element of the vector part of the quaternion.
+    v : numpy.ndarray
+        Vector part of the quaternion.
+
+    Raises
+    ------
+    ValueError
+        When length of input array is not equal to either 3 or 4.
 
     Examples
     --------
@@ -276,28 +433,29 @@ class Quaternion(np.ndarray):
     >>> R@x
     [1.8 2.  2.6]
 
-    A call to method product() will return an array of a multiplied vector.
+    A call to method ``product()`` will return an array of a multiplied vector.
 
     >>> q1 = Quaternion([1., 2., 3., 4.])
     >>> q2 = Quaternion([5., 4., 3., 2.])
     >>> q1.product(q2)
     [-0.49690399  0.1987616   0.74535599  0.3975232 ]
 
-    Multiplication operators are overriden to return quaternions
+    Multiplication operators are overriden to perform the expected hamilton
+    product.
 
     >>> str(q1*q2)
     '(-0.4969 +0.1988i +0.7454j +0.3975k)'
     >>> str(q1@q2)
     '(-0.4969 +0.1988i +0.7454j +0.3975k)'
 
-    Basic operators are also overriden and return quaternions
+    Basic operators are also overriden.
 
     >>> str(q1+q2)
     '(0.4619 +0.4868i +0.5117j +0.5366k)'
     >>> str(q1-q2)
     '(-0.6976 -0.2511i +0.1954j +0.6420k)'
 
-    Pure quaternions are built from 3-element arrays
+    Pure quaternions are built from arrays with three elements.
 
     >>> q = Quaternion([1., 2., 3.])
     >>> str(q)
@@ -324,7 +482,8 @@ class Quaternion(np.ndarray):
         q = np.array(q, dtype=float)
         if q.ndim!=1 or q.shape[-1] not in [3, 4]:
             raise ValueError("Expected `q` to have shape (4,) or (3,), got {}.".format(q.shape))
-        q = np.array([0.0, *q]) if q.shape[-1]==3 else q
+        if q.shape[-1]==3:
+            q = np.array([0.0, *q])
         q /= np.linalg.norm(q)
         # Create the ndarray instance of type Quaternion. This will call the
         # standard ndarray constructor, but return an object of type Quaternion.
@@ -333,28 +492,29 @@ class Quaternion(np.ndarray):
         return obj
 
     @property
-    def w(self):
+    def w(self) -> float:
         return self.A[0]
 
     @property
-    def x(self):
+    def x(self) -> float:
         return self.A[1]
 
     @property
-    def y(self):
+    def y(self) -> float:
         return self.A[2]
 
     @property
-    def z(self):
+    def z(self) -> float:
         return self.A[3]
 
     @property
-    def v(self):
+    def v(self) -> np.ndarray:
         return self.A[1:]
 
     @property
     def conjugate(self) -> np.ndarray:
-        """Conjugate of quaternion
+        """
+        Conjugate of quaternion
 
         A quaternion, whose form is :math:`\\mathbf{q} = (q_w, q_x, q_y, q_z)`,
         has a conjugate of the form :math:`\\mathbf{q}^* = (q_w, -q_x, -q_y, -q_z)`.
@@ -388,7 +548,7 @@ class Quaternion(np.ndarray):
 
     @property
     def conj(self) -> np.ndarray:
-        """Synonym to method conjugate()
+        """Synonym to property ``conjugate``
 
         Returns
         -------
@@ -427,7 +587,7 @@ class Quaternion(np.ndarray):
 
         Returns
         -------
-        out : NumPy array
+        out : numpy.ndarray
             Inverse of quaternion
 
         Examples
@@ -447,11 +607,12 @@ class Quaternion(np.ndarray):
 
     @property
     def inv(self) -> np.ndarray:
-        """Synonym to method inverse()
+        """
+        Synonym to property ``inverse``
 
         Returns
         -------
-        out : NumPy array
+        out : numpy.ndarray
             Inverse of quaternion
 
         Examples
@@ -515,8 +676,8 @@ class Quaternion(np.ndarray):
 
         Returns
         -------
-        out : NumPy array
-            Array with exponential of quaternion
+        exp : numpy.ndarray
+            Exponential of quaternion
 
         Examples
         --------
@@ -535,7 +696,6 @@ class Quaternion(np.ndarray):
             return np.array([1.0, 0.0, 0.0, 0.0])
         t = np.linalg.norm(self.v)
         u = self.v/t
-        # q_exp = np.concatenate(([np.cos(t)], u*np.sin(t)))
         q_exp = np.array([np.cos(t), *u*np.sin(t)])
         if self.is_pure():
             return q_exp
@@ -548,8 +708,8 @@ class Quaternion(np.ndarray):
 
         Returns
         -------
-        out : NumPy array
-            Array with exponential of quaternion
+        exp : numpy.ndarray
+            Exponential of quaternion
 
         Examples
         --------
@@ -612,7 +772,7 @@ class Quaternion(np.ndarray):
 
     def __str__(self) -> str:
         """
-        Build 'printable' representation of quaternion
+        Build a *printable* representation of quaternion
 
         Returns
         -------
@@ -627,7 +787,7 @@ class Quaternion(np.ndarray):
         """
         return "({:-.4f} {:+.4f}i {:+.4f}j {:+.4f}k)".format(self.w, self.x, self.y, self.z)
 
-    def __add__(self, p: Any) -> Any:
+    def __add__(self, p: Any):
         """
         Add quaternions
 
@@ -649,14 +809,12 @@ class Quaternion(np.ndarray):
         >>> q1 = Quaternion([0.55747131, 0.12956903, 0.5736954 , 0.58592763])
         >>> q2 = Quaternion([0.49753507, 0.50806522, 0.52711628, 0.4652709])
         >>> q3 = q1+q2
-        >>> q3
-        <ahrs.common.quaternion.Quaternion object at 0x000001F379003748>
         >>> str(q3)
         '(0.5386 +0.3255i +0.5620j +0.5367k)'
         """
-        return Quaternion(self.A + p.A)
+        return Quaternion(self.to_array() + p)
 
-    def __sub__(self, p: Any) -> Any:
+    def __sub__(self, p: Any):
         """
         Difference of quaternions
 
@@ -673,12 +831,10 @@ class Quaternion(np.ndarray):
         >>> q1 = Quaternion([0.55747131, 0.12956903, 0.5736954 , 0.58592763])
         >>> q2 = Quaternion([0.49753507, 0.50806522, 0.52711628, 0.4652709])
         >>> q3 = q1-q2
-        >>> q3
-        <ahrs.common.quaternion.Quaternion object at 0x000001F379003748>
         >>> str(q3)
         '(0.1482 -0.9358i +0.1152j +0.2983k)'
         """
-        return Quaternion(self.A - p.A)
+        return Quaternion(self.to_array() - p)
 
     def __mul__(self, q: np.ndarray) -> Any:
         """
@@ -769,7 +925,7 @@ class Quaternion(np.ndarray):
 
     def __pow__(self, a: float) -> np.ndarray:
         """
-        Returns array of quaternion to the power of `a`
+        Returns array of quaternion to the power of ``a``
 
         Assuming the quaternion is a versor, its power can be defined using the
         exponential:
@@ -792,8 +948,8 @@ class Quaternion(np.ndarray):
 
         Returns
         -------
-        p : NumPy array
-            Quaternion `q` to the power of `a`
+        q^a : numpy.ndarray
+            Quaternion :math:`\\mathbf{q}` to the power of ``a``
         """
         return np.e**(a*self.logarithm)
 
@@ -897,7 +1053,6 @@ class Quaternion(np.ndarray):
         [Sola]_ [Dantam]_ as:
 
         .. math::
-
             \\begin{eqnarray}
             \\mathbf{pq} & = & \\big( (q_w p_w - \\mathbf{q}_v \\cdot \\mathbf{p}_v) \\; ,
             \\; \\mathbf{q}_v \\times \\mathbf{p}_v + q_w \\mathbf{p}_v + p_w \\mathbf{q}_v \\big) \\\\
@@ -925,15 +1080,19 @@ class Quaternion(np.ndarray):
             \\end{bmatrix}
             \\end{eqnarray}
 
+        where :math:`\\lfloor \\mathbf{a} \\rfloor_\\times` represents the
+        `skew-symmetric matrix <https://en.wikipedia.org/wiki/Skew-symmetric_matrix>`_
+        of :math:`\\mathbf{a}`.
+
         Parameters
         ----------
         r : numpy.ndarray, Quaternion
-            Quaternion to multiply with
+            Quaternion to multiply with.
 
         Returns
         -------
         qr : numpy.ndarray
-            Product of quaternions
+            Product of quaternions.
 
         Examples
         --------
@@ -1058,9 +1217,10 @@ class Quaternion(np.ndarray):
         return self.to_DCM()@a
 
     def to_array(self) -> np.ndarray:
-        """Return quaternion as a NumPy array
+        """
+        Return quaternion as a NumPy array
 
-        Quaternion values are stored in attribute `q`, which is a NumPy array.
+        Quaternion values are stored in attribute ``A``, which is a NumPy array.
         This method simply returns such attribute.
 
         Returns
@@ -1079,10 +1239,11 @@ class Quaternion(np.ndarray):
         return self.A
 
     def to_list(self) -> list:
-        """Return quaternion as list
+        """
+        Return quaternion as list
 
-        Quaternion values are stored in attribute `q`, which is a NumPy array.
-        This method reads such attribute and returns it as a list.
+        Quaternion values are stored in attribute ``A``, which is a NumPy array.
+        This method reads that attribute and returns it as a list.
 
         Returns
         -------
@@ -1099,7 +1260,8 @@ class Quaternion(np.ndarray):
         return self.A.tolist()
 
     def to_axang(self) -> Tuple[np.ndarray, float]:
-        """Return equivalent axis-angle representation of the quaternion.
+        """
+        Return equivalent axis-angle representation of the quaternion.
 
         Returns
         -------
@@ -1121,7 +1283,8 @@ class Quaternion(np.ndarray):
         return axis, angle
 
     def to_angles(self) -> np.ndarray:
-        """Return corresponding Euler angles of quaternion.
+        """
+        Return corresponding Euler angles of quaternion.
 
         Given a unit quaternions :math:`\\mathbf{q} = (q_w, q_x, q_y, q_z)`,
         its corresponding Euler angles [WikiConversions]_ are:
@@ -1187,14 +1350,14 @@ class Quaternion(np.ndarray):
         """
         Quaternion from Direction Cosine Matrix.
 
-        There are five methods to obtain a quaternion from a Direction Cosine
-        Matrix:
+        There are five methods available to obtain a quaternion from a
+        Direction Cosine Matrix:
 
-        * ``'Chiaverini'`` as described in [Chiaverini]_
-        * ``'Hughes'`` as described in [Hughes]_
-        * ``'Itzhack'`` as described in [Bar-Itzhack]_
-        * ``'Sarabandi'`` as described in [Sarabandi]_
-        * ``'Shepperd'`` as described in [Shepperd]_
+        * ``'chiaverini'`` as described in [Chiaverini]_
+        * ``'hughes'`` as described in [Hughes]_
+        * ``'itzhack'`` as described in [Bar-Itzhack]_
+        * ``'sarabandi'`` as described in [Sarabandi]_
+        * ``'shepperd'`` as described in [Shepperd]_
 
         Parameters
         ----------
@@ -1261,14 +1424,14 @@ class Quaternion(np.ndarray):
         """
         return self.from_rpy(angles)
 
-    def derivative(self, w: np.ndarray) -> np.ndarray:
+    def ode(self, w: np.ndarray) -> np.ndarray:
         """
-        Quaternion derivative from angular velocity.
+        Ordinary Differential Equation of the quaternion.
 
         Parameters
         ----------
         w : numpy.ndarray
-            Angular velocity, in rad/s, about X-, Y- and Z-angle.
+            Angular velocity, in rad/s, about X-, Y- and Z-axis.
 
         Returns
         -------

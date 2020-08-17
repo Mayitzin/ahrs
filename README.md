@@ -17,18 +17,18 @@ AHRS is compatible with **Python 3.6** and newer.
 
 ## Installation
 
-AHRS may be installed using [pip](https://pip.pypa.io):
-
-```shell
-pip install ahrs
-```
-
-Or directly from the repository:
+The most recommended mehod is to install AHRS directly from this repository:
 
 ```shell
 git clone https://github.com/Mayitzin/ahrs.git
 cd ahrs
 python setup.py install
+```
+
+to get the latest version. Or using [pip](https://pip.pypa.io) for the stable releases:
+
+```shell
+pip install ahrs
 ```
 
 AHRS depends on common packages [NumPy](https://numpy.org/) and [SciPy](https://www.scipy.org/). Further packages are avoided, to reduce its third-party dependency.
@@ -59,8 +59,8 @@ AHRS depends on common packages [NumPy](https://numpy.org/) and [SciPy](https://
 It can be used, for example, to estimate the normal gravity acceleration (in m/s^2) at any location on Earth.
 
 ```python
->>> g = wgs.normal_gravity(50.0, h=500.0)        # Latitude = 50° N,   height above sea = 500 m
-9.810958954471268
+>>> wgs.normal_gravity(50.0, 1000.0)    # Gravity at latitude = 50.0 °, 1000 m above surface
+9.807617683884756
 ```
 
 Setting the fundamental parameters (`a`, `f`, `gm`, `w`) yields a different ellipsoid. For the moon, for example, we build a new model:
@@ -68,20 +68,20 @@ Setting the fundamental parameters (`a`, `f`, `gm`, `w`) yields a different elli
 ```python
 >>> moon_flattening = (ahrs.MOON_EQUATOR_RADIUS-ahrs.MOON_POLAR_RADIUS)/ahrs.MOON_EQUATOR_RADIUS
 >>> mgs = WGS(a=ahrs.MOON_EQUATOR_RADIUS, f=moon_flattening, gm=ahrs.MOON_GM, w=ahrs.MOON_ROTATION)
->>> g = mgs.normal_gravity(10.0, h=500.0)
+>>> g = mgs.normal_gravity(10.0, h=500.0)    # Gravity on moon at 10° N and 500 m above surface
 1.6239820345657434
 ```
 
 - The [International Gravity Formula](http://earth.geology.yale.edu/~ajs/1945A/360.pdf) and the EU's [WELMEC](https://www.welmec.org/documents/guides/2/) normal gravity reference system are also implemented.
 
 ```python
->>> ahrs.utils.international_gravity(50.0)       # Works only at sea level
+>>> ahrs.utils.international_gravity(50.0)       # Latitude = 50° N
 9.810786421572386
->>> ahrs.utils.welmec_gravity(50.0, 500.0)       # This can be also above sea level (here 500 m)
+>>> ahrs.utils.welmec_gravity(50.0, 500.0)       # Latitude = 50° N,   height above sea = 500 m
 9.809152687885897
 ```
 
-- New class `DCM` (derived from `numpy.ndarray` to use its attributes and methods) for orientation/rotation representations as 3x3 Direction Cosine Matrices.
+- New class `DCM` (derived from `numpy.ndarray`) for orientation/rotation representations as 3x3 Direction Cosine Matrices.
 
 ```python
 >>> from ahrs import DCM
@@ -98,7 +98,7 @@ array([[ 0.81379768  0.54383814 -0.20487413]
        [ 0.34202014 -0.16317591  0.92541658]])
 >>> R.log
 array([0.26026043, 0.29531805, 0.5473806 ])
->>> R.to_axisangle()        # Axis as 3D NumPy array, and angle as radians
+>>> R.to_axisangle()        # Axis in 3D NumPy array, and angle as radians
 (array([0.38601658, 0.43801381, 0.81187135]), 0.6742208510527136)
 >>> R.to_quaternion()
 array([0.94371436, 0.12767944, 0.14487813, 0.26853582])
@@ -106,12 +106,48 @@ array([0.94371436, 0.12767944, 0.14487813, 0.26853582])
 array([ 0.94371436, -0.12767944, -0.14487813, -0.26853582])
 ```
 
-- A whole bunch of new constant values (mainly for Geodesy) accessed from the top level of the package.
-- New operations, properties and methods for class `Quaternion`.
+- A whole bunch of [new constant values](https://ahrs.readthedocs.io/en/latest/constants.html) (mainly for Geodesy) accessed from the top level of the package.
+- New operations, properties and methods for class `Quaternion` (now also derived from `numpy.ndarray`)
 - Docstrings are improved with further explanations, references and equations whenever possible.
-- New Attitude Estimation Algorithms! All estimators are refactored to be consistent to the original articles describing them. They have in-code reference to the original equations.
 
-To use the sensor data to estimate the attitude simply pass the data to a desired filter, and it will automatically estimate the quaternions with the given parameters.
+## More Attitude Estimators!
+
+One of the biggest improvements in this version is the addition of many new attitude estimation algorithms for low-cost devices.
+
+All estimators are refactored to be consistent to the original articles describing them. They have in-code reference to the original equations, so that you can follow the articles along with the code, if you need to.
+
+Implemented attitude estimators are checked as ``Ready``. More Estimators are still a *Work In Progress*, or *planned* to be added in the future.
+
+| Algorithm      | Gyroscope | Accelerometer | Magnetometer | Status  |
+|----------------|:---------:|:-------------:|:------------:|:-------:|
+| AQUA           | YES       | Optional      | Optional     | Ready   |
+| Complementary  | YES       | YES           | Optional     | Ready   |
+| Davenport's    | NO        | YES           | YES          | Ready   |
+| ESOQ           | NO        | YES           | YES          | WIP     |
+| ESOQ-2         | NO        | YES           | YES          | WIP     |
+| FAMC           | NO        | YES           | YES          | Ready   |
+| FKF            | NO        | YES           | YES          | WIP     |
+| FCF            | NO        | YES           | YES          | Planned |
+| FOAM           | NO        | YES           | YES          | Planned |
+| FLAE           | NO        | YES           | YES          | Ready   |
+| Fourati        | YES       | YES           | YES          | Ready   |
+| FQA            | NO        | YES           | Optional     | Ready   |
+| GDA-LKF        | YES       | YES           | YES          | Planned |
+| Integration    | YES       | NO            | NO           | Ready   |
+| Madgwick       | YES       | YES           | Optional     | Ready   |
+| MAGYQ          | YES       | YES           | YES          | Planned |
+| Mahony         | YES       | YES           | Optional     | Ready   |
+| OLEQ           | NO        | YES           | YES          | Ready   |
+| QUEST          | NO        | YES           | YES          | Ready   |
+| REQUEST        | NO        | YES           | YES          | Planned |
+| ROLEQ          | NO        | YES           | YES          | Ready   |
+| SAAM           | NO        | YES           | YES          | Ready   |
+| Sabatini       | YES       | YES           | YES          | Planned |
+| SOLEQ          | NO        | YES           | YES          | Planned |
+| Tilt           | NO        | YES           | Optional     | Ready   |
+| TRIAD          | NO        | YES           | YES          | Ready   |
+
+To use the sensor data to estimate the attitude simply pass the data to a desired estimator, and it will automatically estimate the quaternions with the given parameters.
 
 ```python
 >>> attitude = ahrs.filters.Madgwick(acc=acc_data, gyr=gyro_data)
@@ -119,67 +155,21 @@ To use the sensor data to estimate the attitude simply pass the data to a desire
 (6959, 4)
 ```
 
-Some algorithms allow a finer tuning of its estimation with different parameters. Check their documentation to see what can you change.
+Some algorithms allow a finer tuning of its estimation with different parameters. Check their documentation to see what can be tuned.
 
 ```python
 >>> attitude = ahrs.filters.Madgwick(acc=acc_data, gyr=gyro_data, mag=mag_data, gain=0.1, frequency=100.0)
 ```
 
-Implemented attitude estimators are checked:
-
-- [x] AQUA (Algebraic Quaternion Algorithm)
-- [x] Complementary Filter with Quaternions
-- [x] Davenport's q-method
-- [ ] ESOQ (Estimator of the Optimal Quaternion)
-- [ ] ESOQ-2 (New Estimator of the Optimal Quaternion)
-- [x] FAMC (Fast Accelerometer-Magnetometer Combination)
-- [ ] FCF (Fast Complementary Filter)
-- [ ] FKF (Fast Kalman Filter)
-- [x] FLAE (Fast Linear Attitude Estimator)
-- [ ] FOAM (Fast Optimal Attitude Matrix)
-- [x] Fourati (Nonlinear Dynamic Attitude Estimator)
-- [x] FQA (Factored Quaternion Algorithm)
-- [ ] GDA-LKF (Gradient-Descent Linear Kalman Filter)
-- [x] Madgwick (Gradient-Descent Estimator)
-- [ ] MAGYQ (Magnetic, Acceleration Fields and Gyroscope Quaternion)
-- [x] Mahony (Nonlinear Explicit Complementary Filter)
-- [x] Naïve Angular velocity integration
-- [ ] OLAE (Optimal Linear Attitude Estimator)
-- [x] OLEQ (Optimal Linear Estimator of Quaternion)
-- [x] QUEST (QUaternion ESTimator)
-- [ ] REQUEST (Recursive QUEST)
-- [x] ROLEQ (Recursive Optimal Linear Estimator of Quaternion)
-- [x] SAAM (Super-fast Attitude of Accelerometer and Magnetometer)
-- [ ] Sabatini (EKF-Based Quaternion Estimator)
-- [ ] SOLEQ (Sub-Optimal Linear Estimator of Quaternion)
-- [x] Tilt (Inclination and Heading)
-- [x] TRIAD (Tri-Axial Attitude Determination)
-
-| Algorithm      | Gyroscope | Accelerometer | Magnetometer |
-|----------------|:---------:|:-------------:|:------------:|
-| AQUA           | YES       | Optional      | Optional     |
-| Complementary  | YES       | YES           | YES          |
-| Davenport's    | NO        | YES           | YES          |
-| FAMC           | NO        | YES           | YES          |
-| FLAE           | NO        | YES           | YES          |
-| Fourati        | YES       | YES           | YES          |
-| FQA            | NO        | YES           | Optional     |
-| Integration    | YES       | NO            | NO           |
-| Madgwick       | YES       | YES           | Optional     |
-| Mahony         | YES       | YES           | Optional     |
-| OLEQ           | NO        | YES           | YES          |
-| QUEST          | NO        | YES           | YES          |
-| SAAM           | NO        | YES           | YES          |
-| ROLEQ          | YES       | YES           | YES          |
-| Tilt           | NO        | YES           | YES          |
-| TRIAD          | NO        | YES           | YES          |
-
-## Note for future versions
-
-`ahrs` is still moving away from plotting and data parsing submodules to better focus in the algorithmic parts. Submodules `io` and `plot` will not be further developed and, eventually, will be removed.
-
-That way you can also choose your favorite libraries for data loading and visualization. This also means, getting rid of its dependency on `matplotlib`.
+Speaking of documentation...
 
 ## Documentation
 
-A comprehensive documentation, with examples, will soon come to [Read the Docs](https://docs.readthedocs.io/). In the meantime you can easily access the fully documented code by calling `help()` over your desired object.
+A comprehensive documentation, with examples, is now available in
+[Read the Docs](https://ahrs.readthedocs.io).
+
+## Note for future versions
+
+`ahrs` is still moving away from plotting and data parsing submodules to better focus in the algorithmic parts. Submodules `io` and `plot` are not built in the package anymore and, eventually, will be entirely removed from the base code.
+
+This way you can also choose your favorite libraries for data loading and visualization. This also means, getting rid of its dependency on `matplotlib`.

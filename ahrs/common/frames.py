@@ -51,13 +51,13 @@ of the ellipsoid and the point of interest.
 
 References
 ----------
-.. [1] Aboelmagd Noureldin, Tashfeen B. Karamat, Jacques Georgy. Fundamentals
-       of Inertial Navigation, Satellite-based Position and their Integration.
-       Springer-Verlag Berlin Heidelberg. 2013.
-.. [2] World Geodetic System 1984. Its Definition and Relationships with Local
-       Geodetic Systems. National Geospatial-Intelligence Agency (NGA)
-       Standarization Document. 2014.
-       ftp://ftp.nga.mil/pub2/gandg/website/wgs84/NGA.STND.0036_1.0.0_WGS84.pdf
+.. [Noureldin] Aboelmagd Noureldin, Tashfeen B. Karamat, Jacques Georgy.
+    Fundamentals of Inertial Navigation, Satellite-based Position and their
+    Integration. Springer-Verlag Berlin Heidelberg. 2013.
+.. [WGS84] World Geodetic System 1984. Its Definition and Relationships with
+    Local Geodetic Systems. National Geospatial-Intelligence Agency (NGA)
+    Standarization Document. 2014.
+    (ftp://ftp.nga.mil/pub2/gandg/website/wgs84/NGA.STND.0036_1.0.0_WGS84.pdf)
 
 """
 

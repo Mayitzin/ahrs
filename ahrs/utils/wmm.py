@@ -42,7 +42,7 @@ This has a convenient solution expressed in spherical harmonics of :math:`n`
 degrees:
 
 .. math::
-    V(r, \\theta, \\phi) = a \\sum_{n=1}^k\\Big(\\frac{a}{r}\\Big)^{n+1}\\sum_{m=0}^{n}(g_n^m \\cos(m\\phi) + h_n^m \\sin(m\\phi)) P_n^m(\\theta)
+    V(r, \\theta, \\phi) = a \\sum_{n=1}^k\\Big(\\frac{a}{r}\\Big)^{n+1}\\sum_{m=0}^{n}\\big(g_n^m \\cos(m\\phi) + h_n^m \\sin(m\\phi)\\big) P_n^m(\\theta)
 
 where :math:`a` is Earth's mean radius; :math:`g_n^m` and :math:`h_n^m` are
 *Gaussian coefficients* of degree :math:`n` and order :math:`m`; :math:`r`,
@@ -108,6 +108,62 @@ projection used to define the grid coordinates. In general, it is estimated as:
 where :math:`C` is the "convergence-of-meridians" defined as the clockwise
 angle from the northward meridional arc to the grid Northing direction.
 
+The class ``WMM`` contains a couple of methods to load and create a geomagnetic
+model from a set of given coefficients. To obtain the magnetic elements at a
+certain spot on the Earth, we call the method ``magnetic_field``
+
+.. code:: python
+
+    >>> wmm = ahrs.utils.WMM()              # Create today's magnetic model
+    >>> wmm.magnetic_field(10.0, -20.0)     # Magnetic field at latitude = 10°, longitude = -20°
+    >>> wmm.D                               # Magnetic declination [degrees]
+    -9.122361367239034
+    >>> wmm.magnetic_field(10.0, -20.0, height=10.5)     # 10.5 km above sea level
+    >>> wmm.D
+    -9.128404039098971
+
+By default, the class ``WMM`` will create a model for the day, when the object
+is being created. To ask for the values at a different date, we simply pass it
+as a parameter.
+
+.. code:: python
+
+    >>> wmm.magnetic_field(10.0, -20.0, height=10.5, date=datetime.date(2017, 5, 12))    # on 12th May, 2017
+    >>> wmm.D
+    -9.73078560629778
+
+All main elements are computed at the same time and accessed independently
+
+.. code:: python
+
+    >>> wmm.X
+    30499.640469609083
+    >>> wmm.Y
+    -5230.267158472566
+    >>> wmm.Z
+    -1716.633311360368
+    >>> wmm.H
+    30944.850352270452
+    >>> wmm.F
+    30992.427998627096
+    >>> wmm.I
+    -3.1751692563622993
+    >>> wmm.GV
+    -9.73078560629778
+
+or in a dictionary
+
+.. code:: python
+
+    >>> wmm.magnetic_elements
+    {'X': 30499.640469609083, 'Y': -5230.267158472566, 'Z': -1716.633311360368,
+    'H': 30944.850352270452, 'F': 30992.427998627096, 'I': -3.1751692563622993,
+    'D': -9.73078560629778, 'GV': -9.73078560629778}
+
+.. note::
+    The model in this package includes coefficients for dates between **2015**
+    and **2024** only. Models out of this timespan cannot be built.
+
 The WMM was developed jointly by the National Centers for Environmental
 Information (NCEI, Boulder CO, USA) (formerly National Geophysical Data Center
 (NGDC)) and the British Geological Survey (BGS, Edinburgh, Scotland). As part
@@ -129,8 +185,8 @@ must provide notice with such work(s) identifying the U.S. Government material
 incorporated and stating that such material is not subject to copyright
 protection.
 
-Reference
----------
+References
+----------
 .. [Chulliat] Chulliat, A., W. Brown, P. Alken, C. Beggan, M. Nair, G. Cox, A.
     Woods, S. Macmillan, B. Meyer and M. Paniccia, The US/UK World Magnetic
     Model for 2020­-2025: Technical Report, National Centers for Environmental
@@ -212,7 +268,8 @@ def geodetic2spherical(lat: float, lon: float, h: float, a: float = EARTH_EQUATO
     return lat_spheric, lon, r
 
 class WMM:
-    """World Magnetic Model
+    """
+    World Magnetic Model
 
     It is mainly used to compute all elements of the World Magnetic Model (WMM)
     at any given point on Earth.
@@ -224,7 +281,7 @@ class WMM:
     terms of spherical harmonics:
 
     .. math::
-        V(\\lambda, \\phi', r, t) = a\\sum_{n=1}^{N}(\\frac{a}{r})^{n+1}\\sum_{m=0}^{n}f(n, m, \\lambda, t)P_n^m(\\phi')
+        V(\\lambda, \\phi', r, t) = a\\sum_{n=1}^{N}\\Big(\\frac{a}{r}\\Big)^{n+1}\\sum_{m=0}^{n}f(n, m, \\lambda, t)P_n^m(\\phi')
 
     where
 
@@ -237,8 +294,8 @@ class WMM:
     .. math::
         P_n^m(\\mu) = \\left\\{
         \\begin{array}{ll}
-            \\sqrt{2\\frac{(n-m)!}{(n+m)!}}P_{n, m}(\\mu) & \\mathrm{if} \, m > 0 \\\\
-            P_{n, m}(\\mu) & \\mathrm{if} \, m = 0
+            \\sqrt{2\\frac{(n-m)!}{(n+m)!}}P_{n, m}(\\mu) & \\mathrm{if} \; m > 0 \\\\
+            P_{n, m}(\\mu) & \\mathrm{if} \; m = 0
         \\end{array}
         \\right.
 
@@ -262,11 +319,11 @@ class WMM:
     date : datetime.date, int or float, default: current day
         Date of desired magnetic field estimation.
     latitude : float, default: None
-        Latitude, in decimal degrees, in geodetic coordinates
+        Latitude, in decimal degrees, in geodetic coordinates.
     longitude : float, default: None
-        Longitude in decimal degrees, in geodetic coordinates
+        Longitude, in decimal degrees, in geodetic coordinates.
     height : float, default: 0.0
-        Mean Sea Level Height in kilometers
+        Mean Sea Level Height, in kilometers.
 
     Attributes
     ----------
@@ -309,62 +366,28 @@ class WMM:
 
     Examples
     --------
-    >>> wmm = ahrs.WMM()         # Create today's magnetic model
-    >>> wmm.magnetic_field(10.0, -20.0)      # Magnetic field at latitude = 10 deg, longitude = -20 deg
-    >>> wmm.D               # Magnetic declination [degrees]
-    -9.122361367239034
-    >>> wmm.magnetic_field(10.0, -20.0, height=10.5)     # 10.5 km above sea level
-    >>> wmm.D
-    -9.128404039098971
-    >>> wmm.magnetic_field(10.0, -20.0, height=10.5, date=datetime.date(2017, 5, 12))    # on 12th May, 2017
-    >>> wmm.D
-    -9.73078560629778
-
-    All main elements are computed at the same time and accessed independently
-
-    >>> wmm.X
-    30499.640469609083
-    >>> wmm.Y
-    -5230.267158472566
-    >>> wmm.Z
-    -1716.633311360368
-    >>> wmm.H
-    30944.850352270452
-    >>> wmm.F
-    30992.427998627096
-    >>> wmm.I
-    -3.1751692563622993
-    >>> wmm.GV
-    -9.73078560629778
-
-    or in a dictionary
-
-    >>> wmm.magnetic_elements
-    {'X': 30499.640469609083, 'Y': -5230.267158472566, 'Z': -1716.633311360368,
-    'H': 30944.850352270452, 'F': 30992.427998627096, 'I': -3.1751692563622993,
-    'D': -9.73078560629778, 'GV': -9.73078560629778}
-
     The magnetic field can be computed at the creation of the WMM object by
     passing the main parameters to its constructor:
 
-    >>> wmm = ahrs.WMM(datetime.date(2017, 5, 12), latitude=10.0, longitude=-20.0, height=10.5)
+    >>> wmm = ahrs.utils.WMM(datetime.date(2017, 5, 12), latitude=10.0, longitude=-20.0, height=10.5)
     >>> wmm.magnetic_elements
     {'X': 30499.640469609083, 'Y': -5230.267158472566, 'Z': -1716.633311360368,
     'H': 30944.850352270452, 'F': 30992.427998627096, 'I': -3.1751692563622993,
     'D': -9.73078560629778, 'GV': -9.73078560629778}
 
     """
-    def __init__(self, date: Union[datetime.date, int, float] = None, **kw) -> NoReturn:
+    def __init__(self, date: Union[datetime.date, int, float] = None, latitude: float = None, longitude: float = None, height: float = 0.0) -> NoReturn:
         self.reset_coefficients(date)
         self.__dict__.update(dict.fromkeys(['X', 'Y', 'Z', 'H', 'F', 'I', 'D', 'GV']))
-        self.latitude = kw.get("latitude")
-        self.longitude = kw.get("longitude")
-        self.height = kw.get("height", 0.0)
+        self.latitude = latitude
+        self.longitude = longitude
+        self.height = height
         if all([self.latitude, self.longitude]):
             self.magnetic_field(self.latitude, self.longitude, self.height, date=self.date)
 
     def reset_coefficients(self, date: Union[datetime.date, int, float] = None) -> NoReturn:
-        """Reset Gauss coefficients to given date.
+        """
+        Reset Gauss coefficients to given date.
 
         Given the date, the corresponding coefficients are updated. Basic
         properties (epoch, release date, and model id) are read and updated in
@@ -389,7 +412,8 @@ class WMM:
         self.load_coefficients(self.wmm_filename)
 
     def load_coefficients(self, cof_file: str) -> NoReturn:
-        """Load model coefficients from COF file.
+        """
+        Load model coefficients from COF file.
 
         The model coefficients, also referred to as Gauss coefficients, are
         listed in a COF file. These coefficients can be used to compute values
@@ -440,7 +464,8 @@ class WMM:
                 self.cd[n, m-1] = row[5]    # h_n^m secular
 
     def get_properties(self, cof_file: str) -> Dict[str, Union[str, float]]:
-        """Return dictionary of WMM properties from COF file.
+        """
+        Return dictionary of WMM properties from COF file.
 
         Three properties are read and returned in a dictionary:
 
@@ -474,7 +499,8 @@ class WMM:
         return properties
 
     def reset_date(self, date: Union[datetime.date, int, float]) -> NoReturn:
-        """Set date to use with the model.
+        """
+        Set date to use with the model.
 
         The WMM requires a date. This date can be given as an instance of
         `datetime.date` or as a decimalized date of the format ``YYYY.d``.
@@ -648,7 +674,8 @@ class WMM:
                 self.cd[m, n] *= S[m, n]
 
     def magnetic_field(self, latitude: float, longitude: float, height: float = 0.0, date: Union[datetime.date, int, float] = datetime.date.today()) -> NoReturn:
-        """Calculate the geomagnetic field elements for a location on Earth.
+        """
+        Calculate the geomagnetic field elements for a location on Earth.
 
         The code includes comments with references to equation numbers
         corresponding to the ones in the official report.

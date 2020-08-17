@@ -172,7 +172,7 @@ the total gravity on the surface of the ellipsoid  :math:`g_0` is just:
 .. math::
     g_0 = \\|\\vec{\\mathbf{g}_0}\\| =
     \\frac{GM}{a\\sqrt{a^2\\sin^2\\beta+b^2\\cos^2\\beta}}
-    \\Big[\\Big(1+\\frac{me'q_0'}{3q_0}\\sin^2\\beta + \\Big(1+-m-\\frac{me'q_0'}{6q_0}\\Big)\\cos^2\\beta\\Big]
+    \\Big[\\Big(1+\\frac{me'q_0'}{3q_0}\\Big)\\sin^2\\beta + \\Big(1-m-\\frac{me'q_0'}{6q_0}\\Big)\\cos^2\\beta\\Big]
 
 where:
 
@@ -203,14 +203,24 @@ closed form formula to find the normal gravity :math:`g` at any given latitude
 :math:`\\phi` [Somigliana1929]_:
 
 .. math::
-    g = \\frac{ag_e \\cos^2\\phi + bg_p\\sin^2\\phi}{\\sqrt{a^2cos^2\\phi + b^2\\sin^2\\phi}}
+    g(\\phi) = \\frac{ag_e \\cos^2\\phi + bg_p\\sin^2\\phi}{\\sqrt{a^2\\cos^2\\phi + b^2\\sin^2\\phi}}
 
 For numerical computation, a more convenient form is:
 
 .. math::
-    g = g_e\\frac{1+k\\sin^2\\phi}{\\sqrt{1-e^2\\sin^2\\phi}}
+    g(\\phi) = g_e\\frac{1+k\\sin^2\\phi}{\\sqrt{1-e^2\\sin^2\\phi}}
 
 using the helper variable :math:`k = \\frac{bg_p}{ag_e} - 1`.
+
+The estimation of the normal gravity is already simplified with the class ``WGS``
+requiring the latitude only.
+
+.. code:: python
+
+    >>> wgs.normal_gravity(0.0)     # Normal gravity at Equator (latitude = 0.0 °)
+    9.78032533590406
+    >>> wgs.normal_gravity(50.0)    # Normal gravity at latitude = 50.0 °
+    9.810702135603085
 
 **Normal Gravity above the Surface**
 
@@ -219,25 +229,40 @@ a truncated Taylor Series with a positive direction downward along the geodetic
 normal to the ellipsoid:
 
 .. math::
-    g_h = g \\Big(1 - \\frac{2}{a}\\big(1+f+m-2f\\sin^2(\\phi)\\big)h \\Big)
+    g(\\phi, h) = g(\\phi) \\Big(1 - \\frac{2}{a}\\big(1+f+m-2f\\sin^2\\phi\\big)h + \\frac{3}{a^2}h^2\\Big)
 
 where :math:`h` is the height, in meters, above the ellipsoid's surface.
 
+.. code:: python
+
+    >>> wgs.normal_gravity(50.0, 1000.0)    # Gravity at latitude = 50.0 °, 1000 m above surface
+    9.807617683884756
+
 **Other Gravitational Methods**
 
-The well known International Gravity Formula [Lambert]_ as described by Helmut
-Moritz in [Tscherning]_ for the `Geodetic Reference System 1980 <https://en.wikipedia.org/wiki/Geodetic_Reference_System_1980>`_
+The well known **International Gravity Formula** [Lambert]_ as described by
+Helmut Moritz in [Tscherning]_ for the `Geodetic Reference System 1980 <https://en.wikipedia.org/wiki/Geodetic_Reference_System_1980>`_
 is also implemented here:
 
 .. math::
-    g = 9.780327 (1 + 0.0053024 \\sin^2\\phi - 0.0000058 \\sin^2(2\\phi))
+    g(\\phi) = 9.780327 (1 + 0.0053024 \\sin^2\\phi - 0.0000058 \\sin^2(2\\phi))
+
+.. code:: python
+
+    >>> ahrs.utils.international_gravity(10.0)
+    9.781884110728155
 
 As a bonus, the **normal gravity estimation** of the European Cooperation on Legal
 Metrology (`WELMEC <https://en.wikipedia.org/wiki/WELMEC>`_) is also
 implemented here:
 
 .. math::
-    g = 9.780318(1 + 0.0053024\\sin^2(\\phi) - 0.0000058\\sin^2(2\\phi)) - 0.000003085h
+    g(\\phi, h) = 9.780318(1 + 0.0053024\\sin^2(\\phi) - 0.0000058\\sin^2(2\\phi)) - 0.000003085h
+
+.. code:: python
+
+    >>> ahrs.utils.welmec_gravity(50.0, 1000.0)     # 50.0° N, 1000 m above sea level
+    9.807610187885896
 
 Although this is thought and mainly used for European latitudes.
 
@@ -247,12 +272,12 @@ the `EGM2008 <https://earth-info.nga.mil/GandG/wgs84/gravitymod/egm2008/>`_,
 which is defined, like the WMM, with spherical harmonics, but of degree 2190
 and order 2159.
 
-Because of its high complexity and demanding computation, this implementation
-is left out of this module in favour of the more convenient applications
-developed in `Fortran by the NGA <https://earth-info.nga.mil/GandG/wgs84/gravitymod/egm2008/egm08_wgs84.html>`_.
+Because of its high complexity and demanding computation, the implementation of
+the EGM2008 is left out of this module in favour of the more convenient
+applications developed in `Fortran by the NGA <https://earth-info.nga.mil/GandG/wgs84/gravitymod/egm2008/egm08_wgs84.html>`_.
 
-Footnote
---------
+Footnotes
+---------
 .. [#] The most precise EGM2008 defines the potential of gravitational force in
     terms of spherical harmonics.
 
@@ -490,8 +515,10 @@ class WGS:
         Examples
         --------
         >>> wgs = ahrs.utils.WGS()
-        >>> wgs.normal_gravity(10.0, h=500.0)
-        9.780430980780672
+        >>> wgs.normal_gravity(50.0)
+        9.810702135603085
+        >>> wgs.normal_gravity(50.0, 100.0)
+        9.810393625316983
 
         """
         ge = self.equatorial_normal_gravity
@@ -502,12 +529,12 @@ class WGS:
         e2 = self.first_eccentricity_squared
         k = (self.b*gp)/(self.a*ge)-1
         sin2 = np.sin(lat)**2
-        g = ge*(1+k*sin2)/np.sqrt(1-e2*sin2)                        # Normal Gravity on Ellipsoid Surface (eq. 4-1)
+        g = ge*(1+k*sin2)/np.sqrt(1-e2*sin2)                        # Gravity on Ellipsoid Surface (eq. 4-1)
         if h==0.0:
             return g
         # Normal gravity above surface
-        m = self.w**2*self.a**2*self.b/self.gm                      # Normal Gravity constant (eq. B-20)
-        g *= 1-2*h*(1+self.f+m-2*sin2)/self.a + 3*h**2/self.a**2    # Normal Gravity Above Ellipsoid (eq. 4-3)
+        m = self.w**2*self.a**2*self.b/self.gm                      # Gravity constant (eq. B-20)
+        g *= 1-2*h*(1+self.f+m-2*self.f*sin2)/self.a + 3.0*h**2/self.a**2   # Gravity Above Ellipsoid (eq. 4-3)
         return g
 
     def vertical_curvature_radius(self, lat: float) -> float:

@@ -78,7 +78,7 @@ class ComplementaryQ:
     def _compute_all(self):
         """Estimate the quaternions given all data
 
-        Attributes `gyr`, `acc` and, optionally, `mag` must contain data.
+        Attributes ``gyr``, ``acc`` and, optionally, ``mag`` must contain data.
 
         Returns
         -------
@@ -106,7 +106,8 @@ class ComplementaryQ:
         return Q
 
     def updateIMU(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray) -> np.ndarray:
-        """"Quaternion Estimation with a IMU architecture.
+        """"
+        Quaternion Estimation with a IMU architecture.
 
         The orientation of the roll and pitch angles is estimated using the
         measurements of the gyroscopes and accelerometers, and converted to a
@@ -148,7 +149,8 @@ class ComplementaryQ:
         return q/np.linalg.norm(q)
 
     def updateMARG(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, mag: np.ndarray) -> np.ndarray:
-        """Quaternion Estimation with a MARG architecture.
+        """
+        Quaternion Estimation with a MARG architecture.
 
         The orientation of the roll and pitch angles is estimated using the
         measurements of the gyroscopes, accelerometers and magnetometers, and

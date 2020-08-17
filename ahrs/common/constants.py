@@ -3,9 +3,9 @@
 Constants
 =========
 
-Common constants used in AHRS and Geodesy. The constants are defined in SI
-Units (second, metre, kilogram) unless otherwise noted, or when constants are
-unitless.
+Common constant values used in AHRS and Geodesy. The constants are defined in
+SI Units (second, metre, kilogram) unless otherwise noted, or when constants
+are unitless.
 
 **Basic Trigonometry**
 
@@ -20,8 +20,9 @@ Name         Description         Value
 **Geodesy**
 
 The following constants are set as defined in the latest report of the World
-Geodetic System 1984 [WGS84]_. The CODATA constants are differentiated with a
-suffix of their origin indicating their epoch as of [CODATA2014]_ or [CODATA2018]_.
+Geodetic System 1984 [WGS84]_ and can be compared against [Chambat]_. The
+CODATA constants are differentiated with a suffix of their origin indicating
+their epoch as of [CODATA2014]_ or [CODATA2018]_.
 
 ====================================  ==============================================  =============
 Name                                  Description                                     Value
@@ -66,16 +67,17 @@ Name                                  Description                               
 ``UNIVERSAL_GRAVITATION_WGS84``       Universal Gravitation defined in WGS84          ``6.67428e-11``
 ====================================  ==============================================  =============
 
-Although, hard defined, most of these values can be also obtained with the
-class ``WGS`` of this package, which builds the World's Geodetic System
-defined in [WGS84]_.
+The values above are set as defined in [WGS84]_, although most of these values
+can be also obtained with the class ``WGS`` of this package, which builds the
+World's Geodetic System independently.
 
 The elemental defining parameters (equatorial radius, flattening, gravitational
-constant and rotational velocity) are set, by default, to that of Earth's. All
-other parameters are derived from these. Just to compare:
+constant and rotational velocity) are set, by default, to that of Earth's, and
+all other parameters are derived from these. Just to compare:
 
 .. code:: python
 
+    >>> import ahrs
     >>> ahrs.EARTH_EQUATOR_RADIUS
     6378137.0
     >>> ahrs.EARTH_POLAR_RADIUS
@@ -89,6 +91,59 @@ other parameters are derived from these. Just to compare:
     6356752.314245179
     >>> wgs.first_eccentricity_squared
     0.0066943799901413165
+
+These values are, so far, determined for the Earth. However, other celestial
+bodies have been measured and their values are, as defined in [Archinal]_,
+[Park]_ and [Williams]_, set as follows:
+
+==========================  ==========================
+Name                        Value
+==========================  ==========================
+``MOON_EQUATOR_RADIUS``     ``1738100.0``
+``MOON_POLAR_RADIUS``       ``1736000.0``
+``MOON_MASS``               ``7.346e22``
+``MOON_ROTATION``           ``1.109027709148159e-7``
+``MOON_J2``                 ``2.027e-4``
+``MERCURY_EQUATOR_RADIUS``  ``2440530.0``
+``MERCURY_POLAR_RADIUS``    ``2438260.0``
+``MERCURY_ROTATION``        ``1.2399326882596827e-6``
+``MERCURY_MASS``            ``3.30114e23``
+``MERCURY_J2``              ``5.03e-5``
+``VENUS_EQUATOR_RADIUS``    ``6051800.0``
+``VENUS_POLAR_RADIUS``      ``6051800.0``
+``VENUS_ROTATION``          ``-2.9923691869737844e-7``
+``VENUS_MASS``              ``4.86747e24``
+``VENUS_J2``                ``4.458e-6``
+``MARS_EQUATOR_RADIUS``     ``3396190.0``
+``MARS_POLAR_RADIUS``       ``3376200.0``
+``MARS_ROTATION``           ``7.088235959185674e-5``
+``MARS_MASS``               ``6.41712e23``
+``MARS_J2``                 ``1.96045e-3``
+``JUPITER_EQUATOR_RADIUS``  ``71492000.0``
+``JUPITER_POLAR_RADIUS``    ``66854000.0``
+``JUPITER_ROTATION``        ``1.758518138029551e-4``
+``JUPITER_MASS``            ``1.898187e27``
+``JUPITER_J2``              ``1.4736e-2``
+``SATURN_EQUATOR_RADIUS``   ``60268000.0``
+``SATURN_POLAR_RADIUS``     ``54364000.0``
+``SATURN_ROTATION``         ``1.637884057802486e-4``
+``SATURN_MASS``             ``5.683174e26``
+``SATURN_J2``               ``1.6298e-2``
+``URANUS_EQUATOR_RADIUS``   ``25559000.0``
+``URANUS_POLAR_RADIUS``     ``24973000.0``
+``URANUS_ROTATION``         ``-1.012376653716682e-4``
+``URANUS_MASS``             ``8.68127e25``
+``URANUS_J2``               ``3.343430e-3``
+``NEPTUNE_EQUATOR_RADIUS``  ``24764000.0``
+``NEPTUNE_POLAR_RADIUS``    ``24341000.0``
+``NEPTUNE_ROTATION``        ``1.083382527619075e-4``
+``NEPTUNE_MASS``            ``1.024126e26``
+``NEPTUNE_J2``              ``3.411e-3``
+``PLUTO_EQUATOR_RADIUS``    ``1188300.0``
+``PLUTO_POLAR_RADIUS``      ``1188300.0``
+``PLUTO_ROTATION``          ``-1.138559183467410e-05``
+``PLUTO_MASS``              ``1.303e22``
+==========================  ==========================
 
 References
 ----------
