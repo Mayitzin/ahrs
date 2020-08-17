@@ -1,14 +1,15 @@
-Welcome to AHRS's documentation!
-================================
+AHRS's documentation
+====================
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
    filters
-   quaternion
+   specialClasses
    wmm
    wgs84
+   metrics
    constants
 
 Indices and tables
