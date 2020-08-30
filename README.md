@@ -33,7 +33,7 @@ pip install ahrs
 
 AHRS depends on common packages [NumPy](https://numpy.org/) and [SciPy](https://www.scipy.org/). Further packages are avoided, to reduce its third-party dependency.
 
-## New in 0.3
+## New in 0.3 (release candidate)
 
 - [Type hints](https://www.python.org/dev/peps/pep-0484/) are added.
 - The **World Magnetic Model** ([WMM](https://www.ngdc.noaa.gov/geomag/WMM/DoDWMM.shtml)) is fully implemented. It can be used to estimate all magnetic field elements on any given place of Earth for dates between 2015 and 2025.
@@ -110,13 +110,13 @@ array([ 0.94371436, -0.12767944, -0.14487813, -0.26853582])
 - New operations, properties and methods for class `Quaternion` (now also derived from `numpy.ndarray`)
 - Docstrings are improved with further explanations, references and equations whenever possible.
 
-## More Attitude Estimators!
+## More Attitude Estimators
 
-One of the biggest improvements in this version is the addition of many new attitude estimation algorithms for low-cost devices.
+One of the biggest improvements in this version is the addition of many new attitude estimation algorithms.
 
-All estimators are refactored to be consistent to the original articles describing them. They have in-code reference to the original equations, so that you can follow the articles along with the code, if you need to.
+All estimators are refactored to be consistent to the original articles describing them. They have in-code references to the original equations, so that you can follow the original articles along with the code.
 
-Implemented attitude estimators are checked as ``Ready``. More Estimators are still a *Work In Progress*, or *planned* to be added in the future.
+Implemented attitude estimators are labeled as ``Ready`` in the following table. More Estimators are still a *Work In Progress*, or *planned* to be added in the future.
 
 | Algorithm      | Gyroscope | Accelerometer | Magnetometer | Status  |
 |----------------|:---------:|:-------------:|:------------:|:-------:|
@@ -125,6 +125,7 @@ Implemented attitude estimators are checked as ``Ready``. More Estimators are st
 | Davenport's    | NO        | YES           | YES          | Ready   |
 | ESOQ           | NO        | YES           | YES          | WIP     |
 | ESOQ-2         | NO        | YES           | YES          | WIP     |
+| EKF            | YES       | YES           | YES          | Ready   |
 | FAMC           | NO        | YES           | YES          | Ready   |
 | FKF            | NO        | YES           | YES          | WIP     |
 | FCF            | NO        | YES           | YES          | Planned |
@@ -170,6 +171,6 @@ A comprehensive documentation, with examples, is now available in
 
 ## Note for future versions
 
-`ahrs` is still moving away from plotting and data parsing submodules to better focus in the algorithmic parts. Submodules `io` and `plot` are not built in the package anymore and, eventually, will be entirely removed from the base code.
+`ahrs` is still moving away from plotting and data handling submodules to better focus in the algorithmic parts. Submodules `io` and `plot` are not built in the package anymore and, eventually, will be entirely removed from the base code.
 
 This way you can also choose your favorite libraries for data loading and visualization. This also means, getting rid of its dependency on `matplotlib`.

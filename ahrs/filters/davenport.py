@@ -10,6 +10,8 @@ References
 .. [Davenport1968] Paul B. Davenport. A Vector Approach to the Algebra of Rotations
     with Applications. NASA Technical Note D-4696. August 1968.
     (https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/19680021122.pdf)
+.. [Lerner2] Lerner, G. M. "Three-Axis Attitude Determination" in Spacecraft
+    Attitude Determination and Control, edited by J.R. Wertz. 1978. p. 426-428.
 
 """
 

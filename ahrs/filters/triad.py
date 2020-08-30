@@ -129,21 +129,16 @@ vector becomes:
     >>> h
     array([0.43293957, 0.0085088 , 0.90138279])
 
-Both vectors :math:`\\mathbf{g}` and :math:`\\mathbf{h}` build the *reference
-triad* :math:`\\mathbf{M}_r`
-
-.. math::
-    \\begin{array}{rcl}
-    \\mathbf{q}_r &=& \\mathbf{g} \\\\
-    \\mathbf{r}_r &=& \\frac{\\mathbf{g}\\times\\mathbf{h}}{|\\mathbf{g}\\times\\mathbf{h}|} \\\\
-    \\mathbf{s}_r &=& \\mathbf{q}_r\\times\\mathbf{r}_r
-    \\end{array}
+Both normalized vectors :math:`\\mathbf{g}` and :math:`\\mathbf{h}` build the
+*reference triad* :math:`\\mathbf{M}_r`
 
 Then, we have to measure their equivalent vectors, for which we use the
 accelerometer to obtain :math:`\\mathbf{a} = \\begin{bmatrix}a_x & a_y & a_z \\end{bmatrix}`,
 and the magnetometer for :math:`\\mathbf{m} = \\begin{bmatrix}m_x & m_y & m_z \\end{bmatrix}`.
 
-Both measurement vectors must be normalized, so that :math:`\\|\\mathbf{a}\\|=\\|\\mathbf{m}\\|=1`.
+Both measurement vectors are also normalized, meaning :math:`\\|\\mathbf{a}\\|=\\|\\mathbf{m}\\|=1`,
+so that they can build the *body's measurement triad*  :math:`\\mathbf{M}_b`.
+
 To get the Direction Cosine Matrix we simply call the method ``estimate`` with
 the normalized measurement vectors:
 
@@ -256,10 +251,8 @@ class TRIAD:
     """
     Tri-Axial Attitude Determination
 
-    Originally TRIAD estimates the Direction Cosine Matrix describing the
-    attitude. This implementation, however, will return its equivalent
-    quaternion by default. To return it as DCM, set the parameter ``as_dcm`` to
-    ``True``.
+    TRIAD estimates the attitude as a Direction Cosine Matrix. To return it as
+    a quaternion, set the parameter ``as_quaternion`` to ``True``.
 
     Parameters
     ----------
@@ -275,8 +268,24 @@ class TRIAD:
     v2 : numpy.ndarray, optional.
         Second tri-axial reference vector. Defaults to normalized geomagnetic
         field :math:`\\mathbf{h} = \\begin{bmatrix}h_x & h_y & h_z \\end{bmatrix}`
+        in Munich, Germany.
     as_quaternion : bool, default: False
         Whether to return attitude as a quaternion.
+
+    Attributes
+    ----------
+    w1 : numpy.ndarray
+        First tri-axial observation vector in body frame.
+    w2 : numpy.ndarray
+        Second tri-axial observation vector in body frame.
+    v1 : numpy.ndarray, optional.
+        First tri-axial reference vector.
+    v2 : numpy.ndarray, optional.
+        Second tri-axial reference vector.
+    as_quaternion : bool, default: False
+        Whether to return attitude as a quaternion.
+    A : numpy.ndarray
+        Estimated attitude.
 
     """
     def __init__(self, w1: np.ndarray = None, w2: np.ndarray = None, v1: np.ndarray = None, v2: np.ndarray = None, as_quaternion: bool = False):

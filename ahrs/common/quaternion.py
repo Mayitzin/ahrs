@@ -63,15 +63,17 @@ with this class:
     Quaternion([0.70710678, 0.        , 0.70710678, 0.        ])
 
 This will *extend* the values of the quaternion, because it is handled as a
-rotation operator. Something explained in a moment.
+rotation operator.
 
-By the way, if you want, you can have a *pretty* formatting of the quaternion
-if typecasted as a string:
+.. tip::
 
-.. code:: python
+    You can have a *pretty formatting* of the quaternion if typecasted as a
+    string, showing it with Hamilton's notation:
 
-    >>> str(q)
-    '(0.7071 +0.0000i +0.7071j +0.0000k)'
+    .. code:: python
+
+        >>> str(q)
+        '(0.7071 +0.0000i +0.7071j +0.0000k)'
 
 As Rotation Operators
 ---------------------

@@ -19,9 +19,9 @@ References
 """
 
 import numpy as np
-from ahrs.common.orientation import *
-from ahrs.common.mathfuncs import *
-from ahrs.common import DEG2RAD
+from ..common.orientation import *
+from ..common.mathfuncs import *
+from ..common import DEG2RAD
 
 class EKF:
     """

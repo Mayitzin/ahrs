@@ -5,9 +5,9 @@ Attitude from gravity (Tilt)
 
 Attitude estimation via gravity acceleration measurements.
 
-The simplest approach using `geometric quadrants <https://en.wikipedia.org/wiki/Quadrant_(plane_geometry)>`_
-to find a vector in a 3D space offers the simplest solution using the gravity
-vector.
+The simplest to estimate the attitude from the gravitational acceleration is
+using 3D `geometric quadrants <https://en.wikipedia.org/wiki/Quadrant_(plane_geometry)>`_,
+which app
 
 Although some methods use ``arctan`` to estimate the angles [ST-AN4509]_ [AD-AN1057]_,
 it is preferred to use ``arctan2`` to explore all quadrants estimating the tilt
@@ -49,14 +49,14 @@ where :math:`\\theta = \\phi = 0`.
     \\begin{array}{cl}
     \\mathbf{b} &=
     R_y(-\\theta)R_x(-\\phi)\\mathbf{m} = R_y(\\theta)^TR_x(\\phi)^T\\mathbf{m} \\\\
-    \\begin{bmatrix}b_x \\\\ b_y \\\\ b_z\\end{bmatrix} &=
+    &=
     \\begin{bmatrix}
         \\cos\\theta & \\sin\\theta\\sin\\phi & \\sin\\theta\\cos\\phi \\\\
         0 & \\cos\\phi & -\\sin\\phi \\\\
         -\\sin\\theta & \\cos\\theta\\sin\\phi & \\cos\\theta\\cos\\phi
     \\end{bmatrix}
     \\begin{bmatrix}m_x \\\\ m_y \\\\ m_z\\end{bmatrix} \\\\
-    &=
+    \\begin{bmatrix}b_x \\\\ b_y \\\\ b_z\\end{bmatrix} &=
     \\begin{bmatrix}
         m_x\\cos\\theta + m_y\\sin\\theta\\sin\\phi + m_z\\sin\\theta\\cos\\phi \\\\
         m_y\\cos\\phi - m_z\\sin\\phi \\\\
