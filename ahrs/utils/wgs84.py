@@ -102,7 +102,8 @@ The WGS 84 Ellipsoid is identified as a geocentric, equipotential ellipsoid of
 revolution, i.e., an ellipsoid with a surface on which the value of the gravity
 potential is the same everywhere.
 
-**Earth's Gravity Field**
+Earth's Gravity Field
+---------------------
 
 In a rectangular system a point :math:`\\mathbf{p}` is located with the
 coordinates :math:`\\begin{pmatrix}x & y & z\\end{pmatrix}`, but in
@@ -115,11 +116,11 @@ plane of Greenwich called the **geographical longitude**.
 
 We assume Earth is an ellipsoid of revolution which is an equipotential surface
 of a **normal gravity field**. Although the Earth is not a perfect ellipsoid,
-its gravity field is easier to handle assuming it its an allipsoid. The
-deviations of the field are so small that they are considered linear for this
-model.
+its gravity field is easier to handle assuming it is one. The deviations of the
+field are so small that they are considered linear for this model.
 
-Defining the **potential of the normal gravity field** :math:`U` [Heiskanen]_ :
+The definition of the **potential of the normal gravity field** :math:`U`
+[Heiskanen]_ is:
 
 .. math::
     U = V + \\Phi
@@ -158,9 +159,10 @@ potential :math:`U` :
 We see that :math:`g_\\lambda=0`, because the effects of the potential along
 the longitudinal direction are neglected.
 
-**Normal Gravity on the Surface**
+Normal Gravity on the Surface
+-----------------------------
 
-Thus, the **magnitude of the normal gravity vector**, simply called **normal
+The **magnitude of the normal gravity vector**, simply called **normal
 gravity**, is:
 
 .. math::
@@ -189,7 +191,7 @@ Keeping it on the surface, we can estimate the **normal gravity at the equator**
 .. math::
     g_e = g_0(\\beta=0°) = \\frac{GM}{ab}\\Big(1-m-\\frac{me'q_0'}{6q_0}\\Big)
 
-Similarly, to estimate the **normal gravity at the poles**:
+Similarly, we estimate the **normal gravity at the poles**:
 
 .. math::
     g_p = g_0(\\beta=90°) = \\frac{GM}{a^2}\\Big(1+\\frac{me'q_0'}{3q_0}\\Big)
@@ -222,7 +224,8 @@ requiring the latitude only.
     >>> wgs.normal_gravity(50.0)    # Normal gravity at latitude = 50.0 °
     9.810702135603085
 
-**Normal Gravity above the Surface**
+Normal Gravity above the Surface
+--------------------------------
 
 At small heights above the surface, the normal gravity can be approximated with
 a truncated Taylor Series with a positive direction downward along the geodetic
@@ -238,7 +241,8 @@ where :math:`h` is the height, in meters, above the ellipsoid's surface.
     >>> wgs.normal_gravity(50.0, 1000.0)    # Gravity at latitude = 50.0 °, 1000 m above surface
     9.807617683884756
 
-**Other Gravitational Methods**
+Other Gravitational Methods
+---------------------------
 
 The well known **International Gravity Formula** [Lambert]_ as described by
 Helmut Moritz in [Tscherning]_ for the `Geodetic Reference System 1980 <https://en.wikipedia.org/wiki/Geodetic_Reference_System_1980>`_
@@ -279,7 +283,8 @@ applications developed in `Fortran by the NGA <https://earth-info.nga.mil/GandG/
 Footnotes
 ---------
 .. [#] The most precise EGM2008 defines the potential of gravitational force in
-    terms of spherical harmonics.
+    terms of spherical harmonics. But that definition is out of the scope of
+    this package.
 
 References
 ----------
@@ -345,11 +350,11 @@ def international_gravity(lat: float, epoch: str = '1980') -> float:
     .. math::
         g = 9.78049 \\big(1 + 0.0052884 \\sin^2\\phi - 0.0000059 \\sin^2(2\\phi)\\big)
 
-    Originally the definitions of the elementary properties (:math:`a`, :math:`g_e`,
-    etc.) weren't as accurate as now. At different moments in history, the
-    values were updated to improve the accuracy of the formula. Those different
-    moments are named **epochs** and are labeled according to the year they
-    were updated:
+    Originally, the definitions of the elementary properties (:math:`a`,
+    :math:`g_e`, etc.) weren't as accurate as now. At different moments in
+    history, the values were updated to improve the accuracy of the formula.
+    Those different moments are named **epochs** and are labeled according to
+    the year they were updated:
 
     +-------+-------------+----------------+-----------------+
     | epoch | :math:`g_e` | :math:`\\beta`  | :math:`\\beta_1` |
@@ -412,7 +417,7 @@ def welmec_gravity(lat: float, h: float = 0.0) -> float:
         g = 9.780318(1 + 0.0053024\\sin^2(\\phi) - 0.0000058\\sin^2(2\\phi)) - 0.000003085h
 
     where :math:`\\phi` is the geographical latitude and :math:`h` is the
-    altitude in meters.
+    height in meters.
 
     Parameters
     ----------
@@ -490,7 +495,7 @@ class WGS:
         .. math::
             g = \\frac{ag_e \\cos^2\\phi + bg_p\\sin^2\\phi}{\\sqrt{a^2cos^2\\phi + b^2\\sin^2\\phi}}
 
-        For numerical copmutation, a more convenient form is:
+        For numerical computation, a more convenient form is:
 
         .. math::
             g = g_e\\frac{1+k\\sin^2\\phi}{\\sqrt{1-e^2\\sin^2\\phi}}
