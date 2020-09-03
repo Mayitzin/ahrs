@@ -4,12 +4,224 @@ Factored Quaternion Algorithm
 =============================
 
 The factored quaternion algorithm (FQA) produces a quaternion output to
-represent the orientation, which restricts the use of magnetic data to the
+represent the orientation, restricting the use of magnetic data to the
 determination of the rotation about the vertical axis.
+
+The FQA and the `TRIAD <../triad.html>`_ algorithm produce an equivalent
+solution to the same problem, with the difference that the former produces a
+quaternion, and the latter a rotation matrix.
 
 Magnetic variations cause only azimuth errors in FQA attitude estimation. A
 singularity avoidance method is used, which allows the algorithm to track
 through all orientations.
+
+.. warning::
+    This algorithm is not applicable to situations in which relatively large
+    linear accelerations due to dynamic motion are present, unless it is used
+    in a complementary or optimal filter together with angular rate information.
+
+The *Earth-fixed coordinate system* :math:`(^ex,\,^ey,\,^ez)` is defined following
+the `North-East-Down <https://en.wikipedia.org/wiki/Local_tangent_plane_coordinates#Local_north,_east,_down_(NED)_coordinates>`_
+(NED) convention.
+
+A *body coordinate system* :math:`(^bx,\,^by,\,^bz)` is attached to the rigid
+body whose orientation is being measured, and the *sensor frame* :math:`(^sx,\,^sy,\,^sz)`
+corresponds to the sensor module conformed by the accelerometer/magnetometer
+system.
+
+The body coordinate system differs from the sensor frame by a constant offset,
+if they are not coinciding. For this method *they are assumed to occupy the same
+place*.
+
+From Euler's theorem of rotations, we can use a unit quaternion :math:`\\mathbf{q}`
+as an `axis-angle rotation <https://en.wikipedia.org/wiki/Axis%E2%80%93angle_representation#Unit_quaternions>`_:
+
+.. math::
+    \\mathbf{q} =
+    \\begin{pmatrix}
+    \\cos\\frac{\\beta}{2} \\\\
+    u_x\\sin\\frac{\\beta}{2} \\\\
+    u_y\\sin\\frac{\\beta}{2} \\\\
+    u_z\\sin\\frac{\\beta}{2}
+    \\end{pmatrix}
+
+where :math:`\\mathbf{u}=\\begin{bmatrix}u_x & u_y & u_z\\end{bmatrix}^T` is
+the rotation axis, and :math:`\\beta` is the rotation angle. See the
+`Quaternion <../quaternion.html>`_ reference page for further details of it.
+
+A rigid body can be placed in an arbitrary orientation by first rotating it
+about its Z-axis by an angle :math:`\\psi` (azimuth or yaw rotation), then
+about its Y-axis by angle :math:`\\theta` (elevation or pitch rotation), and
+finally about its X-axis by angle :math:`\\phi` (bank or roll rotation).
+
+Elevation Quaternion
+--------------------
+
+The X-axis accelerometer senses only the component of gravity along the X-axis,
+and this component, in turn, depends only on the elevation angle.
+
+Starting with the rigid body in its reference orientation, the X-axis
+accelerometer is perpendicular to gravity and thus registers zero acceleration.
+The Y-axis accelerometer also reads zero, while the Z-axis accelerometer reads
+:math:`−g`. If the body is then rotated in azimuth about its Z-axis, the X-axis
+accelerometer still reads zero, regardless of the azimuth angle.
+
+If the rigid body is next rotated up through an angle :math:`\\theta`, the
+X-axis accelerometer will instantaneously read
+
+.. math::
+    a_x = g\\sin\\theta
+
+and the Z-axis will read
+
+.. math::
+    a_z = -g\\cos\\theta
+
+where :math:`9.81 \\frac{m}{s^2}` is the gravitational acceleration and
+:math:`\\mathbf{a}=\\begin{bmatrix}a_x & a_y & a_z\\end{bmatrix}^T` is the
+**measured acceleration vector** in the body coordinate system.
+
+For convenience, the accelerometer and magnetometer outputs are normalized to
+unit vectors, so that:
+
+.. math::
+    \\begin{array}{rcl}
+    \\mathbf{a} &=& \\frac{\\mathbf{a}}{\\|\\mathbf{a}\\|} \\\\
+    \\mathbf{m} &=& \\frac{\\mathbf{m}}{\\|\\mathbf{m}\\|}
+    \\end{array}
+
+From the normalized accelerometer measurements, we can get:
+
+.. math::
+    \\sin\\theta = a_x
+
+In order to obtain an elevation quaternion, a value is needed for
+:math:`\\sin\\frac{\\theta}{2}` and :math:`\\cos\\frac{\\theta}{2}`. From
+trigonometric half-angle formulas, **half-angle values** are given by
+
+.. math::
+    \\begin{array}{rcl}
+    \\sin\\frac{\\theta}{2} &=& \\mathrm{sgn}(\\sin\\theta) \\sqrt{\\frac{1-\\cos\\theta}{2}} \\\\
+    \\cos\\frac{\\theta}{2} &=& \\sqrt{\\frac{1+\\cos\\theta}{2}}
+    \\end{array}
+
+where :math:`\\mathrm{sgn}()` is the `sign <https://en.wikipedia.org/wiki/Sign_function>`_
+function.
+
+Because elevation is a rotation about the Y-axis, the unit quaternion
+representing it will be expressed as:
+
+.. math::
+    \\mathbf{q}_e =
+    \\begin{pmatrix}\\cos\\frac{\\theta}{2} \\\\ 0 \\\\ \\sin\\frac{\\theta}{2} \\\\ 0\\end{pmatrix}
+
+Roll Quaternion
+---------------
+
+Changing the roll angle alters the measurements, so that the accelerometer
+readings are:
+
+.. math::
+    \\begin{array}{rcl}
+    a_y &=& -\\cos\\theta\\sin\\phi \\\\
+    a_z &=& -\\cos\\theta\\cos\\phi
+    \\end{array}
+
+.. note::
+    In reality the measurements are :math:`-g\\cos\\theta\\sin\\phi` and
+    :math:`-g\\cos\\theta\\cos\\phi`, with a magnitude equal to :math:`g`, but
+    when normalized their magnitude is equal to :math:`1`, and :math:`g` is
+    overlooked.
+
+If :math:`\\cos\\theta\\neq 0`, the values of :math:`\\sin\\phi` and :math:`\\cos\\phi`
+are determined by:
+
+.. math::
+    \\begin{array}{rcl}
+    \\sin\\phi &=& -\\frac{a_y}{\\cos\\theta} \\\\
+    \\cos\\phi &=& -\\frac{a_z}{\\cos\\theta}
+    \\end{array}
+
+But if :math:`\\cos\\theta=0` the roll angle :math:`\\phi` is undefined and can
+be assumed to be equal to zero. We obtain the half-angles similar to the
+elevation quaternion, and roll quaternion is then computed as:
+
+.. math::
+    \\mathbf{q}_r =
+    \\begin{pmatrix}\\cos\\frac{\\phi}{2} \\\\ \\sin\\frac{\\phi}{2} \\\\ 0 \\\\ 0\\end{pmatrix}
+
+Azimuth Quaternion
+------------------
+
+Since the azimuth rotation has no effect on accelerometer data, the strategy is
+to use the readings of the magnetometer, but first we have to rotate the
+normalized magnetic readings :math:`^b\\mathbf{m}` into an intermediate
+coordinate system through the elevation and roll quaternions:
+
+.. math::
+    ^e\\mathbf{m} = \\mathbf{q}_e\\mathbf{q}_r \,^b\\mathbf{m}\\mathbf{q}_r^{-1}\\mathbf{q}_e^{-1}
+
+where :math:`^b\\mathbf{m}=\\begin{pmatrix}0 & ^bm_x & ^bm_y & ^bm_z\\end{pmatrix}`
+is the magnetic field measured in the body frame, and represented as a pure
+quaternion.
+
+The rotated magnetic measurements should correspond to the **normalized known
+local geomagnetic field** [#]_ vector :math:`\\mathbf{n}=\\begin{bmatrix}n_x & n_y & n_z\\end{bmatrix}`,
+except for the azimuth:
+
+.. math::
+    \\begin{bmatrix}n_x \\\\ n_y\\end{bmatrix}=
+    \\begin{bmatrix}\\cos\\psi & -\\sin\\psi \\\\ \\sin\\psi & \\cos\\psi\\end{bmatrix}
+    \\begin{bmatrix}^em_x \\\\ ^em_y\\end{bmatrix}
+
+where :math:`\\psi` is the azimuth angle. We normalize both sides to enforce
+equal length of its vectors:
+
+.. math::
+    \\begin{bmatrix}N_x \\\\ N_y\\end{bmatrix}=
+    \\begin{bmatrix}\\cos\\psi & -\\sin\\psi \\\\ \\sin\\psi & \\cos\\psi\\end{bmatrix}
+    \\begin{bmatrix}M_x \\\\ M_y\\end{bmatrix}
+
+with:
+
+.. math::
+    \\begin{array}{rcl}
+    \\begin{bmatrix}N_x \\\\ N_y\\end{bmatrix} &=& \\frac{1}{\\sqrt{n_x^2+n_y^2}} \\begin{bmatrix}n_x \\\\ n_y\\end{bmatrix} \\\\
+    \\begin{bmatrix}M_x \\\\ M_y\\end{bmatrix} &=& \\frac{1}{\\sqrt{^em_x^2+^em_y^2}} \\begin{bmatrix}^em_x \\\\ ^em_y\\end{bmatrix}
+    \\end{array}
+
+And now we just solve for the azimuth angle with:
+
+.. math::
+    \\begin{bmatrix}\\cos\\psi \\\\ \\sin\\psi \\end{bmatrix} =
+    \\begin{bmatrix}M_x & M_y \\\\ -My & M_x \\end{bmatrix}
+    \\begin{bmatrix}N_x \\\\ N_y \\end{bmatrix}
+
+In the same manner as with the elevation and roll, we estimate the half-angle
+values and define the azimuth quaternion as:
+
+.. math::
+    \\mathbf{q}_a =
+    \\begin{pmatrix}\\cos\\frac{\\psi}{2} \\\\ 0 \\\\ 0 \\\\ \\sin\\frac{\\psi}{2} \\end{pmatrix}
+
+Final Quaternion
+----------------
+
+Having computed all three quaternions, the estimation representing the
+orientation of the rigid body is given by their product:
+
+.. math::
+    \\mathbf{q} = \\mathbf{q}_a\\mathbf{q}_e\\mathbf{q}_r
+
+It should be noted that this algorithm does not evaluate any trigonometric
+function at any step, although a singularity occurs in the FQA if the elevation
+angle is :math:`\\pm 90°`, making :math:`\\cos\\theta=0`, but that is dealt
+with at the computation of the first quaternion.
+
+Footnotes
+---------
+.. [#] The local geomagnetic field can be obtained with the World Magnetic
+    Model. See the `WMM documentation <../WMM.html>`_ page for further details.
 
 References
 ----------
@@ -31,6 +243,16 @@ class FQA:
     """
     Factored Quaternion Algorithm
 
+    Parameters
+    ----------
+    acc : numpy.ndarray, default: None
+        N-by-3 array with N measurements of the gravitational acceleration.
+    mag : numpy.ndarray, default: None
+        N-by-3 array with N measurements of the geomagnetic field.
+    mag_ref : numpy.ndarray, default: None
+        Reference geomagnetic field. If None is given, defaults to the
+        geomagnetic field of Munich, Germany.
+
     Attributes
     ----------
     acc : numpy.ndarray
@@ -38,16 +260,9 @@ class FQA:
     mag : numpy.ndarray
         N-by-3 array with N magnetometer samples.
     m_ref : numpy.ndarray
-        Reference local magnetic field.
-
-    Parameters
-    ----------
-    acc : numpy.ndarray, default: None
-        N-by-3 array with measurements of acceleration in in m/s^2
-    mag : numpy.ndarray, default: None
-        N-by-3 array with measurements of magnetic field in mT
-    magnetic_dip : float
-        Magnetic Inclination angle, in degrees.
+        Normalized reference geomagnetic field.
+    Q : numpy.ndarray
+        Estimated attitude as quaternion.
 
     Raises
     ------
@@ -55,12 +270,11 @@ class FQA:
         When dimension of input arrays ``acc`` and ``mag`` are not equal.
 
     """
-    def __init__(self, acc: np.ndarray = None, mag: np.ndarray = None, **kw):
+    def __init__(self, acc: np.ndarray = None, mag: np.ndarray = None, mag_ref: np.ndarray = None):
         self.acc = acc
         self.mag = mag
         # Reference measurements
-        mdip = kw.get('magnetic_dip')             # Magnetic dip, in degrees
-        self.m_ref = np.array([MAG['X'], MAG['Y'], MAG['Z']]) if mdip is None else np.array([cosd(mdip), 0., sind(mdip)])
+        self.m_ref = np.array([MAG['X'], MAG['Y'], MAG['Z']]) if mag_ref is None else mag_ref
         self.m_ref = self.m_ref[:2]/np.linalg.norm(self.m_ref[:2])
         if self.acc is not None and self.mag is not None:
             self.Q = self._compute_all()
