@@ -3,7 +3,97 @@
 Davenport's q-Method
 ====================
 
-Paul Davenport's q-method to estimate attitude as proposed in [Davenport1968]_.
+In 1965 `Grace Wahba <https://en.wikipedia.org/wiki/Grace_Wahba>`_ came up with
+a simple, yet very intuitive, way to describe the problem of finding a rotation
+between two coordinate systems.
+
+Given a set of :math:`N` vector measurements :math:`\\mathbf{u}` in the body
+coordinate system, an optimal attitude matrix :math:`\\mathbf{A}` would
+minimize the `loss function <https://en.wikipedia.org/wiki/Loss_function>`_:
+
+.. math::
+    L(\\mathbf{A}) = \\frac{1}{2}\\sum_{i=1}^Nw_i|u_i-\\mathbf{A}v_i|^2
+
+where :math:`u_i` is the i-th vector measurement in the body frame, :math:`v_i`
+is the i-th vector in the reference frame, and :math:`w_i` are a set of :math:`N`
+nonnegative weights for each observation. This famous formulation is known as
+`Wahba's problem <https://en.wikipedia.org/wiki/Wahba%27s_problem>`_.
+
+A first elegant solution was proposed by [Davenport1968]_ that solves this in
+terms of quaternions, yielding a unique optimal solution. The corresponding
+**gain function** is defined as:
+
+.. math::
+    g(\\mathbf{A}) = 1 - L(\\mathbf{A}) = \\sum_{i=1}^Nw_i\\mathbf{U}^T\\mathbf{AV}
+
+The gain function is at maximum when the loss function :math:`L(\\mathbf{A})`
+is at minimum. The goal is, then, to find the optimal attitude matrix
+:math:`\\mathbf{A}`, which *maximizes* :math:`g(\\mathbf{A})`. We first notice
+that:
+
+.. math::
+    \\begin{array}{rl}
+    g(\\mathbf{A}) =& \\sum_{i=1}^Nw_i\\mathrm{tr}\\big(\\mathbf{U}_i^T\\mathbf{AV}_i\\big) \\\\
+    =& \\mathrm{tr}(\\mathbf{AB}^T)
+    \\end{array}
+
+where :math:`\\mathrm{tr}` denotes the `trace <https://en.wikipedia.org/wiki/Trace_(linear_algebra)>`_
+of a matrix, and :math:`\\mathbf{B}` is the *attitude profile matrix*:
+
+.. math::
+    \\mathbf{B} = \\sum_{i=1}^Nw_i\\mathbf{UV}
+
+Now, we must parametrize the attitude matrix in terms of a quaternion :math:`\\mathbf{q}`:
+
+.. math::
+    \\mathbf{A}(\\mathbf{q}) = (q_w^2-\\mathbf{q}_v\\cdot\\mathbf{q}_v)\\mathbf{I}_3+2\\mathbf{q}_v\\mathbf{q}_v^T-2q_w\\lfloor\\mathbf{q}\\rfloor_\\times
+
+where :math:`\\mathbf{I}_3` is a :math:`3\\times 3` identity matrix, and the
+expression :math:`\\lfloor \\mathbf{x}\\rfloor_\\times` is the `skew-symmetric
+matrix <https://en.wikipedia.org/wiki/Skew-symmetric_matrix>`_ of a vector
+:math:`\\mathbf{x}`. See the `quaternion page <../quaternion.html>`_ for further
+details about this representation mapping.
+
+The gain function, in terms of quaternion, becomes:
+
+.. math::
+    g(\\mathbf{q}) = (q_w^2-\\mathbf{q}_v\\cdot\\mathbf{q}_v)\\mathrm{tr}\\mathbf{B}^T + 2\\mathrm{tr}\\big(\\mathbf{q}_v\\mathbf{q}_v^T\\mathbf{B}^T\\big) + 2q_w\\mathrm{tr}(\\lfloor\\mathbf{q}\\rfloor_\\times\\mathbf{B}^T)
+
+A simpler expression, using helper quantities, can be a bilinear relationship
+of the form:
+
+.. math::
+    g(\\mathbf{q}) = \\mathbf{q}^T\\mathbf{Kq}
+
+where the :math:`4\\times 4` matrix :math:`\\mathbf{K}` is built with:
+
+.. math::
+    \\mathbf{K} = \\begin{bmatrix}
+    \\sigma & \\mathbf{z}^T \\\\
+    \\mathbf{z} & \\mathbf{S}-\\sigma\\mathbf{I}_3
+    \\end{bmatrix}
+
+using the intermediate values:
+
+.. math::
+    \\begin{array}{rcl}
+    \\sigma &=& \\mathrm{tr}\\mathbf{B} \\\\
+    \\mathbf{S} &=& \\mathbf{B}+\\mathbf{B}^T \\\\
+    \\mathbf{z} &=& \\begin{bmatrix}B_{23}-B_{32} \\\\ B_{31}-B_{13} \\\\ B_{12}-B_{21}\\end{bmatrix}
+    \\end{array}
+
+The optimal quaternion :math:`\\hat{\\mathbf{q}}`, which parametrizes the
+optimal attitude matrix, is an eigenvector of :math:`\\mathbf{K}`. With the
+help of `Lagrange multipliers <https://en.wikipedia.org/wiki/Lagrange_multiplier>`_,
+:math:`g(\\mathbf{q})` is maximized if the eigenvector corresponding to the
+largest eigenvalue :math:`\\lambda` is chosen.
+
+.. math::
+    \\mathbf{K}\\hat{\\mathbf{q}} = \\lambda\\hat{\\mathbf{q}}
+
+The biggest disadvantage of this method is its computational load in the last
+step of computing the eigenvalues and eigenvectors to find the optimal
+quaternion.
 
 References
 ----------
@@ -117,4 +207,4 @@ class Davenport:
         K[1:, 1:] = S - sigma*np.eye(3)
         K[0, 1:] = K[1:, 0] = z
         w, v = np.linalg.eig(K)
-        return v[:, np.argmax(w)]       # Eigenvector associated to largest eigenvalue is normalized quaternion
+        return v[:, np.argmax(w)]       # Eigenvector associated to largest eigenvalue is optimal quaternion
