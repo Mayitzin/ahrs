@@ -229,27 +229,34 @@ class Tilt:
             raise ValueError("Input data must be of shape (N, 3). Got shape {}".format(self.acc.shape))
         num_samples = len(self.acc)
         Q = np.zeros((num_samples, 3)) if self.as_angles else np.zeros((num_samples, 4))
-        for t in range(num_samples):
-            Q[t] = self.estimate(self.acc[t]) if self.mag is None else self.estimate(self.acc[t], self.mag[t])
-        return Q
-        #######################################
-        # # Normalization of 2D arrays
-        # a = self.acc/np.linalg.norm(self.acc, axis=1)[:, None]
-        # angles = np.zeros((len(a), 3))   # Allocation of angles array
-        # # Estimate tilt angles
-        # angles[:, 0] = np.arctan2(a[:, 1], a[:, 2])
-        # angles[:, 1] = np.arctan2(-a[:, 0], np.sqrt(a[:, 1]**2 + a[:, 2]**2))
-        # if self.mag is not None:
-        #     # Estimate heading angle
-        #     m = self.mag/np.linalg.norm(self.mag, axis=1)[:, None]
-        #     my2 = m[:, 2]*np.sin(angles[:, 0]) - m[:, 1]*np.cos(angles[:, 0])
-        #     mz2 = m[:, 1]*np.sin(angles[:, 0]) + m[:, 2]*np.cos(angles[:, 0])
-        #     mx3 = m[:, 0]*np.cos(angles[:, 1]) + mz2*np.sin(angles[:, 1])
-        #     angles[:, 2] = np.arctan2(my2, mx3)
-        #     # Return in degrees or in radians
-        #     if in_deg:
-        #         return angles*dptk.maths.RAD2DEG
-        # return angles
+        # Normalization of 2D arrays
+        a = self.acc/np.linalg.norm(self.acc, axis=1)[:, None]
+        angles = np.zeros((len(a), 3))   # Allocation of angles array
+        # Estimate tilt angles
+        angles[:, 0] = np.arctan2(a[:, 1], a[:, 2])
+        angles[:, 1] = np.arctan2(-a[:, 0], np.sqrt(a[:, 1]**2 + a[:, 2]**2))
+        if self.mag is not None:
+            # Estimate heading angle
+            m = self.mag/np.linalg.norm(self.mag, axis=1)[:, None]
+            my2 = m[:, 2]*np.sin(angles[:, 0]) - m[:, 1]*np.cos(angles[:, 0])
+            mz2 = m[:, 1]*np.sin(angles[:, 0]) + m[:, 2]*np.cos(angles[:, 0])
+            mx3 = m[:, 0]*np.cos(angles[:, 1]) + mz2*np.sin(angles[:, 1])
+            angles[:, 2] = np.arctan2(my2, mx3)
+            # Return angles in degrees
+            if self.as_angles:
+                return angles*RAD2DEG
+        # Euler to Quaternion
+        cp = np.cos(0.5*angles[:, 1])
+        sp = np.sin(0.5*angles[:, 1])
+        cr = np.cos(0.5*angles[:, 0])
+        sr = np.sin(0.5*angles[:, 0])
+        cy = np.cos(0.5*angles[:, 2])
+        sy = np.sin(0.5*angles[:, 2])
+        Q[:, 0] = cy*cp*cr + sy*sp*sr
+        Q[:, 1] = cy*cp*sr - sy*sp*cr
+        Q[:, 2] = sy*cp*sr + cy*sp*cr
+        Q[:, 3] = sy*cp*cr - cy*sp*sr
+        return Q/np.linalg.norm(Q, axis=1)[:, None]
 
     def estimate(self, acc: np.ndarray, mag: np.ndarray = None) -> np.ndarray:
         """
