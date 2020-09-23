@@ -13,8 +13,8 @@ solutions using Euler Angles, Direction Cosine Matrices and Quaternions.
 
 The matrix operations in these solutions are the main focus of attention in
 this method. The operations are analytically simplified, where the accuracy is
-maintained, while the time consumption is reduced, yielding the Fast
-Accelerometer-Magnetometer Combination (FAMC), whose main contributions are:
+maintained, while the time consumption is reduced, yielding the **Fast
+Accelerometer-Magnetometer Combination (FAMC)**, whose main contributions are:
 
 - Analytic eigenvalue results are given for the dynamic magnetometer reference
   vector case.
@@ -81,7 +81,7 @@ The helping arrays are:
 
 .. math::
     \\begin{array}{rcl}
-    \\mathbf{B} &=& \\frac{1}{2}\\big(^b\\mathbf{a}(^r\\mathbf{a})^T+^b\\mathbf{m}(^r\\mathbf{m})^T\\big) \\\\ && \\\\
+    \\mathbf{B} &=& \\frac{1}{2}\\big(\,^b\\mathbf{a}(\,^r\\mathbf{a})^T+\,^b\\mathbf{m}(^r\\mathbf{m})^T\\big) \\\\ && \\\\
     \\mathbf{z}^T &=& \\begin{bmatrix}B_{23}-B_{32}\\\\B_{31}-B_{13}\\\\B_{12}-B_{21}\\end{bmatrix}
     \\end{array}
 
@@ -252,7 +252,7 @@ class FAMC:
         # Parameters
         B = np.zeros((3, 3))                # (eq. 18)
         B[:, 0] = m_N*mag
-        B[:, 2] = m_D*mag + aacc
+        B[:, 2] = m_D*mag + acc
         B *= 0.5
         tau = B[0, 2] + B[2, 0]
         alpha = np.zeros(3)
