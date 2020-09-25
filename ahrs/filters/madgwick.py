@@ -216,9 +216,10 @@ references, making their magnitudes, irrespective of their location, always
 equal to 1.
 
 .. note::
-    All vectors operating with quaternions will be considered pure quaternions.
-    That is, given a tri-dimensional vector :math:`\\mathbf{x}=\\begin{bmatrix}x&y&z\\end{bmatrix}`,
-    it will be redefined as :math:`\\mathbf{x}=\\begin{bmatrix}0&x&y&z\\end{bmatrix}`.
+    All real vectors in a three-dimensional euclidean operating with
+    quaternions will be considered pure quaternions. That is, given a
+    three-dimensional vector :math:`\\mathbf{x}=\\begin{bmatrix}x&y&z\\end{bmatrix}\\in\\mathbb{R}^3`,
+    it will be redefined as :math:`\\mathbf{x}=\\begin{bmatrix}0&x&y&z\\end{bmatrix}\\in\\mathbf{H}^4`.
 
 To obtain the objective function of the **gravitational acceleration**, we
 assume, by convention, that the vertical Z-axis is defined by the direction of
@@ -226,8 +227,8 @@ the gravity :math:`^E\\mathbf{g}=\\begin{bmatrix}0 & 0 & 0 & 1\\end{bmatrix}`.
 
 Substituting :math:`^E\\mathbf{g}` and the *normalized* accelerometer
 measurement :math:`^S\\mathbf{a}=\\begin{bmatrix}0 & a_x & a_y & a_z\\end{bmatrix}`
-for :math:`^E\\mathbf{d}` and :math:`^S\\mathbf{s}` respectively, yielding a
-new objective function and its Jacobian particular to the acceleration:
+for :math:`^E\\mathbf{d}` and :math:`^S\\mathbf{s}`, respectively, yields a new
+objective function and its Jacobian particular to the acceleration:
 
 .. math::
     \\begin{array}{c}
@@ -486,7 +487,7 @@ class Madgwick:
     Madgwick's algorithm uses a gradient descent method to correct the
     estimation of the attitude. The **step size**, a.k.a.
     `learning rate <https://en.wikipedia.org/wiki/Learning_rate>`_, is
-    considered a gain of this algorithm and can be set in the parameters too:
+    considered a *gain* of this algorithm and can be set in the parameters too:
 
     >>> orientation = Madgwick(gyr=gyro_data, acc=acc_data, gain=0.01)
 
@@ -556,6 +557,30 @@ class Madgwick:
         q : numpy.ndarray
             Estimated quaternion.
 
+        Examples
+        --------
+
+        Assuming we have a tri-axial gyroscope array with 1000 samples, and
+        another one with 1000 samples of a tri-axial gyroscope. We get the
+        attitude with the Madgwick algorithm as:
+
+        >>> from ahrs.filters import Madgwick
+        >>> orientation = Madgwick()
+        >>> Q = np.tile([1., 0., 0., 0.], (len(gyro_data), 1)) # Allocate for quaternions
+        >>> for t in range(1, num_samples):
+        ...   Q[t] = orientation.updateIMU(Q[t-1], gyr=gyro_data[t], acc=acc_data[t])
+        ...
+
+        Or giving the data directly in the class constructor will estimate all
+        attitudes at once:
+
+        >>> orientation = Madgwick(gyr=gyro_data, acc=acc_data)
+        >>> orientation.Q.shape
+        (1000, 4)
+
+        This builds the array ``Q``, where all attitude estimations will be
+        stored as quaternions.
+
         """
         if gyr is None or not np.linalg.norm(gyr)>0:
             return q
@@ -598,6 +623,31 @@ class Madgwick:
         -------
         q : numpy.ndarray
             Estimated quaternion.
+
+        Examples
+        --------
+
+        Assuming we have a tri-axial gyroscope array with 1000 samples, a
+        second array with 1000 samples of a tri-axial gyroscope, and a third
+        array with 1000 samples of a tri-axial magnetometer. We get the
+        attitude with the Madgwick algorithm as:
+
+        >>> from ahrs.filters import Madgwick
+        >>> orientation = Madgwick()
+        >>> Q = np.tile([1., 0., 0., 0.], (len(gyro_data), 1)) # Allocate for quaternions
+        >>> for t in range(1, num_samples):
+        ...   Q[t] = orientation.updateMARG(Q[t-1], gyr=gyro_data[t], acc=acc_data[t], mag=mag_data[t])
+        ...
+
+        Or giving the data directly in the class constructor will estimate all
+        attitudes at once:
+
+        >>> orientation = Madgwick(gyr=gyro_data, acc=acc_data, mag=mag_data)
+        >>> orientation.Q.shape
+        (1000, 4)
+
+        This builds the array ``Q``, where all attitude estimations will be
+        stored as quaternions.
 
         """
         if gyr is None or not np.linalg.norm(gyr)>0:
