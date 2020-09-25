@@ -146,8 +146,16 @@ class SAAM:
     ((1000, 3), (1000, 3))
     >>> from ahrs.filters import SAAM
     >>> orientation = SAAM(acc=acc_data, mag=mag_data)
-    >>> orientation.Q.shape                 # Estimated
+    >>> orientation.Q.shape                 # Estimated attitudes as Quaternions
     (1000, 4)
+    >>> orientation.Q
+    array([[-0.09867706 -0.33683592 -0.52706394 -0.77395607],
+           [-0.10247491 -0.33710813 -0.52117549 -0.77732433],
+           [-0.10082646 -0.33658091 -0.52082828 -0.77800078],
+           ...,
+           [-0.78760687 -0.57789515  0.2131519  -0.01669966],
+           [-0.78683706 -0.57879487  0.21313092 -0.02142776],
+           [-0.77869223 -0.58616905  0.22344478 -0.01080235]])
 
     """
     def __init__(self, acc: np.ndarray = None, mag: np.ndarray = None):
@@ -160,7 +168,12 @@ class SAAM:
     def _compute_all(self) -> np.ndarray:
         """Estimate the quaternions given all data.
 
-        Attributes ``acc`` and ``mag`` must contain data.
+        Attributes ``acc`` and ``mag`` must contain data. It is assumed that
+        these attributes have the same shape (M, 3), where N is the number of
+        observations.
+
+        The estimation of all values is vectorized, so that the computation is
+        accelerated, instead of using a time-wasting loop.
 
         Returns
         -------
@@ -171,11 +184,21 @@ class SAAM:
         """
         if self.acc.shape != self.mag.shape:
             raise ValueError("acc and mag are not the same size")
-        num_samples = len(self.acc)
-        Q = np.zeros((num_samples, 4))
-        for t in range(num_samples):
-            Q[t] = self.estimate(self.acc[t], self.mag[t])
-        return Q
+        if self.acc.shape[-1]!=3:
+            raise ValueError("Sensor data must be of shape (M, 3), but it got {}".format(self.acc.shape))
+        ax, ay, az = np.transpose(self.acc/np.linalg.norm(self.acc, axis=1)[:, None])
+        mx, my, mz = np.transpose(self.mag/np.linalg.norm(self.mag, axis=1)[:, None])
+        # Dynamic magnetometer reference vector (eq. 12)
+        mD = ax*mx + ay*my + az*mz
+        mN = np.sqrt(1-mD**2)
+        # Quaternion components (eq. 16)
+        qw = ax*my - ay*(mN+mx)
+        qx = (az-1)*(mN+mx) + ax*(mD-mz)
+        qy = (az-1)*my + ay*(mD-mz)
+        qz = az*mD - ax*mN-mz
+        # Final quaternion (eq. 18)
+        Q = np.c_[qw, qx, qy, qz]
+        return Q/np.linalg.norm(Q, axis=1)[:, None]
 
     def estimate(self, acc: np.ndarray = None, mag: np.ndarray = None) -> np.ndarray:
         """Attitude Estimation
