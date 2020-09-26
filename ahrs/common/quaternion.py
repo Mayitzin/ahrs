@@ -426,8 +426,8 @@ class Quaternion(np.ndarray):
     --------
     >>> from ahrs import Quaternion
     >>> q = Quaternion([1., 2., 3., 4.])
-    >>> str(q)
-    '(0.1826 +0.3651i +0.5477j +0.7303k)'
+    >>> q
+    Quaternion([0.18257419, 0.36514837, 0.54772256, 0.73029674])
     >>> x = [1., 2., 3.]
     >>> q.rot(x)
     [1.8 2.  2.6]
@@ -440,37 +440,44 @@ class Quaternion(np.ndarray):
     >>> q1 = Quaternion([1., 2., 3., 4.])
     >>> q2 = Quaternion([5., 4., 3., 2.])
     >>> q1.product(q2)
-    [-0.49690399  0.1987616   0.74535599  0.3975232 ]
+    array([-0.49690399,  0.1987616 ,  0.74535599,  0.3975232 ])
 
     Multiplication operators are overriden to perform the expected hamilton
     product.
 
-    >>> str(q1*q2)
-    '(-0.4969 +0.1988i +0.7454j +0.3975k)'
-    >>> str(q1@q2)
-    '(-0.4969 +0.1988i +0.7454j +0.3975k)'
+    >>> q1*q2
+    array([-0.49690399,  0.1987616 ,  0.74535599,  0.3975232 ])
+    >>> q1@q2
+    array([-0.49690399,  0.1987616 ,  0.74535599,  0.3975232 ])
 
     Basic operators are also overriden.
 
-    >>> str(q1+q2)
-    '(0.4619 +0.4868i +0.5117j +0.5366k)'
-    >>> str(q1-q2)
-    '(-0.6976 -0.2511i +0.1954j +0.6420k)'
+    >>> q1+q2
+    Quaternion([0.46189977, 0.48678352, 0.51166727, 0.53655102])
+    >>> q1-q2
+    Quaternion([-0.69760203, -0.25108126,  0.19543951,  0.64196028])
 
     Pure quaternions are built from arrays with three elements.
 
     >>> q = Quaternion([1., 2., 3.])
-    >>> str(q)
-    '(0.0000 +0.2673i +0.5345j +0.8018k)'
+    >>> q
+    Quaternion([0.        , 0.26726124, 0.53452248, 0.80178373])
     >>> q.is_pure()
     True
 
-    Conversions between representations are also possible
+    Conversions between representations are also possible.
 
     >>> q.to_axang()
     (array([0.26726124, 0.53452248, 0.80178373]), 3.141592653589793)
     >>> q.to_angles()
-    [ 1.24904577 -0.44291104  2.8198421 ]
+    array([ 1.24904577, -0.44291104,  2.8198421 ])
+
+    And a nice representation as a string is also implemented to conform to
+    Hamilton's notation.
+
+    >>> str(q)
+    '(0.0000 +0.2673i +0.5345j +0.8018k)'
+
     """
     def __new__(subtype, q: np.ndarray = None, **kwargs):
         if q is None:
@@ -572,7 +579,7 @@ class Quaternion(np.ndarray):
 
         The inverse quaternion :math:`\\mathbf{q}^{-1}` is such that the
         quaternion times its inverse gives the identity quaternion
-        :math:`\\mathbf{q}_I = (1, 0, 0, 0)`
+        :math:`\\mathbf{q}_I=\\begin{pmatrix}1 & 0 & 0 & 0\\end{pmatrix}`
 
         It is obtained as:
 
@@ -590,18 +597,17 @@ class Quaternion(np.ndarray):
         Returns
         -------
         out : numpy.ndarray
-            Inverse of quaternion
+            Inverse of quaternion.
 
         Examples
         --------
         >>> q = Quaternion([1., -2., 3., -4.])
-        >>> str(q)
-        '(0.1826 -0.3651i +0.5477j -0.7303k)'
-        >>> str(q.inverse)
-        '[ 0.18257419  0.36514837 -0.54772256  0.73029674]'
-        >>> q2 = q@q.inverse
-        >>> str(q2)
-        '(1.0000 +0.0000i +0.0000j +0.0000k)'
+        >>> q
+        Quaternion([ 0.18257419, -0.36514837,  0.54772256, -0.73029674])
+        >>> q.inverse
+        array([ 0.18257419,  0.36514837, -0.54772256,  0.73029674])
+        >>> q@q.inverse
+        array([1.00000000e+00, 0.00000000e+00, 0.00000000e+00, 2.77555756e-17])
         """
         if self.is_versor():
             return self.conjugate
@@ -615,18 +621,17 @@ class Quaternion(np.ndarray):
         Returns
         -------
         out : numpy.ndarray
-            Inverse of quaternion
+            Inverse of quaternion.
 
         Examples
         --------
         >>> q = Quaternion([1., -2., 3., -4.])
-        >>> str(q)
-        '(0.1826 -0.3651i +0.5477j -0.7303k)'
+        >>> q
+        Quaternion([ 0.18257419, -0.36514837,  0.54772256, -0.73029674])
         >>> q.inv
-        '[ 0.18257419  0.36514837 -0.54772256  0.73029674]'
-        >>> q2 = q@q.inv
-        >>> str(q2)
-        '(1.0000 +0.0000i +0.0000j +0.0000k)'
+        array([ 0.18257419,  0.36514837, -0.54772256,  0.73029674])
+        >>> q@q.inv
+        array([1.00000000e+00, 0.00000000e+00, 0.00000000e+00, 2.77555756e-17])
         """
         return self.inverse
 
@@ -973,6 +978,20 @@ class Quaternion(np.ndarray):
         -------
         out : bool
             Boolean equal to True if :math:`q_w = 0`.
+
+        Examples
+        --------
+        >>> q = Quaternion()
+        >>> q
+        Quaternion([1., 0., 0., 0.])
+        >>> q.is_pure()
+        False
+        >>> q = Quaternion([0., 1., 2., 3.])
+        >>> q
+        Quaternion([0.        , 0.26726124, 0.53452248, 0.80178373])
+        >>> q.is_pure()
+        True
+
         """
         return self.w==0.0
 
@@ -995,6 +1014,29 @@ class Quaternion(np.ndarray):
         -------
         out : bool
             Boolean equal to True if :math:`q_v = 0`.
+
+        Examples
+        --------
+        >>> q = Quaternion()
+        >>> q
+        Quaternion([1., 0., 0., 0.])
+        >>> q.is_real()
+        True
+        >>> q = Quaternion([0., 1., 2., 3.])
+        >>> q
+        Quaternion([0.        , 0.26726124, 0.53452248, 0.80178373])
+        >>> q.is_real()
+        False
+        >>> q = Quaternion([1., 2., 3., 4.])
+        >>> q
+        Quaternion([0.18257419, 0.36514837, 0.54772256, 0.73029674])
+        >>> q.is_real()
+        False
+        >>> q = Quaternion([5., 0., 0., 0.])    # All quaternions are normalized, by default
+        >>> q
+        Quaternion([1., 0., 0., 0.])
+        >>> q.is_real()
+        True
         """
         return not any(self.v)
 
@@ -1024,7 +1066,7 @@ class Quaternion(np.ndarray):
         Returns a bool value, where ``True`` if quaternion is identity quaternion.
 
         A quaternion is a quaternion if its scalar part is equal to 1, and the
-        vector part is equal to 0:
+        vector part is equal to 0, such that :math:`\\mathbf{q} = 1 + 0i + 0j + 0k`.
 
         .. math::
             \\left\\{
@@ -1037,7 +1079,21 @@ class Quaternion(np.ndarray):
         Returns
         -------
         out : bool
-            Boolean equal to ``True`` if :math:`\\mathbf{q} = (1, \\mathbf{0})`.
+            Boolean equal to ``True`` if :math:`\\mathbf{q}=\\begin{pmatrix}1 & 0 & 0 & 0\\end{pmatrix}`.
+
+        Examples
+        --------
+        >>> q = Quaternion()
+        >>> q
+        Quaternion([1., 0., 0., 0.])
+        >>> q.is_identity()
+        True
+        >>> q = Quaternion([0., 1., 0., 0.])
+        >>> q
+        Quaternion([0., 1., 0., 0.])
+        >>> q.is_identity()
+        False
+
         """
         return np.allclose(self.A, np.array([1.0, 0.0, 0.0, 0.0]))
 
@@ -1348,7 +1404,7 @@ class Quaternion(np.ndarray):
             [2.0*(self.x*self.y+self.w*self.z), 1.0-2.0*(self.x**2+self.z**2), 2.0*(self.y*self.z-self.w*self.x)],
             [2.0*(self.x*self.z-self.w*self.y), 2.0*(self.w*self.x+self.y*self.z), 1.0-2.0*(self.x**2+self.y**2)]])
 
-    def from_DCM(self, dcm: np.ndarray, method: str = 'chiaverini', **kw) -> NoReturn:
+    def from_DCM(self, dcm: np.ndarray, method: str = 'chiaverini', **kw) -> np.ndarray:
         """
         Quaternion from Direction Cosine Matrix.
 
@@ -1388,14 +1444,74 @@ class Quaternion(np.ndarray):
         q /= np.linalg.norm(q)
         return q
 
-    def from_rpy(self, angles: np.ndarray) -> NoReturn:
+    def from_rpy(self, angles: np.ndarray) -> np.ndarray:
         """
         Quaternion from given RPY angles.
+
+        The quaternion can be constructed from the Aerospace cardanian angle
+        sequence that follows the order :math:`\\phi\\to\\theta\\to\\psi`,
+        where :math:`\\phi` is the **roll** (or *bank*) angle, :math:`\\theta`
+        is the **pitch** (or *elevation*) angle, and :math:`\\psi` is the
+        **yaw** (or *heading*) angle.
+
+        The composing quaternions are:
+
+        .. math::
+            \\begin{array}{rcl}
+            \\mathbf{q}_X &=& \\begin{pmatrix}\\cos\\frac{\\phi}{2} & \\sin\\frac{\\phi}{2} i & 0 & 0\\end{pmatrix} \\\\ && \\\\
+            \\mathbf{q}_Y &=& \\begin{pmatrix}\\cos\\frac{\\theta}{2} & 0 & \\sin\\frac{\\theta}{2} j & 0\\end{pmatrix} \\\\ && \\\\
+            \\mathbf{q}_Z &=& \\begin{pmatrix}\\cos\\frac{\\psi}{2} & 0 & 0 & \\sin\\frac{\\psi}{2} k\\end{pmatrix}
+            \\end{array}
+
+        The elements of the final quaternion
+        :math:`\\mathbf{q}=\\mathbf{q}_Z\\mathbf{q}_Y\\mathbf{q}_X = q_w+q_xi+q_yj+q_zk`
+        are obtained as:
+
+        .. math::
+            \\begin{array}{rcl}
+            q_w &=& \\cos\\frac{\\psi}{2}\\cos\\frac{\\theta}{2}\\cos\\frac{\\phi}{2} + \\sin\\frac{\\psi}{2}\\sin\\frac{\\theta}{2}\\sin\\frac{\\phi}{2} \\\\ && \\\\
+            q_x &=& \\cos\\frac{\\psi}{2}\\cos\\frac{\\theta}{2}\\sin\\frac{\\phi}{2} - \\sin\\frac{\\psi}{2}\\sin\\frac{\\theta}{2}\\cos\\frac{\\phi}{2} \\\\ && \\\\
+            q_y &=& \\cos\\frac{\\psi}{2}\\sin\\frac{\\theta}{2}\\cos\\frac{\\phi}{2} + \\sin\\frac{\\psi}{2}\\cos\\frac{\\theta}{2}\\sin\\frac{\\phi}{2} \\\\ && \\\\
+            q_z &=& \\sin\\frac{\\psi}{2}\\cos\\frac{\\theta}{2}\\cos\\frac{\\phi}{2} - \\cos\\frac{\\psi}{2}\\sin\\frac{\\theta}{2}\\sin\\frac{\\phi}{2}
+            \\end{array}
+
+        .. warning::
+            The Aerospace sequence :math:`\\phi\\to\\theta\\to\\psi` is only
+            one of the `twelve possible rotation sequences
+            <https://en.wikipedia.org/wiki/Euler_angles#Tait.E2.80.93Bryan_angles>`_
+            around the main axes. Other sequences might be more suitable for
+            other applications, but this one is the most common in practice.
 
         Parameters
         ----------
         angles : numpy.ndarray
-            3 cardanian angles in following order: roll -> pitch -> yaw.
+            3 cardanian angles, in radians, following the order: roll -> pitch -> yaw.
+
+        Returns
+        -------
+        q : numpy.ndarray
+            Quaternion from roll-pitch-yaw angles.
+
+        Examples
+        --------
+        >>> from ahrs import DEG2RAD    # Helper variable to convert angles to radians
+        >>> q = Quaternion()
+        >>> q.from_rpy(np.array([10.0, 20.0, 30.0])*DEG2RAD)    # Give roll-pitch-yaw angles as radians.
+        array([0.95154852, 0.23929834, 0.18930786, 0.03813458])
+
+        It can be corroborated with the class `DCM <./dcm.html>`_, which represents a Direction
+        Cosine Matrix, and can also be built with roll-pitch-yaw angles.
+
+        >>> from ahrs import DCM
+        >>> R = DCM(rpy=[10.0, 20.0, 30.0])     # Here you give the angles as degrees
+        >>> R
+        DCM([[ 0.92541658,  0.01802831,  0.37852231],
+             [ 0.16317591,  0.88256412, -0.44096961],
+             [-0.34202014,  0.46984631,  0.81379768]])
+        >>> q.from_DCM(R)
+        array([0.95154852, 0.23929834, 0.18930786, 0.03813458])
+
+        With both approaches the same quaternion is obtained.
 
         """
         angles = np.array(angles)
@@ -1411,11 +1527,11 @@ class Quaternion(np.ndarray):
         q = np.zeros(4)
         q[0] = cy*cp*cr + sy*sp*sr
         q[1] = cy*cp*sr - sy*sp*cr
-        q[2] = sy*cp*sr + cy*sp*cr
+        q[2] = cy*sp*cr + sy*cp*sr
         q[3] = sy*cp*cr - cy*sp*sr
         return q
 
-    def from_angles(self, angles: np.ndarray) -> NoReturn:
+    def from_angles(self, angles: np.ndarray) -> np.ndarray:
         """
         Synonym to method from_rpy()
 
@@ -1423,6 +1539,33 @@ class Quaternion(np.ndarray):
         ----------
         angles : numpy.ndarray
             3 cardanian angles in following order: roll -> pitch -> yaw.
+
+        Returns
+        -------
+        q : numpy.ndarray
+            Quaternion from roll-pitch-yaw angles.
+
+        Examples
+        --------
+        >>> from ahrs import DEG2RAD    # Helper variable to convert angles to radians
+        >>> q = Quaternion()
+        >>> q.from_angles(np.array([10.0, 20.0, 30.0])*DEG2RAD)    # Give roll-pitch-yaw angles as radians.
+        array([0.95154852, 0.23929834, 0.18930786, 0.03813458])
+
+        It can be corroborated with the class `DCM <./dcm.html>`_, which represents a Direction
+        Cosine Matrix, and can also be built with roll-pitch-yaw angles.
+
+        >>> from ahrs import DCM
+        >>> R = DCM(rpy=[10.0, 20.0, 30.0])     # Here you give the angles as degrees
+        >>> R
+        DCM([[ 0.92541658,  0.01802831,  0.37852231],
+             [ 0.16317591,  0.88256412, -0.44096961],
+             [-0.34202014,  0.46984631,  0.81379768]])
+        >>> q.from_DCM(R)
+        array([0.95154852, 0.23929834, 0.18930786, 0.03813458])
+
+        With both approaches the same quaternion is obtained.
+
         """
         return self.from_rpy(angles)
 
