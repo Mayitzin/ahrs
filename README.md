@@ -7,17 +7,17 @@
 ![PyPI Downloads](https://pepy.tech/badge/ahrs)
 ![Codacy Badge](https://api.codacy.com/project/badge/Grade/bc366c601ed44e12b233218dd37cd32c)
 
-AHRS is a zoo of functions and algorithms in pure Python helping to estimate the orientation and position of robotic systems.
+AHRS is a zoo of functions and algorithms in pure Python used to estimate the orientation and position of mobile systems.
 
-Orginally, an [AHRS](https://en.wikipedia.org/wiki/Attitude_and_heading_reference_system) is defined as a set of orthogonal sensors providing attitude information about an aircraft. This field is now expanding to smaller devices, like wearables, automated transportation and all kinds of systems in motion.
+Orginally, an [AHRS](https://en.wikipedia.org/wiki/Attitude_and_heading_reference_system) is a set of orthogonal sensors providing attitude information about an aircraft. This field has now expanded to smaller devices, like wearables, automated transportation and all kinds of systems in motion.
 
-This package's focus is **fast prototyping**, **education**, **testing** and **easy modularity**. Performance is _NOT_ the main goal. For optimized implementations there are endless resources in C/C++.
+This package's focus is **fast prototyping**, **education**, **testing** and **modularity**. Performance is _NOT_ the main goal. For optimized implementations there are endless resources in C/C++ or Fortran.
 
 AHRS is compatible with **Python 3.6** and newer.
 
 ## Installation
 
-The most recommended mehod is to install AHRS directly from this repository:
+The most recommended mehod is to install AHRS directly from this repository to get the latest version:
 
 ```shell
 git clone https://github.com/Mayitzin/ahrs.git
@@ -25,13 +25,13 @@ cd ahrs
 python setup.py install
 ```
 
-to get the latest version. Or using [pip](https://pip.pypa.io) for the stable releases:
+Or using [pip](https://pip.pypa.io) for the stable releases:
 
 ```shell
 pip install ahrs
 ```
 
-AHRS depends on common packages [NumPy](https://numpy.org/) and [SciPy](https://www.scipy.org/). Further packages are avoided, to reduce its third-party dependency.
+AHRS depends on common packages [NumPy](https://numpy.org/) and [SciPy](https://www.scipy.org/). More packages are avoided, to reduce its third-party dependency.
 
 ## New in 0.3 (release candidate)
 
@@ -47,29 +47,66 @@ AHRS depends on common packages [NumPy](https://numpy.org/) and [SciPy](https://
 'D': -9.73078560629778, 'GV': -9.73078560629778}
 ```
 
-- The ellipsoid model of the **World Geodetic System** ([WGS84](https://earth-info.nga.mil/GandG/update/index.php?dir=wgs84&action=wgs84)) is included. A full implementation of the **Earth Gravitational Model** ([EGM2008](https://earth-info.nga.mil/GandG/wgs84/gravitymod/egm2008/egm08_wgs84.html)) is _NOT_ available here, but the estimation of the main and derived parameters of the WGS84 using the ellipsoid model are implemented:
+- The _ellipsoid model_ of the **World Geodetic System** ([WGS84](https://earth-info.nga.mil/GandG/update/index.php?dir=wgs84&action=wgs84)) is included. A full implementation of the **Earth Gravitational Model** ([EGM2008](https://earth-info.nga.mil/GandG/wgs84/gravitymod/egm2008/egm08_wgs84.html)) is _NOT_ available here, but the estimation of the main and derived parameters of the WGS84 using the ellipsoid model are implemented:
 
 ```python
 >>> from ahrs.utils import WGS
 >>> wgs = WGS()      # Creates an ellipsoid model, using Earth's characteristics by default
->>> [x for x in dir(wgs) if not x.startswith('__')]
-['a', 'arithmetic_mean_radius', 'aspect_ratio', 'atmosphere_gravitational_constant', 'authalic_sphere_radius', 'curvature_polar_radius', 'dynamic_inertial_moment_about_X', 'dynamic_inertial_moment_about_Y', 'dynamic_inertial_moment_about_Z', 'dynamical_form_factor', 'equatorial_normal_gravity', 'equivolumetric_sphere_radius', 'f', 'first_eccentricity_squared', 'geometric_dynamic_ellipticity', 'geometric_inertial_moment', 'geometric_inertial_moment_about_Z', 'gm', 'gravitational_constant_without_atmosphere', 'is_geodetic', 'linear_eccentricity', 'mass', 'mean_normal_gravity', 'normal_gravity', 'normal_gravity_constant', 'normal_gravity_potential', 'polar_normal_gravity', 'second_degree_zonal_harmonic', 'second_eccentricity_squared', 'semi_minor_axis', 'w']
+>>> wgs_properties = [x for x in dir(wgs) if not (hasattr(wgs.__getattribute__(x), '__call__') or x.startswith('__'))]
+>>> for p in wgs_properties:
+...     print('{:<{w}}  {}'.format(p, wgs.__getattribute__(p), w=len(max(wgs_properties, key=len))))
+...
+a                                          6378137.0
+arithmetic_mean_radius                     6371008.771415059
+aspect_ratio                               0.9966471893352525
+atmosphere_gravitational_constant          343591934.4
+authalic_sphere_radius                     6371007.1809182055
+b                                          6356752.314245179
+curvature_polar_radius                     6399593.625758493
+dynamic_inertial_moment_about_X            8.007921777277886e+37
+dynamic_inertial_moment_about_Y            8.008074799852911e+37
+dynamic_inertial_moment_about_Z            8.03430094201443e+37
+dynamical_form_factor                      0.0010826298213129219
+equatorial_normal_gravity                  9.78032533590406
+equivolumetric_sphere_radius               6371000.790009159
+f                                          0.0033528106647474805
+first_eccentricity_squared                 0.0066943799901413165
+geometric_dynamic_ellipticity              0.003258100628533992
+geometric_inertial_moment                  8.046726628049449e+37
+geometric_inertial_moment_about_Z          8.073029370114392e+37
+gm                                         398600441800000.0
+gravitational_constant_without_atmosphere  398600098208065.6
+is_geodetic                                True
+linear_eccentricity                        521854.00842338527
+mass                                       5.972186390142457e+24
+mean_normal_gravity                        9.797643222256516
+normal_gravity_constant                    0.0034497865068408447
+normal_gravity_potential                   62636851.71456948
+polar_normal_gravity                       9.832184937863065
+second_degree_zonal_harmonic               -0.00048416677498482876
+second_eccentricity_squared                0.006739496742276434
+w                                          7.292115e-05
 ```
 
 It can be used, for example, to estimate the normal gravity acceleration (in m/s^2) at any location on Earth.
 
 ```python
->>> wgs.normal_gravity(50.0, 1000.0)    # Gravity at latitude = 50.0 °, 1000 m above surface
+>>> wgs.normal_gravity(50.0, 1000.0)    # Normal gravity at latitude = 50.0 °, 1000 m above surface
 9.807617683884756
 ```
 
-Setting the fundamental parameters (`a`, `f`, `gm`, `w`) yields a different ellipsoid. For the moon, for example, we build a new model:
+Setting the fundamental parameters (`a`, `f`, `GM`, `w`) yields a different ellipsoid. For the moon, for instance, we build a new model:
 
 ```python
->>> moon_flattening = (ahrs.MOON_EQUATOR_RADIUS-ahrs.MOON_POLAR_RADIUS)/ahrs.MOON_EQUATOR_RADIUS
->>> mgs = WGS(a=ahrs.MOON_EQUATOR_RADIUS, f=moon_flattening, gm=ahrs.MOON_GM, w=ahrs.MOON_ROTATION)
->>> g = mgs.normal_gravity(10.0, h=500.0)    # Gravity on moon at 10° N and 500 m above surface
-1.6239820345657434
+>>> moon_a = ahrs.MOON_EQUATOR_RADIUS
+>>> moon_f = (ahrs.MOON_EQUATOR_RADIUS-ahrs.MOON_POLAR_RADIUS)/ahrs.MOON_EQUATOR_RADIUS
+>>> moon_gm = ahrs.MOON_GM
+>>> moon_w = ahrs.MOON_ROTATION
+>>> moon = WGS(a=moon_a, f=moon_f, GM=moon_gm, w=moon_w)
+>>> moon.normal_gravity(10.0, h=500.0)  # Gravity on moon at 10° N and 500 m above surface
+1.6239259827292798
+>>> moon.is_geodetic     # Only the Earth is geodetic
+False
 ```
 
 - The [International Gravity Formula](http://earth.geology.yale.edu/~ajs/1945A/360.pdf) and the EU's [WELMEC](https://www.welmec.org/documents/guides/2/) normal gravity reference system are also implemented.
@@ -171,6 +208,6 @@ A comprehensive documentation, with examples, is now available in
 
 ## Note for future versions
 
-`ahrs` is still moving away from plotting and data handling submodules to better focus in the algorithmic parts. Submodules `io` and `plot` are not built in the package anymore and, eventually, will be entirely removed from the base code.
+`ahrs` moves away from plotting and data handling submodules to better focus in the algorithmic parts. Submodules `io` and `plot` are not built in the package anymore and, eventually, will be entirely removed from the base code.
 
-This way you can also choose your favorite libraries for data loading and visualization. This also means, getting rid of its dependency on `matplotlib`.
+This way you can also choose your favorite libraries for data loading and visualization. This also means, getting rid of its dependency on `matplotlib` too.
