@@ -1662,6 +1662,35 @@ class QuaternionArray:
         """
         return self.conjugate()
 
+    def to_angles(self) -> np.ndarray:
+        """
+        Return corresponding Euler angles of quaternion.
+
+        Given a unit quaternions :math:`\\mathbf{q} = (q_w, q_x, q_y, q_z)`,
+        its corresponding Euler angles [WikiConversions]_ are:
+
+        .. math::
+
+            \\begin{bmatrix}
+            \\phi \\\\ \\theta \\\\ \\psi
+            \\end{bmatrix} =
+            \\begin{bmatrix}
+            \\mathrm{atan2}\\big(2(q_wq_x + q_yq_z), 1-2(q_x^2+q_y^2)\\big) \\\\
+            \\arcsin\\big(2(q_wq_y - q_zq_x)\\big) \\\\
+            \\mathrm{atan2}\\big(2(q_wq_z + q_xq_y), 1-2(q_y^2+q_z^2)\\big)
+            \\end{bmatrix}
+
+        Returns
+        -------
+        angles : numpy.ndarray
+            Euler angles of quaternion.
+
+        """
+        phi = np.arctan2(2.0*(self.array[:, 0]*self.array[:, 1] + self.array[:, 2]*self.array[:, 3]), 1.0 - 2.0*(self.array[:, 1]**2 + self.array[:, 2]**2))
+        theta = np.arcsin(2.0*(self.array[:, 0]*self.array[:, 2] - self.array[:, 3]*self.array[:, 1]))
+        psi = np.arctan2(2.0*(self.array[:, 0]*self.array[:, 3] + self.array[:, 1]*self.array[:, 2]), 1.0 - 2.0*(self.array[:, 2]**2 + self.array[:, 3]**2))
+        return np.c_[phi, theta, psi]
+
     def to_DCM(self) -> np.ndarray:
         """
         Return N direction cosine matrices in SO(3) from a given Quaternion
