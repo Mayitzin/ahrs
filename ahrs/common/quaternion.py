@@ -1723,13 +1723,13 @@ class QuaternionArray:
     def average(self, span: Tuple[int, int] = None, w: np.ndarray = None) -> np.ndarray:
         """Average quaternion using Markley's method [Markley2007]_
 
-        The average quaternion is the eigenvector of `M` corresponding to the
-        maximum eigenvalue, where:
+        The average quaternion is the eigenvector of :math:`\\mathbf{M}`
+        corresponding to the maximum eigenvalue, where:
 
         .. math::
             \\mathbf{M} = \\mathbf{q}^T \\cdot \\mathbf{q}
 
-        is a 4-by-4 matrix
+        is a 4-by-4 matrix.
 
         Parameters
         ----------
@@ -1746,11 +1746,15 @@ class QuaternionArray:
         q = self.array.copy()
         if span is not None:
             if hasattr(span, '__iter__') and len(span)==2:
-                q = q[span[0], span[1]]
+                q = q[span[0]:span[1]]
             else:
                 raise ValueError("span must be a pair of integers indicating the indices of the data.")
         if w is not None:
-            q *= w
+            if w.ndim>1:
+                raise ValueError("The weights must be in a one-dimensional array.")
+            if w.size!=q.shape[0]:
+                raise ValueError("The number of weights do not match the number of quaternions.")
+            q *= w[:, None]
         eigvals, eigvecs = np.linalg.eig(q.T@q)
         return eigvecs[:, eigvals.argmax()]
 
