@@ -3,6 +3,12 @@
 Super-fast Attitude from Accelerometer and Magnetometer
 =======================================================
 
+This novel estimator proposed by [Wu]_, offers an extremely simplified
+computation of `Davenport's <../davenport.html>`_ solution to
+`Wahba's problem <https://en.wikipedia.org/wiki/Wahba%27s_problem>`_, where the
+full solution is reduced to a couple of floating point operations, without
+losing accuracy and gaining important computation times.
+
 The accelerometer and magnetometer have their normalized observations
 :math:`^b\\mathbf{a}=\\begin{bmatrix}a_x&a_y&a_z\\end{bmatrix}^T`,
 :math:`^b\\mathbf{m}=\\begin{bmatrix}m_x&m_y&m_z\\end{bmatrix}^T` in the body
@@ -17,8 +23,7 @@ reference frame :math:`^r\\mathbf{a}=\\begin{bmatrix}0&0&1\\end{bmatrix}^T` and
     a_x^2+a_y^2+a_z^2 = m_x^2+m_y^2+m_z^2 = m_N^2+m_D^2 = 1
 
 and they are related by the `direction cosine matrix <../dcm.html>`_
-:math:`\\mathbf{C}\\in SO(3)` with the minimization of `Wahba's problem
-<https://en.wikipedia.org/wiki/Wahba%27s_problem>`_ as:
+:math:`\\mathbf{C}\\in SO(3)` with the minimization of Wahba's problem as:
 
 .. math::
     \\mathrm{min} \\big(w\\|\,^b\\mathbf{a}-\\mathbf{C}\,^r\\mathbf{a}\\|^2+(1-w)\\|\,^b\\mathbf{m}-\\mathbf{C}\,^r\\mathbf{m}\\|^2\\big)
@@ -91,14 +96,14 @@ the fundamental solution to :math:`(\\mathbf{K}-\\mathbf{I})\\mathbf{q}=0` is:
     q_z &=& a_zm_D - a_xm_N - m_z
     \\end{array}
 
-which shows that the weights are not even necessary. Finally the normalized
+which shows that the weights are not even necessary. Finally, the normalized
 quaternion representing the attitude is:
 
 .. math::
     \\mathbf{q} = \\frac{1}{\\sqrt{q_w^2+q_x^2+q_y^2+q_z^2}}\\begin{pmatrix}q_w & q_x & q_y & q_z\\end{pmatrix}
 
-This estimator is extremely short and relies en purely linear operations, which
-makes it very suitable for low-cost and simple processors. Its accuracy is
+This estimator is extremely short and relies solely on linear operations,
+making it very suitable for low-cost and simple processors. Its accuracy is
 comparable to that of QUEST and FQA, but it is one order of magnitude faster.
 
 References
@@ -149,13 +154,13 @@ class SAAM:
     >>> orientation.Q.shape                 # Estimated attitudes as Quaternions
     (1000, 4)
     >>> orientation.Q
-    array([[-0.09867706 -0.33683592 -0.52706394 -0.77395607],
-           [-0.10247491 -0.33710813 -0.52117549 -0.77732433],
-           [-0.10082646 -0.33658091 -0.52082828 -0.77800078],
+    array([[-0.09867706, -0.33683592, -0.52706394, -0.77395607],
+           [-0.10247491, -0.33710813, -0.52117549, -0.77732433],
+           [-0.10082646, -0.33658091, -0.52082828, -0.77800078],
            ...,
-           [-0.78760687 -0.57789515  0.2131519  -0.01669966],
-           [-0.78683706 -0.57879487  0.21313092 -0.02142776],
-           [-0.77869223 -0.58616905  0.22344478 -0.01080235]])
+           [-0.78760687, -0.57789515,  0.2131519,  -0.01669966],
+           [-0.78683706, -0.57879487,  0.21313092, -0.02142776],
+           [-0.77869223, -0.58616905,  0.22344478, -0.01080235]])
 
     """
     def __init__(self, acc: np.ndarray = None, mag: np.ndarray = None):
@@ -169,11 +174,11 @@ class SAAM:
         """Estimate the quaternions given all data.
 
         Attributes ``acc`` and ``mag`` must contain data. It is assumed that
-        these attributes have the same shape (M, 3), where N is the number of
+        these attributes have the same shape (M, 3), where M is the number of
         observations.
 
-        The estimation of all values is vectorized, so that the computation is
-        accelerated, instead of using a time-wasting loop.
+        The full estimation is vectorized, to avoid the use of a time-wasting
+        loop.
 
         Returns
         -------
@@ -186,6 +191,7 @@ class SAAM:
             raise ValueError("acc and mag are not the same size")
         if self.acc.shape[-1]!=3:
             raise ValueError("Sensor data must be of shape (M, 3), but it got {}".format(self.acc.shape))
+        # Normalize measurements (eq. 1)
         ax, ay, az = np.transpose(self.acc/np.linalg.norm(self.acc, axis=1)[:, None])
         mx, my, mz = np.transpose(self.mag/np.linalg.norm(self.mag, axis=1)[:, None])
         # Dynamic magnetometer reference vector (eq. 12)
@@ -214,6 +220,15 @@ class SAAM:
         -------
         q : numpy.ndarray
             Estimated quaternion.
+
+        Examples
+        --------
+        >>> acc_data = np.array([4.098297, 8.663757, 2.1355896])
+        >>> mag_data = np.array([-28.71550512, -25.92743566, 4.75683931])
+        >>> from ahrs.filters import SAAM
+        >>> saam = SAAM()
+        >>> saam.estimate(acc=acc_data, mag=mag_data)   # Estimate attitude as quaternion
+        array([-0.09867706, -0.33683592, -0.52706394, -0.77395607])
 
         """
         # Normalize measurements (eq. 1)
