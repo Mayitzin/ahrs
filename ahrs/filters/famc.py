@@ -17,18 +17,18 @@ maintained, while the time consumption is reduced, yielding the **Fast
 Accelerometer-Magnetometer Combination (FAMC)**, whose main contributions are:
 
 - Analytic eigenvalue results are given for the dynamic magnetometer reference
-  vector case.
-- Solution as quaternion representation given through a simplification of
-  `Davenport's q-method <./davenport.html>`_.
-- Clearly advantageous on time consumption, compared with existing solutions to
-  Wahba's problem.
+  vector.
+- Solution as quaternion representation from a simplification of `Davenport's
+  q-method <./davenport.html>`_.
+- Advantageous on time consumption, compared with existing solutions to Wahba's
+  problem.
 
-The AMC relates a Direction Cosine Matrix, :math:`\\mathbf{R}`, such that:
+The AMC relates a Direction Cosine Matrix, :math:`\\mathbf{C}`, such that:
 
 .. math::
     \\begin{array}{c}
-    ^b\\mathbf{a} = \\mathbf{R}\,^r\\mathbf{a} \\\\ \\\\
-    ^b\\mathbf{m} = \\mathbf{R}\,^r\\mathbf{m}
+    ^b\\mathbf{a} = \\mathbf{C}\,^r\\mathbf{a} \\\\ \\\\
+    ^b\\mathbf{m} = \\mathbf{C}\,^r\\mathbf{m}
     \\end{array}
 
 where :math:`^b\\mathbf{a}=\\begin{bmatrix}a_x&a_y&a_z\\end{bmatrix}^T` and
@@ -42,20 +42,20 @@ The reference frame, :math:`r`, is chosen to follow the `North-East-Down
 
 Thus, the reference vectors are given by :math:`^r\\mathbf{a}=\\begin{bmatrix}0 & 0 & 1\\end{bmatrix}^T`
 and :math:`^r\\mathbf{m}=\\begin{bmatrix}m_N & m_E & m_D\\end{bmatrix}^T`,
-although this solution neglects the Easterly geomagnetic field and describes
-it based on the local `magnetic dip <https://en.wikipedia.org/wiki/Magnetic_dip>`_
+although this solution neglects the Easterly geomagnetic field describing it
+based on the local `magnetic dip <https://en.wikipedia.org/wiki/Magnetic_dip>`_
 :math:`\\theta` to form a simpler expression
 :math:`^r\\mathbf{m}=\\begin{bmatrix}\\cos\\theta & 0 & -\\sin\\theta\\end{bmatrix}^T`
 
 The most common solution to Wahba's problem relates two vector observation
-pairs with weights. Here, two equal weights equal to :math:`0.5` yield the loss
-function:
+pairs with weights. Here, two equivalent weights equal to :math:`0.5` yield the
+loss function:
 
 .. math::
-    L(\\mathbf{R}) = \\frac{1}{2}\\Big[\\frac{1}{2}\\|^b\\mathbf{a}-\\mathbf{R}\,^r\\mathbf{a}\\|^2+\\frac{1}{2}\\|^b\\mathbf{m}-\\mathbf{R}\,^r\\mathbf{m}\\|^2\\Big]
+    L(\\mathbf{C}) = \\frac{1}{2}\\Big[\\frac{1}{2}\\|^b\\mathbf{a}-\\mathbf{C}\,^r\\mathbf{a}\\|^2+\\frac{1}{2}\\|^b\\mathbf{m}-\\mathbf{C}\,^r\\mathbf{m}\\|^2\\Big]
 
 Using `Davenport's q-method <./davenport.html>`_ we find the minimum of
-:math:`L(\\mathbf{R})` by calculating the maximum eigenvalue of Davenport's
+:math:`L(\\mathbf{C})` by calculating the maximum eigenvalue of Davenport's
 matrix :math:`\\mathbf{K}` in terms of quaternions:
 
 .. math::
@@ -167,16 +167,16 @@ class FAMC:
     Parameters
     ----------
     acc : numpy.ndarray, default: None
-        N-by-3 array with measurements of acceleration in in m/s^2
+        M-by-3 array with measurements of acceleration in in m/s^2
     mag : numpy.ndarray, default: None
-        N-by-3 array with measurements of magnetic field in mT
+        M-by-3 array with measurements of magnetic field in mT
 
     Attributes
     ----------
     acc : numpy.ndarray
-        N-by-3 array with N accelerometer samples.
+        M-by-3 array with M accelerometer samples.
     mag : numpy.ndarray
-        N-by-3 array with N magnetometer samples.
+        M-by-3 array with m magnetometer samples.
     Q : numpy.array, default: None
         M-by-4 Array with all estimated quaternions, where M is the number of
         samples. Equal to None when no estimation is performed.
@@ -191,14 +191,22 @@ class FAMC:
     >>> acc_data.shape, mag_data.shape      # NumPy arrays with sensor data
     ((1000, 3), (1000, 3))
     >>> from ahrs.filters import FAMC
-    >>> orientation = FAMC(acc=acc_data, mag=mag_data)
-    >>> orientation.Q.shape                 # Estimated
+    >>> famc = FAMC(acc=acc_data, mag=mag_data)
+    >>> famc.Q       # Estimated attitudes as Quaternions
+    array([[-0.82311077,  0.45760535, -0.33408929, -0.0383452 ],
+           [-0.82522048,  0.4547043 , -0.33277675, -0.03892033],
+           [-0.82463698,  0.4546915 , -0.33422422, -0.03903417],
+           ...,
+           [-0.82420642,  0.56217735,  0.02548005, -0.06317571],
+           [-0.82364606,  0.56311099,  0.0241655 , -0.06268338],
+           [-0.81844766,  0.57077781,  0.02532182, -0.06095017]])
+    >>> famc.Q.shape
     (1000, 4)
 
     """
     def __init__(self, acc: np.ndarray = None, mag: np.ndarray = None):
-        self.acc = acc
-        self.mag = mag
+        self.acc = acc.copy()
+        self.mag = mag.copy()
         self.Q = None
         if self.acc is not None and self.mag is not None:
             self.Q = self._compute_all()
@@ -206,7 +214,7 @@ class FAMC:
     def _compute_all(self) -> np.ndarray:
         """Estimate the quaternions given all data.
 
-        Attributes `acc` and `mag` must contain data.
+        Attributes ``acc`` and ``mag`` must contain data.
 
         Returns
         -------
@@ -223,20 +231,29 @@ class FAMC:
             Q[t] = self.estimate(self.acc[t], self.mag[t])
         return Q
 
-    def estimate(self, acc: np.ndarray = None, mag: np.ndarray = None) -> np.ndarray:
+    def estimate(self, acc: np.ndarray, mag: np.ndarray) -> np.ndarray:
         """Attitude Estimation
 
         Parameters
         ----------
-        a : array
+        a : numpy.ndarray
             Sample of tri-axial Accelerometer.
-        m : array
+        m : numpy.ndarray
             Sample of tri-axial Magnetometer.
 
         Returns
         -------
-        q : array
+        q : numpy.ndarray
             Estimated quaternion of the form :math:`\\begin{pmatrix}q_w & q_x & q_y & q_z\\end{pmatrix}`
+
+        Examples
+        --------
+        >>> acc_data = np.array([4.098297, 8.663757, 2.1355896])
+        >>> mag_data = np.array([-28.71550512, -25.92743566, 4.75683931])
+        >>> from ahrs.filters import FAMC
+        >>> famc = FAMC()
+        >>> famc.estimate(acc=acc_data, mag=mag_data)   # Estimate attitude as quaternion
+        array([-0.82311077,  0.45760535, -0.33408929, -0.0383452])
 
         """
         # Normalize measurements (eq. 10)
