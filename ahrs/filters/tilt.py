@@ -5,12 +5,11 @@ Attitude from gravity (Tilt)
 
 Attitude estimation via gravity acceleration measurements.
 
-The simplest to estimate the attitude from the gravitational acceleration is
-using 3D `geometric quadrants <https://en.wikipedia.org/wiki/Quadrant_(plane_geometry)>`_,
-which app
+The simplest way to estimate the attitude from the gravitational acceleration
+is using 3D `geometric quadrants <https://en.wikipedia.org/wiki/Quadrant_(plane_geometry)>`_.
 
 Although some methods use ``arctan`` to estimate the angles [ST-AN4509]_ [AD-AN1057]_,
-it is preferred to use ``arctan2`` to explore all quadrants estimating the tilt
+it is preferred to use ``arctan2`` to explore all quadrants searching the tilt
 angles.
 
 First, we normalize the gravity vector, so that it has magnitude equal to 1.
@@ -81,12 +80,13 @@ Finally, we transform the roll-pitch-yaw angles to a quaternion representation:
 
 .. math::
     \\mathbf{q} =
-    \\begin{bmatrix}
+    \\begin{pmatrix}q_w\\\\q_x\\\\q_y\\\\q_z\\end{pmatrix} =
+    \\begin{pmatrix}
         \\cos\\Big(\\frac{\\phi}{2}\\Big)\\cos\\Big(\\frac{\\theta}{2}\\Big)\\cos\\Big(\\frac{\\psi}{2}\\Big) + \\sin\\Big(\\frac{\\phi}{2}\\Big)\\sin\\Big(\\frac{\\theta}{2}\\Big)\\sin\\Big(\\frac{\\psi}{2}\\Big) \\\\
         \\sin\\Big(\\frac{\\phi}{2}\\Big)\\cos\\Big(\\frac{\\theta}{2}\\Big)\\cos\\Big(\\frac{\\psi}{2}\\Big) - \\cos\\Big(\\frac{\\phi}{2}\\Big)\\sin\\Big(\\frac{\\theta}{2}\\Big)\\sin\\Big(\\frac{\\psi}{2}\\Big) \\\\
         \\cos\\Big(\\frac{\\phi}{2}\\Big)\\sin\\Big(\\frac{\\theta}{2}\\Big)\\cos\\Big(\\frac{\\psi}{2}\\Big) + \\sin\\Big(\\frac{\\phi}{2}\\Big)\\cos\\Big(\\frac{\\theta}{2}\\Big)\\sin\\Big(\\frac{\\psi}{2}\\Big) \\\\
         \\cos\\Big(\\frac{\\phi}{2}\\Big)\\cos\\Big(\\frac{\\theta}{2}\\Big)\\sin\\Big(\\frac{\\psi}{2}\\Big) - \\sin\\Big(\\frac{\\phi}{2}\\Big)\\sin\\Big(\\frac{\\theta}{2}\\Big)\\cos\\Big(\\frac{\\psi}{2}\\Big)
-    \\end{bmatrix}
+    \\end{pmatrix}
 
 Setting the property ``as_angles`` to ``True`` will avoid this last conversion
 returning the attitude as angles.
@@ -110,7 +110,7 @@ References
 .. [ST-AN4509] Tilt measurement using a low-g 3-axis accelerometer.
     STMicroelectronics. Application note AN4509. 2014.
     (https://www.st.com/resource/en/application_note/dm00119046.pdf)
-.. [WikiConversions] Wikipedia Conversion between quaternions and Euler angles.
+.. [WikiConversions] Wikipedia: Conversion between quaternions and Euler angles.
     (https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles)
 
 """
@@ -154,50 +154,64 @@ class Tilt:
     with accelerometer samples.
 
     >>> from ahrs.filters import Tilt
-    >>> orientation = Tilt(acc_data)
+    >>> tilt = Tilt(acc_data)
 
     The estimated quaternions are saved in the attribute ``Q``.
 
-    >>> type(orientation.Q), orientation.Q.shape
-    (<class 'numpy.ndarray'>, (1000, 4))
+    >>> tilt.Q
+    array([[0.76901856, 0.60247641, -0.16815772, 0.13174072],
+           [0.77310283, 0.59724644, -0.16900433, 0.1305612 ],
+           [0.7735134,  0.59644005, -0.1697294,  0.1308748 ],
+           ...,
+           [0.7800751,  0.59908629, -0.14315079, 0.10993772],
+           [0.77916118, 0.59945374, -0.14520157, 0.11171197],
+           [0.77038613, 0.61061868, -0.14375869, 0.11394512]])
+    >>> tilt.Q.shape
+    (1000, 4)
 
     If we desire to estimate each sample independently, we call the
-    corresponding method.
+    corresponding method with each sample individually.
 
-    .. code:: python
-
-        orientation = Tilt()
-        Q = np.zeros((num_samples, 4))  # Allocate quaternions array
-        for t in range(num_samples):
-            Q[t] = orientation.estimate(acc_data[t])
+    >>> tilt = Tilt()
+    >>> num_samples = len(acc_data)
+    >>> Q = np.zeros((num_samples, 4))  # Allocate quaternions array
+    >>> for t in range(num_samples):
+    ...     Q[t] = tilt.estimate(acc_data[t])
+    ...
+    >>> tilt.Q[:5]
+    array([[0.76901856, 0.60247641, -0.16815772, 0.13174072],
+           [0.77310283, 0.59724644, -0.16900433, 0.1305612 ],
+           [0.7735134,  0.59644005, -0.1697294,  0.1308748 ],
+           [0.77294791, 0.59913005, -0.16502363, 0.12791369],
+           [0.76936935, 0.60323746, -0.16540014, 0.12968487]])
 
     Originally, this estimation computes first the Roll-Pitch-Yaw angles and
     then converts them to Quaternions. If we desire the angles instead, we set
     it so in the parameters.
 
-    .. note::
-        It will return the angles, in degrees, following the standard order
-        ``Roll->Pitch->Yaw``.
-
-    >>> orientation = Tilt(acc_data, as_angles=True)
-    >>> type(orientation.Q), orientation.Q.shape
+    >>> tilt = Tilt(acc_data, as_angles=True)
+    >>> type(tilt.Q), tilt.Q.shape
     (<class 'numpy.ndarray'>, (1000, 3))
-    >>> orientation.Q[:5]
+    >>> tilt.Q[:5]
     array([[8.27467200e-04,  4.36167791e-06, 0.00000000e+00],
            [9.99352822e-04,  8.38015258e-05, 0.00000000e+00],
            [1.30423484e-03,  1.72201573e-04, 0.00000000e+00],
            [1.60337482e-03,  8.53081042e-05, 0.00000000e+00],
            [1.98459171e-03, -8.34729603e-05, 0.00000000e+00]])
 
+    .. note::
+        It will return the angles, in degrees, following the standard order
+        ``Roll->Pitch->Yaw``.
+
     The yaw angle is, expectedly, equal to zero, because the heading cannot be
     estimated with the gravity acceleration only.
 
-    For this reason, the use of magnetometer data can be used to estimate the
-    yaw. This is also implemented in :class:`Tilt` and the magnetometer is
-    taken into account when given as parameter.
+    For this reason, magnetometer data can be used to estimate the yaw. This is
+    also implemented and the magnetometer will be taken into account when given
+    as parameter.
 
-    >>> orientation = Tilt(acc=acc_data, mag=mag_data, as_angles=True)
-    >>> orientation.Q[:5]
+    >>> tilt = Tilt(acc=acc_data, mag=mag_data, as_angles=True)
+    >>> tilt.Q[:5]
     array([[8.27467200e-04,  4.36167791e-06, -4.54352439e-02],
            [9.99352822e-04,  8.38015258e-05, -4.52836926e-02],
            [1.30423484e-03,  1.72201573e-04, -4.49355365e-02],
@@ -216,13 +230,19 @@ class Tilt:
         """
         Estimate the orientation given all data.
 
-        Attribute ``acc`` must contain data. Additiona
+        Attributes ``acc`` and ``mag`` must contain data. It is assumed that
+        these attributes have the same shape (M, 3), where M is the number of
+        observations.
+
+        The full estimation is vectorized, to avoid the use of a time-wasting
+        loop.
 
         Returns
         -------
         Q : numpy.ndarray
-            M-by-4 Array with all estimated quaternions, where M is the number
-            of samples.
+            M-by-4 array with all estimated quaternions, where M is the number
+            of samples. It returns an M-by-3 array, if the flag ``as_angles``
+            is set to ``True``.
 
         """
         if self.acc.shape[-1]!=3:
@@ -242,10 +262,10 @@ class Tilt:
             mz2 = m[:, 1]*np.sin(angles[:, 0]) + m[:, 2]*np.cos(angles[:, 0])
             mx3 = m[:, 0]*np.cos(angles[:, 1]) + mz2*np.sin(angles[:, 1])
             angles[:, 2] = np.arctan2(my2, mx3)
-            # Return angles in degrees
-            if self.as_angles:
-                return angles*RAD2DEG
-        # Euler to Quaternion
+        # Return angles in degrees
+        if self.as_angles:
+            return angles*RAD2DEG
+        # RPY to Quaternion
         cp = np.cos(0.5*angles[:, 1])
         sp = np.sin(0.5*angles[:, 1])
         cr = np.cos(0.5*angles[:, 0])
@@ -271,11 +291,29 @@ class Tilt:
         ----------
         acc : numpy.ndarray
             Sample of tri-axial Accelerometer in m/s^2.
+        mag : numpy.ndarray, default: None
+            N-by-3 array with measurements of magnetic field in mT.
 
         Returns
         -------
         q : numpy.ndarray
-            Estimated quaternion.
+            Estimated attitude.
+
+        Examples
+        --------
+        >>> acc_data = np.array([4.098297, 8.663757, 2.1355896])
+        >>> mag_data = np.array([-28.71550512, -25.92743566, 4.75683931])
+        >>> from ahrs.filters import Tilt
+        >>> tilt = Tilt()
+        >>> tilt.estimate(acc=acc_data, mag=mag_data)   # Estimate attitude as quaternion
+        array([0.09867706 0.33683592 0.52706394 0.77395607])
+
+        Optionally, the attitude can be retrieved as roll-pitch-yaw angles, in
+        degrees.
+
+        >>> tilt = Tilt(as_angles=True)
+        >>> tilt.estimate(acc=acc_data, mag=mag_data)
+        array([ 76.15281566 -24.66891862 146.02634429])
 
         """
         a_norm = np.linalg.norm(acc)
