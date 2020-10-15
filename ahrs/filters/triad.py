@@ -77,7 +77,8 @@ It is only required that :math:`\\mathbf{M}_r` has an inverse, but that is
 already ensured, since :math:`\\mathbf{q}_r`, :math:`\\mathbf{r}_r`,
 and :math:`\\mathbf{s}_r` are linearly independent [Lerner1]_.
 
-**Strapdown INS**
+Strapdown INS
+-------------
 
 For estimations using a Strapdown INS on Earth, we identify two main reference
 vectors: gravity :math:`\\mathbf{g}=\\begin{bmatrix}g_x & g_y & g_z\\end{bmatrix}`
@@ -104,30 +105,32 @@ We obtain its magnetic elements as:
 
 .. code-block:: python
 
+    >>> import datetime
     >>> from ahrs.utils import WMM
     >>> wmm = WMM(latitude=48.137154, longitude=11.576124, height=0.519, date=datetime.date(2020, 10, 3))
     >>> wmm.magnetic_elements
-    {'X': 20877.54618154064, 'Y': 410.3179911981241, 'Z': 43467.17614071816, 'H': 20881.577895749713, 'F': 48222.771561415684, 'I': 64.34042768719739, 'D': 1.125920771938391, 'GV': 1.125920771938391}
+    {'X': 21009.66924050522, 'Y': 1333.4601319284525, 'Z': 43731.849938722924, 'H': 21051.943319296533, 'F': 48535.13177670226, 'I': 64.2944417667441, 'D': 3.631627635223863, 'GV': 3.631627635223863}
 
 For further explanation of class :class:`WMM`, please check its `page <../WMM.html>`_.
 Of our interest are only the values of ``X``, ``Y`` and ``Z`` representing the
 magnetic field intensity, in nT, along the X-, Y- and Z-axis, respectively.
 
 .. math::
-    \\mathbf{h} = \\begin{bmatrix} 20877.54618 \\\\ 410.31799 \\\\ 43467.17614 \\end{bmatrix}
+    \\mathbf{h} = \\begin{bmatrix} 21009.66924 \\\\ 1333.46013 \\\\ 43731.84994 \\end{bmatrix}
 
 But, again, TRIAD works with normalized vectors, so the reference magnetic
 vector becomes:
 
 .. math::
-    \\mathbf{h} = \\begin{bmatrix} 0.43293957 \\\\ 0.0085088 \\\\ 0.90138279 \\end{bmatrix}
+    \\mathbf{h} = \\begin{bmatrix} 0.43288 \\\\ 0.02747 \\\\ 0.90103 \\end{bmatrix}
 
 .. code-block:: python
 
+    >>> import numpy as np
     >>> h = np.array([wmm.magnetic_elements[x] for x in list('XYZ')])
-    >>> h /= np.linalg.norm(h)                          # Reference geomagnetic field (h)
+    >>> h /= np.linalg.norm(h)      # Reference geomagnetic field (h)
     >>> h
-    array([0.43293957, 0.0085088 , 0.90138279])
+    array([0.4328755 , 0.02747412, 0.90103495])
 
 Both normalized vectors :math:`\\mathbf{g}` and :math:`\\mathbf{h}` build the
 *reference triad* :math:`\\mathbf{M}_r`
@@ -148,14 +151,16 @@ the normalized measurement vectors:
     >>> triad.v1 = np.array([0.0, 0.0, 1.0])                    # Reference gravity vector (g)
     >>> triad.v2 = h                                            # Reference geomagnetic field (h)
     >>> a = np.array([-2.499e-04, 4.739e-02, 0.9988763])        # Measured acceleration (normalized)
+    >>> a /= np.linalg.norm(a)
     >>> m = np.array([-0.36663061, 0.17598138, -0.91357132])    # Measured magnetic field (normalized)
+    >>> m /= np.linalg.norm(m)
     >>> triad.estimate(w1=a, w2=m)
     array([[-8.48320410e-01, -5.29483162e-01, -2.49900033e-04],
            [ 5.28878238e-01, -8.47373587e-01,  4.73900062e-02],
            [-2.53039690e-02,  4.00697428e-02,  9.98876431e-01]])
 
 Optionally, it can return the estimation as a quaternion representation setting
-``as_quaternion`` it to ``True``
+``as_quaternion`` to ``True``.
 
 .. code-block:: python
 
@@ -287,13 +292,33 @@ class TRIAD:
     A : numpy.ndarray
         Estimated attitude.
 
+    Examples
+    --------
+    >>> from ahrs.filters import TRIAD
+    >>> triad = TRIAD()
+    >>> triad.v1 = np.array([0.0, 0.0, 1.0])                    # Reference gravity vector (g)
+    >>> triad.v2 = h                                            # Reference geomagnetic field (h)
+    >>> a = np.array([-2.499e-04, 4.739e-02, 0.9988763])        # Measured acceleration (normalized)
+    >>> a /= np.linalg.norm(a)
+    >>> m = np.array([-0.36663061, 0.17598138, -0.91357132])    # Measured magnetic field (normalized)
+    >>> m /= np.linalg.norm(m)
+    >>> triad.estimate(w1=a, w2=m)
+    array([[-8.48320410e-01, -5.29483162e-01, -2.49900033e-04],
+           [ 5.28878238e-01, -8.47373587e-01,  4.73900062e-02],
+           [-2.53039690e-02,  4.00697428e-02,  9.98876431e-01]])
+
+    It also works by passing each array to its corresponding parameter. They
+    will be normalized too.
+
+    >>> triad = TRIAD(w1=a, w2=m, v1=[0.0, 0.0, 1.0], v2=[-0.36663061, 0.17598138, -0.91357132])
+
     """
     def __init__(self, w1: np.ndarray = None, w2: np.ndarray = None, v1: np.ndarray = None, v2: np.ndarray = None, as_quaternion: bool = False):
         self.w1 = w1
         self.w2 = w2
-        self.v1 = np.array([0.0, 0.0, 1.0]) if v1 is None else v1
+        self.v1 = np.array([0.0, 0.0, 1.0]) if v1 is None else np.copy(v1)
         self.v1 /= np.linalg.norm(self.v1)
-        self.v2 = np.array([MAG['X'], MAG['Y'], MAG['Z']]) if v2 is None else v2
+        self.v2 = np.array([MAG['X'], MAG['Y'], MAG['Z']]) if v2 is None else np.copy(v2)
         self.v2 /= np.linalg.norm(self.v2)
         self.as_quaternion = as_quaternion
         if self.w1 is not None and self.w2 is not None:
@@ -345,8 +370,23 @@ class TRIAD:
             ``as_quaternion`` is set to ``True``, it is returned as a
             quaternion representation.
 
+        Examples
+        --------
+        >>> triad = ahrs.filters.TRIAD()
+        >>> triad.v1 = [0.0, 0.0, 1.0]                              # Normalized reference gravity vector (g)
+        >>> triad.v2 = [0.4328755, 0.02747412, 0.90103495]          # Normalized reference geomagnetic field (h)
+        >>> a = [4.098297, 8.663757, 2.1355896]                     # Measured acceleration
+        >>> m = [-28715.50512, -25927.43566, 4756.83931]            # Measured magnetic field
+        >>> triad.estimate(w1=a, w2=m)                              # Estimated attitude as DCM
+        array([[-7.84261e-01  ,  4.5905718e-01,  4.1737417e-01],
+               [ 2.2883429e-01, -4.1126404e-01,  8.8232463e-01],
+               [ 5.7668844e-01,  7.8748232e-01,  2.1749032e-01]])
+        >>> triad.estimate(w1=a, w2=m, as_quaternion=True)          # Estimated attitude as quaternion
+        array([ 0.07410345, -0.3199659, -0.53747247, -0.77669417])
+
         """
-        # Normalized Observations
+        w1, w2 = np.copy(w1), np.copy(w2)
+        # Normalized Vectors
         w1 /= np.linalg.norm(w1)                            # (eq. 12-39a)
         w2 /= np.linalg.norm(w2)
         # First Triad
@@ -358,7 +398,7 @@ class TRIAD:
         r2 = v1xv2 / np.linalg.norm(v1xv2)
         r3 = np.cross(self.v1, v1xv2) / np.linalg.norm(v1xv2)
         # Solve TRIAD
-        Mb = np.c_[w1, s2, s3]                              # (eq- 12-41)
+        Mb = np.c_[w1, s2, s3]                              # (eq. 12-41)
         Mr = np.c_[self.v1, r2, r3]                         # (eq. 12-42)
         A = Mb@Mr.T                                         # (eq. 12-45)
         if as_quaternion:
