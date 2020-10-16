@@ -433,32 +433,30 @@ class Madgwick:
     matching parameters.
 
     >>> from ahrs.filters import Madgwick
-    >>> orientation = Madgwick(gyr=gyro_data, acc=acc_data)     # Using IMU
+    >>> madgwick = Madgwick(gyr=gyro_data, acc=acc_data)     # Using IMU
 
     The estimated quaternions are saved in the attribute ``Q``.
 
-    >>> type(orientation.Q), orientation.Q.shape
+    >>> type(madgwick.Q), madgwick.Q.shape
     (<class 'numpy.ndarray'>, (1000, 4))
 
     If we desire to estimate each sample independently, we call the
     corresponding method.
 
-    .. code:: python
-
-        orientation = Madgwick()
-        Q = np.tile([1., 0., 0., 0.], (num_samples, 1)) # Allocate for quaternions
-        for t in range(1, num_samples):
-            Q[t] = orientation.updateIMU(Q[t-1], gyr=gyro_data[t], acc=acc_data[t])
+    >>> madgwick = Madgwick()
+    >>> Q = np.tile([1., 0., 0., 0.], (num_samples, 1)) # Allocate for quaternions
+    >>> for t in range(1, num_samples):
+    ...     Q[t] = madgwick.updateIMU(Q[t-1], gyr=gyro_data[t], acc=acc_data[t])
 
     Further on, we can also use magnetometer data.
 
-    >>> orientation = Madgwick(gyr=gyro_data, acc=acc_data, mag=mag_data)   # Using MARG
+    >>> madgwick = Madgwick(gyr=gyro_data, acc=acc_data, mag=mag_data)   # Using MARG
 
     This algorithm is dynamically adding the orientation, instead of estimating
     it from static observations. Thus, it requires an initial attitude to build
     on top of it. This can be set with the parameter ``q0``:
 
-    >>> orientation = Madgwick(gyr=gyro_data, acc=acc_data, q0=[0.7071, 0.0, 0.7071, 0.0])
+    >>> madgwick = Madgwick(gyr=gyro_data, acc=acc_data, q0=[0.7071, 0.0, 0.7071, 0.0])
 
     If no initial orientation is given, then an attitude using the first
     samples is estimated. This attitude is computed assuming the sensors are
@@ -468,28 +466,27 @@ class Madgwick:
     this value we set it in its parameter ``frequency``. Here we set it, for
     example, to 150 Hz.
 
-    >>> orientation = Madgwick(gyr=gyro_data, acc=acc_data, frequency=150.0)
+    >>> madgwick = Madgwick(gyr=gyro_data, acc=acc_data, frequency=150.0)
 
     Or, alternatively, setting the sampling step (:math:`\\Delta t = \\frac{1}{f}`):
 
-    >>> orientation = Madgwick(gyr=gyro_data, acc=acc_data, Dt=1/150)
+    >>> madgwick = Madgwick(gyr=gyro_data, acc=acc_data, Dt=1/150)
 
     This is specially useful for situations where the sampling rate is variable:
 
-    .. code:: python
-
-        orientation = Madgwick()
-        Q = np.tile([1., 0., 0., 0.], (num_samples, 1)) # Allocate for quaternions
-        for t in range(1, num_samples):
-            orientation.Dt = new_sample_rate
-            Q[t] = orientation.updateIMU(Q[t-1], gyr=gyro_data[t], acc=acc_data[t])
+    >>> madgwick = Madgwick()
+    >>> Q = np.zeros((num_samples, 4))      # Allocation of quaternions
+    >>> Q[0] = [1.0, 0.0, 0.0, 0.0]         # Initial attitude as a quaternion
+    >>> for t in range(1, num_samples):
+    >>>     madgwick.Dt = new_sample_rate
+    ...     Q[t] = madgwick.updateIMU(Q[t-1], gyr=gyro_data[t], acc=acc_data[t])
 
     Madgwick's algorithm uses a gradient descent method to correct the
     estimation of the attitude. The **step size**, a.k.a.
     `learning rate <https://en.wikipedia.org/wiki/Learning_rate>`_, is
     considered a *gain* of this algorithm and can be set in the parameters too:
 
-    >>> orientation = Madgwick(gyr=gyro_data, acc=acc_data, gain=0.01)
+    >>> madgwick = Madgwick(gyr=gyro_data, acc=acc_data, gain=0.01)
 
     Following the original article, the gain defaults to ``0.033`` for IMU
     arrays, and to ``0.041`` for MARG arrays.
@@ -561,21 +558,21 @@ class Madgwick:
         --------
 
         Assuming we have a tri-axial gyroscope array with 1000 samples, and
-        another one with 1000 samples of a tri-axial gyroscope. We get the
-        attitude with the Madgwick algorithm as:
+        1000 samples of a tri-axial accelerometer. We get the attitude with the
+        Madgwick algorithm as:
 
         >>> from ahrs.filters import Madgwick
-        >>> orientation = Madgwick()
+        >>> madgwick = Madgwick()
         >>> Q = np.tile([1., 0., 0., 0.], (len(gyro_data), 1)) # Allocate for quaternions
         >>> for t in range(1, num_samples):
-        ...   Q[t] = orientation.updateIMU(Q[t-1], gyr=gyro_data[t], acc=acc_data[t])
+        ...   Q[t] = madgwick.updateIMU(Q[t-1], gyr=gyro_data[t], acc=acc_data[t])
         ...
 
         Or giving the data directly in the class constructor will estimate all
         attitudes at once:
 
-        >>> orientation = Madgwick(gyr=gyro_data, acc=acc_data)
-        >>> orientation.Q.shape
+        >>> madgwick = Madgwick(gyr=gyro_data, acc=acc_data)
+        >>> madgwick.Q.shape
         (1000, 4)
 
         This builds the array ``Q``, where all attitude estimations will be
@@ -628,22 +625,22 @@ class Madgwick:
         --------
 
         Assuming we have a tri-axial gyroscope array with 1000 samples, a
-        second array with 1000 samples of a tri-axial gyroscope, and a third
-        array with 1000 samples of a tri-axial magnetometer. We get the
+        second array with 1000 samples of a tri-axial accelerometer, and a
+        third array with 1000 samples of a tri-axial magnetometer. We get the
         attitude with the Madgwick algorithm as:
 
         >>> from ahrs.filters import Madgwick
-        >>> orientation = Madgwick()
+        >>> madgwick = Madgwick()
         >>> Q = np.tile([1., 0., 0., 0.], (len(gyro_data), 1)) # Allocate for quaternions
         >>> for t in range(1, num_samples):
-        ...   Q[t] = orientation.updateMARG(Q[t-1], gyr=gyro_data[t], acc=acc_data[t], mag=mag_data[t])
+        ...   Q[t] = madgwick.updateMARG(Q[t-1], gyr=gyro_data[t], acc=acc_data[t], mag=mag_data[t])
         ...
 
         Or giving the data directly in the class constructor will estimate all
         attitudes at once:
 
-        >>> orientation = Madgwick(gyr=gyro_data, acc=acc_data, mag=mag_data)
-        >>> orientation.Q.shape
+        >>> madgwick = Madgwick(gyr=gyro_data, acc=acc_data, mag=mag_data)
+        >>> madgwick.Q.shape
         (1000, 4)
 
         This builds the array ``Q``, where all attitude estimations will be
