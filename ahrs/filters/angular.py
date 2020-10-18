@@ -86,11 +86,11 @@ class AngularRate:
     Parameters
     ----------
     gyr : numpy.ndarray, default: None
-        N-by-3 array with measurements of angular velocity in rad/s
+        N-by-3 array with measurements of angular velocity in rad/s.
     q0 : numpy.ndarray
         Initial orientation, as a versor (normalized quaternion).
     frequency : float, default: 100.0
-        Sampling frequency in *Herz*.
+        Sampling frequency in Herz.
     Dt : float, default: 0.01
         Sampling step in seconds. Inverse of sampling frequency. Not required
         if ``frequency`` value is given.
@@ -101,6 +101,58 @@ class AngularRate:
         N-by-3 array with N gyroscope samples.
     Q : numpy.ndarray
         Estimated quaternions.
+
+    Examples
+    --------
+    >>> gyro_data.shape             # NumPy arrays with gyroscope data in rad/s
+    (1000, 3)
+    >>> from ahrs.filters import AngularRate
+    >>> angular_rate = AngularRate(gyr=gyro_data)
+    >>> angular_rate.Q
+    array([[ 1.00000000e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00],
+           [ 9.99999993e-01,  2.36511228e-06, -1.12991334e-04,  4.28771947e-05],
+           [ 9.99999967e-01,  1.77775173e-05, -2.43529706e-04,  8.33144162e-05],
+           ...,
+           [-0.92576208, -0.23633121,  0.19738534, -0.2194337 ],
+           [-0.92547793, -0.23388968,  0.19889139, -0.22187479],
+           [-0.92504595, -0.23174096,  0.20086376, -0.22414251]])
+    >>> angular_rate.Q.shape        # Estimated attitudes as Quaternions
+    (1000, 4)
+
+    The estimation of each attitude is built upon the previous attitude. This
+    estimator sets the initial attitude equal to the unit quaternion
+    ``[1.0, 0.0, 0.0, 0.0]`` by default, because we cannot obtain the first
+    orientation with gyroscopes only.
+
+    We can use the class :class:`Tilt` to estimate the initial attitude with a
+    simple measurement of a tri-axial accelerometer:
+
+    >>> from ahrs.filter import Tilt
+    >>> tilt = Tilt()
+    >>> q_initial = tilt.estimate(acc=acc_sample)  # One tridimensional sample suffices
+    >>> angular_rate = AngularRate(gyr=gyro_data, q0=q_initial)
+    >>> angular_rate.Q
+    array([[ 0.77547502,  0.6312126 ,  0.01121595, -0.00912944],
+           [ 0.77547518,  0.63121388,  0.01110125, -0.00916754],
+           [ 0.77546726,  0.63122508,  0.01097435, -0.00921875],
+           ...,
+           [-0.92576208, -0.23633121,  0.19738534, -0.2194337 ],
+           [-0.92547793, -0.23388968,  0.19889139, -0.22187479],
+           [-0.92504595, -0.23174096,  0.20086376, -0.22414251]])
+
+    The :class:`Tilt` can also use a magnetometer to improve the estimation
+    with the heading orientation.
+
+    >>> q_initial = tilt.estimate(acc=acc_sample, mag=mag_sample)
+    >>> angular_rate = AngularRate(gyr=gyro_data, q0=q_initial)
+    >>> angular_rate.Q
+    array([[ 0.66475674,  0.55050651, -0.30902706, -0.39942875],
+           [ 0.66473764,  0.5504497 , -0.30912672, -0.39946172],
+           [ 0.66470495,  0.55039529, -0.30924191, -0.39950193],
+           ...,
+           [-0.90988476, -0.10433118,  0.28970402,  0.27802214],
+           [-0.91087203, -0.1014633 ,  0.28977124,  0.2757716 ],
+           [-0.91164416, -0.09861271,  0.2903888 ,  0.27359606]])
 
     """
     def __init__(self, gyr: np.ndarray = None, q0: np.ndarray = None, **kw):
@@ -144,7 +196,29 @@ class AngularRate:
         q : numpy.ndarray
             Estimated quaternion.
 
+        Examples
+        --------
+        >>> from ahrs.filters import AngularRate
+        >>> gyro_data.shape
+        (1000, 3)
+        >>> num_samples = gyro_data.shape[0]
+        >>> Q = np.zeros((num_samples, 4))      # Allocation of quaternions
+        >>> Q[0] = [1.0, 0.0, 0.0, 0.0]         # Initial attitude as a quaternion
+        >>> angular_rate = AngularRate()
+        >>> for t in range(1, num_samples):
+        ...     Q[t] = angular_rate.update(Q[t-1], gyro_data[t])
+        ...
+        >>> Q
+        array([[ 1.00000000e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00],
+               [ 9.99999993e-01,  2.36511228e-06, -1.12991334e-04,  4.28771947e-05],
+               [ 9.99999967e-01,  1.77775173e-05, -2.43529706e-04,  8.33144162e-05],
+               ...,
+               [-0.92576208, -0.23633121,  0.19738534, -0.2194337 ],
+               [-0.92547793, -0.23388968,  0.19889139, -0.22187479],
+               [-0.92504595, -0.23174096,  0.20086376, -0.22414251]])
+
         """
+        q = np.copy(q)
         if gyr is None or not np.linalg.norm(gyr)>0:
             return q
         qDot = 0.5*q_prod(q, [0, *gyr])     # Quaternion derivative
