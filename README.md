@@ -7,7 +7,7 @@
 ![PyPI Downloads](https://pepy.tech/badge/ahrs)
 ![Codacy Badge](https://api.codacy.com/project/badge/Grade/bc366c601ed44e12b233218dd37cd32c)
 
-AHRS is a zoo of functions and algorithms in pure Python used to estimate the orientation and position of mobile systems.
+AHRS is a collection of functions and algorithms in pure Python used to estimate the orientation of mobile systems.
 
 Orginally, an [AHRS](https://en.wikipedia.org/wiki/Attitude_and_heading_reference_system) is a set of orthogonal sensors providing attitude information about an aircraft. This field has now expanded to smaller devices, like wearables, automated transportation and all kinds of systems in motion.
 
@@ -17,7 +17,7 @@ AHRS is compatible with **Python 3.6** and newer.
 
 ## Installation
 
-The most recommended mehod is to install AHRS directly from this repository to get the latest version:
+The most recommended method is to install AHRS directly from this repository to get the latest version:
 
 ```shell
 git clone https://github.com/Mayitzin/ahrs.git
@@ -153,37 +153,43 @@ One of the biggest improvements in this version is the addition of many new atti
 
 All estimators are refactored to be consistent to the original articles describing them. They have in-code references to the original equations, so that you can follow the original articles along with the code.
 
-Implemented attitude estimators are labeled as ``Ready`` in the following table. More Estimators are still a *Work In Progress*, or *planned* to be added in the future.
+Implemented attitude estimators are in the following table.
+
+| Algorithm      | Gyroscope | Accelerometer | Magnetometer |
+|----------------|:---------:|:-------------:|:------------:|
+| AQUA           | YES       | YES           | Optional     |
+| Complementary  | YES       | YES           | Optional     |
+| Davenport's    | NO        | YES           | YES          |
+| EKF            | YES       | YES           | YES          |
+| FAMC           | NO        | YES           | YES          |
+| FLAE           | NO        | YES           | YES          |
+| Fourati        | YES       | YES           | YES          |
+| FQA            | NO        | YES           | Optional     |
+| Integration    | YES       | NO            | NO           |
+| Madgwick       | YES       | YES           | Optional     |
+| Mahony         | YES       | YES           | Optional     |
+| OLEQ           | NO        | YES           | YES          |
+| QUEST          | NO        | YES           | YES          |
+| ROLEQ          | NO        | YES           | YES          |
+| SAAM           | NO        | YES           | YES          |
+| Tilt           | NO        | YES           | Optional     |
+| TRIAD          | NO        | YES           | YES          |
+
+More Estimators are still a *Work In Progress*, or *planned* to be added in the future.
 
 | Algorithm      | Gyroscope | Accelerometer | Magnetometer | Status  |
 |----------------|:---------:|:-------------:|:------------:|:-------:|
-| AQUA           | YES       | Optional      | Optional     | Ready   |
-| Complementary  | YES       | YES           | Optional     | Ready   |
-| Davenport's    | NO        | YES           | YES          | Ready   |
 | ESOQ           | NO        | YES           | YES          | WIP     |
 | ESOQ-2         | NO        | YES           | YES          | WIP     |
-| EKF            | YES       | YES           | YES          | Ready   |
-| FAMC           | NO        | YES           | YES          | Ready   |
 | FKF            | NO        | YES           | YES          | WIP     |
 | FCF            | NO        | YES           | YES          | Planned |
 | FOAM           | NO        | YES           | YES          | Planned |
-| FLAE           | NO        | YES           | YES          | Ready   |
-| Fourati        | YES       | YES           | YES          | Ready   |
-| FQA            | NO        | YES           | Optional     | Ready   |
 | GDA-LKF        | YES       | YES           | YES          | Planned |
-| Integration    | YES       | NO            | NO           | Ready   |
-| Madgwick       | YES       | YES           | Optional     | Ready   |
 | MAGYQ          | YES       | YES           | YES          | Planned |
-| Mahony         | YES       | YES           | Optional     | Ready   |
-| OLEQ           | NO        | YES           | YES          | Ready   |
-| QUEST          | NO        | YES           | YES          | Ready   |
+| QRAUKF         | YES       | YES           | YES          | Planned |
 | REQUEST        | NO        | YES           | YES          | Planned |
-| ROLEQ          | NO        | YES           | YES          | Ready   |
-| SAAM           | NO        | YES           | YES          | Ready   |
 | Sabatini       | YES       | YES           | YES          | Planned |
 | SOLEQ          | NO        | YES           | YES          | Planned |
-| Tilt           | NO        | YES           | Optional     | Ready   |
-| TRIAD          | NO        | YES           | YES          | Ready   |
 
 To use the sensor data to estimate the attitude simply pass the data to a desired estimator, and it will automatically estimate the quaternions with the given parameters.
 
