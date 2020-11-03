@@ -9,33 +9,42 @@ base coordinate frame is the **orientation** or **attitude**.
 Rotations are linear operations preserving vector lenght and relative vector
 orientation, and a rotation operator acting on a vector :math:`\\mathbf{v}\\in\\mathbb{R}^3`
 can be defined in the Special Orthogonal group :math:`SO(3)`, also known as the
-**rotation group**.
+`rotation group <https://en.wikipedia.org/wiki/3D_rotation_group>`_.
 
-The rotation operator is, normally, represented by a :math:`3\\times 3` matrix:
+The rotation operator is a linear transformation represented by a
+:math:`3\\times 3` matrix:
 
 .. math::
     \\mathbf{R} =
     \\begin{bmatrix}
-    | & | & | \\\\ \\mathbf{r}_1 & \\mathbf{r}_2 & \\mathbf{r}_3 \\\\ | & | & |
+    r_{11} & r_{12} & r_{13} \\\\ r_{21} & r_{22} & r_{23} \\\\ r_{31} & r_{32} & r_{33}
     \\end{bmatrix} \\in \\mathbb{R}^{3\\times 3}
 
-where :math:`\\mathbf{r}_1`, :math:`\\mathbf{r}_2` and :math:`\\mathbf{r}_3`
+where
+
+.. math::
+    \\begin{array}{lcr}
+    \\mathbf{r}_1 = \\begin{bmatrix}r_{11}\\\\ r_{12} \\\\ r_{13} \\end{bmatrix} \\; , &
+    \\mathbf{r}_2 = \\begin{bmatrix}r_{21}\\\\ r_{22} \\\\ r_{32} \\end{bmatrix} \\; , &
+    \\mathbf{r}_3 = \\begin{bmatrix}r_{31}\\\\ r_{23} \\\\ r_{33} \\end{bmatrix}
+    \\end{array}
+
 are unit vectors orthogonal to each other. All matrices satisfying this
 condition are called **orthogonal matrices**.
 
-The rotation operator :math:`\\mathbf{R}` rotates any vector
+The transformation matrix :math:`\\mathbf{R}` rotates any vector
 :math:`\\mathbf{v}\\in\\mathbb{R}^3` through the matrix product,
 
 .. math::
     \\mathbf{v}' = \\mathbf{Rv}
 
-Thanks to its orthonormality, :math:`\\mathbf{RR}^{-1}=\\mathbf{RR}^T=\\mathbf{R}^T\\mathbf{R}=\\mathbf{I}`,
+We observe that :math:`\\mathbf{RR}^{-1}=\\mathbf{RR}^T=\\mathbf{R}^T\\mathbf{R}=\\mathbf{I}`,
 indicating that the inverse of :math:`\\mathbf{R}` is its transpose. So,
 
 .. math::
     \\mathbf{v} = \\mathbf{R}^T\\mathbf{v}'
 
-The determinant of a rotation matrix is always equal to :math:`+1`. Meaning,
+The determinant of a rotation matrix is always equal to :math:`+1`. This means,
 its product with any vector will leave the vector's lenght unchanged.
 
 Matrices conforming to both properties belong to the special orthogonal group
@@ -50,16 +59,6 @@ matrix is commonly named the **Direction Cosine Matrix**.
 DCMs are, therefore, the most common representation of rotations [WikiR]_,
 especially in real applications of spacecraft tracking and location.
 
-Rotations have several representations. The most common to use and easier to
-understand are the Direction Cosine Matrices, or Rotation Matrices.
-
-Strictly speaking, a **rotation matrix** is the matrix that, when
-pre-multiplied by a vector expressed in the world coordinates, yields the same
-vector expressed in the body-fixed coordinates.
-
-A rotation matrix can also be referred to as a *direction cosine matrix*,
-because its elements are the cosines of the unsigned angles between body-fixed
-axes and the world axes.
 
 References
 ----------
@@ -232,28 +231,117 @@ class DCM(np.ndarray):
 
     @property
     def I(self) -> np.ndarray:
+        """
+        synonym of property ``inv``.
+
+        Returns
+        -------
+        np.ndarray
+            Inverse of the DCM.
+        """
         return self.A.T
 
     @property
     def inv(self) -> np.ndarray:
+        """
+        Inverse of the DCM.
+
+        The direction cosine matrix belongs to the Special Orthogonal group
+        `SO(3) <https://en.wikipedia.org/wiki/SO(3)>`_, where its transpose is
+        equal to its inverse:
+
+        .. math::
+            \\mathbf{R}^T\\mathbf{R} = \\mathbf{R}^{-1}\\mathbf{R} = \\mathbf{I}_3
+
+        Returns
+        -------
+        np.ndarray
+            Inverse of the DCM.
+        """
         return self.A.T
 
     @property
     def det(self) -> float:
+        """
+        Synonym of property ``determinant``.
+
+        Returns
+        -------
+        float
+            Determinant of the DCM.
+        """
+        return np.linalg.det(self.A)
+
+    @property
+    def determinant(self) -> float:
+        """
+        Determinant of the DCM.
+        
+        Given a direction cosine matrix :math:`\\mathbf{R}`, its determinant
+        :math:`|\\mathbf{R}|` is found as:
+
+        .. math::
+            |\\mathbf{R}| =
+            \\begin{vmatrix}r_{11} & r_{12} & r_{13} \\\\ r_{21} & r_{22} & r_{23} \\\\ r_{31} & r_{32} & r_{33}\\end{vmatrix}=
+            r_{11}\\begin{vmatrix}r_{22} & r_{23}\\\\r_{32} & r_{33}\\end{vmatrix} -
+            r_{12}\\begin{vmatrix}r_{21} & r_{23}\\\\r_{31} & r_{33}\\end{vmatrix} +
+            r_{13}\\begin{vmatrix}r_{21} & r_{22}\\\\r_{31} & r_{32}\\end{vmatrix}
+
+        where the determinant of :math:`\\mathbf{B}\\in\\mathbb{R}^{2\\times 2}`
+        is:
+
+        .. math::
+            |\\mathbf{B}|=\\begin{vmatrix}b_{11}&b_{12}\\\\b_{21}&b_{22}\\end{vmatrix}=b_{11}b_{22}-b_{12}b_{21}
+
+        Returns
+        -------
+        float
+            Determinant of the DCM.
+        """
         return np.linalg.det(self.A)
 
     @property
     def fro(self) -> float:
+        """
+        Synonym of property ``frobenius``.
+
+        Returns
+        -------
+        float
+            Frobenius norm of the DCM.
+        """
         return np.linalg.norm(self.A, 'fro')
 
     @property
     def frobenius(self) -> float:
+        """
+        Frobenius norm of the DCM.
+
+        The `Frobenius norm <https://en.wikipedia.org/wiki/Matrix_norm#Frobenius_norm>`_
+        of a matrix :math:`\\mathbf{A}` is defined as:
+
+        .. math::
+            \\|\\mathbf{A}\\|_F = \\sqrt{\\sum_{i=1}^m\\sum_{j=1}^n|a_{ij}|^2}
+
+        Returns
+        -------
+        float
+            Frobenius norm of the DCM.
+        """
         return np.linalg.norm(self.A, 'fro')
 
     @property
     def log(self) -> np.ndarray:
         """
-        Logarithm of DCM
+        Logarithm of DCM.
+
+        The logarithmic map is defined as the inverse of the exponential map.
+        It corresponds to the logarithm given by the Rodrigues rotation formula:
+
+        .. math::
+            \\log(\\mathbf{R}) = \\frac{\\theta(\\mathbf{R}-\\mathbf{R}^T)}{2\\sin\\theta}
+
+        with :math:`\\theta=\\arccos\\Big(\\frac{\\mathrm{tr}(\\mathbf{R}-1)}{2}\\Big)`.
 
         Returns
         -------
@@ -261,34 +349,79 @@ class DCM(np.ndarray):
             Logarithm of DCM
 
         """
-        S = 0.5*(self.A-self.A.T)       # Skew-symmetric matrix
-        y = np.array([S[2, 1], -S[2, 0], S[1, 0]])  # Axis
-        if np.allclose(np.zeros(3), y):
-            return np.zeros(3)
-        y2 = np.linalg.norm(y)
-        return np.arcsin(y2)*y/y2
+        angle = np.arccos((self.A.trace()-1)/2)
+        S = self.A-self.A.T                         # Skew-symmetric matrix
+        logR = angle*S/(2*np.sin(angle))
 
     @property
     def adjugate(self) -> np.ndarray:
+        """
+        Return the adjugate of the DCM.
+
+        The adjugate, a.k.a. *classical adjoint*, of a matrix :math:`\\mathbf{A}`
+        is the transpose of its *cofactor matrix*. For orthogonal matrices, it
+        simplifies to:
+
+        .. math::
+            \\mathrm{adj}(\\mathbf{A}) = \\mathrm{det}(\\mathbf{A})\\mathbf{A}^T
+
+        Returns
+        -------
+        np.ndarray
+            Adjugate of the DCM.
+        """
         return np.linalg.det(self.A)*self.A.T
 
     @property
     def adj(self) -> np.ndarray:
+        """
+        Synonym of property ``adjugate``
+
+        Returns
+        -------
+        np.ndarray
+            Adjugate of the DCM.
+        """
         return np.linalg.det(self.A)*self.A.T
 
     def to_axisangle(self) -> Tuple[np.ndarray, float]:
         """
-        DCM from axis-angle representation
+        Return axis-angle representation of the DCM.
 
-        Use Rodrigue's formula to obtain the axis-angle representation from the
-        DCM.
+        Defining a *rotation matrix* :math:`\\mathbf{R}`:
 
-        Parameters
-        ----------
+        .. math::
+            \\mathbf{R} =
+            \\begin{bmatrix}
+            r_{11} & r_{12} & r_{13} \\\\
+            r_{21} & r_{22} & r_{23} \\\\
+            r_{31} & r_{32} & r_{33}
+            \\end{bmatrix}
+
+        The axis-angle representation of :math:`\\mathbf{R}` is obtained with:
+
+        .. math::
+            \\theta = \\arccos\\Big(\\frac{\\mathrm{tr}(\\mathbf{R}-1)}{2}\\Big)
+
+        for the **rotation angle**, and:
+
+        .. math::
+            \\mathbf{k} = \\frac{1}{2\\sin\\theta}
+            \\begin{bmatrix}r_{32} - r_{23} \\\\ r_{13} - r_{31} \\\\ r_{21} - r_{12}\\end{bmatrix}
+
+        for the **rotation vector**.
+
+        .. note::
+            The axis-angle representation is not unique since a rotation of
+            :math:`−\\theta` about :math:`−\\mathbf{k}` is the same as a
+            rotation of :math:`\\theta` about :math:`\\mathbf{k}`.
+
+        Returns
+        -------
         axis : numpy.ndarray
             Axis of rotation.
         angle : float
-            Angle of rotation.
+            Angle of rotation, in radians.
 
         """
         angle = np.arccos((self.A.trace()-1)/2)
@@ -298,7 +431,16 @@ class DCM(np.ndarray):
         return axis, angle
 
     def to_axang(self) -> Tuple[np.ndarray, float]:
-        """Synonym of method ``to_axisangle``
+        """
+        Synonym of method ``to_axisangle``
+
+        Returns
+        -------
+        axis : numpy.ndarray
+            Axis of rotation.
+        angle : float
+            Angle of rotation, in radians.
+
         """
         return self.to_axisangle()
 
@@ -309,12 +451,21 @@ class DCM(np.ndarray):
         Use Rodrigue's formula to obtain the DCM from the axis-angle
         representation.
 
+        .. math::
+            \\mathbf{R} = \\mathbf{I}_3 - (\\sin\\theta)\\mathbf{K} + (1-\\cos\\theta)\\mathbf{K}^2
+
+        where :math:`\\mathbf{R}` is the DCM, which rotates through an **angle**
+        :math:`\\theta` counterclockwise about the **axis** :math:`\\mathbf{k}`,
+        :math:`\\mathbf{I}_3` is the :math:`3\\times 3` identity matrix, and
+        :math:`\\mathbf{K}` is the `skew-symmetric <https://en.wikipedia.org/wiki/Skew-symmetric_matrix>`_
+        matrix of :math:`\\mathbf{k}`.
+
         Parameters
         ----------
         axis : numpy.ndarray
             Axis of rotation.
         angle : float
-            Angle of rotation.
+            Angle of rotation, in radians.
 
         Returns
         -------
@@ -325,6 +476,25 @@ class DCM(np.ndarray):
         axis /= np.linalg.norm(axis)
         K = skew(axis)
         return np.identity(3) + np.sin(angle)*K + (1-np.cos(angle))*K@K
+
+    def from_axang(self, axis: np.ndarray, angle: float) -> np.ndarray:
+        """
+        Synonym of method ``from_axisangle``
+
+        Parameters
+        ----------
+        axis : numpy.ndarray
+            Axis of rotation.
+        angle : float
+            Angle of rotation, in radians.
+
+        Returns
+        -------
+        R : numpy.ndarray
+            3-by-3 direction cosine matrix
+
+        """
+        return self.from_axisangle(axis, angle)
 
     def from_quaternion(self, q: np.ndarray) -> np.ndarray:
         """
@@ -345,8 +515,13 @@ class DCM(np.ndarray):
             2(q_xq_z - q_wq_y) & 2(q_wq_x + q_yq_z) & 1 - 2(q_x^2 + q_y^2)
             \\end{bmatrix}
 
-        The identity Quaternion :math:`\\mathbf{q} = (1, 0, 0, 0)`, produces a
-        a :math:`3 \\times 3` Identity matrix :math:`\\mathbf{I}_3`.
+        The identity Quaternion :math:`\\mathbf{q} = \\begin{pmatrix}1 & 0 & 0 & 0\\end{pmatrix}`,
+        produces a :math:`3 \\times 3` Identity matrix :math:`\\mathbf{I}_3`.
+
+        Parameters
+        ----------
+        q : numpy.ndarray
+            Quaternion
 
         Returns
         -------
@@ -378,7 +553,18 @@ class DCM(np.ndarray):
             [2.0*(q[1]*q[3]-q[0]*q[2]), 2.0*(q[0]*q[1]+q[2]*q[3]), 1.0-2.0*(q[1]**2+q[2]**2)]])
 
     def from_q(self, q: np.ndarray) -> np.ndarray:
-        """Synonym of method ``from_quaternion``
+        """
+        Synonym of method ``from_quaternion``
+
+        Parameters
+        ----------
+        q : numpy.ndarray
+            Quaternion
+
+        Returns
+        -------
+        R : numpy.ndarray
+            3-by-3 direction cosine matrix
         """
         return self.from_quaternion(self, q)
 
@@ -389,16 +575,15 @@ class DCM(np.ndarray):
         There are five methods available to obtain a quaternion from a
         Direction Cosine Matrix:
 
-        * ``'chiaverini'`` as described in [Chiaverini]_
-        * ``'hughes'`` as described in [Hughes]_
-        * ``'itzhack'`` as described in [Bar-Itzhack]_
-        * ``'sarabandi'`` as described in [Sarabandi]_
-        * ``'shepperd'`` as described in [Shepperd]_
+        * ``'chiaverini'`` as described in [Chiaverini]_.
+        * ``'hughes'`` as described in [Hughes]_.
+        * ``'itzhack'`` as described in [Bar-Itzhack]_ using version 3 by default.
+        * ``'sarabandi'`` as described in [Sarabandi]_ with a threshold equal
+          to 0.0 by default.
+        * ``'shepperd'`` as described in [Shepperd]_.
 
         Parameters
         ----------
-        dcm : numpy.ndarray
-            3-by-3 Direction Cosine Matrix.
         method : str, default: 'chiaverini'
             Method to use. Options are: 'chiaverini', 'hughes', 'itzhack',
             'sarabandi', and 'shepperd'.
@@ -418,7 +603,14 @@ class DCM(np.ndarray):
         return q/np.linalg.norm(q)
 
     def to_q(self, method: str = 'chiaverini', **kw) -> np.ndarray:
-        """Synonym of method ``to_quaternion``
+        """
+        Synonym of method ``to_quaternion``
+
+        Parameters
+        ----------
+        method : str, default: 'chiaverini'
+            Method to use. Options are: 'chiaverini', 'hughes', 'itzhack',
+            'sarabandi', and 'shepperd'.
         """
         return self.to_quaternion(method=method, **kw)
 
@@ -426,9 +618,16 @@ class DCM(np.ndarray):
         """
         Euler Angles from DCM
 
+        A set of Euler angles may be written according to:
+
+        .. math::
+            \\mathbf{a} =
+            \\begin{bmatrix}\\phi \\\\ \\theta \\\\ \\psi\\end{bmatrix} =
+            \\begin{bmatrix}\\mathrm{arctan2}(r_{23}, r_{33}) \\\\ -\\arcsin(r_{13}) \\\\ \\mathrm{arctan2}(r_{12}, r_{11})\\end{bmatrix}
+
         Returns
         -------
-        e : numpy.ndarray
+        a : numpy.ndarray
             Euler angles
         """
         phi = np.arctan2(self.A[1, 2], self.A[2, 2])    # Roll Angle
