@@ -232,7 +232,19 @@ class DCM(np.ndarray):
     @property
     def I(self) -> np.ndarray:
         """
-        synonym of property ``inv``.
+        synonym of property :meth:`inv`.
+
+        Examples
+        --------
+        >>> R = DCM(rpy=[10.0, -20.0, 30.0])
+        >>> R.view()
+        DCM([[ 0.92541658, -0.31879578, -0.20487413],
+             [ 0.16317591,  0.82317294, -0.54383814],
+             [ 0.34202014,  0.46984631,  0.81379768]])
+        >>> R.I
+        array([[ 0.92541658,  0.16317591,  0.34202014],
+               [-0.31879578,  0.82317294,  0.46984631],
+               [-0.20487413, -0.54383814,  0.81379768]])
 
         Returns
         -------
@@ -253,6 +265,18 @@ class DCM(np.ndarray):
         .. math::
             \\mathbf{R}^T\\mathbf{R} = \\mathbf{R}^{-1}\\mathbf{R} = \\mathbf{I}_3
 
+        Examples
+        --------
+        >>> R = DCM(rpy=[10.0, -20.0, 30.0])
+        >>> R.view()
+        DCM([[ 0.92541658, -0.31879578, -0.20487413],
+             [ 0.16317591,  0.82317294, -0.54383814],
+             [ 0.34202014,  0.46984631,  0.81379768]])
+        >>> R.inv
+        array([[ 0.92541658,  0.16317591,  0.34202014],
+               [-0.31879578,  0.82317294,  0.46984631],
+               [-0.20487413, -0.54383814,  0.81379768]])
+
         Returns
         -------
         np.ndarray
@@ -263,12 +287,22 @@ class DCM(np.ndarray):
     @property
     def det(self) -> float:
         """
-        Synonym of property ``determinant``.
+        Synonym of property :meth:`determinant`.
 
         Returns
         -------
         float
             Determinant of the DCM.
+
+        Examples
+        --------
+        >>> R = DCM(rpy=[10.0, -20.0, 30.0])
+        >>> R.view()
+        DCM([[ 0.92541658, -0.31879578, -0.20487413],
+             [ 0.16317591,  0.82317294, -0.54383814],
+             [ 0.34202014,  0.46984631,  0.81379768]])
+        >>> R.det
+        1.0000000000000002
         """
         return np.linalg.det(self.A)
 
@@ -293,22 +327,45 @@ class DCM(np.ndarray):
         .. math::
             |\\mathbf{B}|=\\begin{vmatrix}b_{11}&b_{12}\\\\b_{21}&b_{22}\\end{vmatrix}=b_{11}b_{22}-b_{12}b_{21}
 
+        All matrices in SO(3), to which direction cosine matrices belong, have
+        a determinant equal to :math:`+1`.
+
         Returns
         -------
         float
             Determinant of the DCM.
+
+        Examples
+        --------
+        >>> R = DCM(rpy=[10.0, -20.0, 30.0])
+        >>> R.view()
+        DCM([[ 0.92541658, -0.31879578, -0.20487413],
+             [ 0.16317591,  0.82317294, -0.54383814],
+             [ 0.34202014,  0.46984631,  0.81379768]])
+        >>> R.determinant
+        1.0000000000000002
         """
         return np.linalg.det(self.A)
 
     @property
     def fro(self) -> float:
         """
-        Synonym of property ``frobenius``.
+        Synonym of property :meth:`frobenius`.
 
         Returns
         -------
         float
             Frobenius norm of the DCM.
+
+        Examples
+        --------
+        >>> R = DCM(rpy=[10.0, -20.0, 30.0])
+        >>> R.view()
+        DCM([[ 0.92541658, -0.31879578, -0.20487413],
+             [ 0.16317591,  0.82317294, -0.54383814],
+             [ 0.34202014,  0.46984631,  0.81379768]])
+        >>> R.fro
+        1.7320508075688774
         """
         return np.linalg.norm(self.A, 'fro')
 
@@ -327,6 +384,16 @@ class DCM(np.ndarray):
         -------
         float
             Frobenius norm of the DCM.
+
+        Examples
+        --------
+        >>> R = DCM(rpy=[10.0, -20.0, 30.0])
+        >>> R.view()
+        DCM([[ 0.92541658, -0.31879578, -0.20487413],
+             [ 0.16317591,  0.82317294, -0.54383814],
+             [ 0.34202014,  0.46984631,  0.81379768]])
+        >>> R.frobenius
+        1.7320508075688774
         """
         return np.linalg.norm(self.A, 'fro')
 
@@ -348,10 +415,23 @@ class DCM(np.ndarray):
         log : numpy.ndarray
             Logarithm of DCM
 
+        Examples
+        --------
+        >>> R = DCM(rpy=[10.0, -20.0, 30.0])
+        >>> R.view()
+        DCM([[ 0.92541658, -0.31879578, -0.20487413],
+             [ 0.16317591,  0.82317294, -0.54383814],
+             [ 0.34202014,  0.46984631,  0.81379768]])
+        >>> R.log
+        array([[ 0.        , -0.26026043, -0.29531805],
+               [ 0.26026043,  0.        , -0.5473806 ],
+               [ 0.29531805,  0.5473806 ,  0.        ]])
+
         """
         angle = np.arccos((self.A.trace()-1)/2)
         S = self.A-self.A.T                         # Skew-symmetric matrix
         logR = angle*S/(2*np.sin(angle))
+        return logR
 
     @property
     def adjugate(self) -> np.ndarray:
@@ -369,18 +449,42 @@ class DCM(np.ndarray):
         -------
         np.ndarray
             Adjugate of the DCM.
+
+        Examples
+        --------
+        >>> R = DCM(rpy=[10.0, -20.0, 30.0])
+        >>> R.view()
+        DCM([[ 0.92541658, -0.31879578, -0.20487413],
+             [ 0.16317591,  0.82317294, -0.54383814],
+             [ 0.34202014,  0.46984631,  0.81379768]])
+        >>> R.adjugate
+        array([[ 0.92541658,  0.16317591,  0.34202014],
+               [-0.31879578,  0.82317294,  0.46984631],
+               [-0.20487413, -0.54383814,  0.81379768]])
         """
         return np.linalg.det(self.A)*self.A.T
 
     @property
     def adj(self) -> np.ndarray:
         """
-        Synonym of property ``adjugate``
+        Synonym of property :meth:`adjugate`.
 
         Returns
         -------
         np.ndarray
             Adjugate of the DCM.
+
+        Examples
+        --------
+        >>> R = DCM(rpy=[10.0, -20.0, 30.0])
+        >>> R.view()
+        DCM([[ 0.92541658, -0.31879578, -0.20487413],
+             [ 0.16317591,  0.82317294, -0.54383814],
+             [ 0.34202014,  0.46984631,  0.81379768]])
+        >>> R.adj
+        array([[ 0.92541658,  0.16317591,  0.34202014],
+               [-0.31879578,  0.82317294,  0.46984631],
+               [-0.20487413, -0.54383814,  0.81379768]])
         """
         return np.linalg.det(self.A)*self.A.T
 
@@ -401,7 +505,7 @@ class DCM(np.ndarray):
         The axis-angle representation of :math:`\\mathbf{R}` is obtained with:
 
         .. math::
-            \\theta = \\arccos\\Big(\\frac{\\mathrm{tr}(\\mathbf{R}-1)}{2}\\Big)
+            \\theta = \\arccos\\Big(\\frac{\\mathrm{tr}(\\mathbf{R})-1}{2}\\Big)
 
         for the **rotation angle**, and:
 
@@ -423,16 +527,27 @@ class DCM(np.ndarray):
         angle : float
             Angle of rotation, in radians.
 
+        Examples
+        --------
+        >>> R = DCM(rpy=[10.0, -20.0, 30.0])
+        >>> R.view()
+        DCM([[ 0.92541658, -0.31879578, -0.20487413],
+             [ 0.16317591,  0.82317294, -0.54383814],
+             [ 0.34202014,  0.46984631,  0.81379768]])
+        >>> R.to_axisangle()
+        (array([ 0.81187135, -0.43801381,  0.38601658]), 0.6742208510527136)
+
         """
         angle = np.arccos((self.A.trace()-1)/2)
         axis = np.zeros(3)
         if angle!=0:
-            axis = np.array([self.A[2, 1]-self.A[1, 2], self.A[0, 2]-self.A[2, 0], self.A[1, 0]-self.A[0, 1]])/(2*np.sin(angle))
+            S = np.array([self.A[2, 1]-self.A[1, 2], self.A[0, 2]-self.A[2, 0], self.A[1, 0]-self.A[0, 1]])
+            axis = S/(2*np.sin(angle))
         return axis, angle
 
     def to_axang(self) -> Tuple[np.ndarray, float]:
         """
-        Synonym of method ``to_axisangle``
+        Synonym of method :meth:`to_axisangle`.
 
         Returns
         -------
@@ -440,6 +555,16 @@ class DCM(np.ndarray):
             Axis of rotation.
         angle : float
             Angle of rotation, in radians.
+
+        Examples
+        --------
+        >>> R = ahrs.DCM(rpy=[10.0, -20.0, 30.0])
+        >>> R.view()
+        DCM([[ 0.92541658, -0.31879578, -0.20487413],
+             [ 0.16317591,  0.82317294, -0.54383814],
+             [ 0.34202014,  0.46984631,  0.81379768]])
+        >>> R.to_axang()
+        (array([ 0.81187135, -0.43801381,  0.38601658]), 0.6742208510527136)
 
         """
         return self.to_axisangle()
@@ -472,6 +597,18 @@ class DCM(np.ndarray):
         R : numpy.ndarray
             3-by-3 direction cosine matrix
 
+        Examples
+        --------
+        >>> R = ahrs.DCM()
+        >>> R.view()
+        DCM([[1., 0., 0.],
+             [0., 1., 0.],
+             [0., 0., 1.]])
+        >>> R.from_axisangle([0.81187135, -0.43801381, 0.38601658], 0.6742208510527136)
+        array([[ 0.92541658, -0.31879578, -0.20487413],
+               [ 0.16317591,  0.82317294, -0.54383814],
+               [ 0.34202014,  0.46984631,  0.81379768]])
+
         """
         axis /= np.linalg.norm(axis)
         K = skew(axis)
@@ -479,7 +616,7 @@ class DCM(np.ndarray):
 
     def from_axang(self, axis: np.ndarray, angle: float) -> np.ndarray:
         """
-        Synonym of method ``from_axisangle``
+        Synonym of method :meth:`from_axisangle`.
 
         Parameters
         ----------
@@ -492,6 +629,18 @@ class DCM(np.ndarray):
         -------
         R : numpy.ndarray
             3-by-3 direction cosine matrix
+
+        Examples
+        --------
+        >>> R = ahrs.DCM()
+        >>> R.view()
+        DCM([[1., 0., 0.],
+             [0., 1., 0.],
+             [0., 0., 1.]])
+        >>> R.from_axang([0.81187135, -0.43801381, 0.38601658], 0.6742208510527136)
+        array([[ 0.92541658, -0.31879578, -0.20487413],
+               [ 0.16317591,  0.82317294, -0.54383814],
+               [ 0.34202014,  0.46984631,  0.81379768]])
 
         """
         return self.from_axisangle(axis, angle)
@@ -528,9 +677,43 @@ class DCM(np.ndarray):
         R : numpy.ndarray
             3-by-3 direction cosine matrix
 
+        Examples
+        --------
+        >>> R = ahrs.DCM()
+        >>> R.from_quaternion([0.70710678, 0.0, 0.70710678, 0.0])
+        array([[-2.22044605e-16,  0.00000000e+00,  1.00000000e+00],
+               [ 0.00000000e+00,  1.00000000e+00,  0.00000000e+00],
+               [-1.00000000e+00,  0.00000000e+00, -2.22044605e-16]])
+
+        Non-normalized quaternions will be normalized and transformed too.
+
+        >>> R.from_quaternion([1, 0.0, 1, 0.0])
+        array([[ 2.22044605e-16,  0.00000000e+00,  1.00000000e+00],
+               [ 0.00000000e+00,  1.00000000e+00,  0.00000000e+00],
+               [-1.00000000e+00,  0.00000000e+00,  2.22044605e-16]])
+
+        A list (or a Numpy array) with N quaternions will return an N-by-3-by-3
+        array with the corresponding DCMs.
+
+        .. code-block::
+
+            >>> R.from_q([[1, 0.0, 1, 0.0], [1.0, -1.0, 0.0, 1.0], [0.0, 0.0, -1.0, 1.0]])
+            array([[[ 2.22044605e-16,  0.00000000e+00,  1.00000000e+00],
+                    [ 0.00000000e+00,  1.00000000e+00,  0.00000000e+00],
+                    [-1.00000000e+00,  0.00000000e+00,  2.22044605e-16]],
+
+                   [[ 3.33333333e-01, -6.66666667e-01, -6.66666667e-01],
+                    [ 6.66666667e-01, -3.33333333e-01,  6.66666667e-01],
+                    [-6.66666667e-01, -6.66666667e-01,  3.33333333e-01]],
+
+                   [[-1.00000000e+00, -0.00000000e+00,  0.00000000e+00],
+                    [ 0.00000000e+00,  2.22044605e-16, -1.00000000e+00],
+                    [ 0.00000000e+00, -1.00000000e+00,  2.22044605e-16]]])
+
         """
         if q is None:
             return np.identity(3)
+        q = np.copy(q)
         if q.shape[-1]!=4 or q.ndim>2:
             raise ValueError("Quaternion must be of the form (4,) or (N, 4)")
         if q.ndim>1:
@@ -554,7 +737,7 @@ class DCM(np.ndarray):
 
     def from_q(self, q: np.ndarray) -> np.ndarray:
         """
-        Synonym of method ``from_quaternion``
+        Synonym of method :meth:`from_quaternion`.
 
         Parameters
         ----------
@@ -565,6 +748,39 @@ class DCM(np.ndarray):
         -------
         R : numpy.ndarray
             3-by-3 direction cosine matrix
+
+        Examples
+        --------
+        >>> R = ahrs.DCM()
+        >>> R.from_q([0.70710678, 0.0, 0.70710678, 0.0])
+        array([[-2.22044605e-16,  0.00000000e+00,  1.00000000e+00],
+               [ 0.00000000e+00,  1.00000000e+00,  0.00000000e+00],
+               [-1.00000000e+00,  0.00000000e+00, -2.22044605e-16]])
+
+        Non-normalized quaternions will be normalized and transformed too.
+
+        >>> R.from_q([1, 0.0, 1, 0.0])
+        array([[ 2.22044605e-16,  0.00000000e+00,  1.00000000e+00],
+               [ 0.00000000e+00,  1.00000000e+00,  0.00000000e+00],
+               [-1.00000000e+00,  0.00000000e+00,  2.22044605e-16]])
+
+        A list (or a Numpy array) with N quaternions will return an N-by-3-by-3
+        array with the corresponding DCMs.
+
+        .. code-block::
+
+            >>> R.from_q([[1, 0.0, 1, 0.0], [1.0, -1.0, 0.0, 1.0], [0.0, 0.0, -1.0, 1.0]])
+            array([[[ 2.22044605e-16,  0.00000000e+00,  1.00000000e+00],
+                    [ 0.00000000e+00,  1.00000000e+00,  0.00000000e+00],
+                    [-1.00000000e+00,  0.00000000e+00,  2.22044605e-16]],
+
+                   [[ 3.33333333e-01, -6.66666667e-01, -6.66666667e-01],
+                    [ 6.66666667e-01, -3.33333333e-01,  6.66666667e-01],
+                    [-6.66666667e-01, -6.66666667e-01,  3.33333333e-01]],
+
+                   [[-1.00000000e+00, -0.00000000e+00,  0.00000000e+00],
+                    [ 0.00000000e+00,  2.22044605e-16, -1.00000000e+00],
+                    [ 0.00000000e+00, -1.00000000e+00,  2.22044605e-16]]])
         """
         return self.from_quaternion(self, q)
 
@@ -577,16 +793,36 @@ class DCM(np.ndarray):
 
         * ``'chiaverini'`` as described in [Chiaverini]_.
         * ``'hughes'`` as described in [Hughes]_.
-        * ``'itzhack'`` as described in [Bar-Itzhack]_ using version 3 by default.
+        * ``'itzhack'`` as described in [Bar-Itzhack]_ using version ``3`` by
+          default. Possible options are integers ``1``, ``2`` or ``3``.
         * ``'sarabandi'`` as described in [Sarabandi]_ with a threshold equal
-          to 0.0 by default.
+          to ``0.0`` by default. Possible threshold values are floats between
+          ``-3.0`` and ``3.0``.
         * ``'shepperd'`` as described in [Shepperd]_.
 
         Parameters
         ----------
-        method : str, default: 'chiaverini'
-            Method to use. Options are: 'chiaverini', 'hughes', 'itzhack',
-            'sarabandi', and 'shepperd'.
+        method : str, default: ``'chiaverini'``
+            Method to use. Options are: ``'chiaverini'``, ``'hughes'``,
+            ``'itzhack'``, ``'sarabandi'``, and ``'shepperd'``.
+
+        Examples
+        --------
+        >>> R = ahrs.DCM(rpy=[10.0, -20.0, 30.0])
+        >>> R.view()
+        DCM([[ 0.92541658, -0.31879578, -0.20487413],
+             [ 0.16317591,  0.82317294, -0.54383814],
+             [ 0.34202014,  0.46984631,  0.81379768]])
+        >>> R.to_quaternion()   # Uses method 'chiaverini' by default
+        array([ 0.94371436,  0.26853582, -0.14487813,  0.12767944])
+        >>> R.to_quaternion('shepperd')
+        array([ 0.94371436, -0.26853582,  0.14487813, -0.12767944])
+        >>> R.to_quaternion('hughes')
+        array([ 0.94371436, -0.26853582,  0.14487813, -0.12767944])
+        >>> R.to_quaternion('itzhack', version=2)
+        array([ 0.94371436, -0.26853582,  0.14487813, -0.12767944])
+        >>> R.to_quaternion('sarabandi', threshold=0.5)
+        array([0.94371436, 0.26853582, 0.14487813, 0.12767944])
 
         """
         q = np.array([1., 0., 0., 0.])
@@ -604,13 +840,31 @@ class DCM(np.ndarray):
 
     def to_q(self, method: str = 'chiaverini', **kw) -> np.ndarray:
         """
-        Synonym of method ``to_quaternion``
+        Synonym of method :meth:`to_quaternion`.
 
         Parameters
         ----------
-        method : str, default: 'chiaverini'
-            Method to use. Options are: 'chiaverini', 'hughes', 'itzhack',
-            'sarabandi', and 'shepperd'.
+        method : str, default: ``'chiaverini'``
+            Method to use. Options are: ``'chiaverini'``, ``'hughes'``,
+            ``'itzhack'``, ``'sarabandi'``, and ``'shepperd'``.
+
+        Examples
+        --------
+        >>> R = ahrs.DCM(rpy=[10.0, -20.0, 30.0])
+        >>> R.view()
+        DCM([[ 0.92541658, -0.31879578, -0.20487413],
+             [ 0.16317591,  0.82317294, -0.54383814],
+             [ 0.34202014,  0.46984631,  0.81379768]])
+        >>> R.to_q()   # Uses method 'chiaverini' by default
+        array([ 0.94371436,  0.26853582, -0.14487813,  0.12767944])
+        >>> R.to_q('shepperd')
+        array([ 0.94371436, -0.26853582,  0.14487813, -0.12767944])
+        >>> R.to_q('hughes')
+        array([ 0.94371436, -0.26853582,  0.14487813, -0.12767944])
+        >>> R.to_q('itzhack', version=2)
+        array([ 0.94371436, -0.26853582,  0.14487813, -0.12767944])
+        >>> R.to_q('sarabandi', threshold=0.5)
+        array([0.94371436, 0.26853582, 0.14487813, 0.12767944])
         """
         return self.to_quaternion(method=method, **kw)
 
