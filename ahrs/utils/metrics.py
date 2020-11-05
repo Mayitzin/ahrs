@@ -169,42 +169,19 @@ def qdist(q1: np.ndarray, q2: np.ndarray) -> float:
     d : float
         Euclidean distance between given unit quaternions
     """
+    q1 = np.copy(q1)
+    q2 = np.copy(q2)
     if q1.shape!=q2.shape:
         raise ValueError("Cannot compare q1 of shape {} and q2 of shape {}".format(q1.shape, q2.shape))
-    if q1.ndim==1 and q2.ndim==1:
+    if q1.ndim==1:
+        q1 /= np.linalg.norm(q1)
+        q2 /= np.linalg.norm(q2)
         if np.allclose(q1, q2) or np.allclose(-q1, q2):
             return 0.0
         return min(np.linalg.norm(q1-q2), np.linalg.norm(q1+q2))
-    return np.r_[[np.linalg.norm(qa-qb, axis=1)], [np.linalg.norm(qa+qb, axis=1)]].min(axis=0)
-
-def qcip(q1: np.ndarray, q2: np.ndarray) -> float:
-    """
-    Cosine of inner products as defined in [Huynh]_:
-
-    .. math::
-        d(\\mathbf{q}_1, \\mathbf{q}_2) = \\arccos(|\\mathbf{q}_1\\cdot\\mathbf{q}_2|)
-
-    The error lies within: [0, :math:`\\frac{\\pi}{2}`]
-
-    Parameters
-    ----------
-    q1 : numpy.ndarray
-        First quaternion, or set of quaternions, to compare.
-    q2 : numpy.ndarray
-        Second quaternion, or set of quaternions, to compare.
-
-    Returns
-    -------
-    d : float
-        Cosine of inner products of quaternions.
-    """
-    if q1.shape!=q2.shape:
-        raise ValueError("Cannot compare q1 of shape {} and q2 of shape {}".format(q1.shape, q2.shape))
-    if q1.ndim==1 and q2.ndim==1:
-        if np.allclose(q1, q2) or np.allclose(-q1, q2):
-            return 0.0
-        return np.arccos(abs(q1@q2))
-    return np.arccos(abs(np.nansum(q1*q2, axis=1)))
+    q1 /= np.linalg.norm(q1)
+    q2 /= np.linalg.norm(q2)
+    return np.r_[[np.linalg.norm(q1-q2, axis=1)], [np.linalg.norm(q1+q2, axis=1)]].min(axis=0)
 
 def qeip(q1: np.ndarray, q2: np.ndarray) -> float:
     """
@@ -227,13 +204,54 @@ def qeip(q1: np.ndarray, q2: np.ndarray) -> float:
     d : float
         Euclidean distance of inner products between given unit quaternions.
     """
+    q1 = np.copy(q1)
+    q2 = np.copy(q2)
     if q1.shape!=q2.shape:
         raise ValueError("Cannot compare q1 of shape {} and q2 of shape {}".format(q1.shape, q2.shape))
-    if q1.ndim==1 and q2.ndim==1:
+    if q1.ndim==1:
+        q1 /= np.linalg.norm(q1)
+        q2 /= np.linalg.norm(q2)
         if np.allclose(q1, q2) or np.allclose(-q1, q2):
             return 0.0
         return 1.0-abs(q1@q2)
+    q1 /= np.linalg.norm(q1)
+    q2 /= np.linalg.norm(q2)
     return 1.0-abs(np.nansum(q1*q2, axis=1))
+
+def qcip(q1: np.ndarray, q2: np.ndarray) -> float:
+    """
+    Cosine of inner products as defined in [Huynh]_:
+
+    .. math::
+        d(\\mathbf{q}_1, \\mathbf{q}_2) = \\arccos(|\\mathbf{q}_1\\cdot\\mathbf{q}_2|)
+
+    The error lies within: [0, :math:`\\frac{\\pi}{2}`]
+
+    Parameters
+    ----------
+    q1 : numpy.ndarray
+        First quaternion, or set of quaternions, to compare.
+    q2 : numpy.ndarray
+        Second quaternion, or set of quaternions, to compare.
+
+    Returns
+    -------
+    d : float
+        Cosine of inner products of quaternions.
+    """
+    q1 = np.copy(q1)
+    q2 = np.copy(q2)
+    if q1.shape!=q2.shape:
+        raise ValueError("Cannot compare q1 of shape {} and q2 of shape {}".format(q1.shape, q2.shape))
+    if q1.ndim==1:
+        q1 /= np.linalg.norm(q1)
+        q2 /= np.linalg.norm(q2)
+        if np.allclose(q1, q2) or np.allclose(-q1, q2):
+            return 0.0
+        return np.arccos(abs(q1@q2))
+    q1 /= np.linalg.norm(q1, axis=1)[:, None]
+    q2 /= np.linalg.norm(q2, axis=1)[:, None]
+    return np.arccos(abs(np.nansum(q1*q2, axis=1)))
 
 def qad(q1: np.ndarray, q2: np.ndarray) -> float:
     """
@@ -246,13 +264,23 @@ def qad(q1: np.ndarray, q2: np.ndarray) -> float:
     q2 : numpy.ndarray
         Second quaternion, or set of quaternions, to compare.
 
+    The error lies within: [0, :math:`\\frac{\\pi}{2}`]
+
     Returns
     -------
     d : float
         Angle difference between given unit quaternions.
     """
-    if q1.ndim==1 and q2.ndim==1:
+    q1 = np.copy(q1)
+    q2 = np.copy(q2)
+    if q1.shape!=q2.shape:
+        raise ValueError("Cannot compare q1 of shape {} and q2 of shape {}".format(q1.shape, q2.shape))
+    if q1.ndim==1:
+        q1 /= np.linalg.norm(q1)
+        q2 /= np.linalg.norm(q2)
         if np.allclose(q1, q2) or np.allclose(-q1, q2):
             return 0.0
         return np.arccos(2.0*(q1@q2)**2-1.0)
+    q1 /= np.linalg.norm(q1, axis=1)[:, None]
+    q2 /= np.linalg.norm(q2, axis=1)[:, None]
     return np.arccos(2.0*np.nansum(q1*q2, axis=1)**2-1.0)
