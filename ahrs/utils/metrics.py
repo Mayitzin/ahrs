@@ -179,8 +179,8 @@ def qdist(q1: np.ndarray, q2: np.ndarray) -> float:
         if np.allclose(q1, q2) or np.allclose(-q1, q2):
             return 0.0
         return min(np.linalg.norm(q1-q2), np.linalg.norm(q1+q2))
-    q1 /= np.linalg.norm(q1)
-    q2 /= np.linalg.norm(q2)
+    q1 /= np.linalg.norm(q1, axis=1)[:, None]
+    q2 /= np.linalg.norm(q2, axis=1)[:, None]
     return np.r_[[np.linalg.norm(q1-q2, axis=1)], [np.linalg.norm(q1+q2, axis=1)]].min(axis=0)
 
 def qeip(q1: np.ndarray, q2: np.ndarray) -> float:
@@ -214,8 +214,8 @@ def qeip(q1: np.ndarray, q2: np.ndarray) -> float:
         if np.allclose(q1, q2) or np.allclose(-q1, q2):
             return 0.0
         return 1.0-abs(q1@q2)
-    q1 /= np.linalg.norm(q1)
-    q2 /= np.linalg.norm(q2)
+    q1 /= np.linalg.norm(q1, axis=1)[:, None]
+    q2 /= np.linalg.norm(q2, axis=1)[:, None]
     return 1.0-abs(np.nansum(q1*q2, axis=1))
 
 def qcip(q1: np.ndarray, q2: np.ndarray) -> float:
