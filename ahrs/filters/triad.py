@@ -11,7 +11,7 @@ observations.
 Given two non-parallel reference *unit vectors* :math:`\\mathbf{v}_1` and
 :math:`\\mathbf{v}_2` and their corresponding *unit vectors* :math:`\\mathbf{w}_1`
 and :math:`\\mathbf{w}_2`, it is required to find an orthogonal matrix
-:math:`\\mathbf{A}` satisfying [Shuster1981]_:
+:math:`\\mathbf{A}` satisfying:
 
 .. math::
     \\mathbf{Av}_1
@@ -230,9 +230,6 @@ References
     Satellite," AIAA Journal, Vol. 2, July 1964, pp. 1350–1351.
 .. [Lerner1] Lerner, G. M. "Three-Axis Attitude Determination" in Spacecraft
     Attitude Determination and Control, edited by J.R. Wertz. 1978. p. 420-426.
-.. [Shuster1981] Shuster, M.D. and Oh, S.D. "Three-Axis Attitude Determination
-    from Vector Observations," Journal of Guidance and Control, Vol.4, No.1,
-    Jan.-Feb. 1981, pp. 70-77.
 .. [Hall] Chris Hall. Spacecraft Attitude Dynamics and Control. Chapter 4:
     Attitude Determination. 2003.
     (http://www.dept.aoe.vt.edu/~cdhall/courses/aoe4140/attde.pdf)
