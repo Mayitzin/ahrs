@@ -482,7 +482,7 @@ class Quaternion(np.ndarray):
     '(0.0000 +0.2673i +0.5345j +0.8018k)'
 
     """
-    def __new__(subtype, q: np.ndarray = None, **kwargs):
+    def __new__(subtype, q: np.ndarray = None, versor: bool = True, **kwargs):
         if q is None:
             q = np.array([1.0, 0.0, 0.0, 0.0])
             if "angles" in kwargs:
@@ -496,7 +496,8 @@ class Quaternion(np.ndarray):
             raise ValueError("Expected `q` to have shape (4,) or (3,), got {}.".format(q.shape))
         if q.shape[-1]==3:
             q = np.array([0.0, *q])
-        q /= np.linalg.norm(q)
+        if versor:
+            q /= np.linalg.norm(q)
         # Create the ndarray instance of type Quaternion. This will call the
         # standard ndarray constructor, but return an object of type Quaternion.
         obj = super(Quaternion, subtype).__new__(subtype, q.shape, float, q)
@@ -790,12 +791,15 @@ class Quaternion(np.ndarray):
         array([ 0.        ,  0.41981298, -0.83962595,  1.25943893])
         
         """
-        v_norm = np.linalg.norm(self.v)
-        u = self.v / v_norm
+        u = self.v/np.linalg.norm(self.v)
         if self.is_versor():
-            return np.array([0.0, *u])
-        t = np.arctan(v_norm/self.w)
-        return np.array([np.log(np.linalg.norm(self.q)), *u*t])
+            if self.is_pure():
+                return np.array([0.0, *(0.5*np.pi*u)])
+            return np.array([0.0, *(u*np.arccos(self.w))])
+        qn = np.linalg.norm(self.A)
+        if self.is_pure():
+            return np.array([np.log(qn), *(0.5*np.pi*u)])
+        return np.array([np.log(qn), *(u*np.arccos(self.w/qn))])
 
     @property
     def log(self) -> np.ndarray:
