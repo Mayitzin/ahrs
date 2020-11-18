@@ -401,6 +401,8 @@ class Quaternion(np.ndarray):
     q : array-like, default: None
         Vector to build the quaternion with. It can be either 3- or
         4-dimensional.
+    versor : bool, default: True
+        Treat the quaternion as versor. It will normalize it immediately.
 
     Attributes
     ----------
@@ -435,7 +437,8 @@ class Quaternion(np.ndarray):
     >>> R@x
     [1.8 2.  2.6]
 
-    A call to method ``product()`` will return an array of a multiplied vector.
+    A call to method :meth:`product` will return an array of a multiplied
+    vector.
 
     >>> q1 = Quaternion([1., 2., 3., 4.])
     >>> q2 = Quaternion([5., 4., 3., 2.])
@@ -525,8 +528,8 @@ class Quaternion(np.ndarray):
         """
         Conjugate of quaternion
 
-        A quaternion, whose form is :math:`\\mathbf{q} = (q_w, q_x, q_y, q_z)`,
-        has a conjugate of the form :math:`\\mathbf{q}^* = (q_w, -q_x, -q_y, -q_z)`.
+        A quaternion, whose form is :math:`\\mathbf{q} = \\begin{pmatrix}q_w & q_x & q_y & q_z\\end{pmatrix}`,
+        has a conjugate of the form :math:`\\mathbf{q}^* = \\begin{pmatrix}q_w & -q_x & -q_y & -q_z\\end{pmatrix}`.
 
         A product of the quaternion with its conjugate yields:
 
@@ -557,7 +560,7 @@ class Quaternion(np.ndarray):
 
     @property
     def conj(self) -> np.ndarray:
-        """Synonym to property ``conjugate``
+        """Synonym of property :meth:`conjugate`
 
         Returns
         -------
@@ -584,14 +587,12 @@ class Quaternion(np.ndarray):
         It is obtained as:
 
         .. math::
+            \\mathbf{q}^{-1} = \\frac{\\mathbf{q}^*}{\\|\\mathbf{q}\\|^2}
 
-            \\mathbf{q}^{-1} = \\mathbf{q}^* / \\|\\mathbf{q}\\|^2
-
-        If the quaternion is normalized (called 'versor') its inverse is the
+        If the quaternion is normalized (called *versor*) its inverse is the
         conjugate.
 
         .. math::
-
             \\mathbf{q}^{-1} = \\mathbf{q}^*
 
         Returns
@@ -616,7 +617,7 @@ class Quaternion(np.ndarray):
     @property
     def inv(self) -> np.ndarray:
         """
-        Synonym to property ``inverse``
+        Synonym of property :meth:`inverse`
 
         Returns
         -------
@@ -644,47 +645,46 @@ class Quaternion(np.ndarray):
         the absolute convergent power series:
 
         .. math::
-
             e^{\\mathbf{q}} = \\sum_{k=0}^{\\infty}\\frac{\\mathbf{q}^k}{k!}
 
-        The exponential of **pure quaternions** is, with the help of Euler
-        formula, redefined as:
+        The exponential of a **pure quaternion** is, with the help of Euler
+        formula and the series of :math:`\\cos\\theta` and :math:`\\sin\\theta`,
+        redefined as:
 
         .. math::
+            \\begin{array}{rcl}
+            e^{\\mathbf{q}_v} &=& \\sum_{k=0}^{\\infty}\\frac{\\mathbf{q}_v^k}{k!} \\\\
+            e^{\\mathbf{u}\\theta} &=&
+            \\Big(1-\\frac{\\theta^2}{2!} + \\frac{\\theta^4}{4!}+\\cdots\\Big)+
+            \\Big(\\mathbf{u}\\theta-\\frac{\\mathbf{u}\\theta^3}{3!} + \\frac{\\mathbf{u}\\theta^5}{5!}+\\cdots\\Big) \\\\
+            &=& \\cos\\theta + \\mathbf{u}\\sin\\theta \\\\
+            &=& \\begin{bmatrix}\\cos\\theta \\\\ \\mathbf{u}\\sin\\theta \\end{bmatrix}
+            \\end{array}
 
-            \\begin{eqnarray}
-            e^{\\mathbf{q}_v} & = & \\sum_{k=0}^{\\infty}\\frac{\\mathbf{q}_v^k}{k!} \\\\
-            & = &
-            \\begin{bmatrix}
-            \\cos \\theta \\\\
-            \\mathbf{u} \\sin \\theta
-            \\end{bmatrix}
-            \\end{eqnarray}
-
-        with :math:`\\mathbf{q}_v = \\mathbf{u}\\theta` and :math:`\\theta=\\|\mathbf{v}\\|`
+        Letting :math:`\\mathbf{q}_v = \\mathbf{u}\\theta` with :math:`\\theta=\\|\mathbf{v}\\|`
+        and :math:`\\|\\mathbf{u}\\|=1`.
 
         Since :math:`\\|e^{\\mathbf{q}_v}\\|^2=\\cos^2\\theta+\\sin^2\\theta=1`,
-        the exponential of a pure quaternion is always a versor. Therefore, if
+        the exponential of a pure quaternion is always unitary. Therefore, if
         the quaternion is real, its exponential is the identity.
 
-        For **general quaternions** the exponential is defined using :math:`\\mathbf{u}\\theta=\\mathbf{q}_v`
-        and the exponential of the pure quaternion:
+        For **general quaternions** the exponential is defined using
+        :math:`\\mathbf{u}\\theta=\\mathbf{q}_v` and the exponential of the pure
+        quaternion:
 
         .. math::
-
-            \\begin{eqnarray}
-            e^{\\mathbf{q}} & = & e^{\\mathbf{q}_w+\\mathbf{q}_v} = e^{\\mathbf{q}_w}e^{\\mathbf{q}_v}\\\\
-            & = & e^{\\mathbf{q}_w}
+            \\begin{array}{rcl}
+            e^{\\mathbf{q}} &=& e^{q_w+\\mathbf{q}_v} = e^{q_w}e^{\\mathbf{q}_v}\\\\
+            &=& e^{q_w}
             \\begin{bmatrix}
-            \\cos \\|\\mathbf{q}_v\\| \\\\
-            \\frac{\\mathbf{q}}{\\|\\mathbf{q}_v\\|} \\sin \\|\\mathbf{q}_v\\|
+            \\cos\\|\\mathbf{q}_v\\| \\\\ \\frac{\\mathbf{q}}{\\|\\mathbf{q}_v\\|}\\sin\\|\\mathbf{q}_v\\|
             \\end{bmatrix}
-            \\end{eqnarray}
+            \\end{array}
 
         Returns
         -------
         exp : numpy.ndarray
-            Exponential of quaternion
+            Exponential of quaternion.
 
         Examples
         --------
@@ -711,12 +711,12 @@ class Quaternion(np.ndarray):
 
     @property
     def exp(self) -> np.ndarray:
-        """Synonym to method exponential()
+        """Synonym of property :meth:`exponential`
 
         Returns
         -------
         exp : numpy.ndarray
-            Exponential of quaternion
+            Exponential of quaternion.
 
         Examples
         --------
@@ -735,29 +735,60 @@ class Quaternion(np.ndarray):
 
     @property
     def logarithm(self) -> np.ndarray:
-        """
-        Logarithm of Quaternion
+        """Logarithm of Quaternion.
 
-        Return logarithm of normalized quaternion, which can be defined with
-        the aid of the exponential of the quaternion.
-
-        The logarithm of **pure quaternions** is obtained as:
+        The logarithm of a **general quaternion**
+        :math:`\\mathbf{q}=\\begin{pmatrix}q_w & \\mathbf{q_v}\\end{pmatrix}`
+        is obtained from:
 
         .. math::
+            \\log\\mathbf{q} = \\begin{bmatrix} \\log\\|\\mathbf{q}\\| \\\\ \\mathbf{u}\\theta \\end{bmatrix}
 
-            \\log \\mathbf{q} = \\log(e^{\\mathbf{u}\\theta}) = \\begin{bmatrix} 0 \\\\ \\mathbf{u}\\theta \\end{bmatrix}
-
-        Similarly, for **general quaternions** the logarithm is:
+        with:
 
         .. math::
+            \\begin{array}{rcl}
+            \\mathbf{u} &=& \\frac{\\mathbf{q}_v}{\\|\\mathbf{q}_v\\|} \\\\
+            \\theta &=& \\arccos\\Big(\\frac{q_w}{\\|\\mathbf{q}\\|}\\Big)
+            \\end{array}
 
-            \\log \\mathbf{q} = \\log\\|\\mathbf{q}\\|+\\mathbf{u}\\theta
-            = \\begin{bmatrix} \\log\\|\\mathbf{q}\\| \\\\ \\mathbf{u}\\theta \\end{bmatrix}
+        It is easy to see, that for a **pure quaternion**
+        :math:`\\mathbf{q}=\\begin{pmatrix}0 & \\mathbf{q_v}\\end{pmatrix}`, the
+        logarithm simplifies the computation through :math:`\\theta=\\arccos(0)=\\frac{\\pi}{2}`:
+
+        .. math::
+            \\log\\mathbf{q} = \\begin{bmatrix}\\log\\|\\mathbf{q}\\| \\\\ \\mathbf{u}\\frac{\\pi}{2}\\end{bmatrix}
+
+        Similarly, for **unitary quaternions** (:math:`\\|\\mathbf{q}\\|=1`)
+        the logarithm is:
+
+        .. math::
+            \\log\\mathbf{q} = \\begin{bmatrix} 0 \\\\ \\mathbf{u}\\arccos(q_w) \\end{bmatrix}
+
+        which further reduces for **pure unitary quaternions** (:math:`q_w=0` and :math:`\\|\\mathbf{q}\\|=1`)
+        to:
+
+        .. math::
+            \\log\\mathbf{q} = \\begin{bmatrix} 0 \\\\ \\mathbf{u}\\frac{\\pi}{2} \\end{bmatrix}
 
         Returns
         -------
-        out : numpy.ndarray
-            log(q)
+        log : numpy.ndarray
+            Logarithm of quaternion.
+
+        Examples
+        --------
+        >>> q = Quaternion([1.0, -2.0, 3.0, -4.0])
+        >>> q.view()
+        Quaternion([ 0.18257419, -0.36514837,  0.54772256, -0.73029674])
+        >>> q.logarithm
+        array([ 0.        , -0.51519029,  0.77278544, -1.03038059])
+        >>> q = Quaternion([0.0, 1.0, -2.0, 3.0])
+        >>> q.view()
+        Quaternion([ 0.        ,  0.26726124, -0.53452248,  0.80178373])
+        >>> q.logarithm
+        array([ 0.        ,  0.41981298, -0.83962595,  1.25943893])
+        
         """
         v_norm = np.linalg.norm(self.v)
         u = self.v / v_norm
@@ -768,12 +799,25 @@ class Quaternion(np.ndarray):
 
     @property
     def log(self) -> np.ndarray:
-        """Synonym to property ``logartihm``
+        """Synonym of property :meth:`logarithm`
 
         Returns
         -------
-        out : numpy.ndarray
-            log(q)
+        log : numpy.ndarray
+            Logarithm of quaternion.
+
+        Examples
+        --------
+        >>> q = Quaternion([1.0, -2.0, 3.0, -4.0])
+        >>> q.view()
+        Quaternion([ 0.18257419, -0.36514837,  0.54772256, -0.73029674])
+        >>> q.log
+        array([ 0.        , -0.51519029,  0.77278544, -1.03038059])
+        >>> q = Quaternion([0.0, 1.0, -2.0, 3.0])
+        >>> q.view()
+        Quaternion([ 0.        ,  0.26726124, -0.53452248,  0.80178373])
+        >>> q.log
+        array([ 0.        ,  0.41981298, -0.83962595,  1.25943893])
         """
         return self.logarithm
 
@@ -955,7 +999,7 @@ class Quaternion(np.ndarray):
 
         Returns
         -------
-        q^a : numpy.ndarray
+        q**a : numpy.ndarray
             Quaternion :math:`\\mathbf{q}` to the power of ``a``
         """
         return np.e**(a*self.logarithm)
@@ -1000,12 +1044,12 @@ class Quaternion(np.ndarray):
         Returns a bool value, where ``True`` if quaternion is real.
 
         A real quaternion has all elements of its vector part equal to zero:
-        :math:`\\mathbf{q} = w + 0i + 0j + 0k = (q_w, \\mathbf{0})`
+        :math:`\\mathbf{q} = w + 0i + 0j + 0k = \\begin{pmatrix} q_w & \\mathbf{0}\\end{pmatrix}`
 
         .. math::
             \\left\\{
             \\begin{array}{ll}
-                \\mathrm{True} & \\: q_v = 0 \\\\
+                \\mathrm{True} & \\: \\mathbf{q}_v = \\begin{bmatrix} 0 & 0 & 0 \\end{bmatrix} \\\\
                 \\mathrm{False} & \\: \\mathrm{otherwise}
             \\end{array}
             \\right.
@@ -1071,7 +1115,7 @@ class Quaternion(np.ndarray):
         .. math::
             \\left\\{
             \\begin{array}{ll}
-                \\mathrm{True} & \\: \\mathbf{q}\\ = \\begin{bmatrix} 1 & 0 & 0 & 0 \\end{bmatrix} \\\\
+                \\mathrm{True} & \\: \\mathbf{q}\\ = \\begin{pmatrix} 1 & 0 & 0 & 0 \\end{pmatrix} \\\\
                 \\mathrm{False} & \\: \\mathrm{otherwise}
             \\end{array}
             \\right.
@@ -1279,12 +1323,12 @@ class Quaternion(np.ndarray):
         Return quaternion as a NumPy array
 
         Quaternion values are stored in attribute ``A``, which is a NumPy array.
-        This method simply returns such attribute.
+        This method simply returns that attribute.
 
         Returns
         -------
         out : numpy.ndarray
-            Quaternion
+            Quaternion.
 
         Examples
         --------
@@ -1344,11 +1388,10 @@ class Quaternion(np.ndarray):
         """
         Return corresponding Euler angles of quaternion.
 
-        Given a unit quaternions :math:`\\mathbf{q} = (q_w, q_x, q_y, q_z)`,
+        Given a unit quaternion :math:`\\mathbf{q} = \\begin{pmatrix}q_w & q_x & q_y & q_z\\end{pmatrix}`,
         its corresponding Euler angles [WikiConversions]_ are:
 
         .. math::
-
             \\begin{bmatrix}
             \\phi \\\\ \\theta \\\\ \\psi
             \\end{bmatrix} =
@@ -1374,8 +1417,9 @@ class Quaternion(np.ndarray):
         Return a Direction Cosine matrix :math:`\\mathbf{R} \\in SO(3)` from a
         given unit quaternion :math:`\\mathbf{q}`.
 
-        The given unit quaternion :math:`\\mathbf{q}` must have the form
-        :math:`\\mathbf{q} = (q_w, q_x, q_y, q_z)`, where :math:`\\mathbf{q}_v = (q_x, q_y, q_z)`
+        The given unit quaternion must have the form
+        :math:`\\mathbf{q} = \\begin{pmatrix}q_w & q_x & q_y & q_z\\end{pmatrix}`,
+        where :math:`\\mathbf{q}_v = \\begin{bmatrix}q_x & q_y & q_z\\end{bmatrix}`
         is the vector part, and :math:`q_w` is the scalar part.
 
         The resulting matrix :math:`\\mathbf{R}` [WikiConversions]_ has the
@@ -1390,8 +1434,8 @@ class Quaternion(np.ndarray):
             2(q_xq_z - q_wq_y) & 2(q_wq_x + q_yq_z) & 1 - 2(q_x^2 + q_y^2)
             \\end{bmatrix}
 
-        The identity Quaternion :math:`\\mathbf{q} = (1, 0, 0, 0)`, produces a
-        a :math:`3 \\times 3` Identity matrix :math:`\\mathbf{I}_3`.
+        The identity Quaternion :math:`\\mathbf{q} = \\begin{pmatrix}1 & 0 & 0 & 0\\end{pmatrix}`,
+        produces a :math:`3 \\times 3` Identity matrix :math:`\\mathbf{I}_3`.
 
         Returns
         -------
@@ -1458,9 +1502,9 @@ class Quaternion(np.ndarray):
 
         .. math::
             \\begin{array}{rcl}
-            \\mathbf{q}_X &=& \\begin{pmatrix}\\cos\\frac{\\phi}{2} & \\sin\\frac{\\phi}{2} i & 0 & 0\\end{pmatrix} \\\\ && \\\\
-            \\mathbf{q}_Y &=& \\begin{pmatrix}\\cos\\frac{\\theta}{2} & 0 & \\sin\\frac{\\theta}{2} j & 0\\end{pmatrix} \\\\ && \\\\
-            \\mathbf{q}_Z &=& \\begin{pmatrix}\\cos\\frac{\\psi}{2} & 0 & 0 & \\sin\\frac{\\psi}{2} k\\end{pmatrix}
+            \\mathbf{q}_X &=& \\begin{pmatrix}\\cos\\frac{\\phi}{2} & \\sin\\frac{\\phi}{2} & 0 & 0\\end{pmatrix} \\\\ && \\\\
+            \\mathbf{q}_Y &=& \\begin{pmatrix}\\cos\\frac{\\theta}{2} & 0 & \\sin\\frac{\\theta}{2} & 0\\end{pmatrix} \\\\ && \\\\
+            \\mathbf{q}_Z &=& \\begin{pmatrix}\\cos\\frac{\\psi}{2} & 0 & 0 & \\sin\\frac{\\psi}{2}\\end{pmatrix}
             \\end{array}
 
         The elements of the final quaternion
