@@ -351,18 +351,18 @@ def slerp(q0: np.ndarray, q1: np.ndarray, t_array: np.ndarray, threshold: float 
 
     Parameters
     ----------
-    q0 : NumPy array
+    q0 : numpy.ndarray
         First endpoint quaternion.
-    q1 : NumPy array
+    q1 : numpy.ndarray
         Second endpoint quaternion.
-    t_array : NumPy array
+    t_array : numpy.ndarray
         Array of times to interpolate to.
     threshold : float, default: 0.9995
         Threshold to closeness of interpolation.
 
     Returns
     -------
-    q : array
+    q : numpy.ndarray
         New quaternion representing the interpolated rotation.
 
     References
@@ -506,22 +506,139 @@ class Quaternion(np.ndarray):
 
     @property
     def w(self) -> float:
+        """Scalar vector part of the Quaternion.
+
+        Given a quaternion :math:`\\mathbf{q}=\\begin{pmatrix}q_w & \\mathbf{q}_v\\end{pmatrix} = \\begin{pmatrix}q_w & q_x & q_y & q_z\\end{pmatrix}`,
+        the scalar part, a.k.a. *real* part, is :math:`q_w`.
+
+        Returns
+        -------
+        q_w : float
+            Scalar part of the quaternion.
+
+        Examples
+        --------
+        >>> q = Quaternion([2.0, -3.0, 4.0, -5.0])
+        >>> q.view()
+        Quaternion([ 0.27216553, -0.40824829,  0.54433105, -0.68041382])
+        >>> q.w
+        0.2721655269759087
+
+        It can also be accessed directly, treating the Quaternion as an array:
+
+        >>> q[0]
+        0.2721655269759087
+        """
         return self.A[0]
 
     @property
     def x(self) -> float:
+        """First element of the vector part of the Quaternion.
+
+        Given a quaternion :math:`\\mathbf{q}=\\begin{pmatrix}q_w & \\mathbf{q}_v\\end{pmatrix} = \\begin{pmatrix}q_w & q_x & q_y & q_z\\end{pmatrix}`,
+        the first element of the vector part is :math:`q_x`.
+
+        Returns
+        -------
+        q_x : float
+            First element of vector part of the quaternion.
+
+        Examples
+        --------
+        >>> q = Quaternion([2.0, -3.0, 4.0, -5.0])
+        >>> q.view()
+        Quaternion([ 0.27216553, -0.40824829,  0.54433105, -0.68041382])
+        >>> q.x
+        -0.408248290463863
+
+        It can also be accessed directly, treating the Quaternion as an array:
+
+        >>> q[1]
+        -0.408248290463863
+        """
         return self.A[1]
 
     @property
     def y(self) -> float:
+        """Second element of the vector part of the Quaternion.
+
+        Given a quaternion :math:`\\mathbf{q}=\\begin{pmatrix}q_w & \\mathbf{q}_v\\end{pmatrix} = \\begin{pmatrix}q_w & q_x & q_y & q_z\\end{pmatrix}`,
+        the third element of the vector part is :math:`q_y`.
+
+        Returns
+        -------
+        q_y : float
+            Second element of vector part of the quaternion.
+
+        Examples
+        --------
+        >>> q = Quaternion([2.0, -3.0, 4.0, -5.0])
+        >>> q.view()
+        Quaternion([ 0.27216553, -0.40824829,  0.54433105, -0.68041382])
+        >>> q.y
+        0.5443310539518174
+
+        It can also be accessed directly, treating the Quaternion as an array:
+
+        >>> q[2]
+        0.5443310539518174
+        """
         return self.A[2]
 
     @property
     def z(self) -> float:
+        """Third element of the vector part of the Quaternion.
+
+        Given a quaternion :math:`\\mathbf{q}=\\begin{pmatrix}q_w & \\mathbf{q}_v\\end{pmatrix} = \\begin{pmatrix}q_w & q_x & q_y & q_z\\end{pmatrix}`,
+        the third element of the vector part is :math:`q_z`.
+
+        Returns
+        -------
+        q_z : float
+            Third element of vector part of the quaternion.
+
+        Examples
+        --------
+        >>> q = Quaternion([2.0, -3.0, 4.0, -5.0])
+        >>> q.view()
+        Quaternion([ 0.27216553, -0.40824829,  0.54433105, -0.68041382])
+        >>> q.z
+        -0.6804138174397717
+
+        It can also be accessed directly, treating the Quaternion as an array:
+
+        >>> q[3]
+        -0.6804138174397717
+        """
         return self.A[3]
 
     @property
     def v(self) -> np.ndarray:
+        """Vector part of the Quaternion.
+
+        Given a quaternion :math:`\\mathbf{q}=\\begin{pmatrix}q_w & q_x & q_y & q_z\\end{pmatrix}`
+        the vector part, a.k.a. *imaginary* part, is
+        :math:`\\mathbf{q}_v=\\begin{bmatrix}q_x & q_y & q_z\\end{bmatrix}`.
+
+        Returns
+        -------
+        q_v : numpy.ndarray
+            Vector part of the quaternion.
+
+        Examples
+        --------
+        >>> q = Quaternion([2.0, -3.0, 4.0, -5.0])
+        >>> q.view()
+        Quaternion([ 0.27216553, -0.40824829,  0.54433105, -0.68041382])
+        >>> q.v
+        array([-0.40824829,  0.54433105, -0.68041382])
+
+        It can also be accessed directly, treating the Quaternion as an array,
+        but is returned as a Quaternion object.
+
+        >>> q[1:]
+        Quaternion([-0.40824829,  0.54433105, -0.68041382])
+        """
         return self.A[1:]
 
     @property
@@ -1689,7 +1806,7 @@ class QuaternionArray:
 
         Parameters
         ----------
-        X : NumPy array
+        X : numpy.ndarray
             N-by-3 array with values of vector part of pure quaternions.
         """
         return np.c_[np.zeros(X.shape[0]), X]
