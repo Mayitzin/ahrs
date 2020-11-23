@@ -1,53 +1,21 @@
 # -*- coding: utf-8 -*-
 """
-These are the most common coordinate frame operations.
+Reference Frames
+================
 
-Main definitions:
+Coordinate frames express the position of an object in relation to a reference.
+There are 4 main frames:
 
-**Earth-Centered Inertial Frame** (ECI) has the origin at the center of mass of
-the Earth. The X-axis points towards the vernal equinox in the equatorial
-plane. The Z-axis is along the rotation axis of the Earth. The y-axis completes
-with a right-hand system. Some literature names it **i-frame**.
-
-**Earth-Centered Earth-Fixed Frame** (ECEF) has its origin and z-axis aligned
-to the ECI frame, but rotates along with the Earth. Therefore is Earth-Fixed.
-Some literature names it **e-frame**.
-
-**Local-Level Frame** (LLF) is the local navigation frame, whose origin
-coincides with the sensor frame. Some literature names it **l-frame**.
-
-**Body Frame** matches the frame of the platform the sensors are mounted on.
-The origin coincides with the center of gravity of the platform. The Y-axis
-points forward of the moving platform, while the Z-axis points upwards. The
-X-axis completes the right-hand system pointing in traverse direction. Some
-literature names it **b-frame**.
-
-**East-North-Up Frame** (ENU) is an LLF with the X-axis pointing East, Y-axis
-pointing to the true North, and the Z-axis completes a right-hand system
-pointing up (away from Earth.)
-
-**North-East-Down Frame** (NED) is an LLF with the X-axis pointing to the true
-North, Y-axis pointing East, and the Z-axis completing the right-hand system
-pointing Down.
-
-**Rectangular coordinates** in the ECEF represent position of a point with its
-x, y, and z vector components aligned parallel to the corresponding e-frame
-axes.
-
-**Geodetic** (also ellipsoidal or curvilinear) **coordinates** in the ECEF are
-defined for positioning elements on or near the Earth.
-
-**Meridian** is the half of a creat circle on Earth's surface terminated by the
-poles.
-
-**Latitude** is the angle in the meridian plane from the equatorial plane to
-the ellipsoidal normal at he point of interest.
-
-**Longitude** is the angle in the equatorial plane from the prime meridian to
-the projection of the point of interest onto the equatorial plane.
-
-**Altitude** is the distance along the ellipsoidal normal between the surface
-of the ellipsoid and the point of interest.
+- **Earth-Centered Inertial Frame** (ECI), also noted as **i-frame**, has its
+  origin at the center of mass of the Earth. The X-axis points towards the
+  `vernal equinox <https://en.wikipedia.org/wiki/March_equinox>`_ in the
+  equatorial plane. The Z-axis is along the rotation axis of the Earth. The
+  Y-axis completes with a right-hand system.
+- **Earth-Centered Earth-Fixed Frame** (ECEF), also noted as **e-frame**, has
+  its origin and Z-axis aligned to the i-frame, but rotates along with the
+  Earth. Therefore, is Earth-Fixed.
+- **Local-Level Frame** (LLF), also noted as **l-frame**, is the local
+  navigation frame, whose origin coincides with the sensor frame.
 
 References
 ----------
@@ -64,9 +32,8 @@ References
 import numpy as np
 from .constants import *
 
-def geo2rect(lon, lat, h, r, ecc=EARTH_SECOND_ECCENTRICITY_2):
-    """Geodetic to Rectangular Coordinates converstion in the Earth-Centered
-    Earth-Fixed Frame (ECEF)
+def geo2rect(lon: float, lat: float, h: float, r: float, ecc: float = EARTH_SECOND_ECCENTRICITY_2) -> np.ndarray:
+    """Geodetic to Rectangular Coordinates conversion in the e-frame.
 
     Parameters
     ----------
@@ -78,12 +45,12 @@ def geo2rect(lon, lat, h, r, ecc=EARTH_SECOND_ECCENTRICITY_2):
         Height above ellipsoidal surface
     r : float
         Normal radius
-    ecc : float
-        Second Eccentricity Squared
+    ecc : float, default: 6.739496742276486e-3
+        Ellipsoid's second eccentricity squared. Defaults to Earth's.
 
     Returns
     -------
-    X : array
+    X : numpy.ndarray
         ECEF rectangular coordinates
     """
     X = np.zeros(3)
@@ -92,7 +59,16 @@ def geo2rect(lon, lat, h, r, ecc=EARTH_SECOND_ECCENTRICITY_2):
     X[2] = (r*(1.0-ecc)+h)*np.sin(lat)
     return X
 
-def rec2geo(X, ecc=EARTH_SECOND_ECCENTRICITY_2):
+def rec2geo(X: np.ndarray, ecc: float = EARTH_SECOND_ECCENTRICITY_2) -> np.ndarray:
+    """Rectangular to Geodetic Coordinates conversion in the e-frame.
+
+    Parameters
+    ----------
+    X : numpy.ndarray
+        Rectangular coordinates in the e-frame.
+    ecc : float, default: 6.739496742276486e-3
+        Ellipsoid's second eccentricity squared. Defaults to Earth's.
+    """
     x, y, z = X
     p = np.linalg.norm([x, y])
     theta = np.arctan(z*a/(p*b))
@@ -100,6 +76,47 @@ def rec2geo(X, ecc=EARTH_SECOND_ECCENTRICITY_2):
     lat = np.arctan((z+ecc*b*np.sin(theta)**3)/(p-e*a*np.cos(theta)**3))
     N = a**2/np.sqrt(a**2*np.cos(lat)**2 + b**2*np.sin(lat)**2)
     h = p/np.cos(lat) - N
+    return np.array([lon, lat, h])
+
+def llf2ecef(lat, lon):
+    """Transform coordinates from LLF to ECEF
+
+    Parameters
+    ----------
+    lat : float
+        Latitude.
+    lon : float
+        Longitude.
+
+    Returns
+    -------
+    R : np.ndarray
+        Direction Cosine Matrix.
+    """
+    return np.array([
+        [-np.sin(lat), -np.sin(lon)*np.cos(lat), np.cos(lon)*np.cos(lat)],
+        [ np.cos(lat), -np.sin(lon)*np.sin(lat), np.cos(lon)*np.sin(lat)],
+        [0.0, np.cos(lon), np.sin(lon)]])
+
+def ecef2llf(lat, lon):
+    """Transform coordinates from ECEF to LLF
+
+    Parameters
+    ----------
+    lat : float
+        Latitude.
+    lon : float
+        Longitude.
+
+    Returns
+    -------
+    R : np.ndarray
+        Direction Cosine Matrix.
+    """
+    return np.array([
+        [-np.sin(lat), np.cos(lat), 0.0],
+        [-np.sin(lon)*np.cos(lat), -np.sin(lon)*np.sin(lat), np.cos(lon)],
+        [np.cos(lon)*np.cos(lat), np.cos(lon)*np.sin(lat), np.sin(lon)]])
 
 def eci2ecef(w, t=0):
     """Transformation between ECI and ECEF
@@ -111,8 +128,8 @@ def eci2ecef(w, t=0):
     t : float, default: 0.0
         Time since reference epoch.
     """
-    return np.array([[np.cos(w)*t, np.sin(w)*t, 0.0],
-                      [-np.sin(w)*t, np.cos(w)*t, 0.0],
-                      [0.0, 0.0, 1.0]])
-
+    return np.array([
+        [ np.cos(w)*t, np.sin(w)*t, 0.0],
+        [-np.sin(w)*t, np.cos(w)*t, 0.0],
+        [         0.0,         0.0, 1.0]])
 
