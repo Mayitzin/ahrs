@@ -2,9 +2,9 @@
 
 # -- Path setup --------------------------------------------------------------
 import os
-from datetime import datetime
 import sys
-sys.path.insert(0, os.path.abspath('../../ahrs'))
+from datetime import datetime
+sys.path.insert(0, os.path.abspath('../../ahrs' if sys.platform.startswith('win') else '../..'))
 
 # -- Project information -----------------------------------------------------
 project = 'AHRS'
