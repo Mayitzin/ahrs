@@ -1,11 +1,12 @@
 # AHRS: Attitude and Heading Reference Systems
 
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/Mayitzin/ahrs/Build%20Python%20Package)
-![PyPI - Python Version](https://img.shields.io/pypi/pyversions/ahrs)
+![docs](https://readthedocs.org/projects/ahrs/badge/?version=latest)
 ![PyPI - License](https://img.shields.io/pypi/l/ahrs)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/ahrs)
 ![PyPI](https://img.shields.io/pypi/v/ahrs)
-![PyPI Downloads](https://pepy.tech/badge/ahrs)
 ![Codacy Badge](https://api.codacy.com/project/badge/Grade/bc366c601ed44e12b233218dd37cd32c)
+![PyPI Downloads](https://pepy.tech/badge/ahrs)
 
 AHRS is a collection of functions and algorithms in pure Python used to estimate the orientation of mobile systems.
 
@@ -144,7 +145,10 @@ array([ 0.94371436, -0.12767944, -0.14487813, -0.26853582])
 ```
 
 - A whole bunch of [new constant values](https://ahrs.readthedocs.io/en/latest/constants.html) (mainly for Geodesy) accessed from the top level of the package.
+- [Metrics](https://ahrs.readthedocs.io/en/latest/metrics.html) for rotations in 3D spaces using quaternions and direction cosine matrices.
 - New operations, properties and methods for class `Quaternion` (now also derived from `numpy.ndarray`)
+- New class `QuaternionArray` to simultaneously handle an array of several quaternions.
+- New submodule `frames` to represent the position of an object in different reference frames.
 - Docstrings are improved with further explanations, references and equations whenever possible.
 
 ## More Attitude Estimators
