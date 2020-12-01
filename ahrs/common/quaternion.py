@@ -486,11 +486,11 @@ class Quaternion(np.ndarray):
         if q is None:
             q = np.array([1.0, 0.0, 0.0, 0.0])
             if "angles" in kwargs:
-                q = self.from_angles(kwargs["angles"])
+                q = Quaternion.from_angles(Quaternion, np.array(kwargs.pop("angles")))
             if "dcm" in kwargs:
-                q = self.from_DCM(kwargs["dcm"])
+                q = Quaternion.from_DCM(Quaternion, np.array(kwargs.pop("dcm")))
             if "rpy" in kwargs:
-                q = self.from_rpy(kwargs["rpy"])
+                q = Quaternion.from_rpy(Quaternion, np.array(kwargs.pop("rpy")))
         q = np.array(q, dtype=float)
         if q.ndim!=1 or q.shape[-1] not in [3, 4]:
             raise ValueError("Expected `q` to have shape (4,) or (3,), got {}.".format(q.shape))
@@ -1562,6 +1562,31 @@ class Quaternion(np.ndarray):
         -------
         DCM : numpy.ndarray
             3-by-3 Direction Cosine Matrix
+
+        Examples
+        --------
+        >>> from ahrs import Quaternion
+        >>> q = Quaternion()
+        >>> q.view()
+        Quaternion([1., 0., 0., 0.])
+        >>> q.to_DCM()
+        array([[1., 0., 0.],
+               [0., 1., 0.],
+               [0., 0., 1.]])
+        >>> q = Quaternion([1., -2., 3., -4.])
+        >>> q.view()
+        Quaternion([ 0.18257419, -0.36514837,  0.54772256, -0.73029674])
+        >>> q.to_DCM()
+        array([[-0.66666667, -0.13333333,  0.73333333],
+               [-0.66666667, -0.33333333, -0.66666667],
+               [ 0.33333333, -0.93333333,  0.13333333]])
+        >>> q = Quaternion([0., -4., 3., -2.])
+        >>> q.view()
+        Quaternion([ 0.        , -0.74278135,  0.55708601, -0.37139068])
+        >>> q.to_DCM()
+        array([[ 0.10344828, -0.82758621,  0.55172414],
+               [-0.82758621, -0.37931034, -0.4137931 ],
+               [ 0.55172414, -0.4137931 , -0.72413793]])
 
         """
         return np.array([
