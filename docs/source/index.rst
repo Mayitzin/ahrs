@@ -21,7 +21,7 @@ fast prototyping and integration with any Python module.
    filters
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: World Models
    :hidden:
 
