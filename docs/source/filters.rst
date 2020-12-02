@@ -13,22 +13,22 @@ For example, importing the QUEST estimator is simply done with:
    >>> from ahrs.filters import QUEST
 
 Most estimators are built to be working with signals of low-cost strapdown
-navigation systems. Three types of sensors are mainly used to this purpose:
+navigation systems. Three types of sensors are mainly used for this purpose:
 
 - **Gyroscopes** measure the angular velocity.
 - **Accelerometers** measure the acceleration (rate of change of velocity).
-- **Magnetometers** measure the geomagnetic field.
+- **Magnetometers** measure the local magnetic field.
 
 Gyroscopes, provide good short-term reliability and resistance to vibration,
 accelerometers provide information that is reliable over time, and
-magnetometers provide heading information in addition to limited attitude
+magnetometers provide heading information in addition to the limited attitude
 information (pitch and roll).
 
 For an attitude estimation we encounter two common strategies:
 
 - **Instantaneous estimation** calculates the attitude using vectors in two
-  frames (a body frame and a known reference frame). It finds the attitude in a
-  single point in time, whitout necessarily considering the kinematics of the
+  frames (a body frame and a known reference frame). It finds the attitude at a
+  single point in time, without necessarily considering the kinematics of the
   objective. Ideally, this works with a system in a quasi-static state. Thus,
   this estimation is sometimes called **Static Attitude Determination**.
 - **Recursive estimation** not only uses vectorial observations, but also takes
@@ -36,9 +36,19 @@ For an attitude estimation we encounter two common strategies:
   system. Because the system kinematics are considered, these type of strategy
   is also called **Dynamic Attitude Determination**.
 
-The most accurate estimators are the dynamic ones, but the are, generally, more
-computationally demanding, against the much simpler and faster static
+The most accurate estimators are the dynamic ones, but they are, generally,
+more computationally demanding, against the much simpler and faster static
 estimators.
+
+Dynamic estimators mainly use angular motions to compute the attitude. These
+displacements are normally measured by gyroscopes in a
+`strapdown <https://en.wikipedia.org/wiki/Inertial_navigation_system#Strapdown_systems)>`_
+system, where the sensors are rigidly attached to the body's frame.
+
+The gyroscopes capture the angular velocity of such body, which is then
+integrated over time and added to the previous estimations to continuously
+obtain a new estimation after every sample. For them to work, however, an
+initial orientation has to be known, so that it can *grow* on top of it.
 
 The following algorithms are implemented in this package:
 
