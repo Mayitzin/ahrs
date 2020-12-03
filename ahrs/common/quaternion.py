@@ -1565,7 +1565,6 @@ class Quaternion(np.ndarray):
 
         Examples
         --------
-        >>> from ahrs import Quaternion
         >>> q = Quaternion()
         >>> q.view()
         Quaternion([1., 0., 0., 0.])
@@ -1805,36 +1804,30 @@ class Quaternion(np.ndarray):
         q[3] = np.sqrt(u[0])*c2pi*u[2]
         return q / np.linalg.norm(q)
 
-class QuaternionArray:
+class QuaternionArray(np.ndarray):
     """Array of Quaternions
 
     Class to represent quaternion arrays. It can be built with N-by-3 or N-by-4
     NumPy arrays. The built objects are always normalized to represent
     rotations in 3D space.
     """
-    def __init__(self, q: np.array = None, **kw):
-        self.array = np.array([[1.0], [0.0], [0.0], [0.0]])
-        self.num_qts = 1
-        if q is not None:
-            sz = q.shape
-            if 2 < sz[-1] < 5:
-                self.num_qts = sz[0]
-                self.array = self._build_pure(q) if sz[-1] == 3 else q
-                # Normalize Quaternions
-                self.array /= np.linalg.norm(self.array, axis=1)[:, None]
-            else:
-                raise ValueError("Expected array to have shape (N, 3) or (N, 4), got {}.".format(q.shape))
-
-    def _build_pure(self, X: np.ndarray) -> np.ndarray:
-        """
-        Build pure quaternions from 3-dimensional vectors
-
-        Parameters
-        ----------
-        X : numpy.ndarray
-            N-by-3 array with values of vector part of pure quaternions.
-        """
-        return np.c_[np.zeros(X.shape[0]), X]
+    def __new__(subtype, q: np.ndarray = None, versors: bool = True, **kwargs):
+        if q is None:
+            q = np.array([[1.0, 0.0, 0.0, 0.0]])
+        q = np.array(q, dtype=float)
+        if q.ndim!=2 or q.shape[-1] not in [3, 4]:
+            raise ValueError("Expected `q` to have shape (N, 4) or (N, 3), got {}.".format(q.shape))
+        if q.shape[-1]==3:
+            q = np.c_[np.zeros(q.shape[0]), q]
+        if versors:
+            q /= np.linalg.norm(q, axis=1)[:, None]
+        # Create the ndarray instance of type QuaternionArray. This will call
+        # the standard ndarray constructor, but return an object of type
+        # QuaternionArray.
+        obj = super(QuaternionArray, subtype).__new__(subtype, q.shape, float, q)
+        obj.array = q
+        obj.num_qts = q.shape[0]
+        return obj
 
     def conjugate(self) -> np.ndarray:
         """
@@ -1860,7 +1853,6 @@ class QuaternionArray:
         its corresponding Euler angles [WikiConversions]_ are:
 
         .. math::
-
             \\begin{bmatrix}
             \\phi \\\\ \\theta \\\\ \\psi
             \\end{bmatrix} =
@@ -1889,14 +1881,30 @@ class QuaternionArray:
         The default values are identity quaternions, which produce N 3-by-3
         Identity matrices.
 
-        Parameters
-        ----------
-        q : array
-            N-by-4 array of Quaternions, where N is the number of quaternions.
+        Returns
+        -------
+        DCM : numpy.ndarray
+            N-by-3-by-3 Direction Cosine Matrices
 
-        References
-        ----------
-        - https://en.wikipedia.org/wiki/Rotation_matrix#Quaternion
+        Examples
+        --------
+        >>> Q = QuaternionArray(np.random.random((3, 4))-0.5)   # Three random quaternions
+        >>> Q.view()
+        QuaternionArray([[-0.75641558,  0.42233104,  0.39637415,  0.30390704],
+                         [-0.52953832, -0.7187872 , -0.44551683,  0.06669994],
+                         [ 0.264412  ,  0.15784685, -0.80536887,  0.50650928]])
+        >>> Q.to_DCM()
+        array([[[ 0.50105608,  0.79456226, -0.34294842],
+                [-0.12495782,  0.45855401,  0.87983735],
+                [ 0.85634593, -0.39799377,  0.32904804]],
+
+               [[ 0.59413175,  0.71110393,  0.37595034],
+                [ 0.56982324, -0.04220784, -0.82068263],
+                [-0.56772259,  0.70181885, -0.43028056]],
+
+               [[-0.81034134, -0.52210413, -0.2659966 ],
+                [ 0.01360439,  0.43706545, -0.89932681],
+                [ 0.58580016, -0.73238041, -0.3470693 ]]])
         """
         R = np.zeros((self.num_qts, 3, 3))
         R[:, 0, 0] = 1.0 - 2.0*(self.array[:, 2]**2 + self.array[:, 3]**2)
@@ -1910,28 +1918,46 @@ class QuaternionArray:
         R[:, 2, 2] = 1.0 - 2.0*(self.array[:, 1]**2 + self.array[:, 2]**2)
         return R
 
-    def average(self, span: Tuple[int, int] = None, w: np.ndarray = None) -> np.ndarray:
+    def average(self, span: Tuple[int, int] = None, weights: np.ndarray = None) -> np.ndarray:
         """Average quaternion using Markley's method [Markley2007]_
 
-        The average quaternion is the eigenvector of :math:`\\mathbf{M}`
+        The average quaternion is the eigenvector of :math:`\\mathbf{M}\\in\\mathbb{C}^{4\\times 4}`
         corresponding to the maximum eigenvalue, where:
 
         .. math::
             \\mathbf{M} = \\mathbf{q}^T \\cdot \\mathbf{q}
 
-        is a 4-by-4 matrix.
+        In this case, the product :math:`\\mathbf{q}^T \\cdot \\mathbf{q}` is a
+        normal matrix multiplication of the elements of each quaternion.
 
         Parameters
         ----------
         span : tuple, default: None
             Span of data to average. If none given, it averages all.
-        w : numpy.ndarray, default: None
-            Weights of each quaternion. If none given, they are equal to 1.
+        weights : numpy.ndarray, default: None
+            Weights of each quaternion. If none given, they are all equal to 1.
 
         Returns
         -------
         q : numpy.ndarray
-            Average quaternion
+            Average quaternion.
+
+        Example
+        -------
+        >>> qts = np.tile([1., -2., 3., -4], (5, 1))    # Five equal quaternions
+        >>> v = np.random.randn(5, 4)*0.1               # Gaussian noise
+        >>> Q1 = QuaternionArray(qts + v)
+        >>> Q1.view()
+        QuaternionArray([[ 0.17614144, -0.39173347,  0.56303067, -0.70605634],
+                         [ 0.17607515, -0.3839024 ,  0.52673809, -0.73767437],
+                         [ 0.16823806, -0.35898889,  0.53664261, -0.74487424],
+                         [ 0.17094453, -0.3723117 ,  0.54109885, -0.73442086],
+                         [ 0.1862619 , -0.38421818,  0.5260265 , -0.73551276]])
+        >>> Q1.average()
+        array([-0.17557859,  0.37832975, -0.53884688,  0.73190355])
+
+        The result is as expected, remembering that a quaternion with opposite
+        signs on each element represents the same orientation.
         """
         q = self.array.copy()
         if span is not None:
@@ -1939,12 +1965,12 @@ class QuaternionArray:
                 q = q[span[0]:span[1]]
             else:
                 raise ValueError("span must be a pair of integers indicating the indices of the data.")
-        if w is not None:
-            if w.ndim>1:
+        if weights is not None:
+            if weights.ndim>1:
                 raise ValueError("The weights must be in a one-dimensional array.")
-            if w.size!=q.shape[0]:
+            if weights.size!=q.shape[0]:
                 raise ValueError("The number of weights do not match the number of quaternions.")
-            q *= w[:, None]
+            q *= weights[:, None]
         eigvals, eigvecs = np.linalg.eig(q.T@q)
         return eigvecs[:, eigvals.argmax()]
 
