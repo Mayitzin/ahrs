@@ -14,7 +14,7 @@ AHRS works with Python 3.6 or later, and depends on `NumPy <https://numpy.org/>`
 and `SciPy <https://www.scipy.org/>`_. Intalling with ``pip`` will automatically
 download them if they are not present in your workspace.
 
-A second option is to download the latest available version in the repository
+A second option is to download the *latest* available version in the repository
 and install it manually:
 
 .. code-block:: console
@@ -23,13 +23,14 @@ and install it manually:
     cd ahrs/
     python setup.py install
 
-This is specially recommended if you want to have the latest version of the
+This is specially recommended if you want to have the newest version of the
 package.
 
 Building the Documentation
 --------------------------
 
-To build documentation you will need Sphinx and the readthedocs theme.
+To build this documentation you first need to have Sphinx and the readthedocs
+theme.
 
 .. code-block:: console
 
