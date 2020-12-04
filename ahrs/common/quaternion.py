@@ -390,11 +390,11 @@ def slerp(q0: np.ndarray, q1: np.ndarray, t_array: np.ndarray, threshold: float 
 
 class Quaternion(np.ndarray):
     """
-    Quaternion object
+    Quaternion.
 
-    Class to represent a quaternion. It can be built with 3- or 4-dimensional
-    vectors. The quaternion objects are always normalized to represent
-    rotations in 3D space, also known as versors.
+    Representation of a quaternion. It can be built with 3- or 4-dimensional
+    vectors. The quaternion objects is always normalized to represent rotations
+    in 3D space, also known as versors.
 
     Parameters
     ----------
@@ -1831,17 +1831,54 @@ class QuaternionArray(np.ndarray):
 
     def conjugate(self) -> np.ndarray:
         """
-        Return the conjugate of all quaternions
+        Return the conjugate of all quaternions.
 
         Returns
         -------
-        q* : array
+        q* : numpy.ndarray
             Array of conjugated quaternions.
+
+        Examples
+        --------
+        >>> Q = QuaternionArray(np.random.random((5, 4))-0.5)
+        >>> Q.view()
+        QuaternionArray([[-0.68487217,  0.45395092, -0.53551826, -0.19518931],
+                         [ 0.49389483,  0.28781475, -0.7085184 , -0.41380217],
+                         [-0.39583397,  0.46873203, -0.21517704,  0.75980563],
+                         [ 0.57515971,  0.33286283,  0.23442397,  0.70953439],
+                         [-0.34067259, -0.24989624,  0.5950285 , -0.68369229]])
+        >>> Q.conjugate()
+        array([[-0.68487217, -0.45395092,  0.53551826,  0.19518931],
+               [ 0.49389483, -0.28781475,  0.7085184 ,  0.41380217],
+               [-0.39583397, -0.46873203,  0.21517704, -0.75980563],
+               [ 0.57515971, -0.33286283, -0.23442397, -0.70953439],
+               [-0.34067259,  0.24989624, -0.5950285 ,  0.68369229]])
         """
         return self.array*np.array([1.0, -1.0, -1.0, -1.0])
 
     def conj(self) -> np.ndarray:
-        """Synonym to method conjugate()
+        """Synonym of :meth:`conjugate`
+
+        Returns
+        -------
+        q* : numpy.ndarray
+            Array of conjugated quaternions.
+
+        Examples
+        --------
+        >>> Q = QuaternionArray(np.random.random((5, 4))-0.5)
+        >>> Q.view()
+        QuaternionArray([[-0.68487217,  0.45395092, -0.53551826, -0.19518931],
+                         [ 0.49389483,  0.28781475, -0.7085184 , -0.41380217],
+                         [-0.39583397,  0.46873203, -0.21517704,  0.75980563],
+                         [ 0.57515971,  0.33286283,  0.23442397,  0.70953439],
+                         [-0.34067259, -0.24989624,  0.5950285 , -0.68369229]])
+        >>> Q.conj()
+        array([[-0.68487217, -0.45395092,  0.53551826,  0.19518931],
+               [ 0.49389483, -0.28781475,  0.7085184 ,  0.41380217],
+               [-0.39583397, -0.46873203,  0.21517704, -0.75980563],
+               [ 0.57515971, -0.33286283, -0.23442397, -0.70953439],
+               [-0.34067259,  0.24989624, -0.5950285 ,  0.68369229]])
         """
         return self.conjugate()
 
@@ -1888,23 +1925,26 @@ class QuaternionArray(np.ndarray):
 
         Examples
         --------
-        >>> Q = QuaternionArray(np.random.random((3, 4))-0.5)   # Three random quaternions
-        >>> Q.view()
-        QuaternionArray([[-0.75641558,  0.42233104,  0.39637415,  0.30390704],
-                         [-0.52953832, -0.7187872 , -0.44551683,  0.06669994],
-                         [ 0.264412  ,  0.15784685, -0.80536887,  0.50650928]])
-        >>> Q.to_DCM()
-        array([[[ 0.50105608,  0.79456226, -0.34294842],
-                [-0.12495782,  0.45855401,  0.87983735],
-                [ 0.85634593, -0.39799377,  0.32904804]],
 
-               [[ 0.59413175,  0.71110393,  0.37595034],
-                [ 0.56982324, -0.04220784, -0.82068263],
-                [-0.56772259,  0.70181885, -0.43028056]],
+        .. code-block:: python
 
-               [[-0.81034134, -0.52210413, -0.2659966 ],
-                [ 0.01360439,  0.43706545, -0.89932681],
-                [ 0.58580016, -0.73238041, -0.3470693 ]]])
+            >>> Q = QuaternionArray(np.random.random((3, 4))-0.5)   # Three random quaternions
+            >>> Q.view()
+            QuaternionArray([[-0.75641558,  0.42233104,  0.39637415,  0.30390704],
+                             [-0.52953832, -0.7187872 , -0.44551683,  0.06669994],
+                             [ 0.264412  ,  0.15784685, -0.80536887,  0.50650928]])
+            >>> Q.to_DCM()
+            array([[[ 0.50105608,  0.79456226, -0.34294842],
+                    [-0.12495782,  0.45855401,  0.87983735],
+                    [ 0.85634593, -0.39799377,  0.32904804]],
+
+                   [[ 0.59413175,  0.71110393,  0.37595034],
+                    [ 0.56982324, -0.04220784, -0.82068263],
+                    [-0.56772259,  0.70181885, -0.43028056]],
+
+                   [[-0.81034134, -0.52210413, -0.2659966 ],
+                    [ 0.01360439,  0.43706545, -0.89932681],
+                    [ 0.58580016, -0.73238041, -0.3470693 ]]])
         """
         R = np.zeros((self.num_qts, 3, 3))
         R[:, 0, 0] = 1.0 - 2.0*(self.array[:, 2]**2 + self.array[:, 3]**2)
