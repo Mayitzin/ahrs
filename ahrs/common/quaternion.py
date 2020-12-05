@@ -506,7 +506,7 @@ class Quaternion(np.ndarray):
 
     @property
     def w(self) -> float:
-        """Scalar vector part of the Quaternion.
+        """Scalar part of the Quaternion.
 
         Given a quaternion :math:`\\mathbf{q}=\\begin{pmatrix}q_w & \\mathbf{q}_v\\end{pmatrix} = \\begin{pmatrix}q_w & q_x & q_y & q_z\\end{pmatrix}`,
         the scalar part, a.k.a. *real* part, is :math:`q_w`.
@@ -1939,6 +1939,36 @@ class QuaternionArray(np.ndarray):
         obj.array = q
         obj.num_qts = q.shape[0]
         return obj
+
+    @property
+    def w(self) -> float:
+        """Scalar part of all Quaternions.
+        """
+        return self.array[:, 0]
+
+    @property
+    def x(self) -> float:
+        """First element of the vector part of all Quaternions.
+        """
+        return self.array[:, 1]
+
+    @property
+    def y(self) -> float:
+        """Second element of the vector part of all Quaternions.
+        """
+        return self.array[:, 2]
+
+    @property
+    def z(self) -> float:
+        """Third element of the vector part of all Quaternions.
+        """
+        return self.array[:, 3]
+
+    @property
+    def v(self) -> float:
+        """Vector part of all Quaternions.
+        """
+        return self.array[:, 1:]
 
     def conjugate(self) -> np.ndarray:
         """
