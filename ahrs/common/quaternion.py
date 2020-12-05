@@ -1810,6 +1810,117 @@ class QuaternionArray(np.ndarray):
     Class to represent quaternion arrays. It can be built with N-by-3 or N-by-4
     NumPy arrays. The built objects are always normalized to represent
     rotations in 3D space.
+
+    If an N-by-3 array is given, it is assumed to represent pure quaternions,
+    which are extended in their
+
+    Parameters
+    ----------
+    q : array-like, default: None
+        N-by-4 or N-by-3 array containing the quaternion values to use.
+    versors : bool, default: True
+        Treat the quaterniona as versors. It will normalize them immediately.
+
+    Attributes
+    ----------
+    array : numpy.ndarray
+        Array with all N quaternions.
+    w : float
+        Scalar part of the quaternion.
+    x : float
+        First element of the vector part of the quaternion.
+    y : float
+        Second element of the vector part of the quaternion.
+    z : float
+        Third element of the vector part of the quaternion.
+    v : numpy.ndarray
+        Vector part of the quaternion.
+
+    Raises
+    ------
+    ValueError
+        When length of input array is not equal to either 3 or 4.
+
+    Examples
+    --------
+    >>> from ahrs import QuaternionArray
+    >>> Q = QuaternionArray(np.random.random((3, 4))-0.5)
+    >>> Q.view()
+    QuaternionArray([[ 0.39338362, -0.29206111, -0.07445273,  0.86856573],
+                     [ 0.65459935,  0.14192058, -0.69722158,  0.25542183],
+                     [-0.42837174,  0.85451579, -0.02786928,  0.29244439]])
+
+    If an N-by-3 array is given, it is used to build an array of pure
+    quaternions:
+
+    >>> Q = QuaternionArray(np.random.random((5, 3))-0.5)
+    >>> Q.view()
+    QuaternionArray([[ 0.        , -0.73961715,  0.23572589,  0.63039652],
+                     [ 0.        , -0.54925142,  0.67303056,  0.49533093],
+                     [ 0.        ,  0.46936253,  0.39912076,  0.78765566],
+                     [ 0.        ,  0.52205066, -0.16510523, -0.83678155],
+                     [ 0.        ,  0.11844943, -0.27839573, -0.95313459]])
+
+    Transformations to other representations are possible:
+
+    .. code-block:: python
+
+        >>> Q = QuaternionArray(np.random.random((3, 4))-0.5)
+        >>> Q.to_angles()
+        array([[-0.41354414,  0.46539024,  2.191703  ],
+               [-1.6441448 , -1.39912606,  2.21590455],
+               [-2.12380045, -0.49600967, -0.34589322]])
+        >>> Q.to_DCM()
+        array([[[-0.51989927, -0.63986956, -0.56592552],
+                [ 0.72684856, -0.67941224,  0.10044993],
+                [-0.44877158, -0.3591183 ,  0.81831419]],
+
+               [[-0.10271648, -0.53229811, -0.84030235],
+                [ 0.13649774,  0.82923647, -0.54197346],
+                [ 0.98530081, -0.17036898, -0.01251876]],
+
+               [[ 0.82739916,  0.20292036,  0.52367352],
+                [-0.2981793 , -0.63144191,  0.71580041],
+                [ 0.47591988, -0.74840126, -0.46194785]]])
+
+    Markley's method to obtain the average quaternion is implemented too:
+
+    >>> qts = np.tile([1., -2., 3., -4], (5, 1))    # Five equal arrays
+    >>> v = np.random.randn(5, 4)*0.1               # Gaussian noise
+    >>> Q = QuaternionArray(qts + v)
+    >>> Q.view()
+    QuaternionArray([[ 0.17614144, -0.39173347,  0.56303067, -0.70605634],
+                     [ 0.17607515, -0.3839024 ,  0.52673809, -0.73767437],
+                     [ 0.16823806, -0.35898889,  0.53664261, -0.74487424],
+                     [ 0.17094453, -0.3723117 ,  0.54109885, -0.73442086],
+                     [ 0.1862619 , -0.38421818,  0.5260265 , -0.73551276]])
+    >>> Q.average()
+    array([-0.17557859,  0.37832975, -0.53884688,  0.73190355])
+
+    If, for any reason, the signs of certain quaternions are flipped (they
+    still represent the same rotation in 3D Euclidean space), we can use the
+    method rempve jumps to flip them back.
+
+    >>> Q.view()
+    QuaternionArray([[ 0.17614144, -0.39173347,  0.56303067, -0.70605634],
+                     [ 0.17607515, -0.3839024 ,  0.52673809, -0.73767437],
+                     [ 0.16823806, -0.35898889,  0.53664261, -0.74487424],
+                     [ 0.17094453, -0.3723117 ,  0.54109885, -0.73442086],
+                     [ 0.1862619 , -0.38421818,  0.5260265 , -0.73551276]])
+    >>> Q[1:3] *= -1
+    >>> Q.view()
+    QuaternionArray([[ 0.17614144, -0.39173347,  0.56303067, -0.70605634],
+                     [-0.17607515,  0.3839024 , -0.52673809,  0.73767437],
+                     [-0.16823806,  0.35898889, -0.53664261,  0.74487424],
+                     [ 0.17094453, -0.3723117 ,  0.54109885, -0.73442086],
+                     [ 0.1862619 , -0.38421818,  0.5260265 , -0.73551276]])
+    >>> Q.remove_jumps()
+    >>> Q.view()
+    QuaternionArray([[ 0.17614144, -0.39173347,  0.56303067, -0.70605634],
+                     [ 0.17607515, -0.3839024 ,  0.52673809, -0.73767437],
+                     [ 0.16823806, -0.35898889,  0.53664261, -0.74487424],
+                     [ 0.17094453, -0.3723117 ,  0.54109885, -0.73442086],
+                     [ 0.1862619 , -0.38421818,  0.5260265 , -0.73551276]])
     """
     def __new__(subtype, q: np.ndarray = None, versors: bool = True, **kwargs):
         if q is None:
@@ -2025,7 +2136,7 @@ class QuaternionArray(np.ndarray):
 
         To revert this, the flipping instances are identified and the next
         samples are multiplied by -1, until it "flips back". This
-        function does that correction over all values of the attribute 'array'.
+        function does that correction over all values of the attribute ``array``.
         """
         q_diff = np.diff(self.array, axis=0)
         jumps = np.nonzero(np.where(np.linalg.norm(q_diff, axis=1)>1, 1, 0))[0]+1
