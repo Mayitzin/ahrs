@@ -9,7 +9,7 @@ These are the most common attitude filters.
 
 from .angular import AngularRate
 from .aqua import AQUA
-from .complementary import ComplementaryQ
+from .complementary import Complementary
 from .davenport import Davenport
 from .ekf import EKF
 from .famc import FAMC
