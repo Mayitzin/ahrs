@@ -1825,16 +1825,16 @@ class QuaternionArray(np.ndarray):
     ----------
     array : numpy.ndarray
         Array with all N quaternions.
-    w : float
-        Scalar part of the quaternion.
-    x : float
-        First element of the vector part of the quaternion.
-    y : float
-        Second element of the vector part of the quaternion.
-    z : float
-        Third element of the vector part of the quaternion.
+    w : numpy.ndarray
+        Scalar parts of all quaternions.
+    x : numpy.ndarray
+        First elements of the vector part of all quaternions.
+    y : numpy.ndarray
+        Second elements of the vector part of all quaternions.
+    z : numpy.ndarray
+        Third elements of the vector part of all quaternions.
     v : numpy.ndarray
-        Vector part of the quaternion.
+        Vector part of all quaternions.
 
     Raises
     ------
@@ -2074,6 +2074,18 @@ class QuaternionArray(np.ndarray):
                          [ 0.85451579, -0.02786928,  0.29244439]])
         """
         return self.array[:, 1:]
+
+    def is_pure(self) -> np.ndarray:
+        return np.isclose(self.w, np.zeros_like(self.w.shape[0]))
+
+    def is_real(self) -> np.ndarray:
+        return np.all(np.isclose(self.v, np.zeros_like(self.v)), axis=1)
+
+    def is_versor(self) -> np.ndarray:
+        return np.isclose(np.linalg.norm(self.array, axis=1), 1.0)
+
+    def is_identity(self) -> np.ndarray:
+        return np.all(np.isclose(self.array, np.tile([1., 0., 0., 0.], (self.array.shape[0], 1))), axis=1)
 
     def conjugate(self) -> np.ndarray:
         """
