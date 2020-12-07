@@ -328,6 +328,7 @@ References
     October 12, 2017. (http://www.iri.upc.edu/people/jsola/JoanSola/objectes/notes/kinematics.pdf)
 .. [WikiConversions] https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
 .. [WikiQuaternion] https://en.wikipedia.org/wiki/Quaternion
+.. [Wiki_SLERP] https://en.wikipedia.org/wiki/Slerp
 
 """
 
@@ -365,10 +366,6 @@ def slerp(q0: np.ndarray, q1: np.ndarray, t_array: np.ndarray, threshold: float 
     q : numpy.ndarray
         New quaternion representing the interpolated rotation.
 
-    References
-    ----------
-    .. [Wiki_SLERP] https://en.wikipedia.org/wiki/Slerp
-
     """
     qdot = np.dot(q0, q1)
     # Ensure SLERP takes the shortest path
@@ -393,8 +390,8 @@ class Quaternion(np.ndarray):
     Quaternion.
 
     Representation of a quaternion. It can be built with 3- or 4-dimensional
-    vectors. The quaternion objects is always normalized to represent rotations
-    in 3D space, also known as versors.
+    vectors. The quaternion object is always normalized to represent rotations
+    in 3D space, also known as a **versor**.
 
     Parameters
     ----------
@@ -1230,8 +1227,8 @@ class Quaternion(np.ndarray):
         """
         Returns a bool value, where ``True`` if quaternion is identity quaternion.
 
-        A quaternion is a quaternion if its scalar part is equal to 1, and the
-        vector part is equal to 0, such that :math:`\\mathbf{q} = 1 + 0i + 0j + 0k`.
+        An **identity quaternion** has its scalar part equal to 1, and its
+        vector part equal to 0, such that :math:`\\mathbf{q} = 1 + 0i + 0j + 0k`.
 
         .. math::
             \\left\\{
@@ -2076,15 +2073,136 @@ class QuaternionArray(np.ndarray):
         return self.array[:, 1:]
 
     def is_pure(self) -> np.ndarray:
+        """Returns an array of boolean values, where a value is ``True`` if its
+        corresponding quaternion is pure.
+
+        A pure quaternion has a scalar part equal to zero: :math:`\\mathbf{q} = 0 + xi + yj + zk`
+
+        .. math::
+            \\left\\{
+            \\begin{array}{ll}
+                \\mathrm{True} & \\: w = 0 \\\\
+                \\mathrm{False} & \\: \\mathrm{otherwise}
+            \\end{array}
+            \\right.
+
+        Returns
+        -------
+        out : np.ndarray
+            Array of booleans.
+
+        Example
+        -------
+        >>> Q = QuaternionArray(np.random.random((3, 4))-0.5)
+        >>> Q[1, 0] = 0.0
+        >>> Q.view()
+        QuaternionArray([[ 0.32014817,  0.47060011,  0.78255824,  0.25227621],
+                         [ 0.        , -0.79009137,  0.47021242, -0.26103598],
+                         [-0.65182559, -0.3032904 ,  0.16078433, -0.67622979]])
+        >>> Q.is_pure()
+        array([False,  True, False])
+        """
         return np.isclose(self.w, np.zeros_like(self.w.shape[0]))
 
     def is_real(self) -> np.ndarray:
+        """Returns an array of boolean values, where a value is ``True`` if its
+        corresponding quaternion is real.
+
+        A real quaternion has all elements of its vector part equal to zero:
+        :math:`\\mathbf{q} = w + 0i + 0j + 0k = \\begin{pmatrix} q_w & \\mathbf{0}\\end{pmatrix}`
+
+        .. math::
+            \\left\\{
+            \\begin{array}{ll}
+                \\mathrm{True} & \\: \\mathbf{q}_v = \\begin{bmatrix} 0 & 0 & 0 \\end{bmatrix} \\\\
+                \\mathrm{False} & \\: \\mathrm{otherwise}
+            \\end{array}
+            \\right.
+
+        Returns
+        -------
+        out : np.ndarray
+            Array of booleans.
+
+        Example
+        -------
+        >>> Q = QuaternionArray(np.random.random((3, 4))-0.5)
+        >>> Q[1, 1:] = 0.0
+        >>> Q.view()
+        QuaternionArray([[-0.8061095 ,  0.42513151,  0.37790158, -0.16322091],
+                         [ 0.04515362,  0.        ,  0.        ,  0.        ],
+                         [ 0.29613776,  0.21692562, -0.16253866, -0.91587493]])
+        >>> Q.is_real()
+        array([False,  True, False])
+        """
         return np.all(np.isclose(self.v, np.zeros_like(self.v)), axis=1)
 
     def is_versor(self) -> np.ndarray:
+        """Returns an array of boolean values, where a value is ``True`` if its
+        corresponding quaternion has a norm equal to one.
+
+        A **versor** is a quaternion, whose `euclidean norm
+        <https://en.wikipedia.org/wiki/Norm_(mathematics)#Euclidean_norm>`_ is
+        equal to one: :math:`\\|\\mathbf{q}\\| = \\sqrt{w^2+x^2+y^2+z^2} = 1`
+
+        .. math::
+            \\left\\{
+            \\begin{array}{ll}
+                \\mathrm{True} & \\: \\sqrt{w^2+x^2+y^2+z^2} = 1 \\\\
+                \\mathrm{False} & \\: \\mathrm{otherwise}
+            \\end{array}
+            \\right.
+
+        Returns
+        -------
+        out : np.ndarray
+            Array of booleans.
+
+        Example
+        -------
+        >>> Q = QuaternionArray(np.random.random((3, 4))-0.5)
+        >>> Q[1] = [1.0, 2.0, 3.0, 4.0]
+        >>> Q.view()
+        QuaternionArray([[-0.8061095 ,  0.42513151,  0.37790158, -0.16322091],
+                         [ 1.        ,  2.        ,  3.        ,  4.        ],
+                         [ 0.29613776,  0.21692562, -0.16253866, -0.91587493]])
+        >>> Q.is_versor()
+        array([ True, False,  True])
+        """
         return np.isclose(np.linalg.norm(self.array, axis=1), 1.0)
 
     def is_identity(self) -> np.ndarray:
+        """Returns an array of boolean values, where a value is ``True`` if its
+        quaternion is equal to the identity quaternion.
+
+        An **identity quaternion** has its scalar part equal to 1, and its
+        vector part equal to 0, such that :math:`\\mathbf{q} = 1 + 0i + 0j + 0k`.
+
+        .. math::
+            \\left\\{
+            \\begin{array}{ll}
+                \\mathrm{True} & \\: \\mathbf{q}\\ = \\begin{pmatrix} 1 & 0 & 0 & 0 \\end{pmatrix} \\\\
+                \\mathrm{False} & \\: \\mathrm{otherwise}
+            \\end{array}
+            \\right.
+
+        Returns
+        -------
+        out : np.ndarray
+            Array of booleans.
+
+        Example
+        -------
+        >>> Q = QuaternionArray(np.random.random((3, 4))-0.5)
+        >>> Q[1] = [1.0, 0.0, 0.0, 0.0]
+        >>> Q.view()
+        QuaternionArray([[-0.8061095 ,  0.42513151,  0.37790158, -0.16322091],
+                         [ 1.        ,  0.        ,  0.        ,  0.        ],
+                         [ 0.29613776,  0.21692562, -0.16253866, -0.91587493]])
+        >>> Q.is_identity()
+        array([False,  True, False])
+
+        """
         return np.all(np.isclose(self.array, np.tile([1., 0., 0., 0.], (self.array.shape[0], 1))), axis=1)
 
     def conjugate(self) -> np.ndarray:
