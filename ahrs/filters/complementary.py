@@ -18,7 +18,7 @@ References
 import numpy as np
 from ..common.orientation import acc2q, q_prod, am2q
 
-class ComplementaryQ:
+class Complementary:
     """
     Class of complementary filter for quaternion estimation.
 
@@ -60,7 +60,7 @@ class ComplementaryQ:
     Raises
     ------
     ValueError
-        When dimension of input arrays `acc`, `gyr`, or `mag` are not equal.
+        When dimension of input arrays ``acc``, ``gyr``, or ``mag`` are not equal.
 
     """
     def __init__(self, gyr: np.ndarray = None, acc: np.ndarray = None, mag: np.ndarray = None, **kw):
@@ -169,7 +169,7 @@ class ComplementaryQ:
 
         Returns
         -------
-        q : array
+        q : numpy.ndarray
             Estimated quaternion.
 
         """
