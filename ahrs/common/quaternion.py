@@ -1804,12 +1804,13 @@ class Quaternion(np.ndarray):
 class QuaternionArray(np.ndarray):
     """Array of Quaternions
 
-    Class to represent quaternion arrays. It can be built with N-by-3 or N-by-4
-    NumPy arrays. The built objects are always normalized to represent
-    rotations in 3D space.
+    Class to represent quaternion arrays. It can be built from N-by-3 or N-by-4
+    arrays. The objects are **always normalized** to represent rotations in 3D
+    space (versors), unless explicitly specified setting the parameter ``versors``
+    to ``False``.
 
     If an N-by-3 array is given, it is assumed to represent pure quaternions,
-    which are extended in their
+    setting their scalar part equal to zero.
 
     Parameters
     ----------
@@ -1919,12 +1920,12 @@ class QuaternionArray(np.ndarray):
                      [ 0.17094453, -0.3723117 ,  0.54109885, -0.73442086],
                      [ 0.1862619 , -0.38421818,  0.5260265 , -0.73551276]])
     """
-    def __new__(subtype, q: np.ndarray = None, versors: bool = True, **kwargs):
+    def __new__(subtype, q: np.ndarray = None, versors: bool = True):
         if q is None:
             q = np.array([[1.0, 0.0, 0.0, 0.0]])
         q = np.array(q, dtype=float)
         if q.ndim!=2 or q.shape[-1] not in [3, 4]:
-            raise ValueError("Expected `q` to have shape (N, 4) or (N, 3), got {}.".format(q.shape))
+            raise ValueError("Expected array to have shape (N, 4) or (N, 3), got {}.".format(q.shape))
         if q.shape[-1]==3:
             q = np.c_[np.zeros(q.shape[0]), q]
         if versors:
@@ -1939,12 +1940,26 @@ class QuaternionArray(np.ndarray):
 
     @property
     def w(self) -> np.ndarray:
-        """Scalar part of all Quaternions.
+        """Scalar parts of all Quaternions.
+
+        Having the quaternion elements :math:`\\mathbf{q}_i=\\begin{pmatrix}w_i & \\mathbf{v}_i\\end{pmatrix}=\\begin{pmatrix}w_i & x_i & y_i & z_i\\end{pmatrix}\\in\\mathbb{R}^4`
+        stacked vertically in an :math:`N\\times 4` matrix :math:`\\mathbf{Q}`:
+
+        .. math::
+            \\mathbf{Q} =
+            \\begin{bmatrix} \\mathbf{q}_0 \\\\ \\mathbf{q}_1 \\\\ \\vdots \\\\ \\mathbf{q}_{N-1} \\end{bmatrix} =
+            \\begin{bmatrix} w_0 & x_0 & y_0 & z_0 \\\\ w_1 & x_1 & y_1 & z_1 \\\\
+            \\vdots & \\vdots & \\vdots & \\vdots \\\\ w_{N-1} & x_{N-1} & y_{N-1} & z_{N-1} \\end{bmatrix}
+
+        The scalar elements of all quaternions are:
+
+        .. math::
+            \\mathbf{w} = \\begin{bmatrix}w_0 & w_1 & \\cdots & w_{N-1}\\end{bmatrix}
 
         Returns
         -------
-        w : float
-            Scalar part of the quaternion.
+        w : numpy.ndarray
+            Scalar parts of all quaternions.
 
         Examples
         --------
@@ -1956,7 +1971,7 @@ class QuaternionArray(np.ndarray):
         >>> Q.w
         array([ 0.39338362,  0.65459935, -0.42837174])
 
-        It can also be accessed directly, returned as a QuaternionArray:
+        They can also be accessed directly, returned as a QuaternionArray:
 
         >>> Q[:, 0]
         QuaternionArray([ 0.39338362,  0.65459935, -0.42837174])
@@ -1965,12 +1980,26 @@ class QuaternionArray(np.ndarray):
 
     @property
     def x(self) -> np.ndarray:
-        """First element of the vector part of all Quaternions.
+        """First elements of the vector part of all Quaternions.
+
+        Having the quaternion elements :math:`\\mathbf{q}_i=\\begin{pmatrix}w_i & \\mathbf{v}_i\\end{pmatrix}=\\begin{pmatrix}w_i & x_i & y_i & z_i\\end{pmatrix}\\in\\mathbb{R}^4`
+        stacked vertically in an :math:`N\\times 4` matrix :math:`\\mathbf{Q}`:
+
+        .. math::
+            \\mathbf{Q} =
+            \\begin{bmatrix} \\mathbf{q}_0 \\\\ \\mathbf{q}_1 \\\\ \\vdots \\\\ \\mathbf{q}_{N-1} \\end{bmatrix} =
+            \\begin{bmatrix} w_0 & x_0 & y_0 & z_0 \\\\ w_1 & x_1 & y_1 & z_1 \\\\
+            \\vdots & \\vdots & \\vdots & \\vdots \\\\ w_{N-1} & x_{N-1} & y_{N-1} & z_{N-1} \\end{bmatrix}
+
+        The first elements of the vector parts of all quaternions are:
+
+        .. math::
+            \\mathbf{x} = \\begin{bmatrix}x_0 & x_1 & \\cdots & x_{N-1}\\end{bmatrix}
 
         Returns
         -------
-        x : float
-            First element of the vector part of all Quaternions.
+        x : numpy.ndarray
+            First elements of the vector part of all quaternions.
 
         Examples
         --------
@@ -1982,7 +2011,7 @@ class QuaternionArray(np.ndarray):
         >>> Q.x
         array([-0.29206111,  0.14192058,  0.85451579])
 
-        It can also be accessed directly, returned as a QuaternionArray:
+        They can also be accessed directly, returned as a QuaternionArray:
 
         >>> Q[:, 1]
         QuaternionArray([-0.29206111,  0.14192058,  0.85451579])
@@ -1991,12 +2020,26 @@ class QuaternionArray(np.ndarray):
 
     @property
     def y(self) -> np.ndarray:
-        """Second element of the vector part of all Quaternions.
+        """Second elements of the vector part of all Quaternions.
+
+        Having the quaternion elements :math:`\\mathbf{q}_i=\\begin{pmatrix}w_i & \\mathbf{v}_i\\end{pmatrix}=\\begin{pmatrix}w_i & x_i & y_i & z_i\\end{pmatrix}\\in\\mathbb{R}^4`
+        stacked vertically in an :math:`N\\times 4` matrix :math:`\\mathbf{Q}`:
+
+        .. math::
+            \\mathbf{Q} =
+            \\begin{bmatrix} \\mathbf{q}_0 \\\\ \\mathbf{q}_1 \\\\ \\vdots \\\\ \\mathbf{q}_{N-1} \\end{bmatrix} =
+            \\begin{bmatrix} w_0 & x_0 & y_0 & z_0 \\\\ w_1 & x_1 & y_1 & z_1 \\\\
+            \\vdots & \\vdots & \\vdots & \\vdots \\\\ w_{N-1} & x_{N-1} & y_{N-1} & z_{N-1} \\end{bmatrix}
+
+        The second elements of the vector parts of all quaternions are:
+
+        .. math::
+            \\mathbf{y} = \\begin{bmatrix}y_0 & y_1 & \\cdots & y_{N-1}\\end{bmatrix}
 
         Returns
         -------
-        y : float
-            Second element of the vector part of all Quaternions.
+        y : numpy.ndarray
+            Second elements of the vector part of all quaternions.
 
         Examples
         --------
@@ -2008,7 +2051,7 @@ class QuaternionArray(np.ndarray):
         >>> Q.y
         array([-0.07445273, -0.69722158, -0.02786928])
 
-        It can also be accessed directly, returned as a QuaternionArray:
+        They can also be accessed directly, returned as a QuaternionArray:
 
         >>> Q[:, 2]
         QuaternionArray([-0.07445273, -0.69722158, -0.02786928])
@@ -2017,12 +2060,26 @@ class QuaternionArray(np.ndarray):
 
     @property
     def z(self) -> np.ndarray:
-        """Third element of the vector part of all Quaternions.
+        """Third elements of the vector part of all Quaternions.
+
+        Having the quaternion elements :math:`\\mathbf{q}_i=\\begin{pmatrix}w_i & \\mathbf{v}_i\\end{pmatrix}=\\begin{pmatrix}w_i & x_i & y_i & z_i\\end{pmatrix}\\in\\mathbb{R}^4`
+        stacked vertically in an :math:`N\\times 4` matrix :math:`\\mathbf{Q}`:
+
+        .. math::
+            \\mathbf{Q} =
+            \\begin{bmatrix} \\mathbf{q}_0 \\\\ \\mathbf{q}_1 \\\\ \\vdots \\\\ \\mathbf{q}_{N-1} \\end{bmatrix} =
+            \\begin{bmatrix} w_0 & x_0 & y_0 & z_0 \\\\ w_1 & x_1 & y_1 & z_1 \\\\
+            \\vdots & \\vdots & \\vdots & \\vdots \\\\ w_{N-1} & x_{N-1} & y_{N-1} & z_{N-1} \\end{bmatrix}
+
+        The third elements of the vector parts of all quaternions are:
+
+        .. math::
+            \\mathbf{z} = \\begin{bmatrix}z_0 & z_1 & \\cdots & z_{N-1}\\end{bmatrix}
 
         Returns
         -------
-        z : float
-            Third element of the vector part of all Quaternions.
+        z : numpy.ndarray
+            Third elements of the vector part of all quaternions.
 
         Examples
         --------
@@ -2034,7 +2091,7 @@ class QuaternionArray(np.ndarray):
         >>> Q.z
         array([0.86856573, 0.25542183, 0.29244439])
 
-        It can also be accessed directly, returned as a QuaternionArray:
+        They can also be accessed directly, returned as a QuaternionArray:
 
         >>> Q[:, 3]
         QuaternionArray([0.86856573, 0.25542183, 0.29244439])
@@ -2045,10 +2102,25 @@ class QuaternionArray(np.ndarray):
     def v(self) -> np.ndarray:
         """Vector part of all Quaternions.
 
+        Having the quaternion elements :math:`\\mathbf{q}_i=\\begin{pmatrix}w_i & \\mathbf{v}_i\\end{pmatrix}=\\begin{pmatrix}w_i & x_i & y_i & z_i\\end{pmatrix}\\in\\mathbb{R}^4`
+        stacked vertically in an :math:`N\\times 4` matrix :math:`\\mathbf{Q}`:
+
+        .. math::
+            \\mathbf{Q} =
+            \\begin{bmatrix} \\mathbf{q}_0 \\\\ \\mathbf{q}_1 \\\\ \\vdots \\\\ \\mathbf{q}_{N-1} \\end{bmatrix} =
+            \\begin{bmatrix} w_0 & x_0 & y_0 & z_0 \\\\ w_1 & x_1 & y_1 & z_1 \\\\
+            \\vdots & \\vdots & \\vdots & \\vdots \\\\ w_{N-1} & x_{N-1} & y_{N-1} & z_{N-1} \\end{bmatrix}
+
+        The vector parts of all quaternions are:
+
+        .. math::
+            \\mathbf{V} = \\begin{bmatrix} x_0 & y_0 & z_0 \\\\ x_1 & y_1 & z_1 \\\\
+            \\vdots & \\vdots & \\vdots \\\\ x_{N-1} & y_{N-1} & z_{N-1} \\end{bmatrix}
+
         Returns
         -------
-        v : numpy.ndarray
-            Vector part of all quaternions.
+        V : numpy.ndarray
+            N-by-3 array with vector parts of all quaternions.
 
         Examples
         --------
@@ -2062,8 +2134,8 @@ class QuaternionArray(np.ndarray):
                [ 0.14192058, -0.69722158,  0.25542183],
                [ 0.85451579, -0.02786928,  0.29244439]])
 
-        It can also be accessed directly, treating the Quaternion as an array,
-        but is returned as a Quaternion object.
+        They can also be accessed directly, slicing the Quaternion like an
+        array, but returned as a Quaternion object.
 
         >>> Q[:, 1:]
         QuaternionArray([[-0.29206111, -0.07445273,  0.86856573],
@@ -2262,7 +2334,7 @@ class QuaternionArray(np.ndarray):
         """
         Return corresponding Euler angles of quaternion.
 
-        Given a unit quaternions :math:`\\mathbf{q} = (q_w, q_x, q_y, q_z)`,
+        Having a unit quaternion :math:`\\mathbf{q} = (q_w, q_x, q_y, q_z)`,
         its corresponding Euler angles [WikiConversions]_ are:
 
         .. math::
