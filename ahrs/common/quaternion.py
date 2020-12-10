@@ -2360,16 +2360,34 @@ class QuaternionArray(np.ndarray):
 
     def to_DCM(self) -> np.ndarray:
         """
-        Return N direction cosine matrices in SO(3) from a given Quaternion
-        array, where N is the number of quaternions.
+        Having *N* quaternions return *N* `direction cosine matrices
+        <https://en.wikipedia.org/wiki/Euclidean_vector#Conversion_between_multiple_Cartesian_bases>`_
+        in `SO(3) <https://en.wikipedia.org/wiki/3D_rotation_group>`_.
 
-        The default values are identity quaternions, which produce N 3-by-3
-        Identity matrices.
+        Any **unit quaternion** has the form
+        :math:`\\mathbf{q} = \\begin{pmatrix}q_w & \\mathbf{q}_v\\end{pmatrix}`,
+        where :math:`\\mathbf{q}_v = \\begin{bmatrix}q_x & q_y & q_z\\end{bmatrix}`
+        is the vector part, :math:`q_w` is the scalar part, and :math:`\\|\\mathbf{q}\\|=1`.
+
+        The `rotation matrix <https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions>`_
+        :math:`\\mathbf{R}` [WikiConversions]_ built from :math:`\\mathbf{q}`
+        has the form:
+
+        .. math::
+            \\mathbf{R}(\\mathbf{q}) =
+            \\begin{bmatrix}
+            1 - 2(q_y^2 + q_z^2) & 2(q_xq_y - q_wq_z) & 2(q_xq_z + q_wq_y) \\\\
+            2(q_xq_y + q_wq_z) & 1 - 2(q_x^2 + q_z^2) & 2(q_yq_z - q_wq_x) \\\\
+            2(q_xq_z - q_wq_y) & 2(q_wq_x + q_yq_z) & 1 - 2(q_x^2 + q_y^2)
+            \\end{bmatrix}
+
+        The identity quaternion :math:`\\mathbf{q}_\\mathbf{I} = \\begin{pmatrix}1 & 0 & 0 & 0\\end{pmatrix}`,
+        produces a :math:`3 \\times 3` Identity matrix :math:`\\mathbf{I}_3`.
 
         Returns
         -------
         DCM : numpy.ndarray
-            N-by-3-by-3 Direction Cosine Matrices
+            N-by-3-by-3 Direction Cosine Matrices.
 
         Examples
         --------
@@ -2394,6 +2412,8 @@ class QuaternionArray(np.ndarray):
                     [ 0.01360439,  0.43706545, -0.89932681],
                     [ 0.58580016, -0.73238041, -0.3470693 ]]])
         """
+        if not all(self.is_versor()):
+            raise AttributeError("All quaternions must be versors to be represented as Direction Cosine Matrices.")
         R = np.zeros((self.num_qts, 3, 3))
         R[:, 0, 0] = 1.0 - 2.0*(self.array[:, 2]**2 + self.array[:, 3]**2)
         R[:, 1, 0] = 2.0*(self.array[:, 1]*self.array[:, 2]+self.array[:, 0]*self.array[:, 3])
@@ -2409,14 +2429,61 @@ class QuaternionArray(np.ndarray):
     def average(self, span: Tuple[int, int] = None, weights: np.ndarray = None) -> np.ndarray:
         """Average quaternion using Markley's method [Markley2007]_
 
-        The average quaternion is the eigenvector of :math:`\\mathbf{M}\\in\\mathbb{C}^{4\\times 4}`
-        corresponding to the maximum eigenvalue, where:
+        It has to be clear that we intend to average **atttitudes** rather than
+        quaternions. It just happens that we represent these attitudes with
+        unit quaternions, that is :math:`\\|\\mathbf{q}\\|=1`.
+
+        The average quaternion :math:`\\bar{\\mathbf{q}}` should minimize a
+        weighted sum of the squared `Frobenius norms
+        <https://en.wikipedia.org/wiki/Matrix_norm#Frobenius_norm>`_ of
+        attitude matrix differences:
 
         .. math::
-            \\mathbf{M} = \\mathbf{q}^T \\cdot \\mathbf{q}
+            \\bar{\\mathbf{q}} = \\mathrm{arg min}\\sum_{i=1}^nw_i\\|\\mathbf{A}(\\mathbf{q}) - \\mathbf{A}(\\mathbf{q}_i)\\|_F^2
 
-        In this case, the product :math:`\\mathbf{q}^T \\cdot \\mathbf{q}` is a
-        normal matrix multiplication of the elements of each quaternion.
+        Taking advantage of the attitude's orthogonality in SO(3), this can be
+        rewritten as a maximization problem:
+
+        .. math::
+            \\bar{\\mathbf{q}} = \\mathrm{arg max} \\big\\{\\mathrm{tr}(\\mathbf{A}(\\mathbf{q})\\mathbf{B}^T)\\big\\}
+
+        with:
+
+        .. math::
+            \\mathbf{B} = \\sum_{i=1}^nw_i\\mathbf{A}(\\mathbf{q}_i)
+
+        We can verify the identity:
+
+        .. math::
+            \\mathrm{tr}(\\mathbf{A}(\\mathbf{q})\\mathbf{B}^T) = \\mathbf{q}^T\\mathbf{Kq}
+
+        using Davenport's symmetric traceless :math:`4\\times 4` matrix:
+
+        .. math::
+            \\mathbf{K}=4\\mathbf{M}-w_\\mathrm{tot}\\mathbf{I}_{4\\times 4}
+
+        where :math:`w_\\mathrm{tot}=\\sum_{i=1}^nw_i`, and :math:`\\mathbf{M}` is the
+        :math:`4\\times 4` matrix:
+
+        .. math::
+            \\mathbf{M} = \\sum_{i=1}^nw_i\\mathbf{q}_i\\mathbf{q}_i^T
+
+        .. warning::
+            In this case, the product :math:`\\mathbf{q}_i\\mathbf{q}_i^T` is a
+            *normal matrix multiplication*, not the Hamilton product, of the
+            elements of each quaternion.
+
+        Finally, the average quaternion :math:`\\bar{\\mathbf{q}}` is the
+        eigenvector corresponding to the maximum eigenvalue of :math:`\\mathbf{M}`,
+        which in turns maximizes the procedure:
+
+        .. math::
+            \\bar{\\mathbf{q}} = \\mathrm{arg max} \\big\\{\\mathbf{q}^T\\mathbf{Mq}\\big\\}
+
+        Changing the sign of any :math:`\\mathbf{q}_i` does not change the
+        value of :math:`\\mathbf{M}`. Thus, the averaging procedure determines
+        :math:`\\bar{\\mathbf{q}}` up to a sign, which is consistent with the
+        nature of the attitude representation using unit quaternions.
 
         Parameters
         ----------
@@ -2447,6 +2514,8 @@ class QuaternionArray(np.ndarray):
         The result is as expected, remembering that a quaternion with opposite
         signs on each element represents the same orientation.
         """
+        if not all(self.is_versor()):
+            raise AttributeError("All quaternions must be versors to be averaged.")
         q = self.array.copy()
         if span is not None:
             if hasattr(span, '__iter__') and len(span)==2:
