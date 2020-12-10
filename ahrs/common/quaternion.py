@@ -333,7 +333,7 @@ References
 """
 
 import numpy as np
-from typing import Type, Union, NoReturn, Any, Tuple, List
+from typing import Type, Union, Any, Tuple, List
 # Functions to convert DCM to quaternion representation
 from .orientation import shepperd
 from .orientation import hughes
@@ -400,6 +400,12 @@ class Quaternion(np.ndarray):
         4-dimensional.
     versor : bool, default: True
         Treat the quaternion as versor. It will normalize it immediately.
+    dcm : array-like
+        Create quaternion object from a 3-by-3 rotation matrix. It is built
+        only if no array was given to build.
+    rpy : array-like
+        Create quaternion object from roll-pitch-yaw angles. It is built only
+        if no array was given to build.
 
     Attributes
     ----------
@@ -482,12 +488,12 @@ class Quaternion(np.ndarray):
     def __new__(subtype, q: np.ndarray = None, versor: bool = True, **kwargs):
         if q is None:
             q = np.array([1.0, 0.0, 0.0, 0.0])
-            if "angles" in kwargs:
-                q = Quaternion.from_angles(Quaternion, np.array(kwargs.pop("angles")))
             if "dcm" in kwargs:
                 q = Quaternion.from_DCM(Quaternion, np.array(kwargs.pop("dcm")))
             if "rpy" in kwargs:
                 q = Quaternion.from_rpy(Quaternion, np.array(kwargs.pop("rpy")))
+            if "angles" in kwargs:  # Older call to rpy
+                q = Quaternion.from_angles(Quaternion, np.array(kwargs.pop("angles")))
         q = np.array(q, dtype=float)
         if q.ndim!=1 or q.shape[-1] not in [3, 4]:
             raise ValueError("Expected `q` to have shape (4,) or (3,), got {}.".format(q.shape))
@@ -1259,7 +1265,7 @@ class Quaternion(np.ndarray):
         """
         return np.allclose(self.A, np.array([1.0, 0.0, 0.0, 0.0]))
 
-    def normalize(self) -> NoReturn:
+    def normalize(self) -> None:
         """Normalize the quaternion
         """
         self.A /= np.linalg.norm(self.A)
@@ -1817,7 +1823,7 @@ class QuaternionArray(np.ndarray):
     q : array-like, default: None
         N-by-4 or N-by-3 array containing the quaternion values to use.
     versors : bool, default: True
-        Treat the quaterniona as versors. It will normalize them immediately.
+        Treat quaternions as versors. It will normalize them immediately.
 
     Attributes
     ----------
@@ -2332,10 +2338,10 @@ class QuaternionArray(np.ndarray):
 
     def to_angles(self) -> np.ndarray:
         """
-        Return corresponding Euler angles of quaternion.
+        Return corresponding roll-pitch-yaw angles of quaternion.
 
-        Having a unit quaternion :math:`\\mathbf{q} = (q_w, q_x, q_y, q_z)`,
-        its corresponding Euler angles [WikiConversions]_ are:
+        Having a unit quaternion :math:`\\mathbf{q} = \\begin{pmatrix}q_w & q_x & q_y & q_z\\end{pmatrix}`,
+        its corresponding roll-pitch-yaw angles [WikiConversions]_ are:
 
         .. math::
             \\begin{bmatrix}
@@ -2351,6 +2357,22 @@ class QuaternionArray(np.ndarray):
         -------
         angles : numpy.ndarray
             Euler angles of quaternion.
+
+        Examples
+        --------
+        >>> Q = QuaternionArray(np.random.random((5, 4))-0.5)   # Five random Quaternions
+        >>> Q.view()
+        QuaternionArray([[-0.5874517 , -0.2181631 , -0.25175194,  0.73751361],
+                         [ 0.64812786,  0.18534342,  0.73606315, -0.06155591],
+                         [-0.0014204 ,  0.8146498 ,  0.26040532,  0.51820146],
+                         [ 0.55231315, -0.6287687 , -0.02216051,  0.5469086 ],
+                         [ 0.08694828, -0.96884826,  0.05115712, -0.22617689]])
+        >>> Q.to_angles()
+        array([[-0.14676831,  0.66566299, -1.84716657],
+               [ 2.36496457,  1.35564472,  2.01193563],
+               [ 2.61751194, -1.00664968,  0.91202161],
+               [-1.28870906,  0.72519173,  1.00562317],
+               [-2.92779394, -0.4437908 , -0.15391635]])
 
         """
         phi = np.arctan2(2.0*(self.array[:, 0]*self.array[:, 1] + self.array[:, 2]*self.array[:, 3]), 1.0 - 2.0*(self.array[:, 1]**2 + self.array[:, 2]**2))
@@ -2531,7 +2553,7 @@ class QuaternionArray(np.ndarray):
         eigvals, eigvecs = np.linalg.eig(q.T@q)
         return eigvecs[:, eigvals.argmax()]
 
-    def remove_jumps(self) -> NoReturn:
+    def remove_jumps(self) -> None:
         """
         Flip sign of opposite quaternions.
 
