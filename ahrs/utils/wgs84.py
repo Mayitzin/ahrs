@@ -315,13 +315,13 @@ def international_gravity(lat: float, epoch: str = '1980') -> float:
     """
     International Gravity Formula
 
-    Estimate normal gravity with the International Gravity Formula [Lambert]_,
-    adapted from Stokes' formula, and adopted by the `International Association
+    Estimate the normal gravity, :math:`g`, using the International Gravity
+    Formula [Lambert]_, adapted from Stokes' formula, and adopted by the `International Association
     of Geodesy <https://www.iag-aig.org/>`_ at its Stockholm Assembly in 1930.
 
     The expression for gravity on a spheroid, which combines gravitational
-    attraction and centrifugal acceleration, can be written in the form of a
-    series:
+    attraction and centrifugal acceleration, at a certain latitude, :math:`\\phi`,
+    can be written in the form of a series:
 
     .. math::
         g = g_e\\big(1 + \\beta\\sin^2(\\phi) - \\beta_1\\sin^2(2\\phi) - \\beta_2\\sin^2(\\phi)\\sin^2(2\\phi) - \\beta_3\\sin^4(\\phi)\\sin^2(2\\phi) - \\dots\\big)
@@ -337,9 +337,10 @@ def international_gravity(lat: float, epoch: str = '1980') -> float:
         & \\mathrm{etc.}
         \\end{array}
 
-    For the case of the International Ellipsoid, the third-order terms are
-    negligible. So, in practice, the term :math:`\\beta_2` and all following
-    terms are dropped to yield the form:
+    and :math:`g_e` is the measured normal gravitaty on the Equator. For the
+    case of the International Ellipsoid, the third-order terms are negligible.
+    So, in practice, the term :math:`\\beta_2` and all following terms are
+    dropped to yield the form:
 
     .. math::
         g = g_e \\big(1 + \\beta \\sin^2\\phi - \\beta_1 \\sin^2(2\\phi)\\big)
@@ -356,23 +357,20 @@ def international_gravity(lat: float, epoch: str = '1980') -> float:
     Those different moments are named **epochs** and are labeled according to
     the year they were updated:
 
-    +-------+-------------+----------------+-----------------+
-    | epoch | :math:`g_e` | :math:`\\beta`  | :math:`\\beta_1` |
-    +=======+=============+================+=================+
-    | 1930  | 9.78049     | 5.2884 x 10^-3 | 5.9 x 10^-6     |
-    +-------+-------------+----------------+-----------------+
-    | 1948  | 9.780373    | 5.2891 x 10^-3 | 5.9 x 10^-6     |
-    +-------+-------------+----------------+-----------------+
-    | 1967  | 9.780318    | 5.3024 x 10^-3 | 5.9 x 10^-6     |
-    +-------+-------------+----------------+-----------------+
-    | 1980  | 9.780327    | 5.3024 x 10^-3 | 5.8 x 10^-6     |
-    +-------+-------------+----------------+-----------------+
+    =====  ===========  ===============  ===========
+    epoch  :math:`g_e`  :math:`\\beta`    :math:`\\beta_1`
+    =====  ===========  ===============  ===========
+    1930   9.78049      5.2884 x 10^-3   5.9 x 10^-6
+    1948   9.780373     5.2891 x 10^-3   5.9 x 10^-6
+    1967   9.780318     5.3024 x 10^-3   5.9 x 10^-6
+    1980   9.780327     5.3024 x 10^-3   5.8 x 10^-6
+    =====  ===========  ===============  ===========
 
     The latest epoch, 1980, is used here by default.
 
     Parameters
     ----------
-    lat: float
+    lat : float
         Geographical Latitude, in decimal degrees.
     epoch : str, default: '1980'
         Epoch of the Geodetic Reference System. Options are ``'1930'``, ``'1948'``,
@@ -391,6 +389,8 @@ def international_gravity(lat: float, epoch: str = '1980') -> float:
     9.7820428934191
 
     """
+    if abs(lat)>90.0:
+        raise ValueError("Latitude must be between -90.0 and 90.0 degrees.")
     lat *= DEG2RAD
     if epoch not in ['1930', '1948', '1967', '1980']:
         return ValueError("Invalid epoch. Try '1930', '1948', '1967' or '1980'.")
@@ -408,7 +408,7 @@ def welmec_gravity(lat: float, h: float = 0.0) -> float:
     Reference normal gravity of WELMEC's gravity zone
 
     Gravity zones are implemented by European States on their territories for
-    weighing instruments that are sensitive to gravity variations [WELMEC2009]_.
+    weighing instruments that are sensitive to variations of gravity [WELMEC2009]_.
 
     Manufacturers may adjust their instruments using the reference gravity
     formula:
@@ -417,7 +417,7 @@ def welmec_gravity(lat: float, h: float = 0.0) -> float:
         g = 9.780318(1 + 0.0053024\\sin^2(\\phi) - 0.0000058\\sin^2(2\\phi)) - 0.000003085h
 
     where :math:`\\phi` is the geographical latitude and :math:`h` is the
-    height in meters.
+    height above sea level in meters.
 
     Parameters
     ----------
@@ -437,6 +437,8 @@ def welmec_gravity(lat: float, h: float = 0.0) -> float:
     9.818628439187075
 
     """
+    if abs(lat)>90.0:
+        raise ValueError("Latitude must be between -90.0 and 90.0 degrees.")
     lat *= DEG2RAD
     return 9.780318*(1 + 0.0053024*np.sin(lat)**2 - 0.0000058*np.sin(2*lat)**2) - 0.000003085*h
 
@@ -447,14 +449,14 @@ class WGS:
     Parameters
     ----------
     a : float, default: 6378137.0
-        Objects's Semi-major axis (Equatorial Radius), in meters. Defaults to
+        Ellipsoid's Semi-major axis (Equatorial Radius), in meters. Defaults to
         Earth's semi-major axis.
     f : float, default: 0.0033528106647474805
-        Objects's flattening factor. Defaults to Earth's flattening.
+        Ellipsoid's flattening factor. Defaults to Earth's flattening.
     GM : float, default: 3.986004418e14
-        Objects's Standard Gravitational Constant in m^3/s^2
+        Ellipsoid's Standard Gravitational Constant in m^3/s^2
     w : float, default: 0.00007292115
-        Objects's rotation rate in rad/s
+        Ellipsoid's rotation rate in rad/s
 
     Attributes
     ----------
@@ -463,13 +465,13 @@ class WGS:
     f : float
         Ellipsoid's flattening factor.
     gm : float
-        Objects's Standard Gravitational Constant in m^3/s^2.
+        Ellipsoid's Standard Gravitational Constant in m^3/s^2.
     w : float
         Ellipsoid's rotation rate in rad/s.
     b : float
         Ellipsoid's semi-minor axis (Polar Radius), in meters.
     is_geodetic : bool
-        Whether the object describes Earth.
+        Whether the Ellipsoid describes Earth.
 
     """
     def __init__(self, a: float = EARTH_EQUATOR_RADIUS, f: float = EARTH_FLATTENING, GM: float = EARTH_GM, w: float = EARTH_ROTATION):
@@ -544,14 +546,15 @@ class WGS:
 
     def vertical_curvature_radius(self, lat: float) -> float:
         """
-        Radius of the curvature in the prime vertical, computed as:
+        Radius of the curvature in the prime vertical, estimated at a given
+        latitude, :math:`\\phi`, as:
 
         .. math::
             R_N = \\frac{a}{\\sqrt{1-e^2\\sin^2\\phi}}
 
         Parameters
         ----------
-        lat: float
+        lat : float
             Geographical latitude, in decimal degrees.
         """
         e = np.sqrt(self.first_eccentricity_squared)
@@ -559,14 +562,15 @@ class WGS:
 
     def meridian_curvature_radius(self, lat: float) -> float:
         """
-        Radius of the curvature in the prime meridian, computed as:
+        Radius of the curvature in the prime meridian, estimated at a given
+        latitude, :math:`\\phi`, as:
 
         .. math::
             R_M = \\frac{a(1-e^2)}{\\sqrt[3]{1-e^2\\sin^2\\phi}}
 
         Parameters
         ----------
-        lat: float
+        lat : float
             Geographical latitude, in decimal degrees.
         """
         e = np.sqrt(self.first_eccentricity_squared)
