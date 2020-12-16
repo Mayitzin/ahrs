@@ -144,11 +144,40 @@ array([0.94371436, 0.12767944, 0.14487813, 0.26853582])
 array([ 0.94371436, -0.12767944, -0.14487813, -0.26853582])
 ```
 
-- A whole bunch of [new constant values](https://ahrs.readthedocs.io/en/latest/constants.html) (mainly for Geodesy) accessed from the top level of the package.
+- New class `QuaternionArray` to simultaneously handle an array with more quaternions at once.
+
+```python
+>>> Q = QuaternionArray(np.random.random((3, 4))-0.5)
+>>> Q.view()
+QuaternionArray([[ 0.31638467,  0.59313477, -0.62538687, -0.39621099],
+                 [ 0.24973118, -0.37958194, -0.67851278, -0.57721079],
+                 [-0.44643469,  0.17200957, -0.72678553,  0.49284031]])
+>>> Q.w
+array([ 0.31638467,  0.24973118, -0.44643469])
+>>> Q.to_DCM()
+array([[[-0.09618377, -0.49116723, -0.86573866],
+        [-0.99258756, -0.017584  ,  0.1202528 ],
+        [-0.07428738,  0.8708878 , -0.48583519]],
+
+       [[-0.58710377,  0.80339746,  0.09930598],
+        [ 0.22680733,  0.04549051,  0.97287669],
+        [ 0.77708918,  0.5937029 , -0.20892408]],
+
+       [[-0.54221755,  0.19001389,  0.81847104],
+        [-0.69007015,  0.45504228, -0.56279633],
+        [-0.47937805, -0.86996048, -0.115609  ]]])
+>>> Q.conjugate()
+array([[ 0.31638467, -0.59313477,  0.62538687,  0.39621099],
+       [ 0.24973118,  0.37958194,  0.67851278,  0.57721079],
+       [-0.44643469, -0.17200957,  0.72678553, -0.49284031]])
+>>> Q.average()
+array([ 0.19537239,  0.17826049, -0.87872408, -0.39736232])
+```
+
+- New submodule `frames` to represent the position of an object in different reference frames.
 - [Metrics](https://ahrs.readthedocs.io/en/latest/metrics.html) for rotations in 3D spaces using quaternions and direction cosine matrices.
 - New operations, properties and methods for class `Quaternion` (now also derived from `numpy.ndarray`)
-- New class `QuaternionArray` to simultaneously handle an array of several quaternions.
-- New submodule `frames` to represent the position of an object in different reference frames.
+- A whole bunch of [new constant values](https://ahrs.readthedocs.io/en/latest/constants.html) (mainly for Geodesy) accessed from the top level of the package.
 - Docstrings are improved with further explanations, references and equations whenever possible.
 
 ## More Attitude Estimators
