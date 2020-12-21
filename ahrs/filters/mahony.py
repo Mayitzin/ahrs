@@ -3,50 +3,124 @@
 Mahony Orientation Filter
 =========================
 
-The filter designed by Robert Mahony [Mahony]_ is formulated as a deterministic
-observer in SO(3) mainly driven by angular velocity measurements and
-reconstructed attitude.
+This estimator, termed "Explicit Complementary Filter" (ECF) by Robert Mahony
+[Mahony]_, uses an inertial measurement :math:`a`, and an angular velocity
+measurement :math:`\\Omega`.
 
-This observer, termed "explicit complementary filter" (ECF), uses an inertial
-measurement :math:`a` and an angular velocity measurement :math:`\\omega`. The
-inertial direction obtained from the gravity is a low-frequency normalized
-measurement:
+The **gyroscopes** measure angular velocity in the body-fixed frame, whose error
+model is:
 
 .. math::
+    \\Omega^y = \\Omega + b + \\mu \\in\\mathbb{R}^3
 
-    a = \\frac{a}{\\|a\\|}
+where :math:`\\Omega` is the true angular velocity, :math:`b` is a constant (or
+slow time-varying) **bias**, and :math:`\\mu` is an additive **measurement
+noise**.
 
-A predicted direction of gravity :math:`v` is expected to be colinear with the
-Z-axis of the inertial frame:
+The observer's main objective is to provide a set of dynamics for an estimated
+orientation :math:`\\hat{\\mathbf{R}}\\in SO(3)`, and to drive such estimation
+towards the real attitude: :math:`\\hat{\\mathbf{R}}\\to\\mathbf{R}\\in SO(3)`.
+
+The proposed observer equations include a prediction term based on the measured
+angular velocity :math:`\\Omega`, and an innovation correction term
+:math:`\\omega(\\tilde{\\mathbf{R}})` derived from the error :math:`\\tilde{\\mathbf{R}}`.
+
+The correction term :math:`\\omega` can be thought of as a non-linear
+approximation of the error between :math:`\\mathbf{R}` and :math:`\\hat{\\mathbf{R}}`
+as measured from the frame of reference associated with :math:`\\hat{\\mathbf{R}}`.
+
+Let :math:`\\mathbf{v}_{0i}\\in\\mathbb{R}^3` denote a set of :math:`n\\geq 2`
+known directions in the inertial (fixed) frame of reference, where the
+directions are not collinear, and :math:`\\mathbf{v}_{i}\\in\\mathbb{R}^3` are
+their associated measurements. The measurements are body-fixed frame
+observations of the fixed inertial directions:
 
 .. math::
+    \\mathbf{v}_i = \\mathbf{R}^T\\mathbf{v}_{0i} + \\mu_i
 
-    \\begin{array}{lll}
-    v & = & R(q)^T \\begin{bmatrix}0 & 0 & 1 \\end{bmatrix}^T\\\\
-    & = &
-    \\begin{bmatrix}
-    1 - 2(q_y^2 + q_z^2) & 2(q_xq_y + q_wq_z) & 2(q_xq_z - q_wq_y) \\\\
-    2(q_xq_y - q_wq_z) & 1 - 2(q_x^2 + q_z^2) & 2(q_wq_x + q_yq_z) \\\\
-    2(q_xq_z + q_wq_y) & 2(q_yq_z - q_wq_x) & 1 - 2(q_x^2 + q_y^2)
-    \\end{bmatrix}
-    \\begin{bmatrix}0 \\\\ 0 \\\\ 1\\end{bmatrix} \\\\
-    & = &
-    \\begin{bmatrix}
-    2(q_xq_z - q_wq_y) \\\\ 2(q_wq_x + q_yq_z) \\\\ 1 - 2(q_x^2 + q_y^2)
-    \\end{bmatrix}
+where :math:`\\mu_i` is a process noise. We assume that :math:`|\\mathbf{v}_{0i}|=1`
+and normalize all measurements to force :math:`|\\mathbf{v}_i|=1`.
+
+We declare :math:`\\hat{\\mathbf{R}}` to be an estimate of :math:`\\mathbf{R}`
+
+They are linked by:
+
+.. math::
+    \\hat{\\mathbf{v}}_i = \\hat{\\mathbf{R}}^T\\mathbf{v}_{0i}
+
+Low cost IMUs measure vectors :math:`\\mathbf{a}` and :math:`\\mathbf{m}`
+representing the gravitational and magnetic vector fields respectively.
+
+.. math::
+    \\begin{array}{rcl}
+    \\mathbf{a} &=& \\mathbf{R}^T\\mathbf{a}_0 \\\\ && \\\\
+    \\mathbf{m} &=& \\mathbf{R}^T\\mathbf{m}_0
     \\end{array}
 
-Considering the basic model of a gyroscope :math:`g`:
+For a single direction, the chosen error is
 
 .. math::
+    \\begin{array}{rcl}
+    E_i &=& 1-\\cos(\\angle\\hat{\\mathbf{v}}_i, \\mathbf{v}_i) \\\\
+    &=& 1-\\langle\\hat{\\mathbf{v}}_i, \\mathbf{v}_i\\rangle \\\\
+    &=& 1-\\mathrm{tr}(\\hat{\\mathbf{R}}^Tv_{0i}v_{0i}^T\\mathbf{R}) \\\\
+    &=& 1-\\mathrm{tr}(\\tilde{\\mathbf{R}}\\mathbf{R}^Tv_{0i}v_{0i}^T\\mathbf{R})
+    \\end{array}
 
-    g = \\omega + b + \\mu
+If :math:`\\tilde{\\mathbf{R}}=\\mathbf{I}`, then :math:`\\hat{\\mathbf{R}}`
+already converges to :math:`\\mathbf{R}`.
 
-where :math:`\\omega` is the real angular velocity, :math:`b` is a varying
-deterministic bias, and :math:`\\mu` is a Gaussian noise.
+For :math:`n` measures, the global cost becomes:
 
-This implementation is based on simplifications by [Euston]_ and [Hamel]_ for
-low-cost inertial measurement units in UAVs.
+.. math::
+    E_\\mathrm{mes} = \\sum_{i=1}^nk_iE_{vi} = \\sum_{i=1}^nk_i-\\mathrm{tr}(\\tilde{\\mathbf{R}}\\mathbf{M})
+
+where :math:`\\mathbf{M}>0` is a positive definite matrix if :math:`n>2`, or
+positive definite for :math:`n\\leq 2`:
+
+.. math::
+    \\mathbf{M} = \\mathbf{R}^T\\mathbf{M}_0\\mathbf{R}
+
+with:
+
+.. math::
+    \\mathbf{M}_0 = \\sum_{i=1}^nk_iv_{0i}v_{0i}^T
+
+The weights :math:`k_i>0` are chosen depending on the relative confidence in
+the measured directions.
+
+the goal of the observer design is to find a simple expression for :math:`\\omega`
+that leads to robust convergence of 
+
+The kinematics of the true system are:
+
+.. math::
+    \\dot{\\mathbf{R}} = \\mathbf{R}\\Omega_\\times = (\\mathbf{R}\\Omega)_\\times\\mathbf{R}
+
+for a time-varying :math:`\\mathbf{R}(t)\\in SO(3)` and with measurements given
+by:
+
+.. math::
+    \\Omega_y \\approx \\Omega + b
+
+with a constant bias :math:`b`. It is assumed that there are :math:`n\\geq 2`
+measurements :math:`v_i` available, expressing the kinematics of the Explicit
+Complementary Filter as quaternions:
+
+.. math::
+    \\begin{array}{rcl}
+    \\dot{\\hat{\\mathbf{q}}} &=& \\frac{1}{2}\\hat{\\mathbf{q}}\\mathbf{p}\\Big(\\lfloor\\Omega_y-\\hat{b}\\rfloor_\\times + k_P(\\omega_\\mathrm{mes})\\Big) \\\\ && \\\\
+    \\dot{\\hat{b}} &=& -k_I\\omega_\\mathrm{mes} \\\\ && \\\\
+    \\omega_\\mathrm{mes} &=& -\\mathrm{vex}\\Big(\\displaystyle\\sum_{i=1}^n\\frac{k_i}{2}(\\mathbf{v}_i\\hat{\\mathbf{v}}_i^T-\\hat{\\mathbf{v}}_i\\mathbf{v}_i^T)\\Big)
+    \\end{array}
+
+The estimated attitude rate of change :math:`\\dot{\\hat{\\mathbf{q}}}` is
+multiplied with the sample-rate :math:`\\Delta t` to integrate the angular
+displacement, which is finally added to the previous attitude, obtaining a more
+robust attitude.
+
+.. math::
+    \\mathbf{q}_{t+1} = \\mathbf{q}_t + \\Delta t\\dot{\\hat{\\mathbf{q}}}_t
 
 References
 ----------
