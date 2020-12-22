@@ -3,11 +3,25 @@
 Mahony Orientation Filter
 =========================
 
-This estimator, termed "Explicit Complementary Filter" (ECF) by Robert Mahony
-[Mahony]_, uses an inertial measurement :math:`a`, and an angular velocity
-measurement :math:`\\Omega`.
+This estimator proposed by Robert Mahony et al. [Mahony2008]_ is formulated as
+a deterministic kinematic observer on the Special Orthogonal group SO(3) driven
+by an instantaneous attitude and angular velocity measurements.
 
-The **gyroscopes** measure angular velocity in the body-fixed frame, whose error
+By exploiting the geometry of the special orthogonal group a related observer,
+the *passive complementary filter*, is derived that decouples the gyro
+measurements from the reconstructed attitude in the observer inputs.
+
+Direct and passive filters are extended to estimate gyro bias on-line. This
+leads to an observer on SO(3), termed the **Explicit Complementary Filter**,
+that requires only accelerometer and gyro outputs, suitable for hardware
+implementation, and providing good estimates as well as online gyro bias
+computation.
+
+Sensor Models
+-------------
+
+The `gyroscopes <https://en.wikipedia.org/wiki/Gyroscope>`_ measure angular
+velocity in the body-fixed frame, whose error
 model is:
 
 .. math::
@@ -17,17 +31,145 @@ where :math:`\\Omega` is the true angular velocity, :math:`b` is a constant (or
 slow time-varying) **bias**, and :math:`\\mu` is an additive **measurement
 noise**.
 
-The observer's main objective is to provide a set of dynamics for an estimated
-orientation :math:`\\hat{\\mathbf{R}}\\in SO(3)`, and to drive such estimation
-towards the real attitude: :math:`\\hat{\\mathbf{R}}\\to\\mathbf{R}\\in SO(3)`.
+An ideal `accelerometer <https://en.wikipedia.org/wiki/Accelerometer>`_
+measures the instantaneous linear acceleration :math:`\\dot{\\mathbf{v}}` of
+the body frame *minus* the gravitational acceleration field :math:`\\mathbf{g}_0`. In
+practice, the output :math:`\\mathbf{a}` of a tri-axial accelerometer has also
+an added bias :math:`\\mathbf{b}_a` and noise :math:`\\mu_a`.
 
-The proposed observer equations include a prediction term based on the measured
-angular velocity :math:`\\Omega`, and an innovation correction term
-:math:`\\omega(\\tilde{\\mathbf{R}})` derived from the error :math:`\\tilde{\\mathbf{R}}`.
+.. math::
+    \\mathbf{a} = \\mathbf{R}^T(\\dot{\\mathbf{v}}-\\mathbf{g}_0) + \\mathbf{b}_a + \\mu_a
 
-The correction term :math:`\\omega` can be thought of as a non-linear
+where :math:`|\\mathbf{g}_0|\\approx 9.8`. Under quasi-static conditions it is
+common to normalize this vector so that:
+
+.. math::
+    \\mathbf{v}_a = \\frac{\\mathbf{a}}{|\\mathbf{a}|} \\approx -\\mathbf{R}^Te_3
+
+where :math:`e_3=\\frac{\\mathbf{g}_0}{|\\mathbf{g}_0|}`.
+
+A `magnetometer <https://en.wikipedia.org/wiki/Magnetometer>`_ provides
+measurements for the magnetic field
+
+.. math::
+    \\mathbf{m} = \\mathbf{R}^T\\mathbf{h} + \\mathbf{B}_m + \\mu_b
+
+where :math:`\\mathbf{h}` is `Earth's magnetic field <https://en.wikipedia.org/wiki/Earth%27s_magnetic_field>`_
+as measured at the inertial frame, :math:`\\mathbf{B}_m` is the local magnetic
+disturbance and :math:`\\mu_b` is the measurement noise.
+
+The magnetic intensity is irrelevant for the estimation of the attitude, and
+only the **direction** of the geomagnetic field will be used. Normally, this
+measurement is also normalized:
+
+.. math::
+    \\mathbf{v}_m = \\frac{\\mathbf{m}}{|\\mathbf{m}|}
+
+The measurement vectors :math:`\\mathbf{v}_a` and :math:`\\mathbf{v}_m` are
+used to build an instantaneous algebraic rotation :math:`\\mathbf{R}`:
+
+.. math::
+    \\mathbf{R} \\approx \\mathbf{R}_y=\\underset{\\mathbf{R}\\in SO(3)}{\\operatorname{arg\,max}} (\\lambda_1|e_3-\\mathbf{Rv}_a|^2 + \\lambda_2|\\mathbf{v}_m^*-\\mathbf{Rv}_m|^2)
+
+where :math:`\\mathbf{v}_m^*` is the referential direction of the local
+magnetic field.
+
+The corresponding weights :math:`\\lambda_1` and :math:`\\lambda_2` are chosen
+depending on the relative confidence in the sensor outputs.
+
+Two degrees of freedom in the rotation matrix are resolved using the
+acceleration readings (*tilt*) and the final degree of freedom is resolved
+using the magnetometer (*heading*.)
+
+The system considered is the kinematics:
+
+.. math::
+    \\dot{\\mathbf{R}} = \\mathbf{R}\\lfloor\\Omega\\rfloor_\\times
+
+where :math:`\\lfloor\\Omega\\rfloor_\\times` denotes the `skew-symmetric
+matrix <https://en.wikipedia.org/wiki/Skew-symmetric_matrix>`_ of
+:math:`\\Omega=\\begin{bmatrix}\\Omega_X & \\Omega_Y & \\Omega_Z\\end{bmatrix}^T`:
+
+.. math::
+    \\lfloor\\Omega\\rfloor_\\times = \\begin{bmatrix}
+    0 & -\\Omega_Z & \\Omega_Y\\\\
+    \\Omega_Z & 0 & -\\Omega_X\\\\
+    -\\Omega_Y & \\Omega_X & 0
+    \\end{bmatrix}
+
+The inverse operation taking the skew-symmetric matrix into its associated
+vector is :math:`\\Omega=\\mathrm{vex}(\\lfloor\\Omega\\rfloor_\\times)`.
+
+The kinematics can also be written in terms of the quaternion representation in
+SO(3):
+
+.. math::
+    \\dot{\\mathbf{q}} = \\frac{1}{2}\\mathbf{qp}(\\Omega)
+
+where :math:`\\mathbf{q}=\\begin{pmatrix}q_w & \\mathbf{q}_v\\end{pmatrix}=\\begin{pmatrix}q_w & q_x & q_y & q_z\\end{pmatrix}`
+represents a unit quaternion, and :math:`\\mathbf{p}(\\Omega)` represents the
+unitary pure quaternion associated to the angular velocity
+:math:`\\mathbf{p}(\\Omega)=\\begin{pmatrix}0 & \\Omega_X & \\Omega_Y & \\Omega_Z\\end{pmatrix}`
+
+.. warning::
+    The product of two quaternions :math:`\\mathbf{p}` and :math:`\\mathbf{q}`
+    is the Hamilton product defined as:
+
+    .. math::
+        \\mathbf{pq} =
+        \\begin{bmatrix}
+        p_w q_w - p_x q_x - p_y q_y - p_z q_z \\\\
+        p_w q_x + p_x q_w + p_y q_z - p_z q_y \\\\
+        p_w q_y - p_x q_z + p_y q_w + p_z q_x \\\\
+        p_w q_z + p_x q_y - p_y q_x + p_z q_w
+        \\end{bmatrix}
+
+Error Criteria
+--------------
+
+We denote :math:`\\hat{\\mathbf{R}}` as the *estimation* of the body-fixed
+rotation matrix :math:`\\mathbf{R}`. The used estimation error is the relative
+rotation from the body-fixed frame to the estimator frame:
+
+.. math::
+    \\tilde{\\mathbf{R}} := \\hat{\\mathbf{R}}^T\\mathbf{R}
+
+Mahony's proposed observer, based on `Lyapunov stability analysis
+<https://en.wikipedia.org/wiki/Lyapunov_stability>`_, yields the **cost
+function**:
+
+.. math::
+    E_\\mathrm{tr} = \\frac{1}{2}\\mathrm{tr}(\\mathbf{I}_3-\\tilde{\\mathbf{R}})
+
+The goal of attitude estimation is to provide a set of dynamics for an estimate
+:math:`\\hat{\\mathbf{R}}(t)\\in SO(3)` to drive the error rotation
+:math:`\\tilde{\\mathbf{R}}(t)\\to \\mathbf{I}_3`, which in turn would drive
+:math:`\\hat{\\mathbf{R}}\\to\\mathbf{R}`.
+
+The general form of the observer is termed as a **Complementary Filter on SO(3)**:
+
+.. math::
+    \\dot{\\hat{\\mathbf{R}}} = \\lfloor\\mathbf{R}\\Omega + k_P\\hat{\\mathbf{R}}\\omega\\rfloor_\\times\\hat{\\mathbf{R}}
+
+where :math:`k_P>0` and the term :math:`\\mathbf{R}\\Omega + k_P\\hat{\\mathbf{R}}\\omega`
+is expressed in the inertial frame.
+
+The *innovation* or *correction* term :math:`\\omega`, derived from the error
+:math:`\\tilde{\\mathbf{R}}`, can be thought of as a non-linear
 approximation of the error between :math:`\\mathbf{R}` and :math:`\\hat{\\mathbf{R}}`
 as measured from the frame of reference associated with :math:`\\hat{\\mathbf{R}}`.
+
+When no correction term is used (:math:`\\omega=0`) the error rotation
+:math:`\\tilde{\\mathbf{R}}` will be constant.
+
+If :math:`\\tilde{\\mathbf{q}}=\\begin{pmatrix}\\tilde{q}_w & \\tilde{\\mathbf{q}}_v\\end{pmatrix}`
+is the quaternion related to :math:`\\tilde{\\mathbf{R}}`, then:
+
+.. math::
+    E_\\mathrm{tr} = 2|\\tilde{\\mathbf{q}}_v|^2 = 2(1-\\tilde{q}_w^2)
+
+Explicit Complementary Filter
+-----------------------------
 
 Let :math:`\\mathbf{v}_{0i}\\in\\mathbb{R}^3` denote a set of :math:`n\\geq 2`
 known directions in the inertial (fixed) frame of reference, where the
@@ -41,42 +183,13 @@ observations of the fixed inertial directions:
 where :math:`\\mu_i` is a process noise. We assume that :math:`|\\mathbf{v}_{0i}|=1`
 and normalize all measurements to force :math:`|\\mathbf{v}_i|=1`.
 
-We declare :math:`\\hat{\\mathbf{R}}` to be an estimate of :math:`\\mathbf{R}`
-
-They are linked by:
+For :math:`n` measures, the **global cost** becomes:
 
 .. math::
-    \\hat{\\mathbf{v}}_i = \\hat{\\mathbf{R}}^T\\mathbf{v}_{0i}
+    E_\\mathrm{mes} = \\sum_{i=1}^nk_i-\\mathrm{tr}(\\tilde{\\mathbf{R}}\\mathbf{M})
 
-Low cost IMUs measure vectors :math:`\\mathbf{a}` and :math:`\\mathbf{m}`
-representing the gravitational and magnetic vector fields respectively.
-
-.. math::
-    \\begin{array}{rcl}
-    \\mathbf{a} &=& \\mathbf{R}^T\\mathbf{a}_0 \\\\ && \\\\
-    \\mathbf{m} &=& \\mathbf{R}^T\\mathbf{m}_0
-    \\end{array}
-
-For a single direction, the chosen error is
-
-.. math::
-    \\begin{array}{rcl}
-    E_i &=& 1-\\cos(\\angle\\hat{\\mathbf{v}}_i, \\mathbf{v}_i) \\\\
-    &=& 1-\\langle\\hat{\\mathbf{v}}_i, \\mathbf{v}_i\\rangle \\\\
-    &=& 1-\\mathrm{tr}(\\hat{\\mathbf{R}}^Tv_{0i}v_{0i}^T\\mathbf{R}) \\\\
-    &=& 1-\\mathrm{tr}(\\tilde{\\mathbf{R}}\\mathbf{R}^Tv_{0i}v_{0i}^T\\mathbf{R})
-    \\end{array}
-
-If :math:`\\tilde{\\mathbf{R}}=\\mathbf{I}`, then :math:`\\hat{\\mathbf{R}}`
-already converges to :math:`\\mathbf{R}`.
-
-For :math:`n` measures, the global cost becomes:
-
-.. math::
-    E_\\mathrm{mes} = \\sum_{i=1}^nk_iE_{vi} = \\sum_{i=1}^nk_i-\\mathrm{tr}(\\tilde{\\mathbf{R}}\\mathbf{M})
-
-where :math:`\\mathbf{M}>0` is a positive definite matrix if :math:`n>2`, or
-positive definite for :math:`n\\leq 2`:
+where :math:`\\mathbf{M}>0` is a positive definite matrix if :math:`n\\geq 3`,
+or positive semi-definite if :math:`n=2`:
 
 .. math::
     \\mathbf{M} = \\mathbf{R}^T\\mathbf{M}_0\\mathbf{R}
@@ -84,51 +197,63 @@ positive definite for :math:`n\\leq 2`:
 with:
 
 .. math::
-    \\mathbf{M}_0 = \\sum_{i=1}^nk_iv_{0i}v_{0i}^T
+    \\mathbf{M}_0 = \\sum_{i=1}^nk_i\\mathbf{v}_{0i}\\mathbf{v}_{0i}^T
 
 The weights :math:`k_i>0` are chosen depending on the relative confidence in
 the measured directions.
 
-the goal of the observer design is to find a simple expression for :math:`\\omega`
-that leads to robust convergence of 
-
-The kinematics of the true system are:
-
-.. math::
-    \\dot{\\mathbf{R}} = \\mathbf{R}\\Omega_\\times = (\\mathbf{R}\\Omega)_\\times\\mathbf{R}
-
-for a time-varying :math:`\\mathbf{R}(t)\\in SO(3)` and with measurements given
-by:
-
-.. math::
-    \\Omega_y \\approx \\Omega + b
-
-with a constant bias :math:`b`. It is assumed that there are :math:`n\\geq 2`
-measurements :math:`v_i` available, expressing the kinematics of the Explicit
-Complementary Filter as quaternions:
+Low-cost IMUs typically measure gravitational, :math:`\\mathbf{a}`, and
+magnetic, :math:`\\mathbf{m}`, vector fields.
 
 .. math::
     \\begin{array}{rcl}
-    \\dot{\\hat{\\mathbf{q}}} &=& \\frac{1}{2}\\hat{\\mathbf{q}}\\mathbf{p}\\Big(\\lfloor\\Omega_y-\\hat{b}\\rfloor_\\times + k_P(\\omega_\\mathrm{mes})\\Big) \\\\ && \\\\
+    \\mathbf{v}_a &=& \\mathbf{R}^T\\frac{\\mathbf{a}_0}{|\\mathbf{a}_0|} \\\\ && \\\\
+    \\mathbf{v}_m &=& \\mathbf{R}^T\\frac{\\mathbf{m}_0}{|\\mathbf{m}_0|}
+    \\end{array}
+
+In this case, the cost function :math:`E_\\mathrm{mes}` becomes:
+
+.. math::
+    E_\\mathrm{mes} = k_1(1-\\langle\\hat{\\mathbf{v}}_a, \\mathbf{v}_a\\rangle) + k_2(1-\\langle\\hat{\\mathbf{v}}_m, \\mathbf{v}_m\\rangle)
+
+.. tip::
+    When the IMU is subject to high magnitude accelerations (takeoff, landing
+    manoeuvres, etc.) it may be wise to reduce the relative weighting of the
+    accelerometer data (:math:`k_1 \\ll k_2`) compared to the magnetometer data.
+    Conversely, sometimes the IMU is mounted in the proximity of powerful
+    electric motors leading to low confidence in the magnetometer readings
+    (choose :math:`k_1 \\gg k_2`).
+
+Expressing the kinematics of the Explicit Complementary Filter as quaternions
+we get:
+
+.. math::
+    \\begin{array}{rcl}
+    \\dot{\\hat{\\mathbf{q}}} &=& \\frac{1}{2}\\hat{\\mathbf{q}}\\mathbf{p}\\Big(\\lfloor\\Omega_y-\\hat{b}\\rfloor_\\times + k_P\\omega_\\mathrm{mes}\\Big) \\\\ && \\\\
     \\dot{\\hat{b}} &=& -k_I\\omega_\\mathrm{mes} \\\\ && \\\\
-    \\omega_\\mathrm{mes} &=& -\\mathrm{vex}\\Big(\\displaystyle\\sum_{i=1}^n\\frac{k_i}{2}(\\mathbf{v}_i\\hat{\\mathbf{v}}_i^T-\\hat{\\mathbf{v}}_i\\mathbf{v}_i^T)\\Big)
+    \\omega_\\mathrm{mes} &=& \\displaystyle\\sum_{i=1}^nk_i\\mathbf{v}_i\\times\\hat{\\mathbf{v}}_i
     \\end{array}
 
 The estimated attitude rate of change :math:`\\dot{\\hat{\\mathbf{q}}}` is
 multiplied with the sample-rate :math:`\\Delta t` to integrate the angular
-displacement, which is finally added to the previous attitude, obtaining a more
-robust attitude.
+displacement, which is finally added to the previous attitude, obtaining the
+newest estimated attitude.
 
 .. math::
-    \\mathbf{q}_{t+1} = \\mathbf{q}_t + \\Delta t\\dot{\\hat{\\mathbf{q}}}_t
+    \\mathbf{q}_{t+1} = \\mathbf{q}_t + \\dot{\\hat{\\mathbf{q}}}_t\\Delta t
 
 References
 ----------
-.. [Mahony] Robert Mahony, Tarek Hamel, and Jean-Michel Pflimlin. Nonlinear
+.. [Mahony2008] Robert Mahony, Tarek Hamel, and Jean-Michel Pflimlin. Nonlinear
    Complementary Filters on the Special Orthogonal Group. IEEE Transactions
    on Automatic Control, Institute of Electrical and Electronics Engineers,
    2008, 53 (5), pp.1203-1217.
    (https://hal.archives-ouvertes.fr/hal-00488376/document)
+.. [Mahony2005] Robert Mahony, Tarek Hamel, and Jean-Michel Pflimlin.
+   Complementary filter design on the special orthogonal group SO(3).
+   Proceedings of the 44th IEEE Conference on Decision and Control, and the
+   European Control Conference 2005. Seville, Spain. December 12-15, 2005.
+   (https://folk.ntnu.no/skoge/prost/proceedings/cdc-ecc05/pdffiles/papers/1889.pdf)
 .. [Euston] Mark Euston, Paul W. Coote, Robert E. Mahony, Jonghyuk Kim, and
    Tarek Hamel. A complementary filter for attitude estimation of a fixed-wing
    UAV. IEEE/RSJ International Conference on Intelligent Robots and Systems,
