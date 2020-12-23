@@ -25,7 +25,7 @@ velocity in the body-fixed frame, whose error
 model is:
 
 .. math::
-    \\Omega^y = \\Omega + b + \\mu \\in\\mathbb{R}^3
+    \\Omega_y = \\Omega + b + \\mu \\in\\mathbb{R}^3
 
 where :math:`\\Omega` is the true angular velocity, :math:`b` is a constant (or
 slow time-varying) **bias**, and :math:`\\mu` is an additive **measurement
@@ -46,7 +46,7 @@ common to normalize this vector so that:
 .. math::
     \\mathbf{v}_a = \\frac{\\mathbf{a}}{|\\mathbf{a}|} \\approx -\\mathbf{R}^Te_3
 
-where :math:`e_3=\\frac{\\mathbf{g}_0}{|\\mathbf{g}_0|}`.
+where :math:`e_3=\\frac{\\mathbf{g}_0}{|\\mathbf{g}_0|}=\\begin{bmatrix}0 & 0 & 1\\end{bmatrix}^T`.
 
 A `magnetometer <https://en.wikipedia.org/wiki/Magnetometer>`_ provides
 measurements for the magnetic field
@@ -69,7 +69,7 @@ The measurement vectors :math:`\\mathbf{v}_a` and :math:`\\mathbf{v}_m` are
 used to build an instantaneous algebraic rotation :math:`\\mathbf{R}`:
 
 .. math::
-    \\mathbf{R} \\approx \\mathbf{R}_y=\\underset{\\mathbf{R}\\in SO(3)}{\\operatorname{arg\,max}} (\\lambda_1|e_3-\\mathbf{Rv}_a|^2 + \\lambda_2|\\mathbf{v}_m^*-\\mathbf{Rv}_m|^2)
+    \\mathbf{R} \\approx \\mathbf{R}_y=\\underset{\\mathbf{R}\\in SO(3)}{\\operatorname{arg\,min}} (\\lambda_1|e_3-\\mathbf{Rv}_a|^2 + \\lambda_2|\\mathbf{v}_m^*-\\mathbf{Rv}_m|^2)
 
 where :math:`\\mathbf{v}_m^*` is the referential direction of the local
 magnetic field.
@@ -229,7 +229,7 @@ we get:
 
 .. math::
     \\begin{array}{rcl}
-    \\dot{\\hat{\\mathbf{q}}} &=& \\frac{1}{2}\\hat{\\mathbf{q}}\\mathbf{p}\\Big(\\lfloor\\Omega_y-\\hat{b}\\rfloor_\\times + k_P\\omega_\\mathrm{mes}\\Big) \\\\ && \\\\
+    \\dot{\\hat{\\mathbf{q}}} &=& \\frac{1}{2}\\hat{\\mathbf{q}}\\mathbf{p}\\Big(\\Omega_y-\\hat{b} + k_P\\omega_\\mathrm{mes}\\Big) \\\\ && \\\\
     \\dot{\\hat{b}} &=& -k_I\\omega_\\mathrm{mes} \\\\ && \\\\
     \\omega_\\mathrm{mes} &=& \\displaystyle\\sum_{i=1}^nk_i\\mathbf{v}_i\\times\\hat{\\mathbf{v}}_i
     \\end{array}
@@ -240,7 +240,7 @@ displacement, which is finally added to the previous attitude, obtaining the
 newest estimated attitude.
 
 .. math::
-    \\mathbf{q}_{t+1} = \\mathbf{q}_t + \\dot{\\hat{\\mathbf{q}}}_t\\Delta t
+    \\mathbf{q}_t = \\mathbf{q}_{t-1} + \\dot{\\hat{\\mathbf{q}}}_t\\Delta t
 
 References
 ----------
@@ -291,9 +291,9 @@ class Mahony:
     Dt : float, default: 0.01
         Sampling step in seconds. Inverse of sampling frequency. Not required
         if `frequency` value is given
-    kp : float, default: 1.0
+    k_P : float, default: 1.0
         Proportional filter gain
-    ki : float, default: 0.3
+    k_I : float, default: 0.3
         Integral filter gain
     q0 : numpy.ndarray, default: None
         Initial orientation, as a versor (normalized quaternion).
@@ -310,9 +310,9 @@ class Mahony:
         Sampling frequency in Herz.
     Dt : float
         Sampling step in seconds. Inverse of sampling frequency.
-    kp : float
+    k_P : float
         Proportional filter gain.
-    ki : float
+    k_I : float
         Integral filter gain.
     q0 : numpy.ndarray
         Initial orientation, as a versor (normalized quaternion)
@@ -394,18 +394,28 @@ class Mahony:
     Following the experimental settings of the original article, the gains are,
     by default, :math:`k_P=1` and :math:`k_I=0.3`.
 
-
     """
-    def __init__(self, gyr: np.ndarray = None, acc: np.ndarray = None, mag: np.ndarray = None, **kw):
+    def __init__(self,
+        gyr: np.ndarray = None,
+        acc: np.ndarray = None,
+        mag: np.ndarray = None,
+        frequency: float = 100.0,
+        k_P: float = 1.0,
+        k_I: float = 0.3,
+        q0: np.ndarray = None,
+        **kwargs):
         self.gyr = gyr
         self.acc = acc
         self.mag = mag
-        self.frequency = kw.get('frequency', 100.0)
-        self.Dt = kw.get('Dt', 1.0/self.frequency)
-        self.kp = kw.get('kp', 1.0)
-        self.ki = kw.get('ki', 0.3)
-        self.q0 = kw.get('q0')
-        self.eInt = np.zeros(3)
+        self.frequency = frequency
+        self.q0 = q0
+        self.k_P = k_P
+        self.k_I = k_I
+        # Old parameter names for backward compatibility
+        self.k_P = kwargs.get('kp', k_P)
+        self.k_I = kwargs.get('ki', k_I)
+        self.Dt = kwargs.get('Dt', 1.0/self.frequency)
+        # Estimate all orientations if sensor data is given
         if self.gyr is not None and self.acc is not None:
             self.Q = self._compute_all()
 
@@ -449,30 +459,38 @@ class Mahony:
         q : numpy.ndarray
             A-priori quaternion.
         gyr : numpy.ndarray
-            Sample of tri-axial Gyroscope in rad/s
+            Sample of tri-axial Gyroscope in rad/s.
         acc : numpy.ndarray
-            Sample of tri-axial Accelerometer in m/s^2
+            Sample of tri-axial Accelerometer in m/s^2.
 
         Returns
         -------
         q : numpy.ndarray
             Estimated quaternion.
 
+        Examples
+        --------
+        >>> orientation = Mahony()
+        >>> Q = np.tile([1., 0., 0., 0.], (num_samples, 1)) # Allocate for quaternions
+        >>> for t in range(1, num_samples):
+        ...     Q[t] = orientation.updateIMU(Q[t-1], gyr=gyro_data[t], acc=acc_data[t])
+
         """
         if gyr is None or not np.linalg.norm(gyr)>0:
             return q
-        g = gyr.copy()
+        Omega = np.copy(gyr)
         a_norm = np.linalg.norm(acc)
         if a_norm>0:
-            v = q2R(q).T@np.array([0.0, 0.0, 1.0])      # Expected Earth's gravity
-            e = np.cross(acc/a_norm, v)                 # Difference between expected and measured acceleration (Error)
-            self.eInt += e*self.Dt                      # Integrate error
-            b = -self.ki*self.eInt                      # Estimated Gyro bias (eq. 48c)
-            d = self.kp*e + b                           # Innovation
-            g += d                                      # Gyro correction
-        qDot = 0.5*q_prod(q, [0.0, *g])                 # Rate of change of quaternion (eq. 48b)
-        q += qDot*self.Dt                               # Update orientation
-        q /= np.linalg.norm(q)
+            R = q2R(q)
+            v_a = R.T@np.array([0.0, 0.0, 1.0])     # Expected Earth's gravity
+            # ECF
+            omega_mes = np.cross(acc/a_norm, v_a)   # Cost function (eqs. 32c and 48a)
+            b = -self.k_I*omega_mes                 # Estimated Gyro bias (eq. 48c)
+            Omega = Omega - b + self.k_P*omega_mes  # Gyro correction
+        p = np.array([0.0, *Omega])
+        qDot = 0.5*q_prod(q, p)                     # Rate of change of quaternion (eqs. 45 and 48b)
+        q += qDot*self.Dt                           # Update orientation
+        q /= np.linalg.norm(q)                      # Normalize Quaternion (Versor)
         return q
 
     def updateMARG(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, mag: np.ndarray) -> np.ndarray:
@@ -484,37 +502,47 @@ class Mahony:
         q : numpy.ndarray
             A-priori quaternion.
         gyr : numpy.ndarray
-            Sample of tri-axial Gyroscope in radians.
+            Sample of tri-axial Gyroscope in rad/s.
         acc : numpy.ndarray
-            Sample of tri-axial Accelerometer in m/s^2
+            Sample of tri-axial Accelerometer in m/s^2.
         mag : numpy.ndarray
-            Sample of tri-axial Magnetometer in mT
+            Sample of tri-axail Magnetometer in uT.
 
         Returns
         -------
         q : numpy.ndarray
             Estimated quaternion.
 
+        Examples
+        --------
+        >>> orientation = Mahony()
+        >>> Q = np.tile([1., 0., 0., 0.], (num_samples, 1)) # Allocate for quaternions
+        >>> for t in range(1, num_samples):
+        ...     Q[t] = orientation.updateMARG(Q[t-1], gyr=gyro_data[t], acc=acc_data[t], mag=mag_data[t])
+
         """
         if gyr is None or not np.linalg.norm(gyr)>0:
             return q
-        g = gyr.copy()
+        Omega = np.copy(gyr)
         a_norm = np.linalg.norm(acc)
         if a_norm>0:
-            m = mag.copy()
-            m_norm = np.linalg.norm(m)
+            m_norm = np.linalg.norm(mag)
             if not m_norm>0:
                 return self.updateIMU(q, gyr, acc)
-            m /= m_norm
-            v = q2R(q).T@np.array([0.0, 0.0, 1.0])              # Expected Earth's gravity
-            # h = q_prod(q, q_prod([0, *m], q_conj(q)))           # Rotate magnetic measurements to inertial frame
-            h = q_prod(q_conj(q), q_prod([0, *m], q))           # Rotate magnetic measurements to inertial frame
-            w = q2R(q).T@np.array([np.sqrt(h[1]**2+h[2]**2), 0.0, h[3]])     # Expected Earth's magnetic field
-            e = np.cross(acc/a_norm, v) + np.cross(m, w)        # Difference between expected and measured values
-            self.eInt += e*self.Dt                              # Add error
-            b = -self.ki*self.eInt                              # Estimated Gyro bias (eq. 48c)
-            g = g - b + self.kp*e                               # Gyro correction
-        qDot = 0.5*q_prod(q, [0.0, *g])                         # Rate of change of quaternion (eq. 48b)
-        q += qDot*self.Dt                                       # Update orientation
-        q /= np.linalg.norm(q)
+            a = np.copy(acc)/a_norm
+            m = np.copy(mag)/m_norm
+            R = q2R(q)
+            v_a = R.T@np.array([0.0, 0.0, 1.0])     # Expected Earth's gravity
+            # Rotate magnetic field to inertial frame
+            h = R@m
+            v_m = R.T@np.array([-np.linalg.norm([h[0], h[1]]), 0.0, h[2]])
+            v_m /= np.linalg.norm(v_m)
+            # ECF
+            omega_mes = np.cross(a, v_a) + np.cross(m, v_m) # Cost function (eqs. 32c and 48a)
+            b = -self.k_I*omega_mes                 # Estimated Gyro bias (eq. 48c)
+            Omega = Omega - b + self.k_P*omega_mes  # Gyro correction
+        p = np.array([0.0, *Omega])
+        qDot = 0.5*q_prod(q, p)                     # Rate of change of quaternion (eqs. 45 and 48b)
+        q += qDot*self.Dt                           # Update orientation
+        q /= np.linalg.norm(q)                      # Normalize Quaternion (Versor)
         return q
