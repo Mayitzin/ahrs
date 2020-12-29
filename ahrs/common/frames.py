@@ -26,6 +26,8 @@ References
     Local Geodetic Systems. National Geospatial-Intelligence Agency (NGA)
     Standarization Document. 2014.
     (ftp://ftp.nga.mil/pub2/gandg/website/wgs84/NGA.STND.0036_1.0.0_WGS84.pdf)
+.. [Laundal2016] Laundal, K.M., Richmond, A.D. Magnetic Coordinate Systems.
+    Space Sci Rev 206, 27–59 (2017). (https://doi.org/10.1007/s11214-016-0275-y)
 
 """
 
@@ -91,7 +93,7 @@ def llf2ecef(lat, lon):
     Returns
     -------
     R : np.ndarray
-        Direction Cosine Matrix.
+        Rotation Matrix.
     """
     return np.array([
         [-np.sin(lat), -np.sin(lon)*np.cos(lat), np.cos(lon)*np.cos(lat)],
@@ -111,7 +113,7 @@ def ecef2llf(lat, lon):
     Returns
     -------
     R : np.ndarray
-        Direction Cosine Matrix.
+        Rotation Matrix.
     """
     return np.array([
         [-np.sin(lat), np.cos(lat), 0.0],
@@ -133,3 +135,42 @@ def eci2ecef(w, t=0):
         [-np.sin(w)*t, np.cos(w)*t, 0.0],
         [         0.0,         0.0, 1.0]])
 
+def ecef2enu(lat, lon):
+    """Transform coordinates from ECEF to ENU
+
+    Parameters
+    ----------
+    lat : float
+        Latitude.
+    lon : float
+        Longitude.
+
+    Returns
+    -------
+    R : np.ndarray
+        Rotation Matrix.
+    """
+    return np.array([
+        [-np.sin(lon), np.cos(lon), 0.0],
+        [-np.cos(lat)*np.cos(lon), -np.cos(lat)*np.sin(lon), np.sin(lat)],
+        [np.sin(lat)*np.cos(lon), np.sin(lat)*np.sin(lon), np.cos(lat)]])
+
+def enu2ecef(lat, lon):
+    """Transform coordinates from ENU to ECEF
+
+    Parameters
+    ----------
+    lat : float
+        Latitude.
+    lon : float
+        Longitude.
+
+    Returns
+    -------
+    R : np.ndarray
+        Rotation Matrix.
+    """
+    return np.array([
+        [-np.sin(lon), -np.cos(lat)*np.cos(lon), np.sin(lat)*np.cos(lon)],
+        [np.cos(lon), -np.cos(lat)*np.sin(lon), np.sin(lat)*np.sin(lon)],
+        [0.0, np.sin(lat), np.cos(lat)]])
