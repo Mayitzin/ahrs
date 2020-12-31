@@ -870,9 +870,20 @@ class DCM(np.ndarray):
 
     def to_angles(self) -> np.ndarray:
         """
-        Euler Angles from DCM
+        Synonym of method :meth:`to_rpy`.
 
-        A set of Euler angles may be written according to:
+        Returns
+        -------
+        a : numpy.ndarray
+            roll-pitch-yaw angles
+        """
+        return self.to_rpy()
+
+    def to_rpy(self) -> np.ndarray:
+        """
+        Roll-Pitch-Yaw Angles from DCM
+
+        A set of Roll-Pitch-Yaw angles may be written according to:
 
         .. math::
             \\mathbf{a} =
@@ -882,10 +893,10 @@ class DCM(np.ndarray):
         Returns
         -------
         a : numpy.ndarray
-            Euler angles
+            roll-pitch-yaw angles.
         """
         phi = np.arctan2(self.A[1, 2], self.A[2, 2])    # Roll Angle
-        theta = -np.sin(self.A[0, 2])                   # Pitch Angle
+        theta = -np.arcsin(self.A[0, 2])                # Pitch Angle
         psi = np.arctan2(self.A[0, 1], self.A[0, 0])    # Yaw Angle
         return np.array([phi, theta, psi])
 
