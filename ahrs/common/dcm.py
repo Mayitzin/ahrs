@@ -30,7 +30,7 @@ where
     \\end{array}
 
 are unit vectors orthogonal to each other. All matrices satisfying this
-condition are called **orthogonal matrices**.
+orthogonality are called **orthogonal matrices**.
 
 The transformation matrix :math:`\\mathbf{R}` rotates any vector
 :math:`\\mathbf{v}\\in\\mathbb{R}^3` through the matrix product,
@@ -48,23 +48,23 @@ The determinant of a rotation matrix is always equal to :math:`+1`. This means,
 its product with any vector will leave the vector's lenght unchanged.
 
 Matrices conforming to both properties belong to the special orthogonal group
-:math:`SO(3)`. Even better, the product of two or more rotation matrices yields another
-rotation matrix in :math:`SO(3)`
+:math:`SO(3)`. Even better, the product of two or more rotation matrices yields
+another rotation matrix in :math:`SO(3)`.
 
 Direction cosines are cosines of angles between a vector and a base coordinate
-frame [WikiDCM]_. In this case, the difference between orthogonal vectors :math:`\\mathbf{r}_i`
-and the base frame are describing the Direction Cosines. This orientation
-matrix is commonly named the **Direction Cosine Matrix**.
+frame [WikipediaDCM]_. In this case, the difference between orthogonal vectors
+:math:`\\mathbf{r}_i` and the base frame are describing the Direction Cosines.
+This orientation matrix is commonly named the **Direction Cosine Matrix**.
 
-DCMs are, therefore, the most common representation of rotations [WikiR]_,
-especially in real applications of spacecraft tracking and location.
-
+DCMs are, therefore, the most common representation of rotations
+[WikipediaRotMat]_, especially in real applications of spacecraft tracking and
+location.
 
 References
 ----------
-.. [WikiDCM] Wikipedia: Direction Cosine.
+.. [WikipediaDCM] Wikipedia: Direction Cosine.
     (https://en.wikipedia.org/wiki/Direction_cosine)
-.. [WikiR] Wikipedia: Rotation Matrix
+.. [WikipediaRotMat] Wikipedia: Rotation Matrix
     (https://mathworld.wolfram.com/RotationMatrix.html)
 .. [Ma] Yi Ma, Stefano Soatto, Jana Kosecka, and S. Shankar Sastry. An
     Invitation to 3-D Vision: From Images to Geometric Models. Springer
@@ -159,7 +159,7 @@ class DCM(np.ndarray):
         Notice the angles are given in reverse order, as it is the way the
         matrices are multiplied.
 
-    >>> DCM(z=30.0)@DCM(y=20.0)@DCM(x=10.0)
+    >>> DCM(z=30.0) @ DCM(y=20.0) @ DCM(x=10.0)
     DCM([[ 0.81379768, -0.44096961,  0.37852231],
          [ 0.46984631,  0.88256412,  0.01802831],
          [-0.34202014,  0.16317591,  0.92541658]])
@@ -172,7 +172,7 @@ class DCM(np.ndarray):
     DCM([[-0.31046846, -0.74782807,  0.58682409],
          [ 0.8700019 ,  0.02520139,  0.49240388],
          [-0.38302222,  0.66341395,  0.64278761]])
-    >>> DCM(z=40.0)@DCM(y=50.0)@DCM(z=60.0)
+    >>> DCM(z=40.0) @ DCM(y=50.0) @ DCM(z=60.0)
     DCM([[-0.31046846, -0.74782807,  0.58682409],
          [ 0.8700019 ,  0.02520139,  0.49240388],
          [-0.38302222,  0.66341395,  0.64278761]])
@@ -558,7 +558,7 @@ class DCM(np.ndarray):
 
         Examples
         --------
-        >>> R = ahrs.DCM(rpy=[10.0, -20.0, 30.0])
+        >>> R = DCM(rpy=[10.0, -20.0, 30.0])
         >>> R.view()
         DCM([[ 0.92541658, -0.31879578, -0.20487413],
              [ 0.16317591,  0.82317294, -0.54383814],
@@ -599,7 +599,7 @@ class DCM(np.ndarray):
 
         Examples
         --------
-        >>> R = ahrs.DCM()
+        >>> R = DCM()
         >>> R.view()
         DCM([[1., 0., 0.],
              [0., 1., 0.],
@@ -632,7 +632,7 @@ class DCM(np.ndarray):
 
         Examples
         --------
-        >>> R = ahrs.DCM()
+        >>> R = DCM()
         >>> R.view()
         DCM([[1., 0., 0.],
              [0., 1., 0.],
@@ -679,7 +679,7 @@ class DCM(np.ndarray):
 
         Examples
         --------
-        >>> R = ahrs.DCM()
+        >>> R = DCM()
         >>> R.from_quaternion([0.70710678, 0.0, 0.70710678, 0.0])
         array([[-2.22044605e-16,  0.00000000e+00,  1.00000000e+00],
                [ 0.00000000e+00,  1.00000000e+00,  0.00000000e+00],
@@ -751,7 +751,7 @@ class DCM(np.ndarray):
 
         Examples
         --------
-        >>> R = ahrs.DCM()
+        >>> R = DCM()
         >>> R.from_q([0.70710678, 0.0, 0.70710678, 0.0])
         array([[-2.22044605e-16,  0.00000000e+00,  1.00000000e+00],
                [ 0.00000000e+00,  1.00000000e+00,  0.00000000e+00],
@@ -808,7 +808,7 @@ class DCM(np.ndarray):
 
         Examples
         --------
-        >>> R = ahrs.DCM(rpy=[10.0, -20.0, 30.0])
+        >>> R = DCM(rpy=[10.0, -20.0, 30.0])
         >>> R.view()
         DCM([[ 0.92541658, -0.31879578, -0.20487413],
              [ 0.16317591,  0.82317294, -0.54383814],
@@ -850,7 +850,7 @@ class DCM(np.ndarray):
 
         Examples
         --------
-        >>> R = ahrs.DCM(rpy=[10.0, -20.0, 30.0])
+        >>> R = DCM(rpy=[10.0, -20.0, 30.0])
         >>> R.view()
         DCM([[ 0.92541658, -0.31879578, -0.20487413],
              [ 0.16317591,  0.82317294, -0.54383814],
