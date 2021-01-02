@@ -273,8 +273,8 @@ with the helper variables:
     T_2 &=& \\sqrt{-4\\tau_1 + \\frac{2^{\\frac{4}{3}}(\\tau_1^2+12\\tau_3)}{T_1} + 2^{\\frac{2}{3}}T_1}
     \\end{array}
 
-Then chose the :math:`\\lambda`, which is closest to 1. This way the solving
-for :math:`\\lambda` is quite shortened.
+Then chose the :math:`\\lambda`, which is closest to 1. This way solving for
+:math:`\\lambda` is truly shortened.
 
 Optimal Quaternion
 ------------------
@@ -311,8 +311,8 @@ The decisive element of QUEST is its matrix :math:`\\mathbf{K}`, whereas for
 FLAE :math:`\\mathbf{W}` plays the same essential role. Both algorithms spend
 most of its computation obtaining said matrices.
 
-FLAE has the same performance as other similar estimators (QUEST, SVD, etc.),
-but with the advantage of being up to 47% faster than the fastest among them.
+FLAE has the same accuracy as other similar estimators (QUEST, SVD, etc.), but
+with the advantage of being up to 47% faster than the fastest among them.
 
 Another advantage is the symbolic formulation of the characteristic polynomial,
 which does not contain any adjoint matrices, leading to a simpler (therefore
@@ -333,7 +333,6 @@ References
 """
 
 import numpy as np
-from scipy import sqrt
 from ..common.mathfuncs import *
 
 # Reference Observations in Munich, Germany
@@ -393,7 +392,7 @@ class FLAE:
             raise ValueError(f"Given method '{self.method}' is not valid. Try 'symbolic', 'eig' or 'newton'")
         # Reference measurements
         mdip = kw.get('magnetic_dip')                       # Magnetic dip, in degrees
-        mag_ref = np.array([MAG['X'], MAG['Y'], MAG['Z']]) if mdip is None else np.array([cosd(mdip), 0., sind(mdip)])
+        mag_ref = np.array([MAG['X'], MAG['Y'], MAG['Z']]) if mdip is None else np.array([cosd(mdip), 0., -sind(mdip)])
         mag_ref /= np.linalg.norm(mag_ref)
         acc_ref = np.array([0.0, 0.0, 1.0])
         self.ref = np.vstack((acc_ref, mag_ref))
@@ -514,18 +513,18 @@ class FLAE:
                 lam -= f/fp                                 # (eq. 51)
                 i += 1
         if method.lower()=='symbolic':
-            # Parameters                                    (eq. 53)
+            # Parameters (eq. 53)
             T0 = 2*t1**3 + 27*t2**2 - 72*t1*t3
             T1 = np.cbrt(T0 + np.sqrt(abs(-4*(t1**2 + 12*t3)**3 + T0**2)))
             T2 = np.sqrt(abs(-4*t1 + 2**(4/3)*(t1**2 + 12*t3)/T1 + 2**(2/3)*T1))
-            # Solutions to polynomial                       (eq. 52)
+            # Solutions to polynomial (eq. 52)
             L = np.zeros(4)
             k1 = -T2**2 - 12*t1
             k2 = 12*np.sqrt(6)*t2/T2
-            L[0] =   T2 - sqrt(abs(k1 - k2))
-            L[1] =   T2 + sqrt(abs(k1 - k2))
-            L[2] = -(T2 + sqrt(abs(k1 + k2)))
-            L[3] = -(T2 - sqrt(abs(k1 + k2)))
+            L[0] =   T2 - np.sqrt(abs(k1 - k2))
+            L[1] =   T2 + np.sqrt(abs(k1 - k2))
+            L[2] = -(T2 + np.sqrt(abs(k1 + k2)))
+            L[3] = -(T2 - np.sqrt(abs(k1 + k2)))
             L /= 2*np.sqrt(6)
             lam = L[(np.abs(L-1.0)).argmin()]               # Eigenvalue closest to 1
         N = W - lam*np.identity(4)                          # (eq. 54)
