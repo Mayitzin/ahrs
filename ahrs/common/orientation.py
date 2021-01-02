@@ -359,7 +359,7 @@ def quat2axang(q: np.ndarray) -> Tuple[np.ndarray, float]:
         return None
     # Normalize input quaternion
     q /= np.linalg.norm(q)
-    axis = np.asarray(q[1:])
+    axis = np.copy(q[1:])
     denom = np.linalg.norm(axis)
     angle = 2.0*np.arctan2(denom, q[0])
     axis = np.array([0.0, 0.0, 0.0]) if angle == 0.0 else axis/denom
@@ -536,28 +536,28 @@ def rotation(ax: Union[str, int] = None, ang: float = 0.0) -> np.ndarray:
 
     Examples
     --------
-    >>> from ahrs import quaternion
-    >>> quaternion.rotation()
+    >>> from ahrs import rotation
+    >>> rotation()
     array([[1. 0. 0.],
            [0. 1. 0.],
            [0. 0. 1.]])
-    >>> ahrs.rotation('z', 30.0)
+    >>> rotation('z', 30.0)
     array([[ 0.8660254 -0.5        0.       ],
            [ 0.5        0.8660254  0.       ],
            [ 0.         0.         1.       ]])
     >>> # Accepts angle input as string
-    ... ahrs.rotation('x', '-30')
+    ... rotation('x', '-30')
     array([[ 1.         0.         0.       ],
            [ 0.         0.8660254  0.5      ],
            [ 0.        -0.5        0.8660254]])
 
     Handles wrong inputs
 
-    >>> ahrs.rotation('false_axis', 'invalid_angle')
+    >>> rotation('false_axis', 'invalid_angle')
     array([[1. 0. 0.],
            [0. 1. 0.],
            [0. 0. 1.]])
-    >>> ahrs.rotation(None, None)
+    >>> rotation(None, None)
     array([[1. 0. 0.],
            [0. 1. 0.],
            [0. 0. 1.]])
@@ -764,6 +764,63 @@ def q2cardan(q: np.ndarray, in_deg: bool = False) -> np.ndarray:
     """synonym to function q2rpy()"""
     return q2rpy(q, in_deg=in_deg)
 
+def ecompass(a: np.ndarray, m: np.ndarray, frame: str = 'ENU', representation: str = 'rotmat') -> np.ndarray:
+    """Orientation from accelerometer and magnetometer readings
+
+    Parameters
+    ----------
+    a : numpy.ndarray
+        Sample of tri-axial accelerometer, in m/s^2.
+    m : numpy.ndarray
+        Sample of tri-axial magnetometer, in uT.
+    frame : str, default: ``'ENU'``
+        Local tangent plane coordinate frame.
+    representation : str, default: ``'rotmat'``
+        Orientation representation.
+
+    Returns
+    -------
+    np.ndarray
+        Estimated orientation.
+
+    Raises
+    ------
+    ValueError
+        When wrong local tangent plane coordinates, or representation, is given.
+    """
+    if frame.upper() not in ['ENU', 'NED']:
+        raise ValueError("Wrong local tangent plane coordinate frame. Try 'ENU' or 'NED'")
+    if representation.lower() not in ['rotmat', 'quaternion', 'rpy', 'axisangle']:
+        raise ValueError("Wrong representation type. Try 'rotmat', 'quaternion', 'rpy', or 'axisangle'")
+    a = np.copy(a)
+    m = np.copy(m)
+    m /= np.linalg.norm(m)
+    Rz = a/np.linalg.norm(a)
+    if frame.upper()=='NED':
+        Ry = np.cross(Rz, m)
+        Rx = np.cross(Ry, Rz)
+    else:
+        Rx = np.cross(m, Rz)
+        Ry = np.cross(Rz, Rx)
+    Rx /= np.linalg.norm(Rx)
+    Ry /= np.linalg.norm(Ry)
+    R = np.c_[Rx, Ry, Rz]
+    if representation.lower()=='quaternion':
+        return chiaverini(R)
+    if representation.lower()=='rpy':
+        phi = np.arctan2(R[1, 2], R[2, 2])    # Roll Angle
+        theta = -np.arcsin(R[0, 2])           # Pitch Angle
+        psi = np.arctan2(R[0, 1], R[0, 0])    # Yaw Angle
+        return np.array([phi, theta, psi])
+    if representation.lower()=='axisangle':
+        angle = np.arccos((R.trace()-1)/2)
+        axis = np.zeros(3)
+        if angle!=0:
+            S = np.array([R[2, 1]-R[1, 2], R[0, 2]-R[2, 0], R[1, 0]-R[0, 1]])
+            axis = S/(2*np.sin(angle))
+        return (axis, angle)
+    return R
+
 def am2DCM(a: np.ndarray, m: np.ndarray, frame: str = 'ENU') -> np.ndarray:
     """Direction Cosine Matrix from acceleration and/or compass using TRIAD.
 
@@ -773,9 +830,9 @@ def am2DCM(a: np.ndarray, m: np.ndarray, frame: str = 'ENU') -> np.ndarray:
         Array of single sample of 3 orthogonal accelerometers.
     m : numpy.ndarray
         Array of single sample of 3 orthogonal magnetometers.
-    frame : str, default: 'ENU'
-        Local Tangent Plane. Options are 'ENU' or 'NED'. Defaults to 'ENU'
-        (East-North-Up) coordinates.
+    frame : str, default: ``'ENU'``
+        Local Tangent Plane. Options are ``'ENU'`` or ``'NED'``. Defaults to
+        ``'ENU'`` (East-North-Up) coordinates.
 
     Returns
     -------
@@ -945,76 +1002,6 @@ def am2angles(a: np.ndarray, m: np.ndarray, in_deg: bool = False) -> np.ndarray:
     if in_deg:
         return angles*RAD2DEG
     return angles
-
-def triad(a, m, V1=None, V2=None, **kw):
-    """Pose from given acceleration and compass using TRIAD method.
-
-    Parameters
-    ----------
-    a : numpy.ndarray
-        First 3-by-1 observation vector in body frame. Usually is normalized
-        acceleration vector a = [ax ay az]^T
-    m : numpy.ndarray
-        Second 3-by-1 observation vector in body frame. Usually is normalized
-        magnetic field vector m = [mx my mz]^T
-    V1 : numpy.ndarray
-        3-by-1 Reference vector 1. Defaults to gravity in navigation frame
-        g = [0 0 1]^T
-    V2 : numpy.ndarray
-        3-by-1 Reference vector 2. Defaults to magnetic field in navigation
-        frame m = [cos(dip) 0 sin(dip)]^T, where dip is the magnetic dip in
-        local latitude
-
-    Extra Parameters
-    ----------------
-    dip : float
-        Magnetic dip in local latitude. Defaults to 66.47° corresponding to
-        Germany.
-
-    Returns
-    -------
-    pose : numpy.ndarray
-        Estimated Direct Cosine Matrix
-
-    References
-    ----------
-    .. [TRIAD] M.D. Shuster et al. Three-Axis Attitude Determination from
-      Vector Observations. Journal of Guidance and Control. Volume 4. Number 1.
-      1981. Page 70 (http://www.malcolmdshuster.com/Pub_1981a_J_TRIAD-QUEST_scan.pdf)
-    .. [Shuster] M.D. Shuster. Deterministic Three-Axis Attitude Determination.
-      The Journal of the Astronautical Sciences. Vol 52. Number 3. September
-      2004. Pages 405-419 (http://www.malcolmdshuster.com/Pub_2004c_J_dirangs_AAS.pdf)
-    .. [WikiTRIAD] Triad method in Wikipedia. (https://en.wikipedia.org/wiki/Triad_method)
-    .. [Garcia] H. Garcia de Marina et al. UAV attitude estimation using
-      Unscented Kalman Filter and TRIAD. IEE 2016. (https://arxiv.org/pdf/1609.07436.pdf)
-    .. [CHall4] Chris Hall. Spacecraft Attitude Dynamics and Control.
-      Chapter 4: Attitude Determination. 2003.
-      (http://www.dept.aoe.vt.edu/~cdhall/courses/aoe4140/attde.pdf)
-    .. [iitbTRIAD] IIT Bombay Student Satellite Team. Triad Algorithm.
-      (https://www.aero.iitb.ac.in/satelliteWiki/index.php/Triad_Algorithm)
-    .. [MarkleyTRIAD] F.L. Makley et al. Fundamentals of Spacecraft Attitude
-      Determination and Control. 2014. Pages 184-186.
-    """
-    if V1 is None:
-        V1 = np.array([[0.], [0.], [1.]])
-    if V2 is None:
-        dip = kw.get('dip', 66.47)
-        V2 = np.array([[cosd(dip)], [0.0], [sind(dip)]])
-    # Normalized Observations
-    W1 = np.array(a / np.linalg.norm(a)).reshape((3, 1))
-    W2 = np.array(m / np.linalg.norm(m)).reshape((3, 1))
-    # First Triad
-    W1xW2 = np.cross(W1, W2, axis=0)
-    s2 = W1xW2 / np.linalg.norm(W1xW2)
-    s3 = np.cross(W1, W1xW2, axis=0) / np.linalg.norm(W1xW2)
-    # Second Triad
-    V1xV2 = np.cross(V1, V2, axis=0)
-    r2 = V1xV2 / np.linalg.norm(V1xV2)
-    r3 = np.cross(V1, V1xV2, axis=0) / np.linalg.norm(V1xV2)
-    # Solve TRIAD
-    Mobs = np.hstack((W1, s2, s3))
-    Mref = np.hstack((V1, r2, r3))
-    return Mobs@Mref.T
 
 def slerp(q0: np.ndarray, q1: np.ndarray, t_array: np.ndarray, threshold: float = 0.9995) -> np.ndarray:
     """Spherical Linear Interpolation between quaternions.
