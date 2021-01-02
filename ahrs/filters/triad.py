@@ -271,8 +271,12 @@ class TRIAD:
         Second tri-axial reference vector. Defaults to normalized geomagnetic
         field :math:`\\mathbf{h} = \\begin{bmatrix}h_x & h_y & h_z \\end{bmatrix}`
         in Munich, Germany.
-    as_quaternion : bool, default: False
-        Whether to return attitude as a quaternion.
+    representation : str, default: ``'rotmat'``
+        Attitude representation. Options are ``rotmat'``, ``'quaternion'``,
+        ``'rpy'``, or ``'axisangle'``.
+    frame : str, default: 'NED'
+        Local tangent plane coordinate frame. Valid options are right-handed
+        ``'NED'`` for North-East-Down and ``'ENU'`` for East-North-Up.
 
     Attributes
     ----------
@@ -294,7 +298,7 @@ class TRIAD:
     >>> from ahrs.filters import TRIAD
     >>> triad = TRIAD()
     >>> triad.v1 = np.array([0.0, 0.0, 1.0])                    # Reference gravity vector (g)
-    >>> triad.v2 = h                                            # Reference geomagnetic field (h)
+    >>> triad.v2 = np.array([21.0097, 1.3335, 43.732])          # Reference geomagnetic field (h)
     >>> a = np.array([-2.499e-04, 4.739e-02, 0.9988763])        # Measured acceleration (normalized)
     >>> a /= np.linalg.norm(a)
     >>> m = np.array([-0.36663061, 0.17598138, -0.91357132])    # Measured magnetic field (normalized)
@@ -310,42 +314,75 @@ class TRIAD:
     >>> triad = TRIAD(w1=a, w2=m, v1=[0.0, 0.0, 1.0], v2=[-0.36663061, 0.17598138, -0.91357132])
 
     """
-    def __init__(self, w1: np.ndarray = None, w2: np.ndarray = None, v1: np.ndarray = None, v2: np.ndarray = None, as_quaternion: bool = False):
-        self.w1 = w1
-        self.w2 = w2
-        self.v1 = np.array([0.0, 0.0, 1.0]) if v1 is None else np.copy(v1)
-        self.v1 /= np.linalg.norm(self.v1)
-        self.v2 = np.array([MAG['X'], MAG['Y'], MAG['Z']]) if v2 is None else np.copy(v2)
-        self.v2 /= np.linalg.norm(self.v2)
-        self.as_quaternion = as_quaternion
+    def __init__(self,
+        w1: np.ndarray = None,
+        w2: np.ndarray = None,
+        v1: np.ndarray = None,
+        v2: np.ndarray = None,
+        representation: str = 'rotmat',
+        frame: str = 'NED'):
+        self.w1: np.ndarray = np.copy(w1)
+        self.w2: np.ndarray = np.copy(w2)
+        self.representation: str = representation
+        if representation.lower() not in ['rotmat', 'quaternion']:
+            raise ValueError("Wrong representation type. Try 'rotmat', or 'quaternion'")
+        if frame.upper() not in ['NED', 'ENU']:
+            raise ValueError(f"Given frame {frame} is NOT valid. Try 'NED' or 'ENU'")
+        # Reference frames
+        self.v1 = self._set_first_triad_reference(v1, frame)
+        self.v2 = self._set_second_triad_reference(v2, frame)
+        # Compute values if samples given
         if self.w1 is not None and self.w2 is not None:
-            self.A = self._compute_all()
+            self.A = self._compute_all(self.representation)
 
-    def _compute_all(self) -> np.ndarray:
+    def _set_first_triad_reference(self, value, frame):
+        if value is None:
+            ref = np.array([0.0, 0.0, 1.0]) if frame.upper=='NED' else np.array([0.0, 0.0, -1.0])
+        else:
+            ref = np.copy(value)
+            ref /= np.linalg.norm(ref)
+        return ref
+
+    def _set_second_triad_reference(self, value, frame):
+        ref = np.array([MAG['X'], MAG['Y'], MAG['Z']])
+        if isinstance(value, float):
+            if abs(value)>90:
+                raise ValueError(f"Dip Angle must be within range [-90, 90]. Got {value}")
+            ref = np.array([cosd(value), 0.0, sind(value)]) if frame.upper()=='NED' else np.array([0.0, cosd(value), -sind(value)])
+        if isinstance(value, (np.ndarray, list)):
+            ref = np.copy(value)
+        return ref/np.linalg.norm(ref)
+
+    def _compute_all(self, representation) -> np.ndarray:
         """
         Estimate the attitude given all data.
 
         Attributes ``w1`` and ``w2`` must contain data.
+
+        Parameters
+        ----------
+        representation : str
+            Attitude representation. Options are ``rotmat'`` or ``'quaternion'``
 
         Returns
         -------
         A : numpy.ndarray
             M-by-3-by-3 with all estimated attitudes as direction cosine
             matrices, where M is the number of samples. It is an N-by-4 array
-            if attribute ``as_quaternion`` is set to ``True``.
+            if ``representation`` is set to ``'quaternion'``.
 
         """
         if self.w1.shape!=self.w2.shape:
             raise ValueError("w1 and w2 are not the same size")
         if self.w1.ndim==1:
-            return self.estimate(self.w1, self.w2, self.as_quaternion)
+            return self.estimate(self.w1, self.w2, representation)
         num_samples = len(self.w1)
-        A = np.zeros((num_samples, 4)) if self.as_quaternion else np.zeros((num_samples, 3, 3))
+        A = np.zeros((num_samples, 4)) if representation.lower()=='quaternion' else np.zeros((num_samples, 3, 3))
         for t in range(num_samples):
-            A[t] = self.estimate(self.w1[t], self.w2[t], self.as_quaternion)
+            A[t] = self.estimate(self.w1[t], self.w2[t], representation)
         return A
 
-    def estimate(self, w1: np.ndarray, w2: np.ndarray, as_quaternion: bool = False) -> np.ndarray:
+    def estimate(self, w1: np.ndarray, w2: np.ndarray, representation: str = 'rotmat') -> np.ndarray:
         """
         Attitude Estimation.
 
@@ -398,6 +435,7 @@ class TRIAD:
         Mb = np.c_[w1, s2, s3]                              # (eq. 12-41)
         Mr = np.c_[self.v1, r2, r3]                         # (eq. 12-42)
         A = Mb@Mr.T                                         # (eq. 12-45)
-        if as_quaternion:
+        # Return according to desired representation
+        if representation.lower()=='quaternion':
             return chiaverini(A)
         return A
