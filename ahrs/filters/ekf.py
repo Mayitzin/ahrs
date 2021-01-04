@@ -5,6 +5,10 @@ Extended Kalman Filter
 
 References
 ----------
+.. [Kalman1960] Rudolf Kalman. A New Approach to Linear Filtering and Prediction
+    Problems. 1960.
+.. [Hartikainen] J. Hartikainen, A. Solin and S. Särkkä. Optimal Filtering with
+    Kalman Filters and Smoothers. 2011
 .. [Marins] João Luís Marins, Xiaoping Yun, Eric R. Bachmann, Robert B. McGhee,
     and Michael J.Zyda. An Extended Kalman Filter for Quaternion-Based
     Orientation Estimation Using MARG Sensors. Proceedings of the 2001 IEEE/RSJ
@@ -13,13 +17,13 @@ References
     (https://calhoun.nps.edu/handle/10945/41567)
 .. [WikiEKF] Wikipedia: Extended Kalman Filter.
     (https://en.wikipedia.org/wiki/Extended_Kalman_filter)
-.. [Michel] Thibaud Michel (2016). On Attitude Estimation with Smartphones.
-    (http://tyrex.inria.fr/mobile/benchmarks-attitude/)
+.. [Labbe2015] Roger R. Labbe Jr. Kalman and Bayesian Filters in Python.
+    (https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python)
 
 """
 
 import numpy as np
-from ..common.orientation import q2R
+from ..common.orientation import q2R, ecompass
 from ..common.mathfuncs import skew
 from ..common import DEG2RAD
 
@@ -59,7 +63,7 @@ class EKF:
         """
         Estimate the quaternions given all data in class Data.
 
-        Class Data must have, at least, ``acc`` and ``mag`` attributes.
+        Attributes ``gyr``, ``acc`` and ``mag`` must contain data.
 
         Returns
         -------
@@ -74,7 +78,7 @@ class EKF:
             raise ValueError("mag and gyr are not the same size")
         num_samples = len(self.acc)
         Q = np.zeros((num_samples, 4))
-        Q[0] = am2q(self.acc[0], self.mag[0]) if self.q0 is None else self.q0/np.linalg.norm(self.q0)
+        Q[0] = ecompass(self.acc[0], self.mag[0], representation='quaternion') if self.q0 is None else self.q0/np.linalg.norm(self.q0)
         for t in range(1, num_samples):
             Q[t] = self.update(Q[t-1], self.gyr[t], self.acc[t], self.mag[t])
         return Q
@@ -152,27 +156,23 @@ class EKF:
         m = np.copy(mag)
         # handle NaNs
         a_norm = np.linalg.norm(a)
-        if a_norm == 0:
-            return q
         m_norm = np.linalg.norm(m)
-        if m_norm == 0:
+        if a_norm == 0 or m_norm == 0:
             return q
         # Normalize vectors
         a /= a_norm
         m /= m_norm
         # ----- Prediction -----
-        # Linearize apriori quaternion
-        F = self.dfdq(g)
+        F = self.dfdq(g)    # Linearize apriori quaternion
         q_k = F@q
-        # Estimate apriori Covariance Matrix (P_k)
+        # Apriori Covariance Matrix (P_k)
         E = np.r_[[-q[1:]], skew(q[1:]) + q[0]*np.identity(3)]
         Q_k = 0.25*self.Dt**2 * (E@self.g_noise@E.T)
         P_k = F@self.P@F.T + Q_k
         # ----- Correction -----
         dcm_k = q2R(q_k)
         z = np.r_[dcm_k@a, dcm_k@m]
-        # Linearize Observations
-        H = self.dhdq(q_k, np.r_[a, m])
+        H = self.dhdq(q_k, np.r_[a, m])     # Linearize Observations
         v = z - H@q_k
         S = H@P_k@H.T + self.R
         K = P_k@H.T@np.linalg.inv(S)
