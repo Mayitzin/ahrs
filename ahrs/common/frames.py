@@ -174,3 +174,43 @@ def enu2ecef(lat, lon):
         [-np.sin(lon), -np.cos(lat)*np.cos(lon), np.sin(lat)*np.cos(lon)],
         [np.cos(lon), -np.cos(lat)*np.sin(lon), np.sin(lat)*np.sin(lon)],
         [0.0, np.sin(lat), np.cos(lat)]])
+
+def ned2enu(x):
+    """Transform coordinates from NED to ENU.
+
+    Parameters
+    ----------
+    x : np.ndarray
+        3D coordinates of point(s) to project.
+
+    Returns
+    -------
+    x' : np.ndarray
+        Transformed coordinates.
+    """
+    if x.shape[-1] != 3 or x.ndim > 2:
+        raise ValueError(f"Given coordinates must have form (3, ) or (N, 3). Got {x.shape}")
+    A = np.array([[0.0, 1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, -1.0]])
+    if x.ndim > 1:
+        return A @ x.T
+    return A @ x
+
+def enu2ned(x):
+    """Transform coordinates from ENU to NED.
+
+    Parameters
+    ----------
+    x : np.ndarray
+        3D coordinates of point(s) to project.
+
+    Returns
+    -------
+    x' : np.ndarray
+        Transformed coordinates.
+    """
+    if x.shape[-1] != 3 or x.ndim > 2:
+        raise ValueError(f"Given coordinates must have form (3, ) or (N, 3). Got {x.shape}")
+    A = np.array([[0.0, 1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, -1.0]])
+    if x.ndim > 1:
+        return (A @ x.T).T
+    return A @ x
