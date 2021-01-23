@@ -786,7 +786,8 @@ def ecompass(a: np.ndarray, m: np.ndarray, frame: str = 'ENU', representation: s
     Raises
     ------
     ValueError
-        When wrong local tangent plane coordinates, or representation, is given.
+        When wrong local tangent plane coordinates, or invalid representation,
+        is given.
     """
     if frame.upper() not in ['ENU', 'NED']:
         raise ValueError("Wrong local tangent plane coordinate frame. Try 'ENU' or 'NED'")
@@ -794,9 +795,11 @@ def ecompass(a: np.ndarray, m: np.ndarray, frame: str = 'ENU', representation: s
         raise ValueError("Wrong representation type. Try 'rotmat', 'quaternion', 'rpy', or 'axisangle'")
     a = np.copy(a)
     m = np.copy(m)
+    if a.shape[-1] != 3 or m.shape[-1] != 3:
+        raise ValueError(f"Input vectors must have exactly 3 elements.")
     m /= np.linalg.norm(m)
     Rz = a/np.linalg.norm(a)
-    if frame.upper()=='NED':
+    if frame.upper() == 'NED':
         Ry = np.cross(Rz, m)
         Rx = np.cross(Ry, Rz)
     else:
@@ -804,15 +807,15 @@ def ecompass(a: np.ndarray, m: np.ndarray, frame: str = 'ENU', representation: s
         Ry = np.cross(Rz, Rx)
     Rx /= np.linalg.norm(Rx)
     Ry /= np.linalg.norm(Ry)
-    R = np.c_[Rx, Ry, Rz]
-    if representation.lower()=='quaternion':
+    R = np.c_[Rx, Ry, Rz].T
+    if representation.lower() == 'quaternion':
         return chiaverini(R)
-    if representation.lower()=='rpy':
+    if representation.lower() == 'rpy':
         phi = np.arctan2(R[1, 2], R[2, 2])    # Roll Angle
         theta = -np.arcsin(R[0, 2])           # Pitch Angle
         psi = np.arctan2(R[0, 1], R[0, 0])    # Yaw Angle
         return np.array([phi, theta, psi])
-    if representation.lower()=='axisangle':
+    if representation.lower() == 'axisangle':
         angle = np.arccos((R.trace()-1)/2)
         axis = np.zeros(3)
         if angle!=0:
