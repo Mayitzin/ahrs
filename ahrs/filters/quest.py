@@ -6,7 +6,7 @@ QUEST
 QUaternion ESTimator as described by Shuster in [Shuster1981]_ and [Shuster1978]_.
 
 We start to define the goal of finding an orthogonal matrix :math:`\\mathbf{A}`
-that minimizes the loss function
+that minimizes the loss function:
 
 .. math::
     L(\\mathbf{A}) = \\frac{1}{2}\\sum_{i=1}^n |\\hat{\\mathbf{W}}_i - \\mathbf{A}\\hat{\\mathbf{V}}_i|^2
@@ -15,10 +15,10 @@ where :math:`a_i` are a set of non-negative weights such that :math:`\\sum_{i=1}
 :math:`\\hat{\\mathbf{V}}_i` are nonparallel **reference vectors**, and
 :math:`\\hat{\\mathbf{W}}_i` are the corresponding **observation vectors**.
 
-The gain function g(\\mathbf{A}) is defined by
+The gain function :math:`g(\\mathbf{A})` is defined by
 
 .. math::
-    g(\\mathbf{A}) = 1 - L(\\mathbf{A}) = \\sum_{i=1}^na_i\\hat{\\mathbf{W}}_i^T\\mathbf{A}\\hat{\\mathbf{V}}_i
+    g(\\mathbf{A}) = 1 - L(\\mathbf{A}) = \\sum_{i=1}^na_i\\,\\hat{\\mathbf{W}}_i^T\\mathbf{A}\\hat{\\mathbf{V}}_i
 
 The loss function :math:`L(\\mathbf{A})` is at its minimum when the gain
 function :math:`g(\\mathbf{A})` is at its maximum. The gain function can be
@@ -27,9 +27,8 @@ reformulated as:
 .. math::
     g(\\mathbf{A}) = \\sum_{i=1}^na_i\\mathrm{tr}\\big(\\hat{\\mathbf{W}}_i^T\\mathbf{A}\\hat{\\mathbf{V}}_i\\big) = \\mathrm{tr}(\\mathbf{AB}^T)
 
-where :math:`\\mathrm{tr}(\\mathbf{C})` is the `trace <https://en.wikipedia.org/wiki/Trace_(linear_algebra)>`_
-of a matrix :math:`\\mathbf{C}`, and :math:`\\mathbf{B}` is the **attitude
-profile matrix**:
+where :math:`\\mathrm{tr}` is the `trace <https://en.wikipedia.org/wiki/Trace_(linear_algebra)>`_
+of a matrix, and :math:`\\mathbf{B}` is the **attitude profile matrix**:
 
 .. math::
     \\mathbf{B} = \\sum_{i=1}^na_i\\hat{\\mathbf{W}}_i^T\\hat{\\mathbf{V}}_i
@@ -47,8 +46,9 @@ is the angle of rotation about :math:`\\hat{\\mathbf{X}}`.
 .. warning::
     The definition of a quaternion used by Shuster sets the vector part
     :math:`\\mathbf{Q}` followed by the scalar part :math:`q`. This module,
-    however will return the estimated quaternion with scalar part first and
-    followed by the vector part: :math:`\\bar{\\mathbf{q}} = \\begin{bmatrix}q & \\mathbf{Q}\\end{bmatrix}`
+    however, will return the estimated quaternion with the *scalar part first*
+    and followed by the vector part: :math:`\\bar{\\mathbf{q}} = \\begin{bmatrix}q
+    & \\mathbf{Q}\\end{bmatrix}`
 
 Because the quaternion works as a versor, it must satisfy:
 
@@ -158,7 +158,8 @@ where:
 
 To find :math:`\\lambda` we implement the `Newton-Raphson method
 <https://en.wikipedia.org/wiki/Newton%27s_method>`_ using the sum of the
-weights :math:`a_i` as a starting value.
+weights :math:`a_i` (in the beginning is constrained to be equal to 1) as a
+starting value.
 
 .. math::
     \\lambda_{t+1} \\gets \\lambda_t - \\frac{f(\\lambda)}{f'(\\lambda)}
@@ -167,7 +168,7 @@ weights :math:`a_i` as a starting value.
 For sensor accuracies better than 1 arc-min (1 degree) the accuracy of a 64-bit
 word is exhausted after only one iteration.
 
-Finally, the optimal quaternion describing the attitude is found as:
+Finally, the **optimal quaternion** describing the attitude is found as:
 
 .. math::
     \\bar{\\mathbf{q}}_\\mathrm{opt} = \\frac{1}{\\sqrt{\\gamma^2+|\\mathbf{Y}|^2}} = \\begin{bmatrix}\\mathbf{Y}\\\\ \\gamma \\end{bmatrix}
@@ -184,8 +185,8 @@ with:
 
 This solution can still lead to an indeterminant result if both :math:`\\gamma`
 and :math:`\\mathbf{X}` vanish simultaneously. :math:`\\gamma` vanishes if and
-only if the angle of rotation is equal :math:`\\pi`, even if :math:`\\mathbf{X}`
-does not vanish along.
+only if the angle of rotation is equal to :math:`\\pi`, even if
+:math:`\\mathbf{X}` does not vanish along.
 
 References
 ----------
@@ -218,11 +219,11 @@ class QUEST:
     mag : numpy.ndarray, default: None
         N-by-3 array with measurements of magnetic field in mT
     weights : array-like
-        Array with two weights used in each observation.
+        Array with two weights. One per sensor measurement.
     magnetic_dip : float
-        Magnetic Inclination angle, in degrees.
+        Local magnetic inclination angle, in degrees.
     gravity : float
-        Normal gravity, in m/s^2.
+        Local normal gravity, in m/s^2.
 
     Attributes
     ----------
