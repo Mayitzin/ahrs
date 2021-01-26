@@ -14,13 +14,8 @@ References
 """
 
 import numpy as np
-from ..common.mathfuncs import *        # Import constants and special functions
-
-# Reference Observations in Munich, Germany
-from ..utils.wmm import WMM
-from ..utils.wgs84 import WGS
-MAG = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT).magnetic_elements
-GRAVITY = WGS().normal_gravity(MUNICH_LATITUDE, MUNICH_HEIGHT)
+from ..common.orientation import ecompass
+from ..common.mathfuncs import cosd, sind
 
 class ROLEQ:
     """
@@ -69,23 +64,48 @@ class ROLEQ:
     (1000, 4)
 
     """
-    def __init__(self, gyr: np.ndarray = None, acc: np.ndarray = None, mag: np.ndarray = None, **kwargs):
+    def __init__(self,
+        gyr: np.ndarray = None,
+        acc: np.ndarray = None,
+        mag: np.ndarray = None,
+        weights: np.ndarray = None,
+        magnetic_ref: np.ndarray = None,
+        frame: str = 'NED',
+        **kwargs
+        ):
         self.gyr = gyr
         self.acc = acc
         self.mag = mag
+        self.a = weights if weights is not None else np.ones(2)
         self.Q = None
         self.frequency = kwargs.get('frequency', 100.0)
         self.Dt = kwargs.get('Dt', 1.0/self.frequency)
-        self.w = kwargs.get('weights', np.ones(2))
         self.q0 = kwargs.get('q0')
+        self.frame = frame
         # Reference measurements
-        mdip = kwargs.get('magnetic_dip', MAG['I'])   # Magnetic dip, in degrees
-        # self.m_ref = np.array([MAG['X'], MAG['Y'], MAG['Z']]) if mdip is None else np.array([cosd(mdip), 0., sind(mdip)])
-        self.m_ref = np.array([cosd(mdip), 0., sind(mdip)])
-        self.g_ref = np.array([0.0, 0.0, kwargs.get('gravity', GRAVITY)])   # Earth's Normal Gravity vector
+        self._set_reference_frames(magnetic_ref, self.frame)
         # Estimate all quaternions if data is given
         if self.acc is not None and self.gyr is not None and self.mag is not None:
             self.Q = self._compute_all()
+
+    def _set_reference_frames(self, mref: float, frame: str = 'NED'):
+        if frame.upper() not in ['NED', 'ENU']:
+            raise ValueError(f"Invalid frame '{frame}'. Try 'NED' or 'ENU'")
+        # Magnetic Reference Vector
+        if mref is None:
+            # Local magnetic reference of Munich, Germany
+            from ..common.mathfuncs import MUNICH_LATITUDE, MUNICH_LONGITUDE, MUNICH_HEIGHT
+            from ..utils.wmm import WMM
+            wmm = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT)
+            self.m_ref = np.array([wmm.X, wmm.Y, wmm.Z]) if frame.upper() == 'NED' else np.array([wmm.Y, wmm.X, -wmm.Z])
+        elif isinstance(mref, (int, float)):
+            cd, sd = cosd(mref), sind(mref)
+            self.m_ref = np.array([cd, 0.0, sd]) if frame.upper() == 'NED' else np.array([0.0, cd, -sd])
+        else:
+            self.m_ref = np.copy(mref)
+        self.m_ref /= np.linalg.norm(self.m_ref)
+        # Gravitational Reference Vector
+        self.a_ref = np.array([0.0, 0.0, -1.0]) if frame.upper() == 'NED' else np.array([0.0, 0.0, 1.0])
 
     def _compute_all(self) -> np.ndarray:
         """Estimate the quaternions given all data.
@@ -105,35 +125,82 @@ class ROLEQ:
             raise ValueError("acc and mag are not the same size")
         num_samples = len(self.acc)
         Q = np.zeros((num_samples, 4))
-        Q[0] = self.estimate(self.acc[0], self.mag[0]) if self.q0 is None else self.q0.copy()
+        Q[0] = ecompass(self.acc[0], self.mag[0], frame=self.frame, representation='quaternion')
         for t in range(1, num_samples):
             Q[t] = self.update(Q[t-1], self.gyr[t], self.acc[t], self.mag[t])
         return Q
 
-    def WW(self, b: np.ndarray, r: np.ndarray) -> np.ndarray:
-        """W Matrix
+    def attitude_propagation(self, q: np.ndarray, omega: np.ndarray) -> np.ndarray:
+        """Linearized function of Process Model (Prediction.)
+
+        .. math::
+            \\mathbf{f}(\\mathbf{q}_{t-1}) = \\Big(\\mathbf{I}_4 + \\frac{\\Delta t}{2}\\boldsymbol\\Omega_t\\Big)\\mathbf{q}_{t-1} =
+            \\begin{bmatrix}
+            q_w - \\frac{\\Delta t}{2} \\omega_x q_x - \\frac{\\Delta t}{2} \\omega_y q_y - \\frac{\\Delta t}{2} \\omega_z q_z\\\\
+            q_x + \\frac{\\Delta t}{2} \\omega_x q_w - \\frac{\\Delta t}{2} \\omega_y q_z + \\frac{\\Delta t}{2} \\omega_z q_y\\\\
+            q_y + \\frac{\\Delta t}{2} \\omega_x q_z + \\frac{\\Delta t}{2} \\omega_y q_w - \\frac{\\Delta t}{2} \\omega_z q_x\\\\
+            q_z - \\frac{\\Delta t}{2} \\omega_x q_y + \\frac{\\Delta t}{2} \\omega_y q_x + \\frac{\\Delta t}{2} \\omega_z q_w
+            \\end{bmatrix}
 
         Parameters
         ----------
-        b : numpy.ndarray
-            Normalized observations vector
-        r : numpy.ndarray
-            Normalized vector of reference frame
+        q : numpy.ndarray
+            A-priori quaternion.
+        omega : numpy.ndarray
+            Angular velocity, in rad/s.
 
         Returns
         -------
-        W : numpy.ndarray
-            Matrix :math:`\\mathbf{W}` of equation :math:`\\mathbf{K}^T \\mathbf{b} = \\mathbf{Wq}`
+        q : numpy.ndarray
+            Linearized estimated quaternion in **Prediction** step.
         """
-        bx, by, bz = b
-        rx, ry, rz = r
-        M1 = np.array([[bx, 0.0, bz, -by], [0.0, bx, by, bz], [bz, by, -bx, 0.0], [-by, bz, 0.0, -bx]]) # (eq. 18a)
-        M2 = np.array([[by, -bz, 0.0, bx], [-bz, -by, bx, 0.0], [0.0, bx, by, bz], [bx, 0.0, bz, -by]]) # (eq. 18b)
-        M3 = np.array([[bz, by, -bx, 0.0], [by, -bz, 0.0, bx], [-bx, 0.0, -bz, by], [0.0, bx, by, bz]]) # (eq. 18c)
+        Omega_t = np.array([
+            [0.0,  -omega[0], -omega[1], -omega[2]],
+            [omega[0],   0.0,  omega[2], -omega[1]],
+            [omega[1], -omega[2],   0.0,  omega[0]],
+            [omega[2],  omega[1], -omega[0],   0.0]])
+        q_omega = (np.identity(4) + 0.5*self.Dt*Omega_t) @ q
+        return q_omega/np.linalg.norm(q_omega)
+
+    def WW(self, Db, Dr):
+        """W Matrix
+
+        .. math::
+            \\mathbf{W} = D_x^r\\mathbf{M}_1 + D_y^r\\mathbf{M}_2 + D_z^r\\mathbf{M}_3
+
+        Parameters
+        ----------
+        Db : numpy.ndarray
+            Normalized tri-axial observations vector.
+        Dr : numpy.ndarray
+            Normalized tri-axial reference vector.
+
+        Returns
+        -------
+        W_matrix : numpy.ndarray
+            W Matrix.
+        """
+        bx, by, bz = Db
+        rx, ry, rz = Dr
+        M1 = np.array([
+            [bx, 0.0, bz, -by],
+            [0.0, bx, by, bz],
+            [bz, by, -bx, 0.0],
+            [-by, bz, 0.0, -bx]])       # (eq. 18a)
+        M2 = np.array([
+            [by, -bz, 0.0, bx],
+            [-bz, -by, bx, 0.0],
+            [0.0, bx, by, bz],
+            [bx, 0.0, bz, -by]])        # (eq. 18b)
+        M3 = np.array([
+            [bz, by, -bx, 0.0],
+            [by, -bz, 0.0, bx],
+            [-bx, 0.0, -bz, by],
+            [0.0, bx, by, bz]])         # (eq. 18c)
         return rx*M1 + ry*M2 + rz*M3    # (eq. 20)
 
-    def estimate(self, acc: np.ndarray = None, mag: np.ndarray = None) -> np.ndarray:
-        """Attitude Estimation
+    def oleq(self, acc: np.ndarray, mag: np.ndarray, q_omega: np.ndarray) -> np.ndarray:
+        """OLEQ with a single rotation by R.
 
         Parameters
         ----------
@@ -148,33 +215,25 @@ class ROLEQ:
             Estimated quaternion.
 
         """
-        # Normalize measurements (eq. 1)
         a_norm = np.linalg.norm(acc)
         m_norm = np.linalg.norm(mag)
-        if not a_norm>0 or not m_norm>0:      # handle NaN
-            return None
-        a = acc/a_norm
-        m = mag/m_norm
-        W = self.w[0]*self.WW(a, self.g_ref) + self.w[1]*self.WW(m, self.m_ref)
-        G = 0.5*(W + np.eye(4))
-        q = np.ones(4)
-        last_q = np.array([1., 0., 0., 0.])
-        i = 0
-        while np.linalg.norm(q-last_q)>1e-8 and i<=20:
-            last_q = q
-            q = G@last_q                    # (eq. 25)
-            q /= np.linalg.norm(q)
-            i += 1
-        return q/np.linalg.norm(q)
+        if a_norm == 0 and m_norm == 0:
+            return q_omega
+        acc = np.copy(acc) / np.linalg.norm(acc)
+        mag = np.copy(mag) / np.linalg.norm(mag)
+        sum_aW = self.a[0]*self.WW(acc, self.a_ref) + self.a[1]*self.WW(mag, self.m_ref)    # (eq. 31)
+        R = 0.5*(np.identity(4) + sum_aW)       # (eq. 33)
+        q = R @ q_omega                         # (eq. 25)
+        return q / np.linalg.norm(q)
 
     def update(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, mag: np.ndarray) -> np.ndarray:
-        """Update Attitude
+        """Update Attitude with a Recursive OLEQ
 
         Parameters
         ----------
         q : numpy.ndarray
             A-priori quaternion.
-        gyr : numpy.ndarray, default: None
+        gyr : numpy.ndarray
             Sample of angular velocity in rad/s
         acc : numpy.ndarray
             Sample of tri-axial Accelerometer in m/s^2
@@ -187,21 +246,6 @@ class ROLEQ:
             Estimated quaternion.
 
         """
-        # Rotate given quaternion with gyroscope measurements
-        gx, gy, gz = gyr
-        Omega = np.array([[0.0, -gx, -gy, -gz], [gx, 0.0, gz, -gy], [gy, -gz, 0.0, gx], [gz, gy, -gx, 0.0]])
-        Phi = np.eye(4) + 0.5*self.Dt*Omega     # (eq. 37)
-        q_g = Phi@q
-        q_g /= np.linalg.norm(q_g)
-        # Second stage: Estimate with OLEQ
-        a_norm = np.linalg.norm(acc)
-        m_norm = np.linalg.norm(mag)
-        if not a_norm>0 or not m_norm>0:    # handle NaN
-            return q_g
-        # Rotation operator (eq. 33)
-        R = np.zeros((4, 4))
-        R += 0.5*self.w[0]*(self.WW(acc/a_norm, self.g_ref) + np.eye(4))
-        R += 0.5*self.w[1]*(self.WW(mag/m_norm, self.m_ref) + np.eye(4))
-        q = R@q_g                                   # (eq. 25)
-        q /= np.linalg.norm(q)
+        q_g = self.attitude_propagation(q, gyr)     # Quaternion from previous quaternion and angular velocity
+        q = self.oleq(acc, mag, q_g)                # Second stage: Estimate with OLEQ
         return q
