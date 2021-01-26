@@ -149,6 +149,7 @@ References
 """
 
 import numpy as np
+from ..common.mathfuncs import cosd, sind
 
 class OLEQ:
     """
@@ -197,7 +198,7 @@ class OLEQ:
         if self.acc is not None and self.mag is not None:
             self.Q = self._compute_all()
 
-    def _set_reference_frames(self, mref: float, frame: str = 'NED'):
+    def _set_reference_frames(self, mref: float, frame: str = 'NED') -> None:
         if frame.upper() not in ['NED', 'ENU']:
             raise ValueError(f"Invalid frame '{frame}'. Try 'NED' or 'ENU'")
         # Magnetic Reference Vector
@@ -236,7 +237,7 @@ class OLEQ:
             Q[t] = self.estimate(self.acc[t], self.mag[t])
         return Q
 
-    def WW(self, Db, Dr):
+    def WW(self, Db: np.ndarray, Dr: np.ndarray) -> np.ndarray:
         """W Matrix
 
         .. math::
@@ -273,7 +274,7 @@ class OLEQ:
             [0.0, bx, by, bz]])         # (eq. 18c)
         return rx*M1 + ry*M2 + rz*M3    # (eq. 20)
 
-    def estimate(self, acc: np.ndarray = None, mag: np.ndarray = None) -> np.ndarray:
+    def estimate(self, acc: np.ndarray, mag: np.ndarray) -> np.ndarray:
         """Attitude Estimation
 
         Parameters
