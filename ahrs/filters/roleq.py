@@ -3,9 +3,76 @@
 Recursive Optimal Linear Estimator of Quaternion
 ================================================
 
+This is a modified `OLEQ <./oleq.html>`_, where a recursive estimation of the
+attitude is made with the measured angular velocity [Zhou2018]_. This
+estimation is set as the initial value for the OLEQ estimation, simplyfing the
+rotational operations.
+
+First, the quaternion :math:`\\mathbf{q}_\\omega` is estimated from the angular
+velocity, :math:`\\boldsymbol\\omega=\\begin{bmatrix}\\omega_x & \\omega_y &
+\\omega_z \\end{bmatrix}^T`, measured by the gyroscopes, in rad/s, at a time
+:math:`t` as:
+
+.. math::
+    \\mathbf{q}_\\omega = \\Big(\\mathbf{I}_4 + \\frac{\\Delta t}{2}\\boldsymbol\\Omega_t\\Big)\\mathbf{q}_{t-1} =
+    \\begin{bmatrix}
+    q_w - \\frac{\\Delta t}{2} \\omega_x q_x - \\frac{\\Delta t}{2} \\omega_y q_y - \\frac{\\Delta t}{2} \\omega_z q_z\\\\
+    q_x + \\frac{\\Delta t}{2} \\omega_x q_w - \\frac{\\Delta t}{2} \\omega_y q_z + \\frac{\\Delta t}{2} \\omega_z q_y\\\\
+    q_y + \\frac{\\Delta t}{2} \\omega_x q_z + \\frac{\\Delta t}{2} \\omega_y q_w - \\frac{\\Delta t}{2} \\omega_z q_x\\\\
+    q_z - \\frac{\\Delta t}{2} \\omega_x q_y + \\frac{\\Delta t}{2} \\omega_y q_x + \\frac{\\Delta t}{2} \\omega_z q_w
+    \\end{bmatrix}
+
+Then, the attitude is "corrected" through OLEQ using a single multiplication of
+its rotation operator:
+
+.. math::
+    \\mathbf{q}_\\mathbf{ROLEQ} = \\frac{1}{2}\\Big(\\mathbf{I}_4 + \\sum_{i=1}^na_i\\mathbf{W}_i\\Big)\\mathbf{q}_\\omega
+
+where each :math:`\\mathbf{W}` (one for accelerations and one for magnetic
+field) is built from their reference vectors, :math:`D^r`, and measurements,
+:math:`D^b`, exactly as in OLEQ:
+
+.. math::
+    \\begin{array}{rcl}
+    \\mathbf{W} &=& D_x^r\\mathbf{M}_1 + D_y^r\\mathbf{M}_2 + D_z^r\\mathbf{M}_3 \\\\ && \\\\
+    \\mathbf{M}_1 &=&
+    \\begin{bmatrix}
+    D_x^b & 0 & D_z^b & -D_y^b \\\\
+    0 & D_x^b & D_y^b & D_z^b \\\\
+    D_z^b & D_y^b & -D_x^b & 0 \\\\
+    -D_y^b & D_z^b & 0 & -D_x^b
+    \\end{bmatrix} \\\\
+    \\mathbf{M}_2 &=&
+    \\begin{bmatrix}
+    D_y^b & -D_z^b & 0 & D_x^b \\\\
+    -D_z^b & -D_y^b & D_x^b & 0 \\\\
+    0 & D_x^b & D_y^b & D_z^b \\\\
+    D_x^b & 0 & D_z^b & -D_y^b
+    \\end{bmatrix} \\\\
+    \\mathbf{M}_3 &=&
+    \\begin{bmatrix}
+    D_z^b & D_y^b & -D_x^b & 0 \\\\
+    D_y^b & -D_z^b & 0 & D_x^b \\\\
+    -D_x^b & 0 & -D_z^b & D_y^b \\\\
+    0 & D_x^b & D_y^b & D_z^b
+    \\end{bmatrix}
+    \\end{array}
+
+It is noticeable that, for OLEQ, a random quaternion was used as a starting
+value for an iterative procedure to find the optimal quaternion. Here, that
+initial value is now :math:`\\mathbf{q}_\\omega` and a simple product (instead
+of a large iterative product) is required.
+
+In this way, the quaternions are recursively computed with much fewer
+computations, and the accuracy is maintained.
+
+For this case, however the three sensor data (gyroscopes, accelerometers and
+magnetometers) have to be provided, along with the an initial quaternion,
+:math:`\\mathbf{q}_0` from which the attitude will be built upon.
+
 References
 ----------
-.. [Zhou] Zhou, Z.; Wu, J.; Wang, J.; Fourati, H. Optimal, Recursive and
+.. [Zhou2018] Zhou, Z.; Wu, J.; Wang, J.; Fourati, H. Optimal, Recursive and
     Sub-Optimal Linear Solutions to Attitude Determination from Vector
     Observations for GNSS/Accelerometer/Magnetometer Orientation Measurement.
     Remote Sens. 2018, 10, 377.
@@ -131,10 +198,10 @@ class ROLEQ:
         return Q
 
     def attitude_propagation(self, q: np.ndarray, omega: np.ndarray) -> np.ndarray:
-        """Linearized function of Process Model (Prediction.)
+        """Attitude estimation from previous quaternion and current angular velocity.
 
         .. math::
-            \\mathbf{f}(\\mathbf{q}_{t-1}) = \\Big(\\mathbf{I}_4 + \\frac{\\Delta t}{2}\\boldsymbol\\Omega_t\\Big)\\mathbf{q}_{t-1} =
+            \\mathbf{q}_\\omega = \\Big(\\mathbf{I}_4 + \\frac{\\Delta t}{2}\\boldsymbol\\Omega_t\\Big)\\mathbf{q}_{t-1} =
             \\begin{bmatrix}
             q_w - \\frac{\\Delta t}{2} \\omega_x q_x - \\frac{\\Delta t}{2} \\omega_y q_y - \\frac{\\Delta t}{2} \\omega_z q_z\\\\
             q_x + \\frac{\\Delta t}{2} \\omega_x q_w - \\frac{\\Delta t}{2} \\omega_y q_z + \\frac{\\Delta t}{2} \\omega_z q_y\\\\
@@ -152,14 +219,14 @@ class ROLEQ:
         Returns
         -------
         q : numpy.ndarray
-            Linearized estimated quaternion in **Prediction** step.
+            Attitude as a quaternion.
         """
         Omega_t = np.array([
             [0.0,  -omega[0], -omega[1], -omega[2]],
             [omega[0],   0.0,  omega[2], -omega[1]],
             [omega[1], -omega[2],   0.0,  omega[0]],
             [omega[2],  omega[1], -omega[0],   0.0]])
-        q_omega = (np.identity(4) + 0.5*self.Dt*Omega_t) @ q
+        q_omega = (np.identity(4) + 0.5*self.Dt*Omega_t) @ q    # (eq. 37)
         return q_omega/np.linalg.norm(q_omega)
 
     def WW(self, Db, Dr):
@@ -208,16 +275,18 @@ class ROLEQ:
             Sample of tri-axial Accelerometer.
         mag : numpy.ndarray
             Sample of tri-axial Magnetometer.
+        q_omega : numpy.ndarray
+            Preceding quaternion estimated with angular velocity.
 
         Returns
         -------
-        q : array
-            Estimated quaternion.
+        q : np.ndarray
+            Final quaternion.
 
         """
         a_norm = np.linalg.norm(acc)
         m_norm = np.linalg.norm(mag)
-        if a_norm == 0 and m_norm == 0:
+        if not a_norm > 0 or not m_norm > 0:    # handle NaN
             return q_omega
         acc = np.copy(acc) / np.linalg.norm(acc)
         mag = np.copy(mag) / np.linalg.norm(mag)
