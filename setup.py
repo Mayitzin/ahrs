@@ -19,10 +19,12 @@ All AHRS wheels distributed on PyPI are MIT licensed.
 
 import sys
 from setuptools import setup, find_packages
-from ahrs.versioning import get_version
+from tools.versioning import get_version
 
 if sys.version_info < (3, 6):
     raise SystemError("Python version >= 3.6 required.")
+
+__version__ = get_version()
 
 REPOSITORY_URL = 'https://github.com/Mayitzin/ahrs/'
 
@@ -31,7 +33,7 @@ with open("README.md", "r") as fh:
 
 metadata = dict(
     name='AHRS',
-    version=get_version(),
+    version=__version__,
     description='Attitude and Heading Reference Systems.',
     long_description=long_description,
     long_description_content_type='text/markdown',

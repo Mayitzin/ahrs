@@ -15,6 +15,3 @@ from .common.constants import *
 from .common.quaternion import Quaternion
 from .common.quaternion import QuaternionArray
 from .common.dcm import DCM
-from .versioning import get_version
-
-__version__ = get_version()
