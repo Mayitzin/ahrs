@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*-
 """
+
+    DECPRECATION NOTICE:
+
+    This submodule is no longer supported nor integrated in the main package,
+    and it will be removed in the next releases.
+
 Plotting tools
 
 .. warning::
@@ -67,6 +73,7 @@ def plot(*data, **kw):
     >>> plot(data, data_2)
     >>> plot(data, data_2, subtitles=["data", "data 2"])
     """
+    raise DeprecationWarning("This function will be removed. Actually I don't know how you got to use it.")
     title = kw.get("title")
     subtitles = kw.get("subtitles")
     labels = kw.get("labels")
@@ -138,6 +145,7 @@ def plot_sensors(*sensors, **kwargs):
     >>> ahrs.utils.plot_sensors(data.gyr, data.acc, data.mag, x_axis=data.time, title="Sensors")
 
     """
+    raise DeprecationWarning("This function will be removed. Actually I don't know how you got to use it.")
     num_axes = kwargs.get('num_axes', 3)
     title = kwargs.get('title', "Sensors")
     subtitles = kwargs.get('subtitles', None)
@@ -182,6 +190,7 @@ def plot_euler(*angles, **kwargs):
     >>> ahrs.utils.plot_euler(data.euler_angles, x_axis=data.time, title="My Angles")
 
     """
+    raise DeprecationWarning("This function will be removed. Actually I don't know how you got to use it.")
     # x_axis = kwargs.get('x_axis', range(sz[0]))
     title = kwargs.get('title', "Euler Angles")
     subtitles = kwargs.get('subtitles', None)
@@ -228,6 +237,7 @@ def plot_quaternions(*quaternions, **kwargs):
     >>> ahrs.utils.plot_quaternions(data.qts, ref_quaternions)
 
     """
+    raise DeprecationWarning("This function will be removed. Actually I don't know how you got to use it.")
     title = kwargs.get('title', "Quaternions")
     subtitles = kwargs.get('subtitles', None)
     fig = plt.figure(title)

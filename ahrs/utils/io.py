@@ -1,6 +1,12 @@
 #! /usr/bin/python3
 # -*- coding: utf-8 -*-
 """
+
+    DECPRECATION NOTICE:
+
+    This submodule is no longer supported nor integrated in the main package,
+    and it will be removed in the next releases.
+
 Input and Output routines
 
 """
@@ -42,6 +48,7 @@ def get_freq(times, units='s'):
     10000.0
 
     """
+    raise DeprecationWarning("This function will be removed. Actually I don't know how you got to use it.")
     diffs = np.diff(times)
     mean = np.nanmean(diffs)
     if units == 'ms':
@@ -80,6 +87,7 @@ def load(file_name, separator=';'):
     data : Data
         Read information stored in class Data.
     """
+    raise DeprecationWarning("This function will be removed. Actually I don't know how you got to use it.")
     if not os.path.isfile(file_name):
         sys.exit("[ERROR] The file {} does not exist.".format(file_name))
     file_ext = file_name.strip().split('.')[-1]
@@ -130,6 +138,7 @@ def load_ETH_EC(path):
         class Data with the contents of the dataset.
 
     """
+    raise DeprecationWarning("This function will be removed. Actually I don't know how you got to use it.")
     if not os.path.isdir(path):
         print("Invalid path")
         return None
@@ -171,6 +180,7 @@ def load_ETH_EuRoC(path):
         datasets, International Journal of Robotic Research,
         DOI: 10.1177/0278364915620033, early 2016.
     """
+    raise DeprecationWarning("This function will be removed. Actually I don't know how you got to use it.")
     if not os.path.isdir(path):
         print("Invalid path")
         return None
@@ -280,6 +290,7 @@ def load_OxIOD(path, sequence=1):
         arXiv:1809.07491. September 2018.
         (https://arxiv.org/pdf/1809.07491.pdf)
     """
+    raise DeprecationWarning("This function will be removed. Actually I don't know how you got to use it.")
     if not os.path.isdir(path):
         print("Invalid path")
         return None
