@@ -45,9 +45,7 @@ metadata = dict(
         "Source Code": REPOSITORY_URL,
         "Bug Tracker": REPOSITORY_URL+"issues"
     },
-    install_requires=[
-        'numpy',
-        'scipy'],
+    install_requires=['numpy'],
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
