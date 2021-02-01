@@ -263,9 +263,6 @@ References
 .. [Zhao] F. Zhao and B.G.M. van Wachem. A novel Quaternion integration
     approach for describing the behaviour of non-spherical particles.
     (https://link.springer.com/content/pdf/10.1007/s00707-013-0914-2.pdf)
-.. [Trawny] N. Trawny and S.I. Roumeliotis. Indirect Kalman Filter for 3D
-    Attitude Estimation. Technical Report No. 2005-002. March 2005.
-    (http://mars.cs.umn.edu/tr/reports/Trawny05b.pdf)
 
 """
 
