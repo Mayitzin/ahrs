@@ -1000,7 +1000,7 @@ class EKF:
         if self.gyr is not None and self.acc is not None:
             self.Q = self._compute_all(self.frame)
 
-    def _set_measurement_noise_covariance(self, **kw):
+    def _set_measurement_noise_covariance(self, **kw) -> np.ndarray:
         self.noises = np.array(kw.get('noises', [0.3**2, 0.5**2, 0.8**2]))
         if 'var_gyr' in kw:
             self.noises[0] = kw.get('var_gyr')
@@ -1013,7 +1013,7 @@ class EKF:
             return np.diag(np.repeat(self.a_noise, 3))
         return np.diag(np.repeat(self.noises[1:], 3))
 
-    def _set_reference_frames(self, mref: float, frame: str = 'NED'):
+    def _set_reference_frames(self, mref: float, frame: str = 'NED') -> None:
         if frame.upper() not in ['NED', 'ENU']:
             raise ValueError(f"Invalid frame '{frame}'. Try 'NED' or ENU'")
         # Magnetic Reference Vector
@@ -1032,11 +1032,11 @@ class EKF:
         # Gravitational Reference Vector
         self.a_ref = np.array([0.0, 0.0, -1.0]) if frame.upper() == 'NED' else np.array([0.0, 0.0, 1.0])
 
-    def _compute_all(self, frame):
+    def _compute_all(self, frame: str) -> np.ndarray:
         """
-        Estimate the quaternions given all data in class Data.
+        Estimate the quaternions given all sensor data.
 
-        Attributes ``gyr``, ``acc`` must contain data. Attribute ``mag`` is
+        Attributes ``gyr``, ``acc`` MUST contain data. Attribute ``mag`` is
         optional.
 
         Returns
@@ -1134,7 +1134,7 @@ class EKF:
         Omega_t = self.Omega(omega)
         return (np.identity(4) + 0.5*self.Dt*Omega_t) @ q
 
-    def dfdq(self, omega):
+    def dfdq(self, omega: np.ndarray) -> np.ndarray:
         """Jacobian of linearized predicted state.
 
         .. math::
