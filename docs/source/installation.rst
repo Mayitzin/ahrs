@@ -10,12 +10,12 @@ If you already have Python, you can install AHRS with:
 This will download and install the latest stable release of ``ahrs`` available
 in the `Python Package Index <https://pypi.org/>`_.
 
-AHRS works with Python 3.6 or later, and depends on `NumPy <https://numpy.org/>`_
-and `SciPy <https://www.scipy.org/>`_. Intalling with ``pip`` will automatically
-download them if they are not present in your workspace.
+AHRS works with Python 3.6 or later, and depends on `NumPy <https://numpy.org/>`_.
+Intalling with ``pip`` will automatically download it if it's not present in
+your workspace.
 
-A second option is to download the *latest* available version in the repository
-and install it manually:
+A second, and more recommended, option is to download the *latest* available
+version in the git repository and install it manually:
 
 .. code-block:: console
 
@@ -23,8 +23,8 @@ and install it manually:
     cd ahrs/
     python setup.py install
 
-This is specially recommended if you want to have the newest version of the
-package.
+This will get you the newest version of the package, so you can get a more
+robust version.
 
 Building the Documentation
 --------------------------

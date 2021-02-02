@@ -77,7 +77,9 @@ Abbreviations
 -------------
 
 ======  =========
+AACGM   Altitude-Adjusted Corrected Geomagnetic Coordinates
 ADC     Analog-to-Digital Converter
+ADEV    Allan deviation
 AHRS    Attitude and Heading Reference System
 AoA     Angle of Arrival
 AoD     Angle of Departure
@@ -85,8 +87,11 @@ AR      Angular Rate
 atan    Arctangent
 atan2   Arctangent (four quadrants)
 AUV     Autonomous Underwater Vehicle
+AVAR    Allan variance
 BIH     Bureau International de l'Heure
 BPF     Band-Pass Filter
+CD      Centered Dipole
+CGM     Corrected Geomagnetic Coordinates
 CIRS    Conventional Inertial Reference System
 CRS     Conventional Celestial Reference System
 CTP     Conventional Terrestrial Pole
@@ -95,6 +100,8 @@ DCM     Direction Cosine Matrix
 DoD     Department of Defense
 DoF     Degrees of Freedom
 DR      Dead Reckoning
+ECEF    Earth-Centered Earth-Fixed
+ECIF    Earth-Centered Inertial Frame
 EGM     Earth Gravitational Model
 EGNSS   Enhanced GNSS
 EKF     Extended Kalman Filter
@@ -110,6 +117,7 @@ HPF     High-Pass Filter
 IAU     International Astronomical Union
 IC      Integrated Circuit
 IERS    International Earth Rotation and Reference Systems Service
+IGRF    International Geomagnetic Reference Field
 IMU     Inertial Measurement Unit
 INS     Inertial Navigation System
 INU     Inertial Navigation Unit
@@ -120,21 +128,30 @@ lat     Latitude
 LLF     Local-level Frame
 lon     Longitude
 LPF     Low-Pass Filter
+MagCal  Magnetic Calibration
 MARG    Magnetism, Angular Rate, and Gravity
+MCU     Micro-Controller Unit
 MEMS    Micro-electromechanical Systems
+MLT     Magnetic Local Time
 MOEMS   Micro-opto electromechanical Systems
 MST     Microsystem Technology
 μC      Microcontroller
 NED     North-East-Down
 PF      Particle Filtering
 PIGA    Pendulous Integrating Gyroscopic Accelerometer
+QD      Quasi-Dipole
 QUEST   Quaternion Estimator
+RHR     Right-Hand Rule
+SCI     Serial Communications Interface
 SI      Système International d'unités
+SLERP   Spherical Linear Interpolation
 SOA     Silicon Oscillating Accelerometer
 SVD     Singular Value Decomposition
 TFG     Turning Fork Gyroscope
+UART    Universal Asynchronous Receiver / Transmitter
 UAV     Unmanned Aerial Vehicle
 UKF     Unscented Kalman Filter
+UT      Universal Time
 WGS     World Geodetic System
 WMM     World Magnetic Model
 ZUPT    Zero Velocity Update
