@@ -37,7 +37,7 @@ def circle(center: Union[list, np.ndarray], radius: float = 1.0, num_points: int
     y = center[1] + radius*np.sin(R)
     return np.array([x, y]).transpose()
 
-def ellipse(center: Union[list, np.ndarray], phi: float, axes: : Union[list, np.ndarray], num_points: int = 20) -> np.ndarray:
+def ellipse(center: Union[list, np.ndarray], phi: float, axes: Union[list, np.ndarray], num_points: int = 20) -> np.ndarray:
     """
     Build an ellipse with the given characteristics.
 
