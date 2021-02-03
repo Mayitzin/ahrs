@@ -37,6 +37,7 @@ AHRS depends on common packages [NumPy](https://numpy.org/) and [SciPy](https://
 ## New in 0.3 (release candidate)
 
 - [Type hints](https://www.python.org/dev/peps/pep-0484/) are added.
+- NumPy is now the only third-party dependency.
 - The **World Magnetic Model** ([WMM](https://www.ngdc.noaa.gov/geomag/WMM/DoDWMM.shtml)) is fully implemented. It can be used to estimate all magnetic field elements on any given place of Earth for dates between 2015 and 2025.
 
 ```python
@@ -186,43 +187,43 @@ One of the biggest improvements in this version is the addition of many new atti
 
 All estimators are refactored to be consistent to the original articles describing them. They have in-code references to the original equations, so that you can follow the original articles along with the code.
 
-Implemented attitude estimators are in the following table.
+Implemented attitude estimators are:
 
-| Algorithm      | Gyroscope | Accelerometer | Magnetometer |
-|----------------|:---------:|:-------------:|:------------:|
-| AQUA           | YES       | YES           | Optional     |
-| Complementary  | YES       | YES           | Optional     |
-| Davenport's    | NO        | YES           | YES          |
-| EKF            | YES       | YES           | YES          |
-| FAMC           | NO        | YES           | YES          |
-| FLAE           | NO        | YES           | YES          |
-| Fourati        | YES       | YES           | YES          |
-| FQA            | NO        | YES           | Optional     |
-| Integration    | YES       | NO            | NO           |
-| Madgwick       | YES       | YES           | Optional     |
-| Mahony         | YES       | YES           | Optional     |
-| OLEQ           | NO        | YES           | YES          |
-| QUEST          | NO        | YES           | YES          |
-| ROLEQ          | NO        | YES           | YES          |
-| SAAM           | NO        | YES           | YES          |
-| Tilt           | NO        | YES           | Optional     |
-| TRIAD          | NO        | YES           | YES          |
+| Algorithm     | Gyroscope | Accelerometer | Magnetometer |
+|---------------|:---------:|:-------------:|:------------:|
+| AQUA          | YES       | YES           | Optional     |
+| Complementary | YES       | YES           | Optional     |
+| Davenport's   | NO        | YES           | YES          |
+| EKF           | YES       | YES           | YES          |
+| FAMC          | NO        | YES           | YES          |
+| FLAE          | NO        | YES           | YES          |
+| Fourati       | YES       | YES           | YES          |
+| FQA           | NO        | YES           | Optional     |
+| Integration   | YES       | NO            | NO           |
+| Madgwick      | YES       | YES           | Optional     |
+| Mahony        | YES       | YES           | Optional     |
+| OLEQ          | NO        | YES           | YES          |
+| QUEST         | NO        | YES           | YES          |
+| ROLEQ         | NO        | YES           | YES          |
+| SAAM          | NO        | YES           | YES          |
+| Tilt          | NO        | YES           | Optional     |
+| TRIAD         | NO        | YES           | YES          |
 
 More Estimators are still a *Work In Progress*, or *planned* to be added in the future.
 
-| Algorithm      | Gyroscope | Accelerometer | Magnetometer | Status  |
-|----------------|:---------:|:-------------:|:------------:|:-------:|
-| ESOQ           | NO        | YES           | YES          | WIP     |
-| ESOQ-2         | NO        | YES           | YES          | WIP     |
-| FKF            | NO        | YES           | YES          | WIP     |
-| FCF            | NO        | YES           | YES          | Planned |
-| FOAM           | NO        | YES           | YES          | Planned |
-| GDA-LKF        | YES       | YES           | YES          | Planned |
-| MAGYQ          | YES       | YES           | YES          | Planned |
-| QRAUKF         | YES       | YES           | YES          | Planned |
-| REQUEST        | NO        | YES           | YES          | Planned |
-| Sabatini       | YES       | YES           | YES          | Planned |
-| SOLEQ          | NO        | YES           | YES          | Planned |
+| Algorithm | Gyroscope | Accelerometer | Magnetometer | Status  |
+|-----------|:---------:|:-------------:|:------------:|:-------:|
+| ESOQ      | NO        | YES           | YES          | WIP     |
+| ESOQ-2    | NO        | YES           | YES          | WIP     |
+| FKF       | NO        | YES           | YES          | WIP     |
+| FCF       | NO        | YES           | YES          | Planned |
+| FOAM      | NO        | YES           | YES          | Planned |
+| GDA-LKF   | YES       | YES           | YES          | Planned |
+| MAGYQ     | YES       | YES           | YES          | Planned |
+| QRAUKF    | YES       | YES           | YES          | Planned |
+| REQUEST   | NO        | YES           | YES          | Planned |
+| Sabatini  | YES       | YES           | YES          | Planned |
+| SOLEQ     | NO        | YES           | YES          | Planned |
 
 To use the sensor data to estimate the attitude simply pass the data to a desired estimator, and it will automatically estimate the quaternions with the given parameters.
 
