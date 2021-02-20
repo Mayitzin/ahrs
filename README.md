@@ -34,10 +34,8 @@ pip install ahrs
 
 AHRS depends on common packages [NumPy](https://numpy.org/) and [SciPy](https://www.scipy.org/). More packages are avoided, to reduce its third-party dependency.
 
-## New in 0.3 (release candidate)
+## New in 0.3
 
-- [Type hints](https://www.python.org/dev/peps/pep-0484/) are added.
-- NumPy is now the only third-party dependency.
 - The **World Magnetic Model** ([WMM](https://www.ngdc.noaa.gov/geomag/WMM/DoDWMM.shtml)) is fully implemented. It can be used to estimate all magnetic field elements on any given place of Earth for dates between 2015 and 2025.
 
 ```python
@@ -175,6 +173,8 @@ array([[ 0.31638467, -0.59313477,  0.62538687,  0.39621099],
 array([ 0.19537239,  0.17826049, -0.87872408, -0.39736232])
 ```
 
+- [Type hints](https://www.python.org/dev/peps/pep-0484/) are added.
+- NumPy is now the only third-party dependency.
 - New submodule `frames` to represent the position of an object in different reference frames.
 - [Metrics](https://ahrs.readthedocs.io/en/latest/metrics.html) for rotations in 3D spaces using quaternions and direction cosine matrices.
 - New operations, properties and methods for class `Quaternion` (now also derived from `numpy.ndarray`)
@@ -204,7 +204,7 @@ Implemented attitude estimators are:
 | Mahony        | YES       | YES           | Optional     |
 | OLEQ          | NO        | YES           | YES          |
 | QUEST         | NO        | YES           | YES          |
-| ROLEQ         | NO        | YES           | YES          |
+| ROLEQ         | YES       | YES           | YES          |
 | SAAM          | NO        | YES           | YES          |
 | Tilt          | NO        | YES           | Optional     |
 | TRIAD         | NO        | YES           | YES          |
