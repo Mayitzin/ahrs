@@ -1009,8 +1009,6 @@ class EKF:
         if 'var_mag' in kw:
             self.noises[2] = kw.get('var_mag')
         self.g_noise, self.a_noise, self.m_noise = self.noises
-        if self.mag is None:
-            return np.diag(np.repeat(self.a_noise, 3))
         return np.diag(np.repeat(self.noises[1:], 3))
 
     def _set_reference_frames(self, mref: float, frame: str = 'NED') -> None:
@@ -1162,6 +1160,20 @@ class EKF:
     def h(self, q: np.ndarray) -> np.ndarray:
         """Measurement Model
 
+        If only the gravitational acceleration is used to correct the
+        estimation, a vector with 3 elements is used:
+
+        .. math::
+            \\mathbf{h}(\\hat{\\mathbf{q}}_t) =
+            2 \\begin{bmatrix}
+            g_x (\\frac{1}{2} - q_y^2 - q_z^2) + g_y (q_wq_z + q_xq_y) + g_z (q_xq_z - q_wq_y) \\\\
+            g_x (q_xq_y - q_wq_z) + g_y (\\frac{1}{2} - q_x^2 - q_z^2) + g_z (q_wq_x + q_yq_z) \\\\
+            g_x (q_wq_y + q_xq_z) + g_y (q_yq_z - q_wq_x) + g_z (\\frac{1}{2} - q_x^2 - q_y^2)
+            \\end{bmatrix}
+
+        If the gravitational acceleration and the geomagnetic field are used,
+        then a vector with 6 elements is used:
+
         .. math::
             \\mathbf{h}(\\hat{\\mathbf{q}}_t) =
             2 \\begin{bmatrix}
@@ -1184,17 +1196,30 @@ class EKF:
             Expected Measurements.
         """
         C = q2R(q).T
-        if len(self.z)<4:
+        if len(self.z) < 4:
             return C @ self.a_ref
         return np.r_[C @ self.a_ref, C @ self.m_ref]
 
     def dhdq(self, q: np.ndarray, mode: str = 'normal') -> np.ndarray:
         """Linearization of observations with Jacobian.
 
+        If only the gravitational acceleration is used to correct the
+        estimation, a :math:`3\\times 4` matrix:
+
         .. math::
             \\mathbf{H}(\\hat{\\mathbf{q}}_t) =
-            2 
-            \\begin{bmatrix}
+            2 \\begin{bmatrix}
+            g_yq_z - g_zq_y & g_yq_y + g_zq_z & - 2g_xq_y + g_yq_x - g_zq_w & - 2g_xq_z + g_yq_w + g_zq_x \\\\
+            -g_xq_z + g_zq_x & g_xq_y - 2g_yq_x + g_zq_w & g_xq_x + g_zq_z & -g_xq_w - 2g_yq_z + g_zq_y \\\\
+            g_xq_y - g_yq_x & g_xq_z - g_yq_w - 2g_zq_x & g_xq_w + g_yq_z - 2g_zq_y & g_xq_x + g_yq_y
+            \\end{bmatrix}
+
+        If the gravitational acceleration and the geomagnetic field are used,
+        then a :math:`6\\times 4` matrix is used:
+
+        .. math::
+            \\mathbf{H}(\\hat{\\mathbf{q}}_t) =
+            2 \\begin{bmatrix}
             g_yq_z - g_zq_y & g_yq_y + g_zq_z & - 2g_xq_y + g_yq_x - g_zq_w & - 2g_xq_z + g_yq_w + g_zq_x \\\\
             -g_xq_z + g_zq_x & g_xq_y - 2g_yq_x + g_zq_w & g_xq_x + g_zq_z & -g_xq_w - 2g_yq_z + g_zq_y \\\\
             g_xq_y - g_yq_x & g_xq_z - g_yq_w - 2g_zq_x & g_xq_w + g_yq_z - 2g_zq_y & g_xq_x + g_yq_y \\\\
@@ -1285,8 +1310,9 @@ class EKF:
         self.z = np.copy(a)
         if mag is not None:
             m_norm = np.linalg.norm(mag)
-            if m_norm>0:
+            if m_norm > 0:
                 self.z = np.r_[a, mag/m_norm]
+        self.R = np.diag(np.repeat(self.noises[1:] if mag is not None else self.noises[1], 3))
         # ----- Prediction -----
         q_t = self.f(q, g)                  # Predicted State
         F   = self.dfdq(g)                  # Linearized Fundamental Matrix
