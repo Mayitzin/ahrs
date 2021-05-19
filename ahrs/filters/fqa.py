@@ -342,7 +342,6 @@ class FQA:
         if not m_norm>0:
             return q_er
         q_a = np.array([1., 0., 0., 0.])
-        m_norm = np.linalg.norm(mag)
         if m_norm>0:
             m = mag/m_norm
             bm = np.array([0.0, *m])

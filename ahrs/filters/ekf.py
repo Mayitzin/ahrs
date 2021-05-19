@@ -1013,7 +1013,7 @@ class EKF:
 
     def _set_reference_frames(self, mref: float, frame: str = 'NED') -> None:
         if frame.upper() not in ['NED', 'ENU']:
-            raise ValueError(f"Invalid frame '{frame}'. Try 'NED' or ENU'")
+            raise ValueError(f"Invalid frame '{frame}'. Try 'NED' or 'ENU'")
         # Magnetic Reference Vector
         if mref is None:
             # Local magnetic reference of Munich, Germany
@@ -1310,8 +1310,9 @@ class EKF:
         self.z = np.copy(a)
         if mag is not None:
             m_norm = np.linalg.norm(mag)
-            if m_norm > 0:
-                self.z = np.r_[a, mag/m_norm]
+            if m_norm == 0:
+                raise ValueError(f"Invalid geomagnetic field. Its magnitude must be greater than zero.")
+            self.z = np.r_[a, mag/m_norm]
         self.R = np.diag(np.repeat(self.noises[1:] if mag is not None else self.noises[1], 3))
         # ----- Prediction -----
         q_t = self.f(q, g)                  # Predicted State
