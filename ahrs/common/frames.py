@@ -192,7 +192,7 @@ def ned2enu(x):
         raise ValueError(f"Given coordinates must have form (3, ) or (N, 3). Got {x.shape}")
     A = np.array([[0.0, 1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, -1.0]])
     if x.ndim > 1:
-        return A @ x.T
+        return (A @ x.T).T
     return A @ x
 
 def enu2ned(x):
