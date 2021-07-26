@@ -272,8 +272,7 @@ class TRIAD:
         field :math:`\\mathbf{h} = \\begin{bmatrix}h_x & h_y & h_z \\end{bmatrix}`
         in Munich, Germany.
     representation : str, default: ``'rotmat'``
-        Attitude representation. Options are ``rotmat'``, ``'quaternion'``,
-        ``'rpy'``, or ``'axisangle'``.
+        Attitude representation. Options are ``rotmat'`` or ``'quaternion'``.
     frame : str, default: 'NED'
         Local tangent plane coordinate frame. Valid options are right-handed
         ``'NED'`` for North-East-Down and ``'ENU'`` for East-North-Up.
@@ -288,8 +287,6 @@ class TRIAD:
         First tri-axial reference vector.
     v2 : numpy.ndarray, optional.
         Second tri-axial reference vector.
-    as_quaternion : bool, default: False
-        Whether to return attitude as a quaternion.
     A : numpy.ndarray
         Estimated attitude.
 
@@ -332,12 +329,12 @@ class TRIAD:
         self.v1 = self._set_first_triad_reference(v1, frame)
         self.v2 = self._set_second_triad_reference(v2, frame)
         # Compute values if samples given
-        if self.w1 is not None and self.w2 is not None:
+        if all([self.w1, self.w2]):
             self.A = self._compute_all(self.representation)
 
     def _set_first_triad_reference(self, value, frame):
         if value is None:
-            ref = np.array([0.0, 0.0, 1.0]) if frame.upper=='NED' else np.array([0.0, 0.0, -1.0])
+            ref = np.array([0.0, 0.0, 1.0]) if frame.upper == 'NED' else np.array([0.0, 0.0, -1.0])
         else:
             ref = np.copy(value)
             ref /= np.linalg.norm(ref)
@@ -348,7 +345,7 @@ class TRIAD:
         if isinstance(value, float):
             if abs(value)>90:
                 raise ValueError(f"Dip Angle must be within range [-90, 90]. Got {value}")
-            ref = np.array([cosd(value), 0.0, sind(value)]) if frame.upper()=='NED' else np.array([0.0, cosd(value), -sind(value)])
+            ref = np.array([cosd(value), 0.0, sind(value)]) if frame.upper() == 'NED' else np.array([0.0, cosd(value), -sind(value)])
         if isinstance(value, (np.ndarray, list)):
             ref = np.copy(value)
         return ref/np.linalg.norm(ref)
@@ -362,7 +359,7 @@ class TRIAD:
         Parameters
         ----------
         representation : str
-            Attitude representation. Options are ``rotmat'`` or ``'quaternion'``
+            Attitude representation. Options are ``'rotmat'`` or ``'quaternion'``.
 
         Returns
         -------
@@ -374,10 +371,10 @@ class TRIAD:
         """
         if self.w1.shape!=self.w2.shape:
             raise ValueError("w1 and w2 are not the same size")
-        if self.w1.ndim==1:
+        if self.w1.ndim == 1:
             return self.estimate(self.w1, self.w2, representation)
         num_samples = len(self.w1)
-        A = np.zeros((num_samples, 4)) if representation.lower()=='quaternion' else np.zeros((num_samples, 3, 3))
+        A = np.zeros((num_samples, 4)) if representation.lower() == 'quaternion' else np.zeros((num_samples, 3, 3))
         for t in range(num_samples):
             A[t] = self.estimate(self.w1[t], self.w2[t], representation)
         return A
@@ -394,15 +391,15 @@ class TRIAD:
             Sample of first tri-axial sensor.
         w2 : numpy.ndarray
             Sample of second tri-axial sensor.
-        as_quaternion : bool, default: False
-            Return estimated attitude as a quaternion representation.
+        representation : str, default: ``'rotmat'``
+            Attitude representation. Options are ``rotmat'`` or ``'quaternion'``.
 
         Returns
         -------
         A : numpy.ndarray
             Estimated attitude as 3-by-3 Direction Cosine Matrix. If
-            ``as_quaternion`` is set to ``True``, it is returned as a
-            quaternion representation.
+            ``representation`` is set to ``'quaternion'``, it is returned as a
+            quaternion.
 
         Examples
         --------
@@ -415,7 +412,7 @@ class TRIAD:
         array([[-7.84261e-01  ,  4.5905718e-01,  4.1737417e-01],
                [ 2.2883429e-01, -4.1126404e-01,  8.8232463e-01],
                [ 5.7668844e-01,  7.8748232e-01,  2.1749032e-01]])
-        >>> triad.estimate(w1=a, w2=m, as_quaternion=True)          # Estimated attitude as quaternion
+        >>> triad.estimate(w1=a, w2=m, representation='quaternion')          # Estimated attitude as quaternion
         array([ 0.07410345, -0.3199659, -0.53747247, -0.77669417])
 
         """
@@ -436,6 +433,6 @@ class TRIAD:
         Mr = np.c_[self.v1, r2, r3]                         # (eq. 12-42)
         A = Mb@Mr.T                                         # (eq. 12-45)
         # Return according to desired representation
-        if representation.lower()=='quaternion':
+        if representation.lower() == 'quaternion':
             return chiaverini(A)
         return A
