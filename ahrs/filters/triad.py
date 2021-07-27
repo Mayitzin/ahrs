@@ -160,11 +160,11 @@ the normalized measurement vectors:
            [-2.53039690e-02,  4.00697428e-02,  9.98876431e-01]])
 
 Optionally, it can return the estimation as a quaternion representation setting
-``as_quaternion`` to ``True``.
+``representation`` to ``'quaternion'``.
 
 .. code-block:: python
 
-    >>> triad.estimate(w1=a, w2=m, as_quaternion=True)
+    >>> triad.estimate(w1=a, w2=m, representation='quaternion')
     array([ 0.27531002, -0.00664729,  0.02275078,  0.96106327])
 
 Giving the observation vector to the constructor, the attitude estimation
@@ -177,7 +177,7 @@ happens automatically, and is stored in the attribute ``A``.
     array([[-8.48320410e-01, -5.29483162e-01, -2.49900033e-04],
            [ 5.28878238e-01, -8.47373587e-01,  4.73900062e-02],
            [-2.53039690e-02,  4.00697428e-02,  9.98876431e-01]])
-    >>> triad = ahrs.filters.TRIAD(w1=np.array([-2.499e-04, 4.739e-02, 0.9988763]), w2=np.array([-0.36663061, 0.17598138, -0.91357132]), v2=h, as_quaternion=True)
+    >>> triad = ahrs.filters.TRIAD(w1=np.array([-2.499e-04, 4.739e-02, 0.9988763]), w2=np.array([-0.36663061, 0.17598138, -0.91357132]), v2=h, representation='quaternion')
     >>> triad.A
     array([ 0.27531002, -0.00664729,  0.02275078,  0.96106327])
 
@@ -204,7 +204,7 @@ If the input data contains many observations, all will be estimated at once.
            [[-8.32771974e-01, -5.53528225e-01, -9.86626329e-03],
             [ 5.51396878e-01, -8.30896061e-01,  7.46539896e-02],
             [-4.95209297e-02,  5.67295235e-02,  9.97160688e-01]]])
-    >>> triad = ahrs.filters.TRIAD(w1=a, w2=m, as_quaternion=True)
+    >>> triad = ahrs.filters.TRIAD(w1=a, w2=m, representation='quaternion')
     >>> triad.A
     array([[ 0.27531229, -0.00664771,  0.02275202,  0.96106259],
            [ 0.2793823 , -0.01030667,  0.0268131 ,  0.95975016],
@@ -416,6 +416,8 @@ class TRIAD:
         array([ 0.07410345, -0.3199659, -0.53747247, -0.77669417])
 
         """
+        if representation.lower() not in ['rotmat', 'quaternion']:
+            raise ValueError("Wrong representation type. Try 'rotmat', or 'quaternion'")
         w1, w2 = np.copy(w1), np.copy(w2)
         # Normalized Vectors
         w1 /= np.linalg.norm(w1)                            # (eq. 12-39a)
