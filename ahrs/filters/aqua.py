@@ -5,17 +5,17 @@ Algebraic Quaternion Algorithm
 
 Roberto Valenti's Algebraic Quaterion Algorithm (AQUA) [Valenti2015]_ estimates
 a quaternion with the algebraic solution of a system from inertial/magnetic
-observations.
+observations, solving [Wahba's Problem](https://en.wikipedia.org/wiki/Wahba%27s_problem).
 
 AQUA computes the "tilt" quaternion and the "heading" quaternion separately in
 two sub-parts. This avoids the impact of the magnetic disturbances on the roll
 and pitch components of the orientation.
 
-It uses a complementary filter that fuses together gyroscope data with
-accelerometer and magnetic field readings. The correction part of the filter is
-based on the independently estimated quaternions and works for both IMU
-(Inertial Measurement Unit) and MARG (Magnetic, Angular Rate, and Gravity)
-sensors [Valenti2016]_.
+AQUA can be used with a complementary filter to fuse the gyroscope data
+together with accelerometer and magnetic field readings. The correction part of
+the filter is based on the independently estimated quaternions and works for
+both IMU (Inertial Measurement Unit) and MARG (Magnetic, Angular Rate, and
+Gravity) sensors [Valenti2016]_.
 
 Quaternion as Orientation
 -------------------------
@@ -331,7 +331,7 @@ intermediate frame into the global frame.
 Quaternion-Based Complementary Filter
 -------------------------------------
 
-AQUA's complementary filter fuses attitude estimation in quaternion form from
+A complementary filter fuses attitude estimation in quaternion form from
 gyroscope data with accelerometer and magnetometer data in the form of a delta
 quaternion.
 
@@ -344,7 +344,7 @@ current frame with the magnetic field.
 In the **Prediction** step the measured angular velocity is used to compute a
 first estimation of the orientation in quaternion form.
 
-Most literature estimates the quaternion derivative from an angular rate
+Most literature estimating the quaternion derivative from an angular rate
 measurement is usually calculated for the one representing the orientation of
 the local frame with respect to the global frame.
 
@@ -484,8 +484,8 @@ However, the gyroscope readings are not affected by linear acceleration, thus
 they can still be used to compute a relatively accurate orientation estimation.
 
 A constant gain fusion algorithm cannot overcome the aforementioned problem if
-the optimal gain has been evaluated for static conditions. AQUA offers an
-adaptive gain to tackle this problem.
+the optimal gain has been evaluated for static conditions. An adaptive gain can
+bw used to tackle this problem.
 
 First a magnitude error :math:`e_m` is defined:
 
@@ -713,13 +713,13 @@ def adaptive_gain(gain: float, a_local: np.ndarray, t1: float = 0.1, t2: float =
     0.005466716107480152
 
     """
-    if t1>t2:
+    if t1 > t2:
         raise ValueError("The second threshold should be greater than the first threshold.")
     em = abs(np.linalg.norm(a_local)-g)/g   # Magnitude error (eq. 60)
     f = 0.0
-    if t1<em<t2:
+    if t1 < em < t2:
         f = (t2-em)/t1
-    if em<=t1:
+    if em <= t1:
         f = 1.0
     return f*gain   # Filtering gain (eq. 61)
 
@@ -781,6 +781,7 @@ class AQUA:
         self.mag = mag
         self.Q = None
         self.frequency = kw.get('frequency', 100.0)
+        self.frame = kw.get('frame', 'NED')
         self.Dt = kw.get('Dt', 1.0/self.frequency)
         self.alpha = kw.get('alpha', 0.01)
         self.beta = kw.get('beta', 0.01)
@@ -798,19 +799,65 @@ class AQUA:
         Q = np.zeros((num_samples, 4))
         # Compute with IMU architecture
         if self.mag is None:
-            Q[0] = self.init_q(self.acc[0]) if self.q0 is None else self.q0.copy()
+            Q[0] = self.estimate(self.acc[0]) if self.q0 is None else self.q0.copy()
             for t in range(1, num_samples):
                 Q[t] = self.updateIMU(Q[t-1], self.gyr[t], self.acc[t])
             return Q
         # Compute with MARG architecture
         if self.mag.shape != self.gyr.shape:
             raise ValueError("mag and gyr are not the same size")
-        Q[0] = self.init_q(self.acc[0], self.mag[0]) if self.q0 is None else self.q0.copy()
+        Q[0] = self.estimate(self.acc[0], self.mag[0]) if self.q0 is None else np.copy(self.q0)
         for t in range(1, num_samples):
             Q[t] = self.updateMARG(Q[t-1], self.gyr[t], self.acc[t], self.mag[t])
         return Q
 
-    def init_q(self, acc: np.ndarray, mag: np.ndarray = None) -> np.ndarray:
+    def Omega(self, x: np.ndarray) -> np.ndarray:
+        """Omega operator.
+
+        Given a vector :math:`\\mathbf{x}\\in\\mathbb{R}^3`, return a
+        :math:`4\\times 4` matrix of the form:
+
+        .. math::
+            \\boldsymbol\\Omega(\\mathbf{x}) =
+            \\begin{bmatrix}
+            0 & -\\mathbf{x}^T \\\\ \\mathbf{x} & \\lfloor\\mathbf{x}\\rfloor_\\times
+            \\end{bmatrix} =
+            \\begin{bmatrix}
+            0 & x_1 & x_2 & x_3 \\\\
+            -x_1 & 0 & x_3 & -x_2 \\\\
+            -x_2 & -x_3 & 0 & x_1 \\\\
+            -x_3 & x_2 & -x_1 & 0
+            \\end{bmatrix}
+
+        This operator is a simplification to create a 4-by-4 matrix used for
+        the product between the angular rate and a quaternion, such that:
+
+        .. math::
+
+            ^L_G\\dot{\\mathbf{q}}_{\\omega, t_k} = \\frac{1}{2}\\boldsymbol\\Omega(\,^L\\mathbf{\\omega}_{q, t_k})\;^L_G\\mathbf{q}_{t_{k-1}}
+
+        .. note::
+            The original definition in the article (eq. 39) has an errata
+            missing the multiplication with :math:`\\frac{1}{2}`.
+
+        Parameters
+        ----------
+        x : numpy.ndarray
+            Three-dimensional vector representing the angular rate around the
+            three axes of the local frame.
+
+        Returns
+        -------
+        Omega : numpy.ndarray
+            Omega matrix.
+        """
+        return np.array([
+            [0.0,    x[0],  x[1],  x[2]],
+            [-x[0],   0.0,  x[2], -x[1]],
+            [-x[1], -x[2],   0.0,  x[0]],
+            [-x[2],  x[1], -x[0],   0.0]])
+
+    def estimate(self, acc: np.ndarray, mag: np.ndarray = None) -> np.ndarray:
         """
         Quaternion from Earth-Field Observations
 
@@ -838,17 +885,19 @@ class AQUA:
         """
         ax, ay, az = acc/np.linalg.norm(acc)
         # Quaternion from Accelerometer Readings (eq. 25)
-        if az>=0:
+        if az >= 0:
             q_acc = np.array([np.sqrt((az+1)/2), -ay/np.sqrt(2*(1-ax)), ax/np.sqrt(2*(az+1)), 0.0])
         else:
             q_acc = np.array([-ay/np.sqrt(2*(1-az)), np.sqrt((1-az)/2.0), 0.0, ax/np.sqrt(2*(1-az))])
         q_acc /= np.linalg.norm(q_acc)
-        # m_norm = np.linalg.norm(mag)
-        if mag is not None and not (np.linalg.norm(mag)>0):
-            lx, ly, lz = q2R(q_acc).T@(mag/np.linalg.norm(mag)) # (eq. 26)
-            Gamma = lx**2 + ly**2                               # (eq. 28)
+        if mag is not None:
+            m_norm = np.linalg.norm(mag)
+            if m_norm == 0:
+                raise ValueError(f"Invalid geomagnetic field. Its magnitude must be greater than zero.")
+            lx, ly, lz = q2R(q_acc).T @ (mag/np.linalg.norm(mag))   # (eq. 26)
+            Gamma = lx**2 + ly**2                                   # (eq. 28)
             # Quaternion from Magnetometer Readings (eq. 35)
-            if lx>=0:
+            if lx >= 0:
                 q_mag = np.array([np.sqrt(Gamma+lx*np.sqrt(Gamma))/np.sqrt(2*Gamma), 0.0, 0.0, ly/np.sqrt(2)*np.sqrt(Gamma+lx*np.sqrt(Gamma))])
             else:
                 q_mag = np.array([ly/np.sqrt(2)*np.sqrt(Gamma-lx*np.sqrt(Gamma)), 0.0, 0.0, np.sqrt(Gamma-lx*np.sqrt(Gamma))/np.sqrt(2*Gamma)])
@@ -886,15 +935,15 @@ class AQUA:
             Estimated quaternion.
 
         """
-        if gyr is None or not np.linalg.norm(gyr)>0:
+        if gyr is None or not np.linalg.norm(gyr) > 0:
             return q
         # PREDICTION
-        qDot = -0.5*q_prod([0, *gyr], q)                    # Quaternion derivative (eq. 38)
+        qDot = 0.5*self.Omega(gyr) @ q                      # Quaternion derivative (eq. 39)
         qInt = q + qDot*self.Dt                             # Quaternion integration (eq. 42)
         qInt /= np.linalg.norm(qInt)
         # CORRECTION
         a_norm = np.linalg.norm(acc)
-        if not a_norm>0:
+        if not a_norm > 0:
             return qInt
         a = acc/a_norm
         gx, gy, gz = q2R(qInt).T@a                          # Predicted gravity (eq. 44)
@@ -941,17 +990,17 @@ class AQUA:
         if gyr is None or not np.linalg.norm(gyr)>0:
             return q
         # PREDICTION
-        qDot = -0.5*q_prod([0, *gyr], q)                    # Quaternion derivative (eq. 38)
+        qDot = 0.5*self.Omega(gyr) @ q                      # Quaternion derivative (eq. 39)
         qInt = q + qDot*self.Dt                             # Quaternion integration (eq. 42)
         qInt /= np.linalg.norm(qInt)
         # CORRECTION
         a_norm = np.linalg.norm(acc)
-        if not a_norm>0:
+        if not a_norm > 0:
             return qInt
         a = acc/a_norm
-        gx, gy, gz = q2R(qInt).T@a                          # Predicted gravity (eq. 44)
+        gx, gy, gz = q2R(qInt).T @ a                        # Predicted gravity (eq. 44)
         # Accelerometer-Based Quaternion
-        q_acc = np.array([np.sqrt((gz+1)/2.0), -gy/np.sqrt(2.0*(gz+1)), gx/np.sqrt(2.0*(gz+1)), 0.0])     # Delta Quaternion (eq. 47)
+        q_acc = np.array([np.sqrt((gz+1.0)/2.0), -gy/np.sqrt(2.0*(gz+1.0)), gx/np.sqrt(2.0*(gz+1.0)), 0.0])     # Delta Quaternion (eq. 47)
         if self.adaptive:
             self.alpha = adaptive_gain(self.alpha, acc)
         q_acc = slerp_I(q_acc, self.alpha, self.threshold)
@@ -959,12 +1008,15 @@ class AQUA:
         q_prime /= np.linalg.norm(q_prime)
         # Magnetometer-Based Quaternion
         m_norm = np.linalg.norm(mag)
-        if not m_norm>0:
+        if not m_norm > 0:
             return q_prime
-        lx, ly, lz = q2R(q_prime).T@(mag/m_norm)            # World frame magnetic vector (eq. 54)
+        lx, ly, lz = q2R(q_prime).T @ (mag/m_norm)          # World frame magnetic vector (eq. 54)
         Gamma = lx**2 + ly**2                               # (eq. 28)
         q_mag = np.array([np.sqrt(Gamma+lx*np.sqrt(Gamma))/np.sqrt(2*Gamma), 0.0, 0.0, ly/np.sqrt(2*(Gamma+lx*np.sqrt(Gamma)))])    # (eq. 58)
         q_mag = slerp_I(q_mag, self.beta, self.threshold)
         # Generalized Quaternion
         q = q_prod(q_prime, q_mag)                          # (eq. 59)
         return q/np.linalg.norm(q)
+
+    def init_q(self, acc: np.ndarray, mag: np.ndarray = None) -> np.ndarray:
+        return self.estimate(acc, mag)
