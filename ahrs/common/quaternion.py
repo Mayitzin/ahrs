@@ -1932,7 +1932,7 @@ class QuaternionArray(np.ndarray):
         q = np.array(q, dtype=float)
         if q.ndim!=2 or q.shape[-1] not in [3, 4]:
             raise ValueError("Expected array to have shape (N, 4) or (N, 3), got {}.".format(q.shape))
-        if q.shape[-1]==3:
+        if q.shape[-1] == 3:
             q = np.c_[np.zeros(q.shape[0]), q]
         if versors:
             q /= np.linalg.norm(q, axis=1)[:, None]
@@ -2540,14 +2540,14 @@ class QuaternionArray(np.ndarray):
             raise AttributeError("All quaternions must be versors to be averaged.")
         q = self.array.copy()
         if span is not None:
-            if hasattr(span, '__iter__') and len(span)==2:
+            if hasattr(span, '__iter__') and len(span) == 2:
                 q = q[span[0]:span[1]]
             else:
                 raise ValueError("span must be a pair of integers indicating the indices of the data.")
         if weights is not None:
             if weights.ndim>1:
                 raise ValueError("The weights must be in a one-dimensional array.")
-            if weights.size!=q.shape[0]:
+            if weights.size != q.shape[0]:
                 raise ValueError("The number of weights do not match the number of quaternions.")
             q *= weights[:, None]
         eigvals, eigvecs = np.linalg.eig(q.T@q)
@@ -2599,3 +2599,41 @@ class QuaternionArray(np.ndarray):
         jump_pairs = jumps.reshape((len(jumps)//2, 2))
         for j in jump_pairs:
             self.array[j[0]:j[1]] *= -1.0
+
+    def rotate_by(self, q: np.ndarray) -> np.ndarray:
+        """Rotate all Quaternions in the array around quaternion :math:`\\mathbf{q}`.
+
+        Parameters
+        ----------
+        q : numpy.ndarray
+            4 element array to rotate around.
+
+        Returns
+        -------
+        Q' : numpy.ndarray
+            4-by-N array with all Quaternions rotated around q.
+
+        Examples
+        --------
+        >>> q = Quaternion([-0.00085769, -0.0404217, 0.29184193, -0.47288709])
+        >>> v = [0.25557699 0.74814091 0.71491841]
+        >>> q.rotate(v)
+        array([-0.22481078 -0.99218916 -0.31806219])
+        >>> A = [[0.18029565, 0.14234782], [0.47473686, 0.38233722], [0.90000689, 0.06117298]]
+        >>> q.rotate(A)
+        array([[-0.10633285 -0.16347163]
+               [-1.02790041 -0.23738541]
+               [-0.00284403 -0.29514739]])
+
+        """
+        q = np.copy(q)
+        if q.size != 4:
+            raise ValueError("Given quaternion to rotate about must have 4 elements.")
+        q /= np.linalg.norm(q)
+        qQ = np.zeros_like(self.array)
+        qQ[:, 0] = q[0]*self.array[:, 0] - q[1]*self.array[:, 1] - q[2]*self.array[:, 2] - q[3]*self.array[:, 3]
+        qQ[:, 1] = q[0]*self.array[:, 1] + q[1]*self.array[:, 0] + q[2]*self.array[:, 3] - q[3]*self.array[:, 2]
+        qQ[:, 2] = q[0]*self.array[:, 2] - q[1]*self.array[:, 3] + q[2]*self.array[:, 0] + q[3]*self.array[:, 1]
+        qQ[:, 3] = q[0]*self.array[:, 3] + q[1]*self.array[:, 2] - q[2]*self.array[:, 1] + q[3]*self.array[:, 0]
+        qQ /= np.linalg.norm(qQ, axis=1)[:, None]
+        return qQ

@@ -7,10 +7,10 @@ AHRS: Versioning
 
 MAJOR = 0
 MINOR = 3
-PATCH = 0
+PATCH = 1
 RELEASE = "0"
 
-def get_version(short=False):
+def get_version(short: bool = False) -> str:
     if short or RELEASE=="0":
-        return "{}.{}.{}".format(MAJOR, MINOR, PATCH)
-    return "{}.{}.{}-{}".format(MAJOR, MINOR, PATCH, RELEASE)
+        return f"{MAJOR}.{MINOR}.{PATCH}"
+    return f"{MAJOR}.{MINOR}.{PATCH}-{RELEASE}"
