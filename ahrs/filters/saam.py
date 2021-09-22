@@ -171,7 +171,8 @@ class SAAM:
             self.Q = self._compute_all()
 
     def _compute_all(self) -> np.ndarray:
-        """Estimate the quaternions given all data.
+        """
+        Estimate the quaternions given all data.
 
         Attributes ``acc`` and ``mag`` must contain data. It is assumed that
         these attributes have the same shape (M, 3), where M is the number of
@@ -189,8 +190,8 @@ class SAAM:
         """
         if self.acc.shape != self.mag.shape:
             raise ValueError("acc and mag are not the same size")
-        if self.acc.shape[-1]!=3:
-            raise ValueError("Sensor data must be of shape (M, 3), but it got {}".format(self.acc.shape))
+        if self.acc.shape[-1] != 3:
+            raise ValueError(f"Sensor data must be of shape (M, 3), but it got {self.acc.shape}")
         # Normalize measurements (eq. 1)
         ax, ay, az = np.transpose(self.acc/np.linalg.norm(self.acc, axis=1)[:, None])
         mx, my, mz = np.transpose(self.mag/np.linalg.norm(self.mag, axis=1)[:, None])
@@ -207,7 +208,8 @@ class SAAM:
         return Q/np.linalg.norm(Q, axis=1)[:, None]
 
     def estimate(self, acc: np.ndarray = None, mag: np.ndarray = None) -> np.ndarray:
-        """Attitude Estimation
+        """
+        Attitude Estimation
 
         Parameters
         ----------
