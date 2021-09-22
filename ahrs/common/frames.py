@@ -32,10 +32,14 @@ References
 """
 
 import numpy as np
-from .constants import *
+from .constants import EARTH_FIRST_ECCENTRICITY
+from .constants import EARTH_SECOND_ECCENTRICITY_2
+from .constants import EARTH_EQUATOR_RADIUS
+from .constants import EARTH_POLAR_RADIUS
 
 def geo2rect(lon: float, lat: float, h: float, r: float, ecc: float = EARTH_SECOND_ECCENTRICITY_2) -> np.ndarray:
-    """Geodetic to Rectangular Coordinates conversion in the e-frame.
+    """
+    Geodetic to Rectangular Coordinates conversion in the e-frame.
 
     Parameters
     ----------
@@ -61,27 +65,35 @@ def geo2rect(lon: float, lat: float, h: float, r: float, ecc: float = EARTH_SECO
     X[2] = (r*(1.0-ecc)+h)*np.sin(lat)
     return X
 
-def rec2geo(X: np.ndarray, ecc: float = EARTH_SECOND_ECCENTRICITY_2) -> np.ndarray:
-    """Rectangular to Geodetic Coordinates conversion in the e-frame.
+def rec2geo(X: np.ndarray, a: float = EARTH_EQUATOR_RADIUS, b: float = EARTH_POLAR_RADIUS, e: float = EARTH_FIRST_ECCENTRICITY, ecc: float = EARTH_SECOND_ECCENTRICITY_2) -> np.ndarray:
+    """
+    Rectangular to Geodetic Coordinates conversion in the e-frame.
 
     Parameters
     ----------
     X : numpy.ndarray
         Rectangular coordinates in the e-frame.
+    a : float, default: 6378137.0
+        Ellipsoid's equatorial radius, in meters. Defaults to Earth's.
+    b : float, default: 6356752.3142
+        Ellipsoid's polar radius, in meters. Defaults to Earth's.
+    e : float, default: 0.081819190842622
+        Ellipsoid's first eccentricity. Defaults to Earth's.
     ecc : float, default: 6.739496742276486e-3
         Ellipsoid's second eccentricity squared. Defaults to Earth's.
     """
     x, y, z = X
     p = np.linalg.norm([x, y])
     theta = np.arctan(z*a/(p*b))
-    lon = 2*np.arctan(y/(x+p))
-    lat = np.arctan((z+ecc*b*np.sin(theta)**3)/(p-e*a*np.cos(theta)**3))
+    lon = 2*np.arctan(y / (x + p))
+    lat = np.arctan((z + ecc*b*np.sin(theta)**3) / (p - e*a*np.cos(theta)**3))
     N = a**2/np.sqrt(a**2*np.cos(lat)**2 + b**2*np.sin(lat)**2)
     h = p/np.cos(lat) - N
     return np.array([lon, lat, h])
 
 def llf2ecef(lat, lon):
-    """Transform coordinates from LLF to ECEF
+    """
+    Transform coordinates from LLF to ECEF
 
     Parameters
     ----------
@@ -101,7 +113,8 @@ def llf2ecef(lat, lon):
         [0.0, np.cos(lon), np.sin(lon)]])
 
 def ecef2llf(lat, lon):
-    """Transform coordinates from ECEF to LLF
+    """
+    Transform coordinates from ECEF to LLF
 
     Parameters
     ----------
@@ -121,7 +134,8 @@ def ecef2llf(lat, lon):
         [np.cos(lon)*np.cos(lat), np.cos(lon)*np.sin(lat), np.sin(lon)]])
 
 def eci2ecef(w, t=0):
-    """Transformation between ECI and ECEF
+    """
+    Transformation between ECI and ECEF
 
     Parameters
     ----------
@@ -136,7 +150,8 @@ def eci2ecef(w, t=0):
         [         0.0,         0.0, 1.0]])
 
 def ecef2enu(lat, lon):
-    """Transform coordinates from ECEF to ENU
+    """
+    Transform coordinates from ECEF to ENU
 
     Parameters
     ----------
@@ -156,7 +171,8 @@ def ecef2enu(lat, lon):
         [np.sin(lat)*np.cos(lon), np.sin(lat)*np.sin(lon), np.cos(lat)]])
 
 def enu2ecef(lat, lon):
-    """Transform coordinates from ENU to ECEF
+    """
+    Transform coordinates from ENU to ECEF
 
     Parameters
     ----------
@@ -176,7 +192,8 @@ def enu2ecef(lat, lon):
         [0.0, np.sin(lat), np.cos(lat)]])
 
 def ned2enu(x):
-    """Transform coordinates from NED to ENU.
+    """
+    Transform coordinates from NED to ENU.
 
     Parameters
     ----------
@@ -196,7 +213,8 @@ def ned2enu(x):
     return A @ x
 
 def enu2ned(x):
-    """Transform coordinates from ENU to NED.
+    """
+    Transform coordinates from ENU to NED.
 
     Parameters
     ----------
