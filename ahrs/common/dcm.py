@@ -84,7 +84,7 @@ References
 
 from typing import Tuple
 import numpy as np
-from .mathfuncs import *
+from .mathfuncs import skew
 from .orientation import rotation
 from .orientation import rot_seq
 # Functions to convert DCM to quaternion representation
@@ -98,7 +98,7 @@ class DCM(np.ndarray):
     """
     Direction Cosine Matrix in SO(3)
 
-    Class to represent a Direction Cosine Matrix. It is built from a 3-by-3 
+    Class to represent a Direction Cosine Matrix. It is built from a 3-by-3
     array, but it can also be built from 3-dimensional vectors representing the
     roll-pitch-yaw angles, a quaternion, or an axis-angle pair representation.
 
@@ -310,7 +310,7 @@ class DCM(np.ndarray):
     def determinant(self) -> float:
         """
         Determinant of the DCM.
-        
+
         Given a direction cosine matrix :math:`\\mathbf{R}`, its determinant
         :math:`|\\mathbf{R}|` is found as:
 
@@ -714,9 +714,9 @@ class DCM(np.ndarray):
         if q is None:
             return np.identity(3)
         q = np.copy(q)
-        if q.shape[-1]!=4 or q.ndim>2:
+        if q.shape[-1] != 4 or q.ndim > 2:
             raise ValueError("Quaternion must be of the form (4,) or (N, 4)")
-        if q.ndim>1:
+        if q.ndim > 1:
             q /= np.linalg.norm(q, axis=1)[:, None]     # Normalize
             R = np.zeros((q.shape[0], 3, 3))
             R[:, 0, 0] = 1.0 - 2.0*(q[:, 2]**2 + q[:, 3]**2)
@@ -782,7 +782,7 @@ class DCM(np.ndarray):
                     [ 0.00000000e+00,  2.22044605e-16, -1.00000000e+00],
                     [ 0.00000000e+00, -1.00000000e+00,  2.22044605e-16]]])
         """
-        return self.from_quaternion(self, q)
+        return self.from_quaternion(q)
 
     def to_quaternion(self, method: str = 'chiaverini', **kw) -> np.ndarray:
         """
