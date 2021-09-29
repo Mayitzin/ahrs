@@ -78,82 +78,145 @@ Abbreviations
 
 ======  =========
 AACGM   Altitude-Adjusted Corrected Geomagnetic Coordinates
+ACARE   Advisory Council for Aeronautics Research in Europe
+ACAS    Airborne Collision Avoidance System
+ACC     Adapttive Cruise Control
+Ack     Acknowledge
 ADC     Analog-to-Digital Converter
+ADCS    Active Directed Control System
+ADI     Attitude Director Indicator
+ADIRS   Air Data Inertial Reference System
+ADIRU   Air Data Inertial Reference Unit
 ADEV    Allan deviation
+AGNSSS  Assisted Global Navigation Satellite System
+AGPS    Assisted Global Positioning System
 AHRS    Attitude and Heading Reference System
 AoA     Angle of Arrival
 AoD     Angle of Departure
 AR      Angular Rate
+asl     above sea level
 atan    Arctangent
 atan2   Arctangent (four quadrants)
+AQUA    Algebraic Quaternion Algorithm
+AU      Astronomical Unit
 AUV     Autonomous Underwater Vehicle
 AVAR    Allan variance
+AVCS    Autonomous Vehicle Control System
+AVG     Autonomous Vehicle Guidance
+AVLS    Autonomous Vehicle Localization System
+AWGN    Additive White Gaussian Noise
+az      Azimuth
+B2B     Business to Business
 BIH     Bureau International de l'Heure
+BIIT    Built-in Integrity Test
+BLE     Bluetooth Low Energy
+BLUE    Best Linear Unbiased Estimate
 BPF     Band-Pass Filter
+CAS     Collision Avoidance System
 CD      Centered Dipole
+CDI     Course Deviation Indicator
 CGM     Corrected Geomagnetic Coordinates
+CIRAS   Coriolis Inertial Rate and Acceleration Sensor
 CIRS    Conventional Inertial Reference System
 CRS     Conventional Celestial Reference System
 CTP     Conventional Terrestrial Pole
 CTRS    Conventional Terrestrial Reference System
 DCM     Direction Cosine Matrix
+DGPS    Differential Global Positioning System
+DME     Distance Measuring Equipment
 DoD     Department of Defense
 DoF     Degrees of Freedom
 DR      Dead Reckoning
+ECDIS   Electronic Chart Display and Information Systems
 ECEF    Earth-Centered Earth-Fixed
 ECIF    Earth-Centered Inertial Frame
 EGM     Earth Gravitational Model
+EGNOS   European Geostationary Navigation Overlay Service
 EGNSS   Enhanced GNSS
 EKF     Extended Kalman Filter
 ENU     East-North-Up
 ESA     European Space Agency
 EU      European Union
+FAA     Federal Aviation Administration
+FMS     Flight Management System
+GAGAN   GPS and Geo Augmented Navigation
+GGF     Global Earth-fixed frame with one axis aligned with gravity
+GIS     Geographic Information System
 GNSS    Global Navigation Satellite System
 GPS     Global Positioning System
 GTRF    Galileo Terrestrial Reference Frame
 gyro    Gyroscope
 HP      High Performance
 HPF     High-Pass Filter
+IAG     International Association of Geodesy
+IATA    International Air Transport Association
 IAU     International Astronomical Union
 IC      Integrated Circuit
+ICAO    International Civil Aviation Organization
 IERS    International Earth Rotation and Reference Systems Service
+IFR     Instrument Flight Rules
 IGRF    International Geomagnetic Reference Field
+ILS     Instrument landing system
 IMU     Inertial Measurement Unit
 INS     Inertial Navigation System
 INU     Inertial Navigation Unit
-CIRAS   Coriolis Inertial Rate and Acceleration Sensor
 ITRF    International Terrestrial Reference Frame
+JPALS   Joint Precision Approach and Landing System
 KF      Kalman Filter
+LAAS    Local Area Augmentation System
 lat     Latitude
+LERP    Linear Interpolation
 LLF     Local-level Frame
+LNAV    Lateral Navigation
 lon     Longitude
+LORAN   Long-range radio navigation
 LPF     Low-Pass Filter
+LPV     Localizer Performance with Vertical Guidance
 MagCal  Magnetic Calibration
 MARG    Magnetism, Angular Rate, and Gravity
+MIMU    Magnetic and Inertial Measurement Unit
+MIS     Management information system
 MCU     Micro-Controller Unit
 MEMS    Micro-electromechanical Systems
+MLF     Marker-cluster Local Frame
+MLS     Microwave landing system
 MLT     Magnetic Local Time
-MOEMS   Micro-opto electromechanical Systems
+mocap   Motion Capture
+MOEMS   Micro-opto Electromechanical Systems
 MST     Microsystem Technology
 μC      Microcontroller
+NASA    National Aeronautics and Space Administration
+NDB     Non-directional beacon
 NED     North-East-Down
+NSE     Navigation System Error
+PBN     Performance-Based Navigation
+PDR     Pedestrian Dead Reckoning
 PF      Particle Filtering
 PIGA    Pendulous Integrating Gyroscopic Accelerometer
 QD      Quasi-Dipole
 QUEST   Quaternion Estimator
 RHR     Right-Hand Rule
+RNAV    Area Navigation
+SBAS    Satellite-Based Augmentation System
 SCI     Serial Communications Interface
 SI      Système International d'unités
 SLERP   Spherical Linear Interpolation
 SOA     Silicon Oscillating Accelerometer
 SVD     Singular Value Decomposition
+TACAN   Tactical Air Navigation System
+TAWS    Terrain Awareness and Warning System
 TFG     Turning Fork Gyroscope
+TLS     Transponder landing system
+TSE     Total System Error
 UART    Universal Asynchronous Receiver / Transmitter
 UAV     Unmanned Aerial Vehicle
 UKF     Unscented Kalman Filter
 UT      Universal Time
+VFR     Visual Flight Rules
+VNAV    Vertical Navigation
+VOR     Very High Frequency Omnidirectional Radio Range
+WAAS    Wide Area Augmentation System
 WGS     World Geodetic System
 WMM     World Magnetic Model
 ZUPT    Zero Velocity Update
 ======  =========
-

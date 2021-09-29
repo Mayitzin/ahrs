@@ -10,16 +10,16 @@ Two main representations are considered:
    :titlesonly:
    :maxdepth: 2
 
-   quaternion
+   quaternion/quaternion
    dcm
 
 From which, the following classes and functions are available
 
 .. toctree::
    :titlesonly:
-   :maxdepth: 2
+   :maxdepth: 1
 
    classDCM
-   classQuaternion
-   classQuaternionArray
+   quaternion/classQuaternion
+   quaternion/classQuaternionArray
    funSLERP
