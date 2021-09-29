@@ -28,7 +28,7 @@ conceived by Sebastian Madgwick.
 Orientation from angular rate
 -----------------------------
 
-The orientation of the Earth frame realtive to the sensor frame
+The orientation of the Earth frame relative to the sensor frame
 :math:`\,\\mathbf{q}_{\\omega, t}=\\begin{bmatrix}q_w & q_x & q_y & q_z\\end{bmatrix}`
 at time :math:`t` can be computed by numerically integrating the quaternion
 derivative :math:`\\dot{\\mathbf{q}}_t=\\frac{1}{2}\\mathbf{q}_{t-1}\\mathbf{\\omega}_t` as:
@@ -54,8 +54,8 @@ The sub-script :math:`\\omega` in :math:`\\mathbf{q}_\\omega` indicates that it
 is calculated from angular rates.
 
 A more detailed explanation of the orientation estimation solely based on
-angular rate can found in the documentation of the `AngularRate <./angular.html>`_
-estimator.
+angular rate can be found in the documentation of the `AngularRate
+<./angular.html>`_ estimator.
 
 Orientation as solution of Gradient Descent
 -------------------------------------------
@@ -68,7 +68,7 @@ orientation of the sensor, :math:`\\mathbf{q}`, is that which aligns any
 its corresponding *measured* direction in the sensor frame,
 :math:`^S\\mathbf{s}=\\begin{bmatrix}0 & s_x & s_y & s_z\\end{bmatrix}`.
 
-Thus, the **objective function** is:
+Thus, the `objective function <https://en.wikipedia.org/wiki/Loss_function>` is:
 
 .. math::
     \\begin{array}{rcl}
@@ -363,7 +363,7 @@ Footnotes
 
 References
 ----------
-.. [Madgwick] Sebastian Madgwick. An efficient orientation filter for inertial 
+.. [Madgwick] Sebastian Madgwick. An efficient orientation filter for inertial
     and inertial/magnetic sensor arrays. April 30, 2010.
     http://www.x-io.co.uk/open-source-imu-and-ahrs-algorithms/
 
@@ -373,7 +373,8 @@ import numpy as np
 from ..common.orientation import q_prod, q_conj, acc2q, am2q
 
 class Madgwick:
-    """Madgwick's Gradient Descent Orientation Filter
+    """
+    Madgwick's Gradient Descent Orientation Filter
 
     If ``acc`` and ``gyr`` are given as parameters, the orientations will be
     immediately computed with method ``updateIMU``.
@@ -426,8 +427,12 @@ class Madgwick:
     Examples
     --------
     Assuming we have 3-axis sensor data in N-by-3 arrays, we can simply give
-    these samples to their corresponding type. The Madgwick algorithm can work
-    solely with gyroscope and accelerometer samples.
+    these samples to their corresponding type.
+
+    **IMU Array**
+
+    The Madgwick algorithm can work solely with gyroscope and accelerometer
+    samples.
 
     The easiest way is to directly give the full array of samples to their
     matching parameters.
@@ -447,6 +452,8 @@ class Madgwick:
     >>> Q = np.tile([1., 0., 0., 0.], (num_samples, 1)) # Allocate for quaternions
     >>> for t in range(1, num_samples):
     ...     Q[t] = madgwick.updateIMU(Q[t-1], gyr=gyro_data[t], acc=acc_data[t])
+
+    **MARG Array**
 
     Further on, we can also use magnetometer data.
 
@@ -506,7 +513,8 @@ class Madgwick:
             self.Q = self._compute_all()
 
     def _compute_all(self) -> np.ndarray:
-        """Estimate the quaternions given all data.
+        """
+        Estimate the quaternions given all data.
 
         Attributes ``gyr`` and ``acc`` must contain data. If ``mag`` contains
         data, the updateMARG() method is used.

@@ -185,7 +185,7 @@ array([ 0.19537239,  0.17826049, -0.87872408, -0.39736232])
 
 One of the biggest improvements in this version is the addition of many new attitude estimation algorithms.
 
-All estimators are refactored to be consistent to the original articles describing them. They have in-code references to the original equations, so that you can follow the original articles along with the code.
+All estimators are refactored to be consistent with the corresponding articles describing them. They have in-code references to the equations, so that you can follow the original articles along with the code.
 
 Implemented attitude estimators are:
 
@@ -209,7 +209,7 @@ Implemented attitude estimators are:
 | Tilt          | NO        | YES           | Optional     |
 | TRIAD         | NO        | YES           | YES          |
 
-More Estimators are still a *Work In Progress*, or *planned* to be added in the future.
+More Estimators are still a _Work In Progress_, or _planned_ to be added in the future.
 
 | Algorithm | Gyroscope | Accelerometer | Magnetometer | Status  |
 |-----------|:---------:|:-------------:|:------------:|:-------:|

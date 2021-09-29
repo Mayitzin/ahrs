@@ -387,8 +387,6 @@ def slerp(q0: np.ndarray, q1: np.ndarray, t_array: np.ndarray, threshold: float 
 
 class Quaternion(np.ndarray):
     """
-    Quaternion.
-
     Representation of a quaternion. It can be built with 3- or 4-dimensional
     vectors. The quaternion object is always normalized to represent rotations
     in 3D space, also known as a **versor**.
