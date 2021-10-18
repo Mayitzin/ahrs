@@ -112,6 +112,7 @@ BIIT    Built-in Integrity Test
 BLE     Bluetooth Low Energy
 BLUE    Best Linear Unbiased Estimate
 BPF     Band-Pass Filter
+CAN     Controller Area Network
 CAS     Collision Avoidance System
 CD      Centered Dipole
 CDI     Course Deviation Indicator
@@ -121,23 +122,43 @@ CIRS    Conventional Inertial Reference System
 CRS     Conventional Celestial Reference System
 CTP     Conventional Terrestrial Pole
 CTRS    Conventional Terrestrial Reference System
+DAAS    Data as a Service
+DAC     Digital-to-Analog Converter
+dB      Decibel
 DCM     Direction Cosine Matrix
+Dec     Declination
+deg     Degrees
+Dev     Deviation
 DGPS    Differential Global Positioning System
 DME     Distance Measuring Equipment
 DoD     Department of Defense
 DoF     Degrees of Freedom
+dps     Degrees per Second
 DR      Dead Reckoning
+DRS     Dead Reckoning System
+DSP     Digital Signal Processing
 ECDIS   Electronic Chart Display and Information Systems
 ECEF    Earth-Centered Earth-Fixed
 ECIF    Earth-Centered Inertial Frame
+ECU     Electronic Control Unit
+EDA     European Defence Agency
+EEA     European Economic Area
+EFCS    Electronic Flight Control System
 EGM     Earth Gravitational Model
 EGNOS   European Geostationary Navigation Overlay Service
 EGNSS   Enhanced GNSS
+EGPS    Enhanced Global Positioning System
+EGR     Embedded Global Positioning System Receiver
+EIR     Earth Inertial Reference
 EKF     Extended Kalman Filter
+EMI     Electromagnetic Interference
 ENU     East-North-Up
+ENS     Electronic Navigation System
 ESA     European Space Agency
+ETRS    European Terrestrial Reference System
 EU      European Union
 FAA     Federal Aviation Administration
+FADEC   Full Authority Digital Engine Controller
 FMS     Flight Management System
 GAGAN   GPS and Geo Augmented Navigation
 GGF     Global Earth-fixed frame with one axis aligned with gravity
@@ -146,6 +167,8 @@ GNSS    Global Navigation Satellite System
 GPS     Global Positioning System
 GTRF    Galileo Terrestrial Reference Frame
 gyro    Gyroscope
+HIL     Hardware-in-the-Loop
+HMI     Human-Machine Interface
 HP      High Performance
 HPF     High-Pass Filter
 IAG     International Association of Geodesy
@@ -153,6 +176,8 @@ IATA    International Air Transport Association
 IAU     International Astronomical Union
 IC      Integrated Circuit
 ICAO    International Civil Aviation Organization
+ICRF    International Celestial Reference Frame
+ICRS    International Celestial Reference System
 IERS    International Earth Rotation and Reference Systems Service
 IFR     Instrument Flight Rules
 IGRF    International Geomagnetic Reference Field
@@ -161,6 +186,8 @@ IMU     Inertial Measurement Unit
 INS     Inertial Navigation System
 INU     Inertial Navigation Unit
 ITRF    International Terrestrial Reference Frame
+ITRS    International Terrestrial Reference System
+ITS     Intelligent Transportation Systems
 JPALS   Joint Precision Approach and Landing System
 KF      Kalman Filter
 LAAS    Local Area Augmentation System
@@ -173,11 +200,14 @@ LORAN   Long-range radio navigation
 LPF     Low-Pass Filter
 LPV     Localizer Performance with Vertical Guidance
 MagCal  Magnetic Calibration
+MANET   Mobile ad hoc Network
 MARG    Magnetism, Angular Rate, and Gravity
-MIMU    Magnetic and Inertial Measurement Unit
-MIS     Management information system
 MCU     Micro-Controller Unit
 MEMS    Micro-electromechanical Systems
+MHIL    Micro Hardware-in-the-Loop
+MHW     Mean High Water
+MIMU    Magnetic and Inertial Measurement Unit
+MIS     Management information system
 MLF     Marker-cluster Local Frame
 MLS     Microwave landing system
 MLT     Magnetic Local Time
@@ -185,6 +215,7 @@ mocap   Motion Capture
 MOEMS   Micro-opto Electromechanical Systems
 MST     Microsystem Technology
 μC      Microcontroller
+NAD     North American Datum
 NASA    National Aeronautics and Space Administration
 NDB     Non-directional beacon
 NED     North-East-Down
@@ -193,11 +224,15 @@ PBN     Performance-Based Navigation
 PDR     Pedestrian Dead Reckoning
 PF      Particle Filtering
 PIGA    Pendulous Integrating Gyroscopic Accelerometer
+PLC     Programmable Logic Controller
 QD      Quasi-Dipole
 QUEST   Quaternion Estimator
 RHR     Right-Hand Rule
+RMS     Root Mean Square
 RNAV    Area Navigation
+RTU     Remote Terminal Unit
 SBAS    Satellite-Based Augmentation System
+SCADA   System Control and Data Acquisition
 SCI     Serial Communications Interface
 SI      Système International d'unités
 SLERP   Spherical Linear Interpolation
@@ -212,6 +247,8 @@ UART    Universal Asynchronous Receiver / Transmitter
 UAV     Unmanned Aerial Vehicle
 UKF     Unscented Kalman Filter
 UT      Universal Time
+V2V     Vehicle-to-Vehicle
+VANET   Vehicular ad hoc Network
 VFR     Visual Flight Rules
 VNAV    Vertical Navigation
 VOR     Very High Frequency Omnidirectional Radio Range
