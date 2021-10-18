@@ -60,6 +60,8 @@ def euclidean(x: np.ndarray, y: np.ndarray, **kwargs) -> float:
     array([0.88956871, 1.19727356, 1.5243858 , 0.68765523, 1.29007067])
 
     """
+    if x.shape != y.shape:
+        raise ValueError(f"Cannot compare x of shape {x.shape} and y of shape {y.shape}")
     return np.linalg.norm(x-y, **kwargs)
 
 def chordal(R1: np.ndarray, R2: np.ndarray) -> float:
@@ -90,6 +92,8 @@ def chordal(R1: np.ndarray, R2: np.ndarray) -> float:
         Chordal distance between matrices.
 
     """
+    if R1.shape != R2.shape:
+        raise ValueError(f"Cannot compare R1 of shape {R1.shape} and R2 of shape {R2.shape}")
     return np.linalg.norm(R1-R2, 'fro')
 
 def identity_deviation(R1: np.ndarray, R2: np.ndarray) -> float:
@@ -117,6 +121,8 @@ def identity_deviation(R1: np.ndarray, R2: np.ndarray) -> float:
         Deviation from identity matrix.
 
     """
+    if R1.shape != R2.shape:
+        raise ValueError(f"Cannot compare R1 of shape {R1.shape} and R2 of shape {R2.shape}")
     return np.linalg.norm(np.eye(3)-R1@R2.T, 'fro')
 
 def angular_distance(R1: np.ndarray, R2: np.ndarray) -> float:
@@ -143,8 +149,8 @@ def angular_distance(R1: np.ndarray, R2: np.ndarray) -> float:
         Angular distance between rotation matrices
 
     """
-    if R1.shape!=R2.shape:
-        raise ValueError("Cannot compare R1 of shape {} and R2 of shape {}".format(R1.shape, R2.shape))
+    if R1.shape != R2.shape:
+        raise ValueError(f"Cannot compare R1 of shape {R1.shape} and R2 of shape {R2.shape}")
     return np.linalg.norm(logR(R1@R2.T))
 
 def qdist(q1: np.ndarray, q2: np.ndarray) -> float:
@@ -171,9 +177,9 @@ def qdist(q1: np.ndarray, q2: np.ndarray) -> float:
     """
     q1 = np.copy(q1)
     q2 = np.copy(q2)
-    if q1.shape!=q2.shape:
-        raise ValueError("Cannot compare q1 of shape {} and q2 of shape {}".format(q1.shape, q2.shape))
-    if q1.ndim==1:
+    if q1.shape != q2.shape:
+        raise ValueError(f"Cannot compare q1 of shape {q1.shape} and q2 of shape {q2.shape}")
+    if q1.ndim == 1:
         q1 /= np.linalg.norm(q1)
         q2 /= np.linalg.norm(q2)
         if np.allclose(q1, q2) or np.allclose(-q1, q2):
@@ -206,9 +212,9 @@ def qeip(q1: np.ndarray, q2: np.ndarray) -> float:
     """
     q1 = np.copy(q1)
     q2 = np.copy(q2)
-    if q1.shape!=q2.shape:
-        raise ValueError("Cannot compare q1 of shape {} and q2 of shape {}".format(q1.shape, q2.shape))
-    if q1.ndim==1:
+    if q1.shape != q2.shape:
+        raise ValueError(f"Cannot compare q1 of shape {q1.shape} and q2 of shape {q2.shape}")
+    if q1.ndim == 1:
         q1 /= np.linalg.norm(q1)
         q2 /= np.linalg.norm(q2)
         if np.allclose(q1, q2) or np.allclose(-q1, q2):
@@ -241,9 +247,9 @@ def qcip(q1: np.ndarray, q2: np.ndarray) -> float:
     """
     q1 = np.copy(q1)
     q2 = np.copy(q2)
-    if q1.shape!=q2.shape:
-        raise ValueError("Cannot compare q1 of shape {} and q2 of shape {}".format(q1.shape, q2.shape))
-    if q1.ndim==1:
+    if q1.shape != q2.shape:
+        raise ValueError(f"Cannot compare q1 of shape {q1.shape} and q2 of shape {q2.shape}")
+    if q1.ndim == 1:
         q1 /= np.linalg.norm(q1)
         q2 /= np.linalg.norm(q2)
         if np.allclose(q1, q2) or np.allclose(-q1, q2):
@@ -273,9 +279,9 @@ def qad(q1: np.ndarray, q2: np.ndarray) -> float:
     """
     q1 = np.copy(q1)
     q2 = np.copy(q2)
-    if q1.shape!=q2.shape:
-        raise ValueError("Cannot compare q1 of shape {} and q2 of shape {}".format(q1.shape, q2.shape))
-    if q1.ndim==1:
+    if q1.shape != q2.shape:
+        raise ValueError(f"Cannot compare q1 of shape {q1.shape} and q2 of shape {q2.shape}")
+    if q1.ndim == 1:
         q1 /= np.linalg.norm(q1)
         q2 /= np.linalg.norm(q2)
         if np.allclose(q1, q2) or np.allclose(-q1, q2):

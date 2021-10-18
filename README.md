@@ -32,7 +32,7 @@ Or using [pip](https://pip.pypa.io) for the stable releases:
 pip install ahrs
 ```
 
-AHRS depends on common packages [NumPy](https://numpy.org/) and [SciPy](https://www.scipy.org/). More packages are avoided, to reduce its third-party dependency.
+AHRS depends merely on [NumPy](https://numpy.org/). More packages are avoided, to reduce its third-party dependency.
 
 ## New in 0.3
 
