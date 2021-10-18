@@ -44,7 +44,7 @@ class Data:
 
 @pytest.fixture()
 def data():
-    fn = "tests/ExampleData.mat"
+    fn = "ExampleData.mat"
     mat = sio.loadmat(fn)
     d = Data()
     d.acc = mat["Accelerometer"]
