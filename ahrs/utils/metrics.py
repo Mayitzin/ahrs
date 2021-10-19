@@ -19,6 +19,26 @@ References
 
 import numpy as np
 from ..common.orientation import logR
+from typing import Union
+
+def _rotations_guard_clauses(R1: Union[list, np.ndarray], R2: Union[list, np.ndarray]) -> None:
+    """
+    Checks validity of rotation matrices.
+
+    Raises
+    ------
+    ValueError
+        If the rotation matrices are not valid.
+
+    """
+    if not isinstance(R1, (list, np.ndarray)):
+        raise TypeError("R1 must be an array.")
+    if not isinstance(R2, (list, np.ndarray)):
+        raise TypeError("R2 must be an array.")
+    if R1.shape[-2:] != (3, 3) or R2.shape[-2:] != (3, 3):
+        raise ValueError(f"Rotation matrices must be of shape (N, 3, 3) or (3, 3). Got {R1.shape}.")
+    if R1.shape != R2.shape:
+        raise ValueError(f"Cannot compare R1 of shape {R1.shape} and R2 of shape {R2.shape}.")
 
 def euclidean(x: np.ndarray, y: np.ndarray, **kwargs) -> float:
     """
@@ -60,6 +80,7 @@ def euclidean(x: np.ndarray, y: np.ndarray, **kwargs) -> float:
     array([0.88956871, 1.19727356, 1.5243858 , 0.68765523, 1.29007067])
 
     """
+    x, y = np.copy(x), np.copy(y)
     if x.shape != y.shape:
         raise ValueError(f"Cannot compare x of shape {x.shape} and y of shape {y.shape}")
     return np.linalg.norm(x-y, **kwargs)
@@ -79,6 +100,8 @@ def chordal(R1: np.ndarray, R2: np.ndarray) -> float:
     where :math:`\\|\\mathbf{X}\\|_F` represents the Frobenius norm of the
     matrix :math:`\\mathbf{X}`.
 
+    The error lies within: [0, :math:`2\\sqrt{3}`]
+
     Parameters
     ----------
     R1 : numpy.ndarray
@@ -92,8 +115,7 @@ def chordal(R1: np.ndarray, R2: np.ndarray) -> float:
         Chordal distance between matrices.
 
     """
-    if R1.shape != R2.shape:
-        raise ValueError(f"Cannot compare R1 of shape {R1.shape} and R2 of shape {R2.shape}")
+    _rotations_guard_clauses(R1, R2)
     return np.linalg.norm(R1-R2, 'fro')
 
 def identity_deviation(R1: np.ndarray, R2: np.ndarray) -> float:
@@ -106,7 +128,7 @@ def identity_deviation(R1: np.ndarray, R2: np.ndarray) -> float:
     where :math:`\\|\\mathbf{X}\\|_F` represents the Frobenius norm of the
     matrix :math:`\\mathbf{X}`.
 
-    The error lies within: [0, :math:`2\\sqrt{2}`]
+    The error lies within: [0, :math:`2\\sqrt{3}`]
 
     Parameters
     ----------
@@ -121,8 +143,7 @@ def identity_deviation(R1: np.ndarray, R2: np.ndarray) -> float:
         Deviation from identity matrix.
 
     """
-    if R1.shape != R2.shape:
-        raise ValueError(f"Cannot compare R1 of shape {R1.shape} and R2 of shape {R2.shape}")
+    _rotations_guard_clauses(R1, R2)
     return np.linalg.norm(np.eye(3)-R1@R2.T, 'fro')
 
 def angular_distance(R1: np.ndarray, R2: np.ndarray) -> float:
@@ -149,8 +170,7 @@ def angular_distance(R1: np.ndarray, R2: np.ndarray) -> float:
         Angular distance between rotation matrices
 
     """
-    if R1.shape != R2.shape:
-        raise ValueError(f"Cannot compare R1 of shape {R1.shape} and R2 of shape {R2.shape}")
+    _rotations_guard_clauses(R1, R2)
     return np.linalg.norm(logR(R1@R2.T))
 
 def qdist(q1: np.ndarray, q2: np.ndarray) -> float:
