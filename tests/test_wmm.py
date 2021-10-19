@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import unittest
 import numpy as np
 import ahrs
@@ -52,47 +53,48 @@ class TestWMM(unittest.TestCase):
         if filename.endswith('.csv'):
             data = np.genfromtxt(filename, delimiter=';', skip_header=1)
             if data.shape[1] < 19:
-                raise ValueError("File has incomplete data")
+                raise ValueError(f"File '{filename}' has incomplete data.")
             keys = ["date", "height", "latitude", "longitude", "X", "Y", "Z", "H", "F", "I", "D", "GV",
                 "dX", "dY", "dZ", "dH", "dF", "dI", "dD"]
             return dict(zip(keys, data.T))
         if filename.endswith('.txt'):
             data = np.genfromtxt(filename, skip_header=1, comments='#')
             if data.shape[1] < 18:
-                raise ValueError("File has incomplete data")
+                raise ValueError(f"File '{filename}' has incomplete data.")
             keys = ["date", "height", "latitude", "longitude", "D", "I", "H", "X", "Y", "Z", "F",
                 "dD", "dI", "dH", "dX", "dY", "dZ", "dF"]
             return dict(zip(keys, data.T))
         raise ValueError("File type is not supported. Try a csv or txt File.")
 
+    def setUp(self):
+        self.wmm = ahrs.utils.WMM()
+        self.base_path = os.path.dirname(os.path.abspath(__file__))
+
+    def tearDown(self) -> None:
+        del self.wmm
+
     def test_wmm2015(self):
-        """Test WMM 2015"""
-        wmm = ahrs.utils.WMM()
-        test_values = self._load_test_values("../ahrs/utils/WMM2015/WMM2015_test_values.csv")
+        test_values = self._load_test_values(os.path.join(self.base_path, "../ahrs/utils/WMM2015/WMM2015_test_values.csv"))
         num_tests = len(test_values['date'])
         for i in range(num_tests):
-            wmm.magnetic_field(test_values['latitude'][i], test_values['longitude'][i], test_values['height'][i], date=test_values['date'][i])
-            self.assertAlmostEqual(test_values['X'][i], wmm.X, 1, 'Expected {:.1f}, result {:.1f}'.format(test_values['X'][i], wmm.X))
-            self.assertAlmostEqual(test_values['Y'][i], wmm.Y, 1, 'Expected {:.1f}, result {:.1f}'.format(test_values['Y'][i], wmm.Y))
-            self.assertAlmostEqual(test_values['Z'][i], wmm.Z, 1, 'Expected {:.1f}, result {:.1f}'.format(test_values['Z'][i], wmm.Z))
-            self.assertAlmostEqual(test_values['I'][i], wmm.I, 2, 'Expected {:.2f}, result {:.2f}'.format(test_values['I'][i], wmm.I))
-            self.assertAlmostEqual(test_values['D'][i], wmm.D, 2, 'Expected {:.2f}, result {:.2f}'.format(test_values['D'][i], wmm.D))
-            self.assertAlmostEqual(test_values['GV'][i], wmm.GV, 2, 'Expected {:.2f}, result {:.2f}'.format(test_values['GV'][i], wmm.GV))
-        del wmm
+            self.wmm.magnetic_field(test_values['latitude'][i], test_values['longitude'][i], test_values['height'][i], date=test_values['date'][i])
+            self.assertAlmostEqual(test_values['X'][i], self.wmm.X, 1, 'Expected {:.1f}, result {:.1f}'.format(test_values['X'][i], self.wmm.X))
+            self.assertAlmostEqual(test_values['Y'][i], self.wmm.Y, 1, 'Expected {:.1f}, result {:.1f}'.format(test_values['Y'][i], self.wmm.Y))
+            self.assertAlmostEqual(test_values['Z'][i], self.wmm.Z, 1, 'Expected {:.1f}, result {:.1f}'.format(test_values['Z'][i], self.wmm.Z))
+            self.assertAlmostEqual(test_values['I'][i], self.wmm.I, 2, 'Expected {:.2f}, result {:.2f}'.format(test_values['I'][i], self.wmm.I))
+            self.assertAlmostEqual(test_values['D'][i], self.wmm.D, 2, 'Expected {:.2f}, result {:.2f}'.format(test_values['D'][i], self.wmm.D))
+            self.assertAlmostEqual(test_values['GV'][i], self.wmm.GV, 2, 'Expected {:.2f}, result {:.2f}'.format(test_values['GV'][i], self.wmm.GV))
 
     def test_wmm2020(self):
-        """Test WMM 2020"""
-        wmm = ahrs.utils.WMM()
-        test_values = self._load_test_values("../ahrs/utils/WMM2020/WMM2020_TEST_VALUES.txt")
+        test_values = self._load_test_values(os.path.join(self.base_path, "../ahrs/utils/WMM2020/WMM2020_TEST_VALUES.txt"))
         num_tests = len(test_values['date'])
         for i in range(num_tests):
-            wmm.magnetic_field(test_values['latitude'][i], test_values['longitude'][i], test_values['height'][i], date=test_values['date'][i])
-            self.assertAlmostEqual(test_values['X'][i], wmm.X, 1, 'Expected {:.1f}, result {:.1f}'.format(test_values['X'][i], wmm.X))
-            self.assertAlmostEqual(test_values['Y'][i], wmm.Y, 1, 'Expected {:.1f}, result {:.1f}'.format(test_values['Y'][i], wmm.Y))
-            self.assertAlmostEqual(test_values['Z'][i], wmm.Z, 1, 'Expected {:.1f}, result {:.1f}'.format(test_values['Z'][i], wmm.Z))
-            self.assertAlmostEqual(test_values['I'][i], wmm.I, 2, 'Expected {:.2f}, result {:.2f}'.format(test_values['I'][i], wmm.I))
-            self.assertAlmostEqual(test_values['D'][i], wmm.D, 2, 'Expected {:.2f}, result {:.2f}'.format(test_values['D'][i], wmm.D))
-        del wmm
+            self.wmm.magnetic_field(test_values['latitude'][i], test_values['longitude'][i], test_values['height'][i], date=test_values['date'][i])
+            self.assertAlmostEqual(test_values['X'][i], self.wmm.X, 1, 'Expected {:.1f}, result {:.1f}'.format(test_values['X'][i], self.wmm.X))
+            self.assertAlmostEqual(test_values['Y'][i], self.wmm.Y, 1, 'Expected {:.1f}, result {:.1f}'.format(test_values['Y'][i], self.wmm.Y))
+            self.assertAlmostEqual(test_values['Z'][i], self.wmm.Z, 1, 'Expected {:.1f}, result {:.1f}'.format(test_values['Z'][i], self.wmm.Z))
+            self.assertAlmostEqual(test_values['I'][i], self.wmm.I, 2, 'Expected {:.2f}, result {:.2f}'.format(test_values['I'][i], self.wmm.I))
+            self.assertAlmostEqual(test_values['D'][i], self.wmm.D, 2, 'Expected {:.2f}, result {:.2f}'.format(test_values['D'][i], self.wmm.D))
 
 if __name__ == '__main__':
     unittest.main()
