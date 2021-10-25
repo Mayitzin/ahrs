@@ -6,7 +6,7 @@ import ahrs
 
 class TestWMM(unittest.TestCase):
     """
-    Test Magnetic Field estimation with provided values
+    Test Magnetic Field estimation with provided values.
 
     WMM 2015 uses a CSV test file with values split with semicolons, whereas
     the WMM 2020 uses a TXT file with values split with spaces. The position of
@@ -56,15 +56,15 @@ class TestWMM(unittest.TestCase):
                 raise ValueError(f"File '{filename}' has incomplete data.")
             keys = ["date", "height", "latitude", "longitude", "X", "Y", "Z", "H", "F", "I", "D", "GV",
                 "dX", "dY", "dZ", "dH", "dF", "dI", "dD"]
-            return dict(zip(keys, data.T))
-        if filename.endswith('.txt'):
+        elif filename.endswith('.txt'):
             data = np.genfromtxt(filename, skip_header=1, comments='#')
             if data.shape[1] < 18:
                 raise ValueError(f"File '{filename}' has incomplete data.")
             keys = ["date", "height", "latitude", "longitude", "D", "I", "H", "X", "Y", "Z", "F",
                 "dD", "dI", "dH", "dX", "dY", "dZ", "dF"]
-            return dict(zip(keys, data.T))
-        raise ValueError("File type is not supported. Try a csv or txt File.")
+        else:
+            raise TypeError("File type is not supported. Try a csv or txt File.")
+        return dict(zip(keys, data.T))
 
     def setUp(self):
         self.wmm = ahrs.utils.WMM()

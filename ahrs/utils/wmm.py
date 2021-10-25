@@ -213,7 +213,7 @@ References
 import datetime
 import pkgutil
 from io import StringIO
-from typing import Union, NoReturn, Tuple, Dict
+from typing import Union, Tuple, Dict
 # Third-Party Dependencies
 import numpy as np
 from ..common.constants import *
@@ -375,7 +375,7 @@ class WMM:
     'D': -9.73078560629778, 'GV': -9.73078560629778}
 
     """
-    def __init__(self, date: Union[datetime.date, int, float] = None, latitude: float = None, longitude: float = None, height: float = 0.0) -> NoReturn:
+    def __init__(self, date: Union[datetime.date, int, float] = None, latitude: float = None, longitude: float = None, height: float = 0.0) -> None:
         self.reset_coefficients(date)
         self.__dict__.update(dict.fromkeys(['X', 'Y', 'Z', 'H', 'F', 'I', 'D', 'GV']))
         self.latitude = latitude
@@ -384,7 +384,7 @@ class WMM:
         if all([self.latitude, self.longitude]):
             self.magnetic_field(self.latitude, self.longitude, self.height, date=self.date)
 
-    def reset_coefficients(self, date: Union[datetime.date, int, float] = None) -> NoReturn:
+    def reset_coefficients(self, date: Union[datetime.date, int, float] = None) -> None:
         """
         Reset Gauss coefficients to given date.
 
@@ -410,7 +410,7 @@ class WMM:
         self.__dict__.update(self.get_properties(self.wmm_filename))
         self.load_coefficients(self.wmm_filename)
 
-    def load_coefficients(self, cof_file: str) -> NoReturn:
+    def load_coefficients(self, cof_file: str) -> None:
         """
         Load model coefficients from COF file.
 
@@ -449,7 +449,7 @@ class WMM:
             Path to COF file with the coefficients of the WMM
 
         """
-        file_data = pkgutil.get_data(__name__, self.wmm_filename).decode()
+        file_data = pkgutil.get_data(__name__, cof_file).decode()
         data = np.genfromtxt(StringIO(file_data), comments="999999", skip_header=1)
         self.degree = int(max(data[:, 0]))
         self.c = np.zeros((self.degree+1, self.degree+1))
@@ -491,13 +491,13 @@ class WMM:
         """
         if not cof_file.endswith(".COF"):
             raise TypeError("File must have extension 'COF'")
-        first_line = pkgutil.get_data(__name__, self.wmm_filename).decode().split('\n')[0]
+        first_line = pkgutil.get_data(__name__, cof_file).decode().split('\n')[0]
         v = first_line.strip().split()
         properties = dict(zip(["model", "modeldate"], v[1:]))
         properties.update({"epoch": float(v[0])})
         return properties
 
-    def reset_date(self, date: Union[datetime.date, int, float]) -> NoReturn:
+    def reset_date(self, date: Union[datetime.date, int, float]) -> None:
         """
         Set date to use with the model.
 
@@ -518,17 +518,19 @@ class WMM:
         if date is None:
             self.date = datetime.date.today()
             self.date_dec = self.date.year + self.date.timetuple().tm_yday/365.0
-        if isinstance(date, (int, float)):
+        elif isinstance(date, (int, float)):
             self.date_dec = float(date)
             self.date = datetime.date.fromordinal(round(datetime.date(int(date), 1, 1).toordinal() + (self.date_dec-int(self.date_dec))*365))
-        if isinstance(date, datetime.date):
+        elif isinstance(date, datetime.date):
             self.date = date
             self.date_dec = self.date.year + self.date.timetuple().tm_yday/365.0
+        else:
+            raise TypeError("Date must be an instance of datetime.date or a decimalized year.")
         if self.date.year < 2015:
             raise ValueError("No available coefficients for dates before 2015.")
         self.wmm_filename = 'WMM2015/WMM.COF' if self.date_dec < 2020.0 else 'WMM2020/WMM.COF'
 
-    def denormalize_coefficients(self, latitude: float) -> NoReturn:
+    def denormalize_coefficients(self, latitude: float) -> None:
         """Recursively estimate associated Legendre polynomials and derivatives
         done in a recursive way as described by Michael Plett in [Wertz]_ for
         an efficient computation.
@@ -658,12 +660,12 @@ class WMM:
             delta = 1           # Kronecker delta
             for m in range(n+1):
                 self.k[m, n] = ((n-1)**2 - m**2) / ((2*n-1)*(2*n-3))
-                if m>0:
+                if m > 0:
                     S[m, n] = S[m-1, n] * np.sqrt((n-m+1)*(delta+1)/(n+m))
                     self.c[n, m-1] *= S[m, n]
                     self.cd[n, m-1] *= S[m, n]
                     delta = 0
-                if n==m:
+                if n == m:
                     self.P[m, n] = cos_lat*self.P[m-1, n-1]
                     self.dP[m, n] = cos_lat*self.dP[m-1, n-1] + sin_lat*self.P[m-1, n-1]
                 else:
@@ -672,7 +674,7 @@ class WMM:
                 self.c[m, n] *= S[m, n]
                 self.cd[m, n] *= S[m, n]
 
-    def magnetic_field(self, latitude: float, longitude: float, height: float = 0.0, date: Union[datetime.date, int, float] = datetime.date.today()) -> NoReturn:
+    def magnetic_field(self, latitude: float, longitude: float, height: float = 0.0, date: Union[datetime.date, int, float] = datetime.date.today()) -> None:
         """
         Calculate the geomagnetic field elements for a location on Earth.
 
@@ -787,7 +789,7 @@ class WMM:
                 # Terms of spherical harmonic expansions
                 gchs = self.gh[m, n]*self.cp[m]         # g(t)cos(ml)
                 gshc = self.gh[m, n]*self.sp[m]         # g(t)sin(ml)
-                if m>0:
+                if m > 0:
                     self.gh[n, m-1] = self.c[n, m-1] + dt*self.cd[n, m-1]   # h_n^m (eq. 9)
                     gchs += self.gh[n, m-1]*self.sp[m]  # g(t)cos(ml) + h(t)sin(ml)
                     gshc -= self.gh[n, m-1]*self.cp[m]  # g(t)sin(ml) - h(t)cos(ml)
@@ -795,14 +797,14 @@ class WMM:
                 y_p += m * gshc * self.P[m, n]
                 z_p += gchs * self.P[m, n]
                 # SPECIAL CASE: NORTH/SOUTH GEOGRAPHIC POLES
-                if (cos_lat==0.0 and m==1):
+                if (cos_lat == 0.0 and m == 1):
                     Bp += arn2 * gshc
-                    if n>1:
+                    if n > 1:
                         Bp *= sin_lat - self.k[m, n]
             Xp += arn2 * x_p                            # (eq. 10)  #### !! According to report must be a substraction. Must re-check this
             Yp += arn2 * y_p                            # (eq. 11)
             Zp -= (n+1) * arn2 * z_p                    # (eq. 12)
-        Yp = Bp if cos_lat==0.0 else Yp/cos_lat
+        Yp = Bp if cos_lat == 0.0 else Yp/cos_lat
         # Transform magnetic vector components to geodetic coordinates (eq. 17)
         self.X = Xp*np.cos(lat_prime-latitude) - Zp*np.sin(lat_prime-latitude)
         self.Y = Yp
@@ -814,34 +816,27 @@ class WMM:
         self.D = RAD2DEG*np.arctan2(self.Y, self.X)
         # Grivation (eq. 1)
         self.GV = self.D.copy()
-        if self.latitude>55.0:
+        if self.latitude > 55.0:
             self.GV -= self.longitude
-        if self.latitude<-55.0:
+        if self.latitude < -55.0:
             self.GV += self.longitude
 
     @property
     def magnetic_elements(self) -> Dict[str, float]:
         """Main geomagnetic elements in a dictionary
 
-        +---------+-----------------------------------------------+
-        | Element | Definition                                    |
-        +=========+===============================================+
-        | X       | Northerly intensity                           |
-        +---------+-----------------------------------------------+
-        | Y       | Easterly intensity                            |
-        +---------+-----------------------------------------------+
-        | Z       | Vertical intensity (Positive downwards)       |
-        +---------+-----------------------------------------------+
-        | H       | Horizontal intensity                          |
-        +---------+-----------------------------------------------+
-        | F       | Total intensity                               |
-        +---------+-----------------------------------------------+
-        | I       | Inclination angle (a.k.a. dip angle)          |
-        +---------+-----------------------------------------------+
-        | D       | Declination angle (a.k.a. magnetic variation) |
-        +---------+-----------------------------------------------+
-        | GV      | Grivation                                     |
-        +---------+-----------------------------------------------+
+        =======  =============================================
+        Element  Definition
+        =======  =============================================
+        X        Northerly intensity
+        Y        Easterly intensity
+        Z        Vertical intensity (Positive downwards)
+        H        Horizontal intensity
+        F        Total intensity
+        I        Inclination angle (a.k.a. dip angle)
+        D        Declination angle (a.k.a. magnetic variation)
+        GV       Grivation
+        =======  =============================================
 
         Example
         -------
