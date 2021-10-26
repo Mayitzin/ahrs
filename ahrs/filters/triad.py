@@ -329,7 +329,7 @@ class TRIAD:
         self.v1 = self._set_first_triad_reference(v1, frame)
         self.v2 = self._set_second_triad_reference(v2, frame)
         # Compute values if samples given
-        if all([self.w1, self.w2]):
+        if self.w1 is not None and self.w2 is not None:
             self.A = self._compute_all(self.representation)
 
     def _set_first_triad_reference(self, value, frame):
@@ -343,14 +343,14 @@ class TRIAD:
     def _set_second_triad_reference(self, value, frame):
         ref = np.array([MAG['X'], MAG['Y'], MAG['Z']])
         if isinstance(value, float):
-            if abs(value)>90:
+            if abs(value) > 90:
                 raise ValueError(f"Dip Angle must be within range [-90, 90]. Got {value}")
             ref = np.array([cosd(value), 0.0, sind(value)]) if frame.upper() == 'NED' else np.array([0.0, cosd(value), -sind(value)])
         if isinstance(value, (np.ndarray, list)):
             ref = np.copy(value)
         return ref/np.linalg.norm(ref)
 
-    def _compute_all(self, representation) -> np.ndarray:
+    def _compute_all(self, representation: str) -> np.ndarray:
         """
         Estimate the attitude given all data.
 
@@ -369,7 +369,7 @@ class TRIAD:
             if ``representation`` is set to ``'quaternion'``.
 
         """
-        if self.w1.shape!=self.w2.shape:
+        if self.w1.shape != self.w2.shape:
             raise ValueError("w1 and w2 are not the same size")
         if self.w1.ndim == 1:
             return self.estimate(self.w1, self.w2, representation)
