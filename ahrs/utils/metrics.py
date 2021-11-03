@@ -35,7 +35,7 @@ def _rotations_guard_clauses(R1: Union[list, np.ndarray], R2: Union[list, np.nda
     """
     for rotation_matrix in [R1, R2]:
         if not isinstance(rotation_matrix, (list, np.ndarray)):
-            raise TypeError(f"{rotation_matrix} must be an array.")
+            raise TypeError(f"{rotation_matrix} must be an array. Got {type(rotation_matrix)}")
     r1, r2 = np.copy(R1), np.copy(R2)
     for rotation_matrix in [r1, r2]:
         if rotation_matrix.shape[-2:] != (3, 3):
@@ -45,9 +45,20 @@ def _rotations_guard_clauses(R1: Union[list, np.ndarray], R2: Union[list, np.nda
         raise ValueError(f"Cannot compare R1 of shape {r1_shape} and R2 of shape {r2_shape}.")
 
 def _quaternions_guard_clauses(q1: Union[list, np.ndarray], q2: Union[list, np.ndarray]) -> None:
+    """
+    Checks validity of quaternions.
+
+    Raises
+    ------
+    TypeError
+        If the quaternions are not valid types.
+    ValueError
+        If the quaternions are not valid shapes.
+
+    """
     for quaternion in [q1, q2]:
         if not isinstance(quaternion, (list, np.ndarray)):
-            raise TypeError(f"{quaternion} must be an array.")
+            raise TypeError(f"{quaternion} must be an array. Got {type(quaternion)}")
     q1, q2 = np.copy(q1), np.copy(q2)
     for quaternion in [q1, q2]:
         if quaternion.shape[-1] != 4:
@@ -129,6 +140,18 @@ def chordal(R1: np.ndarray, R2: np.ndarray) -> float:
     d : float
         Chordal distance between matrices.
 
+    Examples
+    --------
+    >>> import ahrs
+    >>> R1 = ahrs.DCM(rpy=[0.0, 0.0, 0.0])
+    >>> R2 = ahrs.DCM(rpy=[90.0, 90.0, 90.0])
+    >>> ahrs.utils.chordal(R1, R2)
+    2.0
+    >>> R1 = ahrs.DCM(rpy=[10.0, -20.0, 30.0])
+    >>> R2 = ahrs.DCM(rpy=[-10.0, 20.0, -30.0])
+    >>> ahrs.utils.chordal(R1, R2)
+    1.6916338074634352
+
     """
     _rotations_guard_clauses(R1, R2)
     R1, R2 = np.copy(R1), np.copy(R2)
@@ -158,6 +181,18 @@ def identity_deviation(R1: np.ndarray, R2: np.ndarray) -> float:
     d : float
         Deviation from identity matrix.
 
+    Examples
+    --------
+    >>> import ahrs
+    >>> R1 = ahrs.DCM(rpy=[0.0, 0.0, 0.0])
+    >>> R2 = ahrs.DCM(rpy=[90.0, 90.0, 90.0])
+    >>> ahrs.utils.identity_deviation(R1, R2)
+    2.0
+    >>> R1 = ahrs.DCM(rpy=[10.0, -20.0, 30.0])
+    >>> R2 = ahrs.DCM(rpy=[-10.0, 20.0, -30.0])
+    >>> ahrs.utils.identity_deviation(R1, R2)
+    1.6916338074634352
+
     """
     _rotations_guard_clauses(R1, R2)
     R1, R2 = np.copy(R1), np.copy(R2)
@@ -185,6 +220,18 @@ def angular_distance(R1: np.ndarray, R2: np.ndarray) -> float:
     -------
     d : float
         Angular distance between rotation matrices
+
+    Examples
+    --------
+    >>> import ahrs
+    >>> R1 = ahrs.DCM(rpy=[0.0, 0.0, 0.0])
+    >>> R2 = ahrs.DCM(rpy=[90.0, 90.0, 90.0])
+    >>> ahrs.utils.angular_distance(R1, R2)
+    1.5707963267948966
+    >>> R1 = ahrs.DCM(rpy=[10.0, -20.0, 30.0])
+    >>> R2 = ahrs.DCM(rpy=[-10.0, 20.0, -30.0])
+    >>> ahrs.utils.angular_distance(R1, R2)
+    1.282213683073497
 
     """
     _rotations_guard_clauses(R1, R2)
