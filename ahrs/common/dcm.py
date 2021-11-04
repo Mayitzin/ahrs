@@ -210,7 +210,12 @@ class DCM(np.ndarray):
                 array = array@rotation('y', kwargs.pop('y', 0.0))
                 array = array@rotation('z', kwargs.pop('z', 0.0))
             if 'rpy' in kwargs:
-                array = rot_seq('zyx', kwargs.pop('rpy'))
+                angles = kwargs.pop('rpy')
+                if not isinstance(angles, (list, np.ndarray)):
+                    raise TypeError(f'roll-pitch-yaw angles must be given in an array. Got {type(angles)}')
+                if len(angles) != 3:
+                    raise ValueError('roll-pitch-yaw angles must be an array with 3 rotations in degrees.')
+                array = rot_seq('zyx', angles)
             if 'euler' in kwargs:
                 seq, angs = kwargs.pop('euler')
                 array = rot_seq(seq, angs)

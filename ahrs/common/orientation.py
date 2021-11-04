@@ -662,6 +662,9 @@ def rot_seq(axes: Union[list, str] = None, angles: Union[list, float] = None) ->
         return R
     if angles is None:
         angles = np.random.uniform(low=-180.0, high=180.0, size=num_rotations)
+    for x in angles:
+        if not isinstance(x, (float, int)):
+            raise TypeError(f"Angles must be float or int numbers. Got {type(x)}")
     if set(axes).issubset(set(accepted_axes)):
         # Perform the matrix multiplications
         for i in range(num_rotations-1, -1, -1):
