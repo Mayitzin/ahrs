@@ -56,6 +56,7 @@ class TestQuaternionArray(unittest.TestCase):
     def setUp(self) -> None:
         self.Q0 = ahrs.QuaternionArray()
         self.Q1 = ahrs.QuaternionArray(np.identity(4))
+        self.decimal_precision = 15
 
     def test_identity_quaternion(self):
         self.assertEqual(self.Q0.w, [1.0])
@@ -70,6 +71,12 @@ class TestQuaternionArray(unittest.TestCase):
         np.testing.assert_equal(self.Q1.y, [0.0, 0.0, 1.0, 0.0])
         np.testing.assert_equal(self.Q1.z, [0.0, 0.0, 0.0, 1.0])
         np.testing.assert_equal(self.Q1.v, np.identity(4)[:, 1:])
+
+    def test_quaternion_average(self):
+        # Create 10 continuous quaternions between 0 and 90 degrees and average
+        # them. Must be, naturally, equal to the 45 degree quaternion.
+        Q = ahrs.QuaternionArray([ahrs.Quaternion(rpy=np.array([0.0, 0.0, x])*ahrs.DEG2RAD) for x in range(0, 100, 10)])
+        np.testing.assert_almost_equal(Q.average(), ahrs.Quaternion(rpy=np.array([0.0, 0.0, 45.0])*ahrs.DEG2RAD), decimal=self.decimal_precision)
 
     def test_wrong_input_array(self):
         self.assertRaises(TypeError, ahrs.QuaternionArray, True)
