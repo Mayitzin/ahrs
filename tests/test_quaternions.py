@@ -52,5 +52,29 @@ class TestQuaternion(unittest.TestCase):
         self.assertRaises(ValueError, ahrs.Quaternion, dcm=np.random.random((3, 3)))
         self.assertRaises(ValueError, ahrs.Quaternion, dcm=-np.identity(3))
 
+class TestQuaternionArray(unittest.TestCase):
+    def setUp(self) -> None:
+        self.Q0 = ahrs.QuaternionArray()
+        self.Q1 = ahrs.QuaternionArray(np.identity(4))
+
+    def test_identity_quaternion(self):
+        self.assertEqual(self.Q0.w, [1.0])
+        self.assertEqual(self.Q0.x, [0.0])
+        self.assertEqual(self.Q0.y, [0.0])
+        self.assertEqual(self.Q0.z, [0.0])
+        np.testing.assert_equal(self.Q0.v, np.atleast_2d(np.zeros(3)))
+
+    def test_4_by_4_array(self):
+        np.testing.assert_equal(self.Q1.w, [1.0, 0.0, 0.0, 0.0])
+        np.testing.assert_equal(self.Q1.x, [0.0, 1.0, 0.0, 0.0])
+        np.testing.assert_equal(self.Q1.y, [0.0, 0.0, 1.0, 0.0])
+        np.testing.assert_equal(self.Q1.z, [0.0, 0.0, 0.0, 1.0])
+        np.testing.assert_equal(self.Q1.v, np.identity(4)[:, 1:])
+
+    def test_wrong_input_array(self):
+        self.assertRaises(TypeError, ahrs.QuaternionArray, True)
+        self.assertRaises(TypeError, ahrs.QuaternionArray, 3.0)
+        self.assertRaises(TypeError, ahrs.QuaternionArray, "[[1.0, 2.0, 3.0, 4.0]]")
+
 if __name__ == "__main__":
     unittest.main()
