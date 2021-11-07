@@ -16,6 +16,14 @@ class TestDCM(unittest.TestCase):
     def test_identity_rotation_matrix(self):
         np.testing.assert_equal(self.R0, np.identity(3))
 
+    def test_wrong_input_matrix(self):
+        self.assertRaises(TypeError, ahrs.DCM, 3)
+        self.assertRaises(TypeError, ahrs.DCM, 3.0)
+        self.assertRaises(TypeError, ahrs.DCM, "np.eye(3)")
+        self.assertRaises(ValueError, ahrs.DCM, np.random.random((3, 3)))
+        self.assertRaises(ValueError, ahrs.DCM, -np.identity(3))
+        self.assertRaises(ValueError, ahrs.DCM, np.identity(4))
+
     def test_wrong_rpy(self):
         self.assertRaises(TypeError, ahrs.DCM, rpy=45.0)
         self.assertRaises(TypeError, ahrs.DCM, rpy=45)
