@@ -318,19 +318,39 @@ class TRIAD:
         v2: np.ndarray = None,
         representation: str = 'rotmat',
         frame: str = 'NED'):
-        self.w1: np.ndarray = np.copy(w1)
-        self.w2: np.ndarray = np.copy(w2)
+        self._guard_clauses_parameters(representation, frame)
+        self._guard_clauses_vectors(w1, w2, v1, v2)
         self.representation: str = representation
-        if representation.lower() not in ['rotmat', 'quaternion']:
-            raise ValueError("Wrong representation type. Try 'rotmat', or 'quaternion'")
-        if frame.upper() not in ['NED', 'ENU']:
-            raise ValueError(f"Given frame {frame} is NOT valid. Try 'NED' or 'ENU'")
+        self.frame: str = frame
+        # Input values
+        self.w1: np.ndarray = np.copy(w1) if isinstance(w1, (list, np.ndarray)) else None
+        self.w2: np.ndarray = np.copy(w2) if isinstance(w2, (list, np.ndarray)) else None
         # Reference frames
         self.v1 = self._set_first_triad_reference(v1, frame)
         self.v2 = self._set_second_triad_reference(v2, frame)
         # Compute values if samples given
         if self.w1 is not None and self.w2 is not None:
             self.A = self._compute_all(self.representation)
+
+    def _guard_clauses_parameters(self, representation, frame):
+        for item in [representation, frame]:
+            if not isinstance(item, str):
+                raise TypeError(f"{item} must be a string")
+        if representation.lower() not in ['rotmat', 'quaternion']:
+            raise ValueError(f"Given representation '{representation}' is NOT valid. Try 'rotmat', or 'quaternion'")
+        if frame.upper() not in ['NED', 'ENU']:
+            raise ValueError(f"Given frame '{frame}' is NOT valid. Try 'NED' or 'ENU'")
+
+    def _guard_clauses_vectors(self, *vectors):
+        for item in vectors:
+            if not isinstance(item, (list, np.ndarray, type(None))):
+                raise TypeError(f"{item} must be a list or numpy.ndarray. It is {type(item)}")
+        w1, w2, *_ = vectors
+        if w1 is None and w2 is None:
+            return None
+        w1, w2 = np.copy(w1), np.copy(w2)
+        if w1.shape != w2.shape:
+            raise ValueError(f"Vectors must have the same shape. w1: {w1.shape}, w2: {w2.shape}")
 
     def _set_first_triad_reference(self, value, frame):
         if value is None:
@@ -341,13 +361,14 @@ class TRIAD:
         return ref
 
     def _set_second_triad_reference(self, value, frame):
-        ref = np.array([MAG['X'], MAG['Y'], MAG['Z']])
         if isinstance(value, float):
             if abs(value) > 90:
                 raise ValueError(f"Dip Angle must be within range [-90, 90]. Got {value}")
             ref = np.array([cosd(value), 0.0, sind(value)]) if frame.upper() == 'NED' else np.array([0.0, cosd(value), -sind(value)])
-        if isinstance(value, (np.ndarray, list)):
+        elif isinstance(value, (np.ndarray, list)):
             ref = np.copy(value)
+        else:
+            ref = np.array([MAG['X'], MAG['Y'], MAG['Z']])
         return ref/np.linalg.norm(ref)
 
     def _compute_all(self, representation: str) -> np.ndarray:
