@@ -797,7 +797,7 @@ class DCM(np.ndarray):
         """
         return self.from_quaternion(q)
 
-    def to_quaternion(self, method: str = 'chiaverini', **kw) -> np.ndarray:
+    def to_quaternion(self, method: str='chiaverini', **kw) -> np.ndarray:
         """
         Quaternion from Direction Cosine Matrix.
 
@@ -839,19 +839,19 @@ class DCM(np.ndarray):
 
         """
         q = np.array([1., 0., 0., 0.])
-        if method.lower()=='hughes':
+        if method.lower() == 'hughes':
             q = hughes(self.A)
-        if method.lower()=='chiaverini':
+        if method.lower() == 'chiaverini':
             q = chiaverini(self.A)
-        if method.lower()=='shepperd':
+        if method.lower() == 'shepperd':
             q = shepperd(self.A)
-        if method.lower()=='itzhack':
+        if method.lower() == 'itzhack':
             q = itzhack(self.A, version=kw.get('version', 3))
-        if method.lower()=='sarabandi':
+        if method.lower() == 'sarabandi':
             q = sarabandi(self.A, eta=kw.get('threshold', 0.0))
         return q/np.linalg.norm(q)
 
-    def to_q(self, method: str = 'chiaverini', **kw) -> np.ndarray:
+    def to_q(self, method: str='chiaverini', **kw) -> np.ndarray:
         """
         Synonym of method :meth:`to_quaternion`.
 
@@ -920,7 +920,7 @@ class DCM(np.ndarray):
         Parameters
         ----------
         w : numpy.ndarray
-            Angular velocity, in rad/s, about X-, Y- and Z-axis.
+            Instantaneous angular velocity, in rad/s, about X-, Y- and Z-axis.
 
         Returns
         -------

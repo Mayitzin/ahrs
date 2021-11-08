@@ -6,8 +6,8 @@ import ahrs
 class TestTRIAD(unittest.TestCase):
     def setUp(self) -> None:
         wmm = ahrs.utils.WMM(latitude=ahrs.MUNICH_LATITUDE, longitude=ahrs.MUNICH_LONGITUDE, height=ahrs.MUNICH_HEIGHT)
-        g = np.array([0.0, 0.0, -1.0]) + np.random.randn(3)*1e-7
-        m = np.array([wmm.X, wmm.Y, wmm.Z]) + np.random.randn(3)*1e-7
+        g = np.array([0.0, 0.0, -1.0]) + np.random.randn(3)*1e-7        # Reference gravity vector + noise
+        m = np.array([wmm.X, wmm.Y, wmm.Z]) + np.random.randn(3)*1e-7   # Reference magnetic field vector + noise
         self.R = ahrs.DCM(rpy=np.random.random(3)*90.0-45.0)
         self.Rg = self.R @ g
         self.Rm = self.R @ m
