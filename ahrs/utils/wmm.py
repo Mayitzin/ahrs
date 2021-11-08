@@ -210,11 +210,10 @@ References
 """
 
 # PSL
-import unittest
 import datetime
 import pkgutil
 from io import StringIO
-from typing import Union, NoReturn, Tuple, Dict
+from typing import Union, Tuple, Dict
 # Third-Party Dependencies
 import numpy as np
 from ..common.constants import *
@@ -376,7 +375,7 @@ class WMM:
     'D': -9.73078560629778, 'GV': -9.73078560629778}
 
     """
-    def __init__(self, date: Union[datetime.date, int, float] = None, latitude: float = None, longitude: float = None, height: float = 0.0) -> NoReturn:
+    def __init__(self, date: Union[datetime.date, int, float] = None, latitude: float = None, longitude: float = None, height: float = 0.0) -> None:
         self.reset_coefficients(date)
         self.__dict__.update(dict.fromkeys(['X', 'Y', 'Z', 'H', 'F', 'I', 'D', 'GV']))
         self.latitude = latitude
@@ -385,7 +384,7 @@ class WMM:
         if all([self.latitude, self.longitude]):
             self.magnetic_field(self.latitude, self.longitude, self.height, date=self.date)
 
-    def reset_coefficients(self, date: Union[datetime.date, int, float] = None) -> NoReturn:
+    def reset_coefficients(self, date: Union[datetime.date, int, float] = None) -> None:
         """
         Reset Gauss coefficients to given date.
 
@@ -411,7 +410,7 @@ class WMM:
         self.__dict__.update(self.get_properties(self.wmm_filename))
         self.load_coefficients(self.wmm_filename)
 
-    def load_coefficients(self, cof_file: str) -> NoReturn:
+    def load_coefficients(self, cof_file: str) -> None:
         """
         Load model coefficients from COF file.
 
@@ -450,7 +449,7 @@ class WMM:
             Path to COF file with the coefficients of the WMM
 
         """
-        file_data = pkgutil.get_data(__name__, self.wmm_filename).decode()
+        file_data = pkgutil.get_data(__name__, cof_file).decode()
         data = np.genfromtxt(StringIO(file_data), comments="999999", skip_header=1)
         self.degree = int(max(data[:, 0]))
         self.c = np.zeros((self.degree+1, self.degree+1))
@@ -492,13 +491,13 @@ class WMM:
         """
         if not cof_file.endswith(".COF"):
             raise TypeError("File must have extension 'COF'")
-        first_line = pkgutil.get_data(__name__, self.wmm_filename).decode().split('\n')[0]
+        first_line = pkgutil.get_data(__name__, cof_file).decode().split('\n')[0]
         v = first_line.strip().split()
         properties = dict(zip(["model", "modeldate"], v[1:]))
         properties.update({"epoch": float(v[0])})
         return properties
 
-    def reset_date(self, date: Union[datetime.date, int, float]) -> NoReturn:
+    def reset_date(self, date: Union[datetime.date, int, float]) -> None:
         """
         Set date to use with the model.
 
@@ -519,17 +518,19 @@ class WMM:
         if date is None:
             self.date = datetime.date.today()
             self.date_dec = self.date.year + self.date.timetuple().tm_yday/365.0
-        if isinstance(date, (int, float)):
+        elif isinstance(date, (int, float)):
             self.date_dec = float(date)
             self.date = datetime.date.fromordinal(round(datetime.date(int(date), 1, 1).toordinal() + (self.date_dec-int(self.date_dec))*365))
-        if isinstance(date, datetime.date):
+        elif isinstance(date, datetime.date):
             self.date = date
             self.date_dec = self.date.year + self.date.timetuple().tm_yday/365.0
+        else:
+            raise TypeError("Date must be an instance of datetime.date or a decimalized year.")
         if self.date.year < 2015:
             raise ValueError("No available coefficients for dates before 2015.")
         self.wmm_filename = 'WMM2015/WMM.COF' if self.date_dec < 2020.0 else 'WMM2020/WMM.COF'
 
-    def denormalize_coefficients(self, latitude: float) -> NoReturn:
+    def denormalize_coefficients(self, latitude: float) -> None:
         """Recursively estimate associated Legendre polynomials and derivatives
         done in a recursive way as described by Michael Plett in [Wertz]_ for
         an efficient computation.
@@ -659,12 +660,12 @@ class WMM:
             delta = 1           # Kronecker delta
             for m in range(n+1):
                 self.k[m, n] = ((n-1)**2 - m**2) / ((2*n-1)*(2*n-3))
-                if m>0:
+                if m > 0:
                     S[m, n] = S[m-1, n] * np.sqrt((n-m+1)*(delta+1)/(n+m))
                     self.c[n, m-1] *= S[m, n]
                     self.cd[n, m-1] *= S[m, n]
                     delta = 0
-                if n==m:
+                if n == m:
                     self.P[m, n] = cos_lat*self.P[m-1, n-1]
                     self.dP[m, n] = cos_lat*self.dP[m-1, n-1] + sin_lat*self.P[m-1, n-1]
                 else:
@@ -673,7 +674,7 @@ class WMM:
                 self.c[m, n] *= S[m, n]
                 self.cd[m, n] *= S[m, n]
 
-    def magnetic_field(self, latitude: float, longitude: float, height: float = 0.0, date: Union[datetime.date, int, float] = datetime.date.today()) -> NoReturn:
+    def magnetic_field(self, latitude: float, longitude: float, height: float = 0.0, date: Union[datetime.date, int, float] = datetime.date.today()) -> None:
         """
         Calculate the geomagnetic field elements for a location on Earth.
 
@@ -788,7 +789,7 @@ class WMM:
                 # Terms of spherical harmonic expansions
                 gchs = self.gh[m, n]*self.cp[m]         # g(t)cos(ml)
                 gshc = self.gh[m, n]*self.sp[m]         # g(t)sin(ml)
-                if m>0:
+                if m > 0:
                     self.gh[n, m-1] = self.c[n, m-1] + dt*self.cd[n, m-1]   # h_n^m (eq. 9)
                     gchs += self.gh[n, m-1]*self.sp[m]  # g(t)cos(ml) + h(t)sin(ml)
                     gshc -= self.gh[n, m-1]*self.cp[m]  # g(t)sin(ml) - h(t)cos(ml)
@@ -796,14 +797,14 @@ class WMM:
                 y_p += m * gshc * self.P[m, n]
                 z_p += gchs * self.P[m, n]
                 # SPECIAL CASE: NORTH/SOUTH GEOGRAPHIC POLES
-                if (cos_lat==0.0 and m==1):
+                if (cos_lat == 0.0 and m == 1):
                     Bp += arn2 * gshc
-                    if n>1:
+                    if n > 1:
                         Bp *= sin_lat - self.k[m, n]
             Xp += arn2 * x_p                            # (eq. 10)  #### !! According to report must be a substraction. Must re-check this
             Yp += arn2 * y_p                            # (eq. 11)
             Zp -= (n+1) * arn2 * z_p                    # (eq. 12)
-        Yp = Bp if cos_lat==0.0 else Yp/cos_lat
+        Yp = Bp if cos_lat == 0.0 else Yp/cos_lat
         # Transform magnetic vector components to geodetic coordinates (eq. 17)
         self.X = Xp*np.cos(lat_prime-latitude) - Zp*np.sin(lat_prime-latitude)
         self.Y = Yp
@@ -815,34 +816,27 @@ class WMM:
         self.D = RAD2DEG*np.arctan2(self.Y, self.X)
         # Grivation (eq. 1)
         self.GV = self.D.copy()
-        if self.latitude>55.0:
+        if self.latitude > 55.0:
             self.GV -= self.longitude
-        if self.latitude<-55.0:
+        if self.latitude < -55.0:
             self.GV += self.longitude
 
     @property
     def magnetic_elements(self) -> Dict[str, float]:
         """Main geomagnetic elements in a dictionary
 
-        +---------+-----------------------------------------------+
-        | Element | Definition                                    |
-        +=========+===============================================+
-        | X       | Northerly intensity                           |
-        +---------+-----------------------------------------------+
-        | Y       | Easterly intensity                            |
-        +---------+-----------------------------------------------+
-        | Z       | Vertical intensity (Positive downwards)       |
-        +---------+-----------------------------------------------+
-        | H       | Horizontal intensity                          |
-        +---------+-----------------------------------------------+
-        | F       | Total intensity                               |
-        +---------+-----------------------------------------------+
-        | I       | Inclination angle (a.k.a. dip angle)          |
-        +---------+-----------------------------------------------+
-        | D       | Declination angle (a.k.a. magnetic variation) |
-        +---------+-----------------------------------------------+
-        | GV      | Grivation                                     |
-        +---------+-----------------------------------------------+
+        =======  =============================================
+        Element  Definition
+        =======  =============================================
+        X        Northerly intensity
+        Y        Easterly intensity
+        Z        Vertical intensity (Positive downwards)
+        H        Horizontal intensity
+        F        Total intensity
+        I        Inclination angle (a.k.a. dip angle)
+        D        Declination angle (a.k.a. magnetic variation)
+        GV       Grivation
+        =======  =============================================
 
         Example
         -------
@@ -853,117 +847,3 @@ class WMM:
         'D': -9.73078560629778, 'GV': -9.73078560629778}
         """
         return {k: self.__dict__[k] for k in ['X', 'Y', 'Z', 'H', 'F', 'I', 'D', 'GV']}
-
-
-class GeoMagTest(unittest.TestCase):
-    """Test Magnetic Field estimation with provided values
-
-    WMM 2015 uses a CSV test file with values split with semicolons, whereas
-    the WMM 2020 uses a TXT file with values split with spaces. The position of
-    their values is different. The following table shows their differences:
-
-    +-------+-------------------+-------------------+
-    | Index | CSV File (WM2015) | TXT File (WM2020) |
-    +=======+===================+===================+
-    | 0     | date              | date              |
-    +-------+-------------------+-------------------+
-    | 1     | height (km)       | height (km)       |
-    +-------+-------------------+-------------------+
-    | 2     | latitude (deg)    | latitude (deg)    |
-    +-------+-------------------+-------------------+
-    | 3     | longitude (deg)   | longitude (deg)   |
-    +-------+-------------------+-------------------+
-    | 4     | X (nT)            | D (deg)           |
-    +-------+-------------------+-------------------+
-    | 5     | Y (nT)            | I (deg)           |
-    +-------+-------------------+-------------------+
-    | 6     | Z (nT)            | H (nT)            |
-    +-------+-------------------+-------------------+
-    | 7     | H (nT)            | X (nT)            |
-    +-------+-------------------+-------------------+
-    | 8     | F (nT)            | Y (nT)            |
-    +-------+-------------------+-------------------+
-    | 9     | I (deg)           | Z (nT)            |
-    +-------+-------------------+-------------------+
-    | 10    | D (deg)           | F (nT)            |
-    +-------+-------------------+-------------------+
-    | 11    | GV (deg)          | dD/dt (deg/year)  |
-    +-------+-------------------+-------------------+
-    | 12    | Xdot (nT/yr)      | dI/dt (deg/year)  |
-    +-------+-------------------+-------------------+
-    | 13    | Ydot (nT/yr)      | dH/dt (nT/year)   |
-    +-------+-------------------+-------------------+
-    | 14    | Zdot (nT/yr)      | dX/dt (nT/year)   |
-    +-------+-------------------+-------------------+
-    | 15    | Hdot (nT/yr)      | dY/dt (nT/year)   |
-    +-------+-------------------+-------------------+
-    | 16    | Fdot (nT/yr)      | dZ/dt (nT/year)   |
-    +-------+-------------------+-------------------+
-    | 17    | dI/dt (deg/year)  | dF/dt (nT/year)   |
-    +-------+-------------------+-------------------+
-    | 18    | dD/dt (deg/year)  |                   |
-    +-------+-------------------+-------------------+
-
-    Besides using a different order, the newest format prescinds from grid
-    variation (GV)
-    """
-    def _load_test_values(self, filename: str) -> np.ndarray:
-        """Load test values from file.
-
-        Parameters
-        ----------
-        filename : str
-            Path to file with test values.
-
-        Returns
-        -------
-        data : ndarray
-            NumPy array with the test values.
-        """
-        if filename.endswith('.csv'):
-            data = np.genfromtxt(filename, delimiter=';', skip_header=1)
-            if data.shape[1]<19:
-                raise ValueError("File has incomplete data")
-            keys = ["date", "height", "latitude", "longitude", "X", "Y", "Z", "H", "F", "I", "D", "GV",
-                "dX", "dY", "dZ", "dH", "dF", "dI", "dD"]
-            return dict(zip(keys, data.T))
-        if filename.endswith('.txt'):
-            data = np.genfromtxt(filename, skip_header=1, comments='#')
-            if data.shape[1]<18:
-                raise ValueError("File has incomplete data")
-            keys = ["date", "height", "latitude", "longitude", "D", "I", "H", "X", "Y", "Z", "F",
-                "dD", "dI", "dH", "dX", "dY", "dZ", "dF"]
-            return dict(zip(keys, data.T))
-        raise ValueError("File type is not supported. Try a csv or txt File.")
-
-    def test_wmm2015(self):
-        """Test WMM 2015"""
-        wmm = WMM()
-        test_values = self._load_test_values("./WMM2015/WMM2015_test_values.csv")
-        num_tests = len(test_values['date'])
-        for i in range(num_tests):
-            wmm.magnetic_field(test_values['latitude'][i], test_values['longitude'][i], test_values['height'][i], date=test_values['date'][i])
-            self.assertAlmostEqual(test_values['X'][i], wmm.X, 1, 'Expected {:.1f}, result {:.1f}'.format(test_values['X'][i], wmm.X))
-            self.assertAlmostEqual(test_values['Y'][i], wmm.Y, 1, 'Expected {:.1f}, result {:.1f}'.format(test_values['Y'][i], wmm.Y))
-            self.assertAlmostEqual(test_values['Z'][i], wmm.Z, 1, 'Expected {:.1f}, result {:.1f}'.format(test_values['Z'][i], wmm.Z))
-            self.assertAlmostEqual(test_values['I'][i], wmm.I, 2, 'Expected {:.2f}, result {:.2f}'.format(test_values['I'][i], wmm.I))
-            self.assertAlmostEqual(test_values['D'][i], wmm.D, 2, 'Expected {:.2f}, result {:.2f}'.format(test_values['D'][i], wmm.D))
-            self.assertAlmostEqual(test_values['GV'][i], wmm.GV, 2, 'Expected {:.2f}, result {:.2f}'.format(test_values['GV'][i], wmm.GV))
-        del wmm
-
-    def test_wmm2020(self):
-        """Test WMM 2020"""
-        wmm = WMM()
-        test_values = self._load_test_values("./WMM2020/WMM2020_TEST_VALUES.txt")
-        num_tests = len(test_values['date'])
-        for i in range(num_tests):
-            wmm.magnetic_field(test_values['latitude'][i], test_values['longitude'][i], test_values['height'][i], date=test_values['date'][i])
-            self.assertAlmostEqual(test_values['X'][i], wmm.X, 1, 'Expected {:.1f}, result {:.1f}'.format(test_values['X'][i], wmm.X))
-            self.assertAlmostEqual(test_values['Y'][i], wmm.Y, 1, 'Expected {:.1f}, result {:.1f}'.format(test_values['Y'][i], wmm.Y))
-            self.assertAlmostEqual(test_values['Z'][i], wmm.Z, 1, 'Expected {:.1f}, result {:.1f}'.format(test_values['Z'][i], wmm.Z))
-            self.assertAlmostEqual(test_values['I'][i], wmm.I, 2, 'Expected {:.2f}, result {:.2f}'.format(test_values['I'][i], wmm.I))
-            self.assertAlmostEqual(test_values['D'][i], wmm.D, 2, 'Expected {:.2f}, result {:.2f}'.format(test_values['D'][i], wmm.D))
-        del wmm
-
-if __name__ == '__main__':
-    unittest.main()

@@ -94,6 +94,10 @@ from .orientation import chiaverini
 from .orientation import itzhack
 from .orientation import sarabandi
 
+def _assert_iterables(item, item_name: str = 'iterable'):
+    if not isinstance(item, (list, tuple, np.ndarray)):
+        raise TypeError(f"{item_name} must be given as an array, got {type(item)}")
+
 class DCM(np.ndarray):
     """
     Direction Cosine Matrix in SO(3)
@@ -210,15 +214,20 @@ class DCM(np.ndarray):
                 array = array@rotation('y', kwargs.pop('y', 0.0))
                 array = array@rotation('z', kwargs.pop('z', 0.0))
             if 'rpy' in kwargs:
-                array = rot_seq('zyx', kwargs.pop('rpy'))
+                angles = kwargs.pop('rpy')
+                _assert_iterables(angles, "Roll-Pitch-Yaw angles")
+                if len(angles) != 3:
+                    raise ValueError("roll-pitch-yaw angles must be an array with 3 rotations in degrees.")
+                array = rot_seq('zyx', angles)
             if 'euler' in kwargs:
                 seq, angs = kwargs.pop('euler')
                 array = rot_seq(seq, angs)
             if 'axang' in kwargs:
                 ax, ang = kwargs.pop('axang')
                 array = DCM.from_axisangle(DCM, np.array(ax), ang)
-        if array.shape[-2:]!=(3, 3):
-            raise ValueError("Direction Cosine Matrix must have shape (3, 3) or (N, 3, 3), got {}.".format(array.shape))
+        _assert_iterables(array, "Direction Cosine Matrix")
+        if array.shape[-2:] != (3, 3):
+            raise ValueError(f"Direction Cosine Matrix must have shape (3, 3) or (N, 3, 3), got {array.shape}.")
         in_SO3 = np.isclose(np.linalg.det(array), 1.0)
         in_SO3 &= np.allclose(array@array.T, np.identity(3))
         if not in_SO3:
@@ -610,6 +619,9 @@ class DCM(np.ndarray):
                [ 0.34202014,  0.46984631,  0.81379768]])
 
         """
+        _assert_iterables(axis)
+        if not isinstance(angle, (int, float)):
+            raise ValueError(f"`angle` must be a float value. Got {type(angle)}")
         axis /= np.linalg.norm(axis)
         K = skew(axis)
         return np.identity(3) + np.sin(angle)*K + (1-np.cos(angle))*K@K
@@ -713,9 +725,10 @@ class DCM(np.ndarray):
         """
         if q is None:
             return np.identity(3)
+        _assert_iterables(q, "Quaternion")
         q = np.copy(q)
         if q.shape[-1] != 4 or q.ndim > 2:
-            raise ValueError("Quaternion must be of the form (4,) or (N, 4)")
+            raise ValueError(f"Quaternion must be of the form (4,) or (N, 4). Got {q.shape}")
         if q.ndim > 1:
             q /= np.linalg.norm(q, axis=1)[:, None]     # Normalize
             R = np.zeros((q.shape[0], 3, 3))
@@ -784,7 +797,7 @@ class DCM(np.ndarray):
         """
         return self.from_quaternion(q)
 
-    def to_quaternion(self, method: str = 'chiaverini', **kw) -> np.ndarray:
+    def to_quaternion(self, method: str='chiaverini', **kw) -> np.ndarray:
         """
         Quaternion from Direction Cosine Matrix.
 
@@ -826,19 +839,19 @@ class DCM(np.ndarray):
 
         """
         q = np.array([1., 0., 0., 0.])
-        if method.lower()=='hughes':
+        if method.lower() == 'hughes':
             q = hughes(self.A)
-        if method.lower()=='chiaverini':
+        if method.lower() == 'chiaverini':
             q = chiaverini(self.A)
-        if method.lower()=='shepperd':
+        if method.lower() == 'shepperd':
             q = shepperd(self.A)
-        if method.lower()=='itzhack':
+        if method.lower() == 'itzhack':
             q = itzhack(self.A, version=kw.get('version', 3))
-        if method.lower()=='sarabandi':
+        if method.lower() == 'sarabandi':
             q = sarabandi(self.A, eta=kw.get('threshold', 0.0))
         return q/np.linalg.norm(q)
 
-    def to_q(self, method: str = 'chiaverini', **kw) -> np.ndarray:
+    def to_q(self, method: str='chiaverini', **kw) -> np.ndarray:
         """
         Synonym of method :meth:`to_quaternion`.
 
@@ -907,7 +920,7 @@ class DCM(np.ndarray):
         Parameters
         ----------
         w : numpy.ndarray
-            Angular velocity, in rad/s, about X-, Y- and Z-axis.
+            Instantaneous angular velocity, in rad/s, about X-, Y- and Z-axis.
 
         Returns
         -------

@@ -19,6 +19,52 @@ References
 
 import numpy as np
 from ..common.orientation import logR
+from typing import Union
+
+def _rotations_guard_clauses(R1: Union[list, np.ndarray], R2: Union[list, np.ndarray]) -> None:
+    """
+    Checks validity of rotation matrices.
+
+    Raises
+    ------
+    TypeError
+        If the rotation matrices are not valid types.
+    ValueError
+        If the rotation matrices are not valid shapes.
+
+    """
+    for rotation_matrix in [R1, R2]:
+        if not isinstance(rotation_matrix, (list, np.ndarray)):
+            raise TypeError(f"{rotation_matrix} must be an array. Got {type(rotation_matrix)}")
+    r1, r2 = np.copy(R1), np.copy(R2)
+    for rotation_matrix in [r1, r2]:
+        if rotation_matrix.shape[-2:] != (3, 3):
+            raise ValueError(f"Rotation matrices must be of shape (N, 3, 3) or (3, 3). Got {rotation_matrix.shape}.")
+    r1_shape, r2_shape = r1.shape, r2.shape
+    if r1_shape != r2_shape:
+        raise ValueError(f"Cannot compare R1 of shape {r1_shape} and R2 of shape {r2_shape}.")
+
+def _quaternions_guard_clauses(q1: Union[list, np.ndarray], q2: Union[list, np.ndarray]) -> None:
+    """
+    Checks validity of quaternions.
+
+    Raises
+    ------
+    TypeError
+        If the quaternions are not valid types.
+    ValueError
+        If the quaternions are not valid shapes.
+
+    """
+    for quaternion in [q1, q2]:
+        if not isinstance(quaternion, (list, np.ndarray)):
+            raise TypeError(f"{quaternion} must be an array. Got {type(quaternion)}")
+    q1, q2 = np.copy(q1), np.copy(q2)
+    for quaternion in [q1, q2]:
+        if quaternion.shape[-1] != 4:
+            raise ValueError(f"Quaternions must be of shape (N, 4) or (4,). Got {quaternion.shape}.")
+    if q1.shape != q2.shape:
+        raise ValueError(f"Cannot compare q1 of shape {q1.shape} and q2 of shape {q2.shape}")
 
 def euclidean(x: np.ndarray, y: np.ndarray, **kwargs) -> float:
     """
@@ -60,6 +106,7 @@ def euclidean(x: np.ndarray, y: np.ndarray, **kwargs) -> float:
     array([0.88956871, 1.19727356, 1.5243858 , 0.68765523, 1.29007067])
 
     """
+    x, y = np.copy(x), np.copy(y)
     if x.shape != y.shape:
         raise ValueError(f"Cannot compare x of shape {x.shape} and y of shape {y.shape}")
     return np.linalg.norm(x-y, **kwargs)
@@ -79,6 +126,8 @@ def chordal(R1: np.ndarray, R2: np.ndarray) -> float:
     where :math:`\\|\\mathbf{X}\\|_F` represents the Frobenius norm of the
     matrix :math:`\\mathbf{X}`.
 
+    The error lies within: [0, :math:`2\\sqrt{3}`]
+
     Parameters
     ----------
     R1 : numpy.ndarray
@@ -91,9 +140,21 @@ def chordal(R1: np.ndarray, R2: np.ndarray) -> float:
     d : float
         Chordal distance between matrices.
 
+    Examples
+    --------
+    >>> import ahrs
+    >>> R1 = ahrs.DCM(rpy=[0.0, 0.0, 0.0])
+    >>> R2 = ahrs.DCM(rpy=[90.0, 90.0, 90.0])
+    >>> ahrs.utils.chordal(R1, R2)
+    2.0
+    >>> R1 = ahrs.DCM(rpy=[10.0, -20.0, 30.0])
+    >>> R2 = ahrs.DCM(rpy=[-10.0, 20.0, -30.0])
+    >>> ahrs.utils.chordal(R1, R2)
+    1.6916338074634352
+
     """
-    if R1.shape != R2.shape:
-        raise ValueError(f"Cannot compare R1 of shape {R1.shape} and R2 of shape {R2.shape}")
+    _rotations_guard_clauses(R1, R2)
+    R1, R2 = np.copy(R1), np.copy(R2)
     return np.linalg.norm(R1-R2, 'fro')
 
 def identity_deviation(R1: np.ndarray, R2: np.ndarray) -> float:
@@ -106,7 +167,7 @@ def identity_deviation(R1: np.ndarray, R2: np.ndarray) -> float:
     where :math:`\\|\\mathbf{X}\\|_F` represents the Frobenius norm of the
     matrix :math:`\\mathbf{X}`.
 
-    The error lies within: [0, :math:`2\\sqrt{2}`]
+    The error lies within: [0, :math:`2\\sqrt{3}`]
 
     Parameters
     ----------
@@ -120,9 +181,21 @@ def identity_deviation(R1: np.ndarray, R2: np.ndarray) -> float:
     d : float
         Deviation from identity matrix.
 
+    Examples
+    --------
+    >>> import ahrs
+    >>> R1 = ahrs.DCM(rpy=[0.0, 0.0, 0.0])
+    >>> R2 = ahrs.DCM(rpy=[90.0, 90.0, 90.0])
+    >>> ahrs.utils.identity_deviation(R1, R2)
+    2.0
+    >>> R1 = ahrs.DCM(rpy=[10.0, -20.0, 30.0])
+    >>> R2 = ahrs.DCM(rpy=[-10.0, 20.0, -30.0])
+    >>> ahrs.utils.identity_deviation(R1, R2)
+    1.6916338074634352
+
     """
-    if R1.shape != R2.shape:
-        raise ValueError(f"Cannot compare R1 of shape {R1.shape} and R2 of shape {R2.shape}")
+    _rotations_guard_clauses(R1, R2)
+    R1, R2 = np.copy(R1), np.copy(R2)
     return np.linalg.norm(np.eye(3)-R1@R2.T, 'fro')
 
 def angular_distance(R1: np.ndarray, R2: np.ndarray) -> float:
@@ -148,9 +221,21 @@ def angular_distance(R1: np.ndarray, R2: np.ndarray) -> float:
     d : float
         Angular distance between rotation matrices
 
+    Examples
+    --------
+    >>> import ahrs
+    >>> R1 = ahrs.DCM(rpy=[0.0, 0.0, 0.0])
+    >>> R2 = ahrs.DCM(rpy=[90.0, 90.0, 90.0])
+    >>> ahrs.utils.angular_distance(R1, R2)
+    1.5707963267948966
+    >>> R1 = ahrs.DCM(rpy=[10.0, -20.0, 30.0])
+    >>> R2 = ahrs.DCM(rpy=[-10.0, 20.0, -30.0])
+    >>> ahrs.utils.angular_distance(R1, R2)
+    1.282213683073497
+
     """
-    if R1.shape != R2.shape:
-        raise ValueError(f"Cannot compare R1 of shape {R1.shape} and R2 of shape {R2.shape}")
+    _rotations_guard_clauses(R1, R2)
+    R1, R2 = np.copy(R1), np.copy(R2)
     return np.linalg.norm(logR(R1@R2.T))
 
 def qdist(q1: np.ndarray, q2: np.ndarray) -> float:
@@ -175,10 +260,7 @@ def qdist(q1: np.ndarray, q2: np.ndarray) -> float:
     d : float
         Euclidean distance between given unit quaternions
     """
-    q1 = np.copy(q1)
-    q2 = np.copy(q2)
-    if q1.shape != q2.shape:
-        raise ValueError(f"Cannot compare q1 of shape {q1.shape} and q2 of shape {q2.shape}")
+    _quaternions_guard_clauses(q1, q2)
     if q1.ndim == 1:
         q1 /= np.linalg.norm(q1)
         q2 /= np.linalg.norm(q2)
@@ -210,10 +292,7 @@ def qeip(q1: np.ndarray, q2: np.ndarray) -> float:
     d : float
         Euclidean distance of inner products between given unit quaternions.
     """
-    q1 = np.copy(q1)
-    q2 = np.copy(q2)
-    if q1.shape != q2.shape:
-        raise ValueError(f"Cannot compare q1 of shape {q1.shape} and q2 of shape {q2.shape}")
+    _quaternions_guard_clauses(q1, q2)
     if q1.ndim == 1:
         q1 /= np.linalg.norm(q1)
         q2 /= np.linalg.norm(q2)
@@ -245,10 +324,7 @@ def qcip(q1: np.ndarray, q2: np.ndarray) -> float:
     d : float
         Cosine of inner products of quaternions.
     """
-    q1 = np.copy(q1)
-    q2 = np.copy(q2)
-    if q1.shape != q2.shape:
-        raise ValueError(f"Cannot compare q1 of shape {q1.shape} and q2 of shape {q2.shape}")
+    _quaternions_guard_clauses(q1, q2)
     if q1.ndim == 1:
         q1 /= np.linalg.norm(q1)
         q2 /= np.linalg.norm(q2)
@@ -277,10 +353,7 @@ def qad(q1: np.ndarray, q2: np.ndarray) -> float:
     d : float
         Angle difference between given unit quaternions.
     """
-    q1 = np.copy(q1)
-    q2 = np.copy(q2)
-    if q1.shape != q2.shape:
-        raise ValueError(f"Cannot compare q1 of shape {q1.shape} and q2 of shape {q2.shape}")
+    _quaternions_guard_clauses(q1, q2)
     if q1.ndim == 1:
         q1 /= np.linalg.norm(q1)
         q2 /= np.linalg.norm(q2)

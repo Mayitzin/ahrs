@@ -245,7 +245,8 @@ Other Gravitational Methods
 ---------------------------
 
 The well known **International Gravity Formula** [Lambert]_ as described by
-Helmut Moritz in [Tscherning]_ for the `Geodetic Reference System 1980 <https://en.wikipedia.org/wiki/Geodetic_Reference_System_1980>`_
+Helmut Moritz in [Tscherning]_ for the `Geodetic Reference System 1980
+<https://en.wikipedia.org/wiki/Geodetic_Reference_System_1980>`_
 is also implemented here:
 
 .. math::
@@ -256,8 +257,8 @@ is also implemented here:
     >>> ahrs.utils.international_gravity(10.0)
     9.781884110728155
 
-As a bonus, the **normal gravity estimation** of the European Cooperation on Legal
-Metrology (`WELMEC <https://en.wikipedia.org/wiki/WELMEC>`_) is also
+As a bonus, the **normal gravity estimation** of the European Cooperation on
+Legal Metrology (`WELMEC <https://en.wikipedia.org/wiki/WELMEC>`_) is also
 implemented here:
 
 .. math::
@@ -294,8 +295,10 @@ References
     (ftp://ftp.nga.mil/pub2/gandg/website/wgs84/NGA.STND.0036_1.0.0_WGS84.pdf)
 .. [Heiskanen] Heiskanen, W. A. and Moritz, H. Physical Geodesy. W. H. Freeman
     and Company. 1967.
-.. [WELMEC2009] WELMEC DIRECTIVE 2009/23/EC: Common application non-automatic
-    weighing instruments. (https://www.welmec.org/documents/guides/2/)
+.. [WELMEC2021] WELMEC Directives 2014/31/EU and 2014/32/EU: Common Application.
+    Non-Automatic Weighing Instruments (NAWI); Automatic Weighing Instruments
+    (AWI); Multi-dimensional Measuring Instruments (MDMI.)
+    (https://www.welmec.org/welmec/documents/guides/2/2021/WELMEC_Guide_2_v2021.pdf)
 .. [Lambert] Walter D. Lambert. The International Gravity Formula. U.S. Coast
     and Geodetic Survey. 1945. (http://earth.geology.yale.edu/~ajs/1945A/360.pdf)
 .. [Somigliana1929] Carlo Somigliana. Teoria generale del campo gravitazionale
@@ -316,23 +319,28 @@ def international_gravity(lat: float, epoch: str = '1980') -> float:
     International Gravity Formula
 
     Estimate the normal gravity, :math:`g`, using the International Gravity
-    Formula [Lambert]_, adapted from Stokes' formula, and adopted by the `International Association
-    of Geodesy <https://www.iag-aig.org/>`_ at its Stockholm Assembly in 1930.
+    Formula [Lambert]_, adapted from Stokes' formula, and adopted by the
+    `International Association of Geodesy <https://www.iag-aig.org/>`_ at its
+    Stockholm Assembly in 1930.
 
     The expression for gravity on a spheroid, which combines gravitational
-    attraction and centrifugal acceleration, at a certain latitude, :math:`\\phi`,
-    can be written in the form of a series:
+    attraction and centrifugal acceleration, at a certain latitude,
+    :math:`\\phi`, can be written in the form of a series:
 
     .. math::
-        g = g_e\\big(1 + \\beta\\sin^2(\\phi) - \\beta_1\\sin^2(2\\phi) - \\beta_2\\sin^2(\\phi)\\sin^2(2\\phi) - \\beta_3\\sin^4(\\phi)\\sin^2(2\\phi) - \\dots\\big)
+        g = g_e\\big(1 + \\beta\\sin^2(\\phi) - \\beta_1\\sin^2(2\\phi)
+        - \\beta_2\\sin^2(\\phi)\\sin^2(2\\phi)
+        - \\beta_3\\sin^4(\\phi)\\sin^2(2\\phi) - \\dots\\big)
 
     where the values of the :math:`\\beta`'s are:
 
     .. math::
         \\begin{array}{ll}
-        \\beta &= \\frac{5}{2}m\\Big(1-\\frac{17}{35}f - \\frac{1}{245}f^2 - \\frac{13}{18865}f^3 - \\dots\\Big) - f \\\\
+        \\beta &= \\frac{5}{2}m\\Big(1-\\frac{17}{35}f - \\frac{1}{245}f^2
+        - \\frac{13}{18865}f^3 - \\dots\\Big) - f \\\\
         \\beta_1 &= \\frac{1}{8}f(f+2\\beta) \\\\
-        \\beta_2 &= \\frac{1}{8}f^2(2f+3\\beta) - \\frac{1}{32}f^3(3f+4\\beta) \\\\
+        \\beta_2 &= \\frac{1}{8}f^2(2f+3\\beta)
+        - \\frac{1}{32}f^3(3f+4\\beta) \\\\
         & \\vdots \\\\
         & \\mathrm{etc.}
         \\end{array}
@@ -373,8 +381,8 @@ def international_gravity(lat: float, epoch: str = '1980') -> float:
     lat : float
         Geographical Latitude, in decimal degrees.
     epoch : str, default: '1980'
-        Epoch of the Geodetic Reference System. Options are ``'1930'``, ``'1948'``,
-        ``'1967'`` and ``'1980'``.
+        Epoch of the Geodetic Reference System. Options are ``'1930'``,
+        ``'1948'``, ``'1967'`` and ``'1980'``.
 
     Return
     ------
@@ -389,26 +397,27 @@ def international_gravity(lat: float, epoch: str = '1980') -> float:
     9.7820428934191
 
     """
-    if abs(lat)>90.0:
+    if abs(lat) > 90.0:
         raise ValueError("Latitude must be between -90.0 and 90.0 degrees.")
-    lat *= DEG2RAD
     if epoch not in ['1930', '1948', '1967', '1980']:
-        return ValueError("Invalid epoch. Try '1930', '1948', '1967' or '1980'.")
+        raise ValueError("Invalid epoch. Try '1930', '1948', '1967' or '1980'.")
+    # Note: From Python 3.10 it is possible to use Structural Pattern Matching.
     g_e, b1, b2 = 9.780327, 5.3024e-3, 5.8e-6
-    if epoch=='1930':
+    if epoch == '1930':
         g_e, b1, b2 = 9.78049, 5.2884e-3, 5.9e-6
-    if epoch=='1948':
+    if epoch == '1948':
         g_e, b1, b2 = 9.780373, 5.2891e-3, 5.9e-6
-    if epoch=='1967':
+    if epoch == '1967':
         g_e, b1, b2 = 9.780318, 5.3024e-3, 5.9e-6
-    return g_e*(1 + b1*np.sin(lat)**2 - b2*np.sin(2.0*lat)**2)
+    lat *= DEG2RAD
+    return g_e*(1.0 + b1*np.sin(lat)**2 - b2*np.sin(2.0*lat)**2)
 
 def welmec_gravity(lat: float, h: float = 0.0) -> float:
     """
     Reference normal gravity of WELMEC's gravity zone
 
     Gravity zones are implemented by European States on their territories for
-    weighing instruments that are sensitive to variations of gravity [WELMEC2009]_.
+    weighing instruments that are sensitive to variations of gravity [WELMEC2021]_.
 
     Manufacturers may adjust their instruments using the reference gravity
     formula:
@@ -434,13 +443,13 @@ def welmec_gravity(lat: float, h: float = 0.0) -> float:
     Examples
     --------
     >>> ahrs.utils.welmec_gravity(52.3, 80.0)      # latitude = 52.3°, height = 80 m
-    9.818628439187075
+    9.812483709897048
 
     """
-    if abs(lat)>90.0:
+    if abs(lat) > 90.0:
         raise ValueError("Latitude must be between -90.0 and 90.0 degrees.")
     lat *= DEG2RAD
-    return 9.780318*(1 + 0.0053024*np.sin(lat)**2 - 0.0000058*np.sin(2*lat)**2) - 0.000003085*h
+    return 9.780318*(1.0 + 0.0053024*np.sin(lat)**2 - 0.0000058*np.sin(2.0*lat)**2) - 0.000003085*h
 
 class WGS:
     """
