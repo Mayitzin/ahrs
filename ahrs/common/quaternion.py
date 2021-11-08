@@ -333,13 +333,17 @@ References
 """
 
 import numpy as np
-from typing import Type, Union, Any, Tuple, List
+from typing import Union, Any, Tuple
 # Functions to convert DCM to quaternion representation
 from .orientation import shepperd
 from .orientation import hughes
 from .orientation import chiaverini
 from .orientation import itzhack
 from .orientation import sarabandi
+
+def _assert_iterables(item, item_name: str = 'iterable'):
+    if not isinstance(item, (list, tuple, np.ndarray)):
+        raise TypeError(f"{item_name} must be given as an array, got {type(item)}")
 
 def slerp(q0: np.ndarray, q1: np.ndarray, t_array: np.ndarray, threshold: float = 0.9995) -> np.ndarray:
     """Spherical Linear Interpolation between two quaternions.
@@ -483,19 +487,23 @@ class Quaternion(np.ndarray):
     '(0.0000 +0.2673i +0.5345j +0.8018k)'
 
     """
-    def __new__(subtype, q: np.ndarray = None, versor: bool = True, **kwargs):
+    def __new__(subtype, q: Union[list, np.ndarray] = None, versor: bool = True, **kwargs):
         if q is None:
             q = np.array([1.0, 0.0, 0.0, 0.0])
             if "dcm" in kwargs:
-                q = Quaternion.from_DCM(Quaternion, np.array(kwargs.pop("dcm")))
+                q = Quaternion.from_DCM(Quaternion, kwargs.pop("dcm"), **kwargs)
             if "rpy" in kwargs:
-                q = Quaternion.from_rpy(Quaternion, np.array(kwargs.pop("rpy")))
+                q = Quaternion.from_rpy(Quaternion, kwargs.pop("rpy"))
             if "angles" in kwargs:  # Older call to rpy
-                q = Quaternion.from_angles(Quaternion, np.array(kwargs.pop("angles")))
+                q = Quaternion.from_angles(Quaternion, kwargs.pop("angles"))
+        if not isinstance(q, (list, np.ndarray)):
+            raise TypeError(f"Expected `q` must be a list or a numpy array. Got {type(q)}")
         q = np.array(q, dtype=float)
-        if q.ndim!=1 or q.shape[-1] not in [3, 4]:
-            raise ValueError("Expected `q` to have shape (4,) or (3,), got {}.".format(q.shape))
-        if q.shape[-1]==3:
+        if q.ndim != 1 or q.shape[-1] not in [3, 4]:
+            raise ValueError(f"Expected `q` to have shape (4,) or (3,), got {q.shape}.")
+        if q.shape[-1] == 3:
+            if not np.any(q):
+                raise ValueError("Expected `q` to be a non-zero vector.")
             q = np.array([0.0, *q])
         if versor:
             q /= np.linalg.norm(q)
@@ -931,12 +939,12 @@ class Quaternion(np.ndarray):
         Examples
         --------
         >>> q = Quaternion([1.0, -2.0, 3.0, -4.0])
-        >>> q.view()
+        >>> q
         Quaternion([ 0.18257419, -0.36514837,  0.54772256, -0.73029674])
         >>> q.log
         array([ 0.        , -0.51519029,  0.77278544, -1.03038059])
         >>> q = Quaternion([0.0, 1.0, -2.0, 3.0])
-        >>> q.view()
+        >>> q
         Quaternion([ 0.        ,  0.26726124, -0.53452248,  0.80178373])
         >>> q.log
         array([ 0.        ,  0.41981298, -0.83962595,  1.25943893])
@@ -958,7 +966,7 @@ class Quaternion(np.ndarray):
         >>> str(q)
         '(0.5575 +0.1296i +0.5737j +0.5859k)'
         """
-        return "({:-.4f} {:+.4f}i {:+.4f}j {:+.4f}k)".format(self.w, self.x, self.y, self.z)
+        return f"({self.w:-.4f} {self.x:+.4f}i {self.y:+.4f}j {self.z:+.4f}k)"
 
     def __add__(self, p: Any):
         """
@@ -1437,7 +1445,7 @@ class Quaternion(np.ndarray):
         """
         a = np.array(a)
         if a.shape[0] != 3:
-            raise ValueError("Expected `a` to have shape (3, N) or (3,), got {}.".format(a.shape))
+            raise ValueError(f"Expected `a` to have shape (3, N) or (3,), got {a.shape}.")
         return self.to_DCM()@a
 
     def to_array(self) -> np.ndarray:
@@ -1615,22 +1623,32 @@ class Quaternion(np.ndarray):
             Method to use. Options are: 'chiaverini', 'hughes', 'itzhack',
             'sarabandi', and 'shepperd'.
 
+        Notes
+        -----
+        The selection can be simplified with Structural Pattern Matching if
+        using Python 3.10 or later.
+
         """
+        _assert_iterables(dcm, 'Direction Cosine Matrix')
+        in_SO3 = np.isclose(np.linalg.det(np.atleast_2d(dcm)), 1.0)
+        in_SO3 &= np.allclose(dcm@dcm.T, np.identity(3))
+        if not in_SO3:
+            raise ValueError("Given Direction Cosine Matrix is not in SO(3).")
+        dcm = np.copy(dcm)
         if dcm.shape != (3, 3):
-            raise TypeError("Expected matrix of size (3, 3). Got {}".format(dcm.shape))
-        q = None
-        if method.lower()=='hughes':
+            raise TypeError(f"Expected matrix of size (3, 3). Got {dcm.shape}")
+        if method.lower() == 'hughes':
             q = hughes(dcm)
-        if method.lower()=='chiaverini':
+        elif method.lower() == 'chiaverini':
             q = chiaverini(dcm)
-        if method.lower()=='shepperd':
+        elif method.lower() == 'shepperd':
             q = shepperd(dcm)
-        if method.lower()=='itzhack':
+        elif method.lower() == 'itzhack':
             q = itzhack(dcm, version=kw.get('version', 3))
-        if method.lower()=='sarabandi':
+        elif method.lower() == 'sarabandi':
             q = sarabandi(dcm, eta=kw.get('threshold', 0.0))
-        if q is None:
-            raise KeyError("Given method '{}' is not implemented.".format(method))
+        else:
+            raise KeyError(f"Given method '{method}' is not implemented.")
         q /= np.linalg.norm(q)
         return q
 
@@ -1704,9 +1722,13 @@ class Quaternion(np.ndarray):
         With both approaches the same quaternion is obtained.
 
         """
+        _assert_iterables(angles, 'Roll-Pitch-Yaw angles')
         angles = np.array(angles)
         if angles.ndim != 1 or angles.shape[0] != 3:
-            raise ValueError("Expected `angles` to have shape (3,), got {}.".format(angles.shape))
+            raise ValueError(f"Expected `angles` must have shape (3,), got {angles.shape}.")
+        for angle in angles:
+            if angle < -2.0* np.pi or angle > 2.0 * np.pi:
+                raise ValueError(f"Expected `angles` must be in the range [-2pi, 2pi], got {angles}.")
         yaw, pitch, roll = angles
         cy = np.cos(0.5*yaw)
         sy = np.sin(0.5*yaw)
@@ -1774,8 +1796,9 @@ class Quaternion(np.ndarray):
             Derivative of quaternion
 
         """
+        _assert_iterables(w, 'Angular velocity')
         if w.ndim != 1 or w.shape[0] != 3:
-            raise ValueError("Expected `w` to have shape (3,), got {}.".format(w.shape))
+            raise ValueError(f"Expected `w` to have shape (3,), got {w.shape}")
         F = np.array([
             [0.0, -w[0], -w[1], -w[2]],
             [w[0], 0.0, -w[2], w[1]],
@@ -1927,9 +1950,10 @@ class QuaternionArray(np.ndarray):
     def __new__(subtype, q: np.ndarray = None, versors: bool = True):
         if q is None:
             q = np.array([[1.0, 0.0, 0.0, 0.0]])
+        _assert_iterables(q, 'Quaternion Array')
         q = np.array(q, dtype=float)
-        if q.ndim!=2 or q.shape[-1] not in [3, 4]:
-            raise ValueError("Expected array to have shape (N, 4) or (N, 3), got {}.".format(q.shape))
+        if q.ndim != 2 or q.shape[-1] not in [3, 4]:
+            raise ValueError(f"Expected array to have shape (N, 4) or (N, 3), got {q.shape}.")
         if q.shape[-1] == 3:
             q = np.c_[np.zeros(q.shape[0]), q]
         if versors:
@@ -2543,7 +2567,7 @@ class QuaternionArray(np.ndarray):
             else:
                 raise ValueError("span must be a pair of integers indicating the indices of the data.")
         if weights is not None:
-            if weights.ndim>1:
+            if weights.ndim > 1:
                 raise ValueError("The weights must be in a one-dimensional array.")
             if weights.size != q.shape[0]:
                 raise ValueError("The number of weights do not match the number of quaternions.")
@@ -2624,6 +2648,7 @@ class QuaternionArray(np.ndarray):
                [-0.00284403 -0.29514739]])
 
         """
+        _assert_iterables(q, 'Quaternion')
         q = np.copy(q)
         if q.size != 4:
             raise ValueError("Given quaternion to rotate about must have 4 elements.")
