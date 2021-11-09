@@ -7,17 +7,15 @@ This novel estimator proposed by [Wu]_, offers an extremely simplified
 computation of `Davenport's <../davenport.html>`_ solution to
 `Wahba's problem <https://en.wikipedia.org/wiki/Wahba%27s_problem>`_, where the
 full solution is reduced to a couple of floating point operations, without
-losing accuracy and gaining important computation times.
+losing much accuracy, and sparing computational time.
 
 The accelerometer and magnetometer have their normalized observations
 :math:`^b\\mathbf{a}=\\begin{bmatrix}a_x&a_y&a_z\\end{bmatrix}^T`,
 :math:`^b\\mathbf{m}=\\begin{bmatrix}m_x&m_y&m_z\\end{bmatrix}^T` in the body
 frame :math:`b`.
 
-Their corresponding normalized vectors in the
-`NED <https://en.wikipedia.org/wiki/Local_tangent_plane_coordinates#Local_north,_east,_down_(NED)_coordinates>`_
-reference frame :math:`^r\\mathbf{a}=\\begin{bmatrix}0&0&1\\end{bmatrix}^T` and
-:math:`^b\\mathbf{a}=\\begin{bmatrix}m_N&0&m_D\\end{bmatrix}^T` are such that:
+Their corresponding normalized vectors :math:`^r\\mathbf{a}=\\begin{bmatrix}0&0&1\\end{bmatrix}^T` and
+:math:`^r\\mathbf{m}=\\begin{bmatrix}m_N&0&m_D\\end{bmatrix}^T` are such that:
 
 .. math::
     a_x^2+a_y^2+a_z^2 = m_x^2+m_y^2+m_z^2 = m_N^2+m_D^2 = 1
@@ -119,6 +117,10 @@ References
 
 import numpy as np
 
+def _assert_iterables(item, item_name: str = 'iterable'):
+    if not isinstance(item, (list, tuple, np.ndarray)):
+        raise TypeError(f"{item_name} must be given as an array. Got {type(item)}")
+
 class SAAM:
     """
     Super-fast Attitude from Accelerometer and Magnetometer
@@ -168,9 +170,9 @@ class SAAM:
         self.mag = mag
         self.Q = None
         if self.acc is not None and self.mag is not None:
-            self.Q = self._compute_all()
+            self.Q = self._compute_all(self.acc, self.mag)
 
-    def _compute_all(self) -> np.ndarray:
+    def _compute_all(self, acc: np.ndarray, mag: np.ndarray) -> np.ndarray:
         """
         Estimate the quaternions given all data.
 
@@ -188,13 +190,18 @@ class SAAM:
             of samples.
 
         """
-        if self.acc.shape != self.mag.shape:
+        _assert_iterables(acc, 'Gravitational acceleration vector')
+        _assert_iterables(mag, 'Geomagnetic field vector')
+        acc, mag = np.copy(acc), np.copy(mag)
+        if acc.shape != mag.shape:
             raise ValueError("acc and mag are not the same size")
-        if self.acc.shape[-1] != 3:
-            raise ValueError(f"Sensor data must be of shape (M, 3), but it got {self.acc.shape}")
+        if acc.shape[-1] != 3:
+            raise ValueError(f"Sensor data must be of shape (3, ) or (M, 3). Got {acc.shape}")
+        if acc.ndim < 2:
+            return self.estimate(acc, mag)
         # Normalize measurements (eq. 1)
-        ax, ay, az = np.transpose(self.acc/np.linalg.norm(self.acc, axis=1)[:, None])
-        mx, my, mz = np.transpose(self.mag/np.linalg.norm(self.mag, axis=1)[:, None])
+        ax, ay, az = np.transpose(acc/np.linalg.norm(acc, axis=1)[:, None])
+        mx, my, mz = np.transpose(mag/np.linalg.norm(mag, axis=1)[:, None])
         # Dynamic magnetometer reference vector (eq. 12)
         mD = ax*mx + ay*my + az*mz
         mN = np.sqrt(1-mD**2)
@@ -236,7 +243,7 @@ class SAAM:
         # Normalize measurements (eq. 1)
         a_norm = np.linalg.norm(acc)
         m_norm = np.linalg.norm(mag)
-        if not a_norm>0 or not m_norm>0:      # handle NaN
+        if not a_norm > 0 or not m_norm > 0:    # handle NaN
             return None
         ax, ay, az = acc/a_norm
         mx, my, mz = mag/m_norm
@@ -250,4 +257,4 @@ class SAAM:
         qz = az*mD - ax*mN-mz
         # Final quaternion (eq. 18)
         q = np.array([qw, qx, qy, qz])
-        return q/np.linalg.norm(q)
+        return q / np.linalg.norm(q)
