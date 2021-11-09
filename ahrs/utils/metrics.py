@@ -261,6 +261,7 @@ def qdist(q1: np.ndarray, q2: np.ndarray) -> float:
         Euclidean distance between given unit quaternions
     """
     _quaternions_guard_clauses(q1, q2)
+    q1, q2 = np.copy(q1), np.copy(q2)
     if q1.ndim == 1:
         q1 /= np.linalg.norm(q1)
         q2 /= np.linalg.norm(q2)
@@ -293,6 +294,7 @@ def qeip(q1: np.ndarray, q2: np.ndarray) -> float:
         Euclidean distance of inner products between given unit quaternions.
     """
     _quaternions_guard_clauses(q1, q2)
+    q1, q2 = np.copy(q1), np.copy(q2)
     if q1.ndim == 1:
         q1 /= np.linalg.norm(q1)
         q2 /= np.linalg.norm(q2)
@@ -325,6 +327,7 @@ def qcip(q1: np.ndarray, q2: np.ndarray) -> float:
         Cosine of inner products of quaternions.
     """
     _quaternions_guard_clauses(q1, q2)
+    q1, q2 = np.copy(q1), np.copy(q2)
     if q1.ndim == 1:
         q1 /= np.linalg.norm(q1)
         q2 /= np.linalg.norm(q2)
@@ -354,6 +357,7 @@ def qad(q1: np.ndarray, q2: np.ndarray) -> float:
         Angle difference between given unit quaternions.
     """
     _quaternions_guard_clauses(q1, q2)
+    q1, q2 = np.copy(q1), np.copy(q2)
     if q1.ndim == 1:
         q1 /= np.linalg.norm(q1)
         q2 /= np.linalg.norm(q2)
