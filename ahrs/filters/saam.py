@@ -116,6 +116,8 @@ References
 """
 
 import numpy as np
+from ..common.quaternion import Quaternion
+from ..common.quaternion import QuaternionArray
 
 def _assert_iterables(item, item_name: str = 'iterable'):
     if not isinstance(item, (list, tuple, np.ndarray)):
@@ -131,6 +133,8 @@ class SAAM:
         N-by-3 array with measurements of acceleration in in m/s^2
     mag : numpy.ndarray, default: None
         N-by-3 array with measurements of magnetic field in mT
+    representation : str, default: ``'quaternion'``
+        Attitude representation. Options are ``'rotmat'`` or ``'quaternion'``.
 
     Attributes
     ----------
@@ -165,12 +169,25 @@ class SAAM:
            [-0.77869223, -0.58616905,  0.22344478, -0.01080235]])
 
     """
-    def __init__(self, acc: np.ndarray = None, mag: np.ndarray = None):
-        self.acc = acc
-        self.mag = mag
-        self.Q = None
+    def __init__(self, acc: np.ndarray = None, mag: np.ndarray = None, representation='quaternion'):
+        self._guard_clauses_parameters(representation)
+        self.acc: np.ndarray = acc
+        self.mag: np.ndarray = mag
+        self.Q: np.ndarray = None
         if self.acc is not None and self.mag is not None:
             self.Q = self._compute_all(self.acc, self.mag)
+            if representation == 'rotmat':
+                self.A = Quaternion(self.Q).to_DCM() if self.Q.ndim < 2 else QuaternionArray(self.Q).to_DCM()
+
+    def _guard_clauses_parameters(self, representation) -> None:
+        if representation.lower() not in ['rotmat', 'quaternion']:
+            raise ValueError(f"Given representation '{representation}' is NOT valid. Try 'quaternion, or 'rotmat'")
+
+    def _assert_observations(self, acc: np.ndarray, mag: np.ndarray) -> None:
+        if acc.shape != mag.shape:
+            raise ValueError("acc and mag are not the same size")
+        if acc.shape[-1] != 3:
+            raise ValueError(f"Sensor data must be of shape (3, ) or (M, 3). Got {acc.shape}")
 
     def _compute_all(self, acc: np.ndarray, mag: np.ndarray) -> np.ndarray:
         """
@@ -193,10 +210,7 @@ class SAAM:
         _assert_iterables(acc, 'Gravitational acceleration vector')
         _assert_iterables(mag, 'Geomagnetic field vector')
         acc, mag = np.copy(acc), np.copy(mag)
-        if acc.shape != mag.shape:
-            raise ValueError("acc and mag are not the same size")
-        if acc.shape[-1] != 3:
-            raise ValueError(f"Sensor data must be of shape (3, ) or (M, 3). Got {acc.shape}")
+        self._assert_observations(acc, mag)
         if acc.ndim < 2:
             return self.estimate(acc, mag)
         # Normalize measurements (eq. 1)
