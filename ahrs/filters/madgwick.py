@@ -68,7 +68,8 @@ orientation of the sensor, :math:`\\mathbf{q}`, is that which aligns any
 its corresponding *measured* direction in the sensor frame,
 :math:`^S\\mathbf{s}=\\begin{bmatrix}0 & s_x & s_y & s_z\\end{bmatrix}`.
 
-Thus, the `objective function <https://en.wikipedia.org/wiki/Loss_function>` is:
+Thus, the `objective function <https://en.wikipedia.org/wiki/Loss_function>`_
+is:
 
 .. math::
     \\begin{array}{rcl}
@@ -372,6 +373,10 @@ References
 import numpy as np
 from ..common.orientation import q_prod, q_conj, acc2q, am2q
 
+def _assert_iterables(item, item_name: str = 'iterable'):
+    if not isinstance(item, (list, tuple, np.ndarray)):
+        raise TypeError(f"{item_name} must be given as an array. Got {type(item)}")
+
 class Madgwick:
     """
     Madgwick's Gradient Descent Orientation Filter
@@ -398,6 +403,10 @@ class Madgwick:
     gain : float, default: {0.033, 0.041}
         Filter gain. Defaults to 0.033 for IMU implementations, or to 0.041 for
         MARG implementations.
+    gain_imu : float, default: 0.033
+        Filter gain for IMU implementation.
+    gain_marg : float, default: 0.041
+        Filter gain for MARG implementation.
     q0 : numpy.ndarray, default: None
         Initial orientation, as a versor (normalized quaternion).
 
@@ -421,59 +430,53 @@ class Madgwick:
     Raises
     ------
     ValueError
-        When dimension of input array(s) ``acc``, ``gyr``, or ``mag`` are not
+        When dimension of input arrays ``acc``, ``gyr``, or ``mag`` are not
         equal.
 
     Examples
     --------
-    Assuming we have 3-axis sensor data in N-by-3 arrays, we can simply give
-    these samples to their corresponding type.
 
-    **IMU Array**
-
-    The Madgwick algorithm can work solely with gyroscope and accelerometer
-    samples.
-
+    This algorithm can work solely with gyroscope and accelerometer samples.
     The easiest way is to directly give the full array of samples to their
-    matching parameters.
+    matching parameters. The estimated quaternions are saved in the attribute
+    ``Q``.
 
     >>> from ahrs.filters import Madgwick
     >>> madgwick = Madgwick(gyr=gyro_data, acc=acc_data)     # Using IMU
-
-    The estimated quaternions are saved in the attribute ``Q``.
-
     >>> type(madgwick.Q), madgwick.Q.shape
     (<class 'numpy.ndarray'>, (1000, 4))
 
-    If we desire to estimate each sample independently, we call the
-    corresponding method.
+    If we desire to estimate each sample independently, we call its *update*
+    method.
 
     >>> madgwick = Madgwick()
     >>> Q = np.tile([1., 0., 0., 0.], (num_samples, 1)) # Allocate for quaternions
     >>> for t in range(1, num_samples):
     ...     Q[t] = madgwick.updateIMU(Q[t-1], gyr=gyro_data[t], acc=acc_data[t])
 
-    **MARG Array**
+
+    This algorithm requires a valid initial attitude. This can be set with the
+    parameter ``q0``:
+
+    >>> madgwick = Madgwick(gyr=gyro_data, acc=acc_data, q0=[0.7071, 0.0, 0.7071, 0.0])
+
+    .. warning::
+        Do **NOT** initialize the filter with an empty array. The initial
+        quaternion **must** be a versor, which is a quaternion, whose norm is
+        equal to ``1.0``.
+
+    If no initial orientation is given, an attitude is estimated using the
+    first samples. This attitude is computed assuming the sensors are straped
+    to a body in a quasi-static state.
 
     Further on, we can also use magnetometer data.
 
     >>> madgwick = Madgwick(gyr=gyro_data, acc=acc_data, mag=mag_data)   # Using MARG
 
-    This algorithm is dynamically adding the orientation, instead of estimating
-    it from static observations. Thus, it requires an initial attitude to build
-    on top of it. This can be set with the parameter ``q0``:
-
-    >>> madgwick = Madgwick(gyr=gyro_data, acc=acc_data, q0=[0.7071, 0.0, 0.7071, 0.0])
-
-    If no initial orientation is given, then an attitude using the first
-    samples is estimated. This attitude is computed assuming the sensors are
-    straped to a system in a quasi-static state.
-
     A constant sampling frequency equal to 100 Hz is used by default. To change
-    this value we set it in its parameter ``frequency``. Here we set it, for
-    example, to 150 Hz.
+    this value we set it in its parameter ``frequency``.
 
-    >>> madgwick = Madgwick(gyr=gyro_data, acc=acc_data, frequency=150.0)
+    >>> madgwick = Madgwick(gyr=gyro_data, acc=acc_data, frequency=150.0)   # 150 Hz
 
     Or, alternatively, setting the sampling step (:math:`\\Delta t = \\frac{1}{f}`):
 
@@ -496,21 +499,31 @@ class Madgwick:
     >>> madgwick = Madgwick(gyr=gyro_data, acc=acc_data, gain=0.01)
 
     Following the original article, the gain defaults to ``0.033`` for IMU
-    arrays, and to ``0.041`` for MARG arrays.
+    arrays, and to ``0.041`` for MARG arrays. Alternatively, the individual
+    gains can be also set separately:
+
+    >>> madgwick = Madgwick(gyr=gyro_data, acc=acc_data, mag=mag_data, gain_imu=0.01, gain_marg=0.05)
 
     """
     def __init__(self, gyr: np.ndarray = None, acc: np.ndarray = None, mag: np.ndarray = None, **kwargs):
-        self.gyr = gyr
-        self.acc = acc
-        self.mag = mag
-        self.frequency = kwargs.get('frequency', 100.0)
-        self.Dt = kwargs.get('Dt', 1.0/self.frequency)
-        self.q0 = kwargs.get('q0')
-        self.gain = kwargs.get('beta')  # Setting gain with `beta` will be removed in the future.
-        if self.gain is None:
-            self.gain = kwargs.get('gain', 0.033 if self.mag is None else 0.041)
+        self.gyr: np.ndarray = gyr
+        self.acc: np.ndarray = acc
+        self.mag: np.ndarray = mag
+        self.frequency: float = kwargs.get('frequency', 100.0)
+        self.Dt: float = kwargs.get('Dt', 1.0/self.frequency)
+        self.q0: np.ndarray = kwargs.get('q0')
+        _assert_iterables(self.q0, 'Initial quaternion')
+        self._set_gain(**kwargs)
         if self.acc is not None and self.gyr is not None:
             self.Q = self._compute_all()
+
+    def _set_gain(self, **kwargs) -> None:
+        """Set the gain parameter"""
+        self.gain_imu: float = kwargs.get('gain_imu', 0.033)
+        self.gain_marg: float = kwargs.get('gain_marg', 0.041)
+        self.gain: float = kwargs.get('beta')  # Setting gain with `beta` will be removed in the future.
+        if self.gain is None:
+            self.gain = kwargs.get('gain', self.gain_imu if self.mag is None else self.gain_marg)
 
     def _compute_all(self) -> np.ndarray:
         """
@@ -577,21 +590,22 @@ class Madgwick:
         ...
 
         Or giving the data directly in the class constructor will estimate all
-        attitudes at once:
+        attitudes at once and store the estimated quaternions in the attribute
+        ``Q``:
 
         >>> madgwick = Madgwick(gyr=gyro_data, acc=acc_data)
         >>> madgwick.Q.shape
         (1000, 4)
 
-        This builds the array ``Q``, where all attitude estimations will be
-        stored as quaternions.
-
         """
-        if gyr is None or not np.linalg.norm(gyr)>0:
+        _assert_iterables(q, 'Quaternion')
+        _assert_iterables(gyr, 'Tri-axial gyroscope sample')
+        _assert_iterables(acc, 'Tri-axial accelerometer sample')
+        if gyr is None or not np.linalg.norm(gyr) > 0:
             return q
         qDot = 0.5 * q_prod(q, [0, *gyr])                           # (eq. 12)
         a_norm = np.linalg.norm(acc)
-        if a_norm>0:
+        if a_norm > 0:
             a = acc/a_norm
             qw, qx, qy, qz = q/np.linalg.norm(q)
             # Gradient objective function (eq. 25) and Jacobian (eq. 26)
@@ -645,23 +659,25 @@ class Madgwick:
         ...
 
         Or giving the data directly in the class constructor will estimate all
-        attitudes at once:
+        attitudes at once and store the estimated quaternions in the attribute
+        ``Q``:
 
         >>> madgwick = Madgwick(gyr=gyro_data, acc=acc_data, mag=mag_data)
         >>> madgwick.Q.shape
         (1000, 4)
 
-        This builds the array ``Q``, where all attitude estimations will be
-        stored as quaternions.
-
         """
-        if gyr is None or not np.linalg.norm(gyr)>0:
+        _assert_iterables(q, 'Quaternion')
+        _assert_iterables(gyr, 'Tri-axial gyroscope sample')
+        _assert_iterables(acc, 'Tri-axial accelerometer sample')
+        _assert_iterables(mag, 'Tri-axial magnetometer sample')
+        if gyr is None or not np.linalg.norm(gyr) > 0:
             return q
-        if mag is None or not np.linalg.norm(mag)>0:
+        if mag is None or not np.linalg.norm(mag) > 0:
             return self.updateIMU(q, gyr, acc)
         qDot = 0.5 * q_prod(q, [0, *gyr])                           # (eq. 12)
         a_norm = np.linalg.norm(acc)
-        if a_norm>0:
+        if a_norm > 0:
             a = acc/a_norm
             m = mag/np.linalg.norm(mag)
             # Rotate normalized magnetometer measurements
