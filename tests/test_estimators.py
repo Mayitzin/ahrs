@@ -52,7 +52,6 @@ class TestSAAM(unittest.TestCase):
     def test_multiple_values(self):
         saam = ahrs.filters.SAAM(self.Rg, self.Rm)
         self.assertLess(np.nanmean(ahrs.utils.metrics.qad(self.Qts, saam.Q)), self.decimal_precision)
-        # np.testing.assert_allclose(ahrs.QuaternionArray(saam.Q).to_DCM(), self.rotations, atol=self.decimal_precision*2.0)
 
     def test_multiple_values_as_rotations(self):
         saam = ahrs.filters.SAAM(self.Rg, self.Rm, representation='rotmat')
@@ -81,6 +80,26 @@ class TestQUEST(unittest.TestCase):
     def test_single_values(self):
         quest = ahrs.filters.QUEST(self.Rg[0], self.Rm[0])
         self.assertLess(ahrs.utils.metrics.qad(self.Qts[0], quest.Q), self.decimal_precision)
+
+class TESTDavenport(unittest.TestCase):
+    def setUp(self) -> None:
+        self.decimal_precision = 1e-7
+        # Create random attitudes
+        num_samples = 1000
+        self.Qts = ahrs.QuaternionArray(np.random.random((num_samples, 4)) - 0.5)
+        self.rotations = self.Qts.to_DCM()
+        # Add noise to reference vectors and rotate them by the random attitudes
+        noises = np.random.randn(2*num_samples, 3) * self.decimal_precision * 0.1
+        self.Rg = np.array([R.T @ (np.array([0.0, 0.0, GRAVITY]) + noises[i]) for i, R in enumerate(self.rotations)])
+        self.Rm = np.array([R.T @ (REFERENCE_MAGNETIC_VECTOR + noises[i+num_samples]) for i, R in enumerate(self.rotations)])
+
+    def test_single_values(self):
+        orientation = ahrs.filters.Davenport(self.Rg[0], self.Rm[0])
+        self.assertLess(ahrs.utils.metrics.qad(orientation.Q, self.Qts[0]), self.decimal_precision)
+
+    def test_multiple_values(self):
+        orientation = ahrs.filters.Davenport(self.Rg, self.Rm)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(orientation.Q, self.Qts)), self.decimal_precision)
 
 if __name__ == '__main__':
     unittest.main()
