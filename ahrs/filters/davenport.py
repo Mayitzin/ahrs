@@ -175,6 +175,8 @@ class Davenport:
         """
         if self.acc.shape != self.mag.shape:
             raise ValueError("acc and mag are not the same size")
+        if self.acc.ndim < 2:
+            return self.estimate(self.acc, self.mag)
         num_samples = len(self.acc)
         Q = np.zeros((num_samples, 4))
         for t in range(num_samples):
