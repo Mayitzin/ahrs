@@ -37,7 +37,7 @@ class TestSAAM(unittest.TestCase):
         self.rotations = self.Qts.to_DCM()
         # Add noise to reference vectors and rotate them by the random attitudes
         noises = np.random.randn(2*num_samples, 3)*1e-3
-        self.Rg = np.array([R.T @ (np.array([0.0, 0.0, 1.0]) + noises[i]) for i, R in enumerate(self.rotations)])
+        self.Rg = np.array([R.T @ (np.array([0.0, 0.0, GRAVITY]) + noises[i]) for i, R in enumerate(self.rotations)])
         self.Rm = np.array([R.T @ (REFERENCE_MAGNETIC_VECTOR + noises[i+num_samples]) for i, R in enumerate(self.rotations)])
         self.decimal_precision = 7e-2
 
@@ -65,6 +65,26 @@ class TestSAAM(unittest.TestCase):
         self.assertRaises(ValueError, ahrs.filters.SAAM, acc=[1.0, 2.0], mag=[2.0, 3.0, 4.0])
         self.assertRaises(ValueError, ahrs.filters.SAAM, acc=[1.0, 2.0, 3.0, 4.0], mag=[2.0, 3.0, 4.0, 5.0])
 
+class TestFAMC(unittest.TestCase):
+    def setUp(self) -> None:
+        # Create random attitudes
+        num_samples = 1000
+        self.Qts = ahrs.QuaternionArray(np.random.random((num_samples, 4)) - 0.5)
+        self.rotations = self.Qts.to_DCM()
+        # Add noise to reference vectors and rotate them by the random attitudes
+        noises = np.random.randn(2*num_samples, 3) * 1e-6
+        self.Rg = np.array([R.T @ (np.array([0.0, 0.0, GRAVITY]) + noises[i]) for i, R in enumerate(self.rotations)])
+        self.Rm = np.array([R.T @ (REFERENCE_MAGNETIC_VECTOR + noises[i+num_samples]) for i, R in enumerate(self.rotations)])
+        self.decimal_precision = 7e-2
+
+    def test_single_values(self):
+        orientation = ahrs.filters.FAMC(self.Rg[0], self.Rm[0])
+        self.assertLess(ahrs.utils.metrics.qad(orientation.Q, self.Qts[0]), self.decimal_precision)
+
+    def test_multiple_values(self):
+        orientation = ahrs.filters.FAMC(self.Rg, self.Rm)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(orientation.Q, self.Qts)), self.decimal_precision)
+
 class TestQUEST(unittest.TestCase):
     def setUp(self) -> None:
         # Create random attitudes
@@ -81,7 +101,7 @@ class TestQUEST(unittest.TestCase):
         quest = ahrs.filters.QUEST(self.Rg[0], self.Rm[0])
         self.assertLess(ahrs.utils.metrics.qad(self.Qts[0], quest.Q), self.decimal_precision)
 
-class TESTDavenport(unittest.TestCase):
+class TestDavenport(unittest.TestCase):
     def setUp(self) -> None:
         self.decimal_precision = 1e-7
         # Create random attitudes
