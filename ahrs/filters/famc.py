@@ -225,6 +225,8 @@ class FAMC:
         """
         if self.acc.shape != self.mag.shape:
             raise ValueError("acc and mag are not the same size")
+        if self.acc.ndim < 2:
+            return self.estimate(self.acc, self.mag)
         num_samples = len(self.acc)
         Q = np.zeros((num_samples, 4))
         for t in range(num_samples):
@@ -259,27 +261,36 @@ class FAMC:
         # Normalize measurements (eq. 10)
         a_norm = np.linalg.norm(acc)
         m_norm = np.linalg.norm(mag)
-        if not a_norm>0 or not m_norm>0:    # handle NaN
+        if not a_norm > 0 or not m_norm > 0:    # handle NaN
             return None
-        acc /= a_norm                       # A = [ax, ay, az] in body frame
-        mag /= m_norm                       # M = [mx, my, mz] in body frame
+        ax, ay, az = acc / a_norm               # A = [ax, ay, az] in body frame
+        mx, my, mz = mag / m_norm               # M = [mx, my, mz] in body frame
         # Dynamic magnetometer reference vector
-        m_D = acc@mag                       # (eq. 13)
-        m_N = np.sqrt(1.0-m_D**2)
+        m_D = ax*mx + ay*my + az*mz             # (eq. 13)
+        m_N = np.sqrt(1.0 - m_D**2)
         # Parameters
-        B = np.zeros((3, 3))                # (eq. 18)
-        B[:, 0] = m_N*mag
-        B[:, 2] = m_D*mag + acc
+        B = np.zeros((3, 3))                    # (eq. 18)
+        B[:, 0] = m_N * np.array([mx, my, mz])
+        B[:, 2] = m_D * np.array([mx, my, mz]) + np.array([ax, ay, az])
         B *= 0.5
         tau = B[0, 2] + B[2, 0]
         alpha = np.zeros(3)
         Y = np.zeros((3, 3))
-        alpha[0] = B[0, 0] - B[2, 2] - 1
-        Y[0] = np.array([-1, B[1, 0], tau])/alpha[0]
-        alpha[1] = B[1, 0]**2/alpha[0] - B[0, 0] - B[2, 2] - 1
-        Y[1] = np.array([-B[1, 0]/alpha[0], -1, B[1, 2]+B[1, 0]*Y[0, 2]])/alpha[1]
+        # First Row
+        alpha[0] = B[2, 2] - B[0, 0] + 1.0
+        Y[0, 0] = -1.0 / alpha[0]
+        Y[0, 1] = B[1, 0] / alpha[0]
+        Y[0, 2] = tau / alpha[0]
+        # Second Row
+        alpha[1] = -B[1, 0]**2/alpha[0] + B[0, 0] + B[2, 2] + 1
+        Y[1, 0] = -B[1, 0] / (alpha[0] * alpha[1])
+        Y[1, 1] = -1.0 / alpha[1]
+        Y[1, 2] = (B[1, 2] + B[1, 0]*tau/alpha[0]) / alpha[1]
+        # Third row
         alpha[2] = alpha[0] - 2 + tau**2/alpha[0] + Y[1, 2]**2*alpha[1]
-        Y[2] = np.array([(tau+B[1, 0]*Y[1, 2])/alpha[0], Y[1, 2], 1])/alpha[2]
+        Y[2, 0] = (tau/alpha[0] + B[1, 0]*Y[1, 2]/alpha[0]) / alpha[2]
+        Y[2, 1] = Y[1, 2] / alpha[2]
+        Y[2, 2] = 1.0 / alpha[2]
         # Quaternion Elements (eq. 21)
         a = B[1, 2]*(Y[0, 0] + Y[0, 1]*(Y[1, 2]*Y[2, 0] + Y[1, 0]) + Y[0, 2]*Y[2, 0]) - (B[0, 2]-B[2, 0])*(Y[1, 2]*Y[2, 0] + Y[1, 0]) - Y[2, 0]*B[1, 0]
         b = B[1, 2]*(          Y[0, 1]*(Y[1, 2]*Y[2, 1] + Y[1, 1]) + Y[0, 2]*Y[2, 1]) - (B[0, 2]-B[2, 0])*(Y[1, 2]*Y[2, 1] + Y[1, 1]) - Y[2, 1]*B[1, 0]
