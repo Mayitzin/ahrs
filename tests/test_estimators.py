@@ -85,7 +85,43 @@ class TestFAMC(unittest.TestCase):
         orientation = ahrs.filters.FAMC(self.Rg, self.Rm)
         self.assertLess(np.nanmean(ahrs.utils.metrics.qad(orientation.Q, self.Qts)), self.decimal_precision)
 
-class TestQUEST(unittest.TestCase):
+class TestFLAE(unittest.TestCase):
+    def setUp(self) -> None:
+        # Create random attitudes
+        num_samples = 1000
+        self.Qts = ahrs.QuaternionArray(np.random.random((num_samples, 4)) - 0.5)
+        self.rotations = self.Qts.to_DCM()
+        # Add noise to reference vectors and rotate them by the random attitudes
+        noises = np.random.randn(2*num_samples, 3) * 1e-6
+        self.Rg = np.array([R.T @ (np.array([0.0, 0.0, GRAVITY]) + noises[i]) for i, R in enumerate(self.rotations)])
+        self.Rm = np.array([R.T @ (REFERENCE_MAGNETIC_VECTOR + noises[i+num_samples]) for i, R in enumerate(self.rotations)])
+        self.decimal_precision = 7e-2
+
+    def test_single_values(self):
+        orientation = ahrs.filters.FLAE(self.Rg[0], self.Rm[0])
+        self.assertLess(ahrs.utils.metrics.qad(orientation.Q, self.Qts[0]), self.decimal_precision)
+
+    def test_single_values_method_eig(self):
+        orientation = ahrs.filters.FLAE(self.Rg[0], self.Rm[0], method='eig')
+        self.assertLess(ahrs.utils.metrics.qad(orientation.Q, self.Qts[0]), self.decimal_precision)
+
+    def test_single_values_method_newton(self):
+        orientation = ahrs.filters.FLAE(self.Rg[0], self.Rm[0], method='newton')
+        self.assertLess(ahrs.utils.metrics.qad(orientation.Q, self.Qts[0]), self.decimal_precision)
+
+    def test_multiple_values(self):
+        orientation = ahrs.filters.FLAE(self.Rg, self.Rm)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(orientation.Q, self.Qts)), self.decimal_precision)
+
+    def test_multiple_values_method_eig(self):
+        orientation = ahrs.filters.FLAE(self.Rg, self.Rm, method='eig')
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(orientation.Q, self.Qts)), self.decimal_precision)
+
+    def test_multiple_values_method_newton(self):
+        orientation = ahrs.filters.FLAE(self.Rg, self.Rm, method='newton')
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(orientation.Q, self.Qts)), self.decimal_precision)
+
+class TestQUEST(unittest.TestCase):     ####### NOT PASSING: ERROR IN IMPLEMENTATION #######
     def setUp(self) -> None:
         # Create random attitudes
         num_samples = 1000
@@ -93,8 +129,8 @@ class TestQUEST(unittest.TestCase):
         self.rotations = self.Qts.to_DCM()
         # Add noise to reference vectors and rotate them by the random attitudes
         noises = np.random.randn(2*num_samples, 3)*1e-3
-        self.Rg = np.array([R @ (np.array([0.0, 0.0, -GRAVITY]) + noises[i]) for i, R in enumerate(self.rotations)])
-        self.Rm = np.array([R @ (REFERENCE_MAGNETIC_VECTOR + noises[i+num_samples]) for i, R in enumerate(self.rotations)])
+        self.Rg = np.array([R.T @ (np.array([0.0, 0.0, -GRAVITY]) + noises[i]) for i, R in enumerate(self.rotations)])
+        self.Rm = np.array([R.T @ (REFERENCE_MAGNETIC_VECTOR + noises[i+num_samples]) for i, R in enumerate(self.rotations)])
         self.decimal_precision = 7e-2
 
     def test_single_values(self):
