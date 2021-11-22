@@ -95,7 +95,7 @@ class TestFLAE(unittest.TestCase):
         noises = np.random.randn(2*num_samples, 3) * 1e-6
         self.Rg = np.array([R.T @ (np.array([0.0, 0.0, GRAVITY]) + noises[i]) for i, R in enumerate(self.rotations)])
         self.Rm = np.array([R.T @ (REFERENCE_MAGNETIC_VECTOR + noises[i+num_samples]) for i, R in enumerate(self.rotations)])
-        self.decimal_precision = 7e-2
+        self.decimal_precision = 2e-3
 
     def test_single_values(self):
         orientation = ahrs.filters.FLAE(self.Rg[0], self.Rm[0])
@@ -155,6 +155,26 @@ class TestDavenport(unittest.TestCase):
 
     def test_multiple_values(self):
         orientation = ahrs.filters.Davenport(self.Rg, self.Rm)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(orientation.Q, self.Qts)), self.decimal_precision)
+
+class TestAQUA(unittest.TestCase):
+    def setUp(self) -> None:
+        self.decimal_precision = 1e-7
+        # Create random attitudes
+        num_samples = 1000
+        self.Qts = ahrs.QuaternionArray(np.random.random((num_samples, 4)) - 0.5)
+        self.rotations = self.Qts.to_DCM()
+        # Add noise to reference vectors and rotate them by the random attitudes
+        noises = np.random.randn(2*num_samples, 3) * self.decimal_precision * 0.1
+        self.Rg = np.array([R.T @ (np.array([0.0, 0.0, GRAVITY]) + noises[i]) for i, R in enumerate(self.rotations)])
+        self.Rm = np.array([R.T @ (REFERENCE_MAGNETIC_VECTOR + noises[i+num_samples]) for i, R in enumerate(self.rotations)])
+
+    def test_single_values(self):
+        orientation = ahrs.filters.AQUA(acc=self.Rg[0], mag=self.Rm[0])
+        self.assertLess(ahrs.utils.metrics.qad(orientation.Q, self.Qts[0]), self.decimal_precision)
+
+    def test_multiple_values(self):
+        orientation = ahrs.filters.AQUA(acc=self.Rg, mag=self.Rm)
         self.assertLess(np.nanmean(ahrs.utils.metrics.qad(orientation.Q, self.Qts)), self.decimal_precision)
 
 if __name__ == '__main__':
