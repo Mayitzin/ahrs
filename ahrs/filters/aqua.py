@@ -574,6 +574,20 @@ from ..common.constants import MUNICH_LATITUDE, MUNICH_HEIGHT
 from ..utils.wgs84 import WGS
 GRAVITY = WGS().normal_gravity(MUNICH_LATITUDE, MUNICH_HEIGHT)
 
+def _assert_iterables(item, item_name: str = 'iterable'):
+    if not isinstance(item, (list, tuple, np.ndarray)):
+        raise TypeError(f"{item_name} must be given as an array. Got {type(item)}")
+
+def _assert_same_shapes(item1, item2, item_names: list = None):
+    for item in [item1, item2]:
+        if not isinstance(item, (list, tuple, np.ndarray)):
+            raise TypeError(f"{item} must be an array. Got {type(item)}")
+    if item_names is None:
+        item_names = ['item1', 'item2']
+    item1, tem2 = np.copy(item1), np.copy(item2)
+    if item1.shape != item2.shape:
+        raise ValueError(f"{item_names[0]} and {item_names[1]} must have the same shape. Got {item1.shape} and {item2.shape}")
+
 def slerp_I(q: np.ndarray, ratio: float, t: float) -> np.ndarray:
     """
     Interpolation with identity quaternion
@@ -755,7 +769,7 @@ class AQUA:
     ----------
     gyr : numpy.ndarray
         N-by-3 array with N gyroscope samples.
-    acc : numpy.ndarra
+    acc : numpy.ndarray
         N-by-3 array with N accelerometer samples.
     mag : numpy.ndarray
         N-by-3 array with N magnetometer samples.
@@ -776,39 +790,55 @@ class AQUA:
 
     """
     def __init__(self, gyr: np.ndarray = None, acc: np.ndarray = None, mag: np.ndarray = None, **kw):
-        self.gyr = gyr
-        self.acc = acc
-        self.mag = mag
-        self.Q = None
-        self.frequency = kw.get('frequency', 100.0)
-        self.frame = kw.get('frame', 'NED')
-        self.Dt = kw.get('Dt', 1.0/self.frequency)
-        self.alpha = kw.get('alpha', 0.01)
-        self.beta = kw.get('beta', 0.01)
-        self.threshold = kw.get('threshold', 0.9)
-        self.adaptive = kw.get('adaptive', False)
-        self.q0 = kw.get('q0')
-        if self.acc is not None and self.gyr is not None:
+        self.gyr: np.ndarray = gyr
+        self.acc: np.ndarray = acc
+        self.mag: np.ndarray = mag
+        self.frequency: float = kw.get('frequency', 100.0)
+        self.frame: str = kw.get('frame', 'NED')
+        self.Dt: float = kw.get('Dt', 1.0/self.frequency)
+        self.alpha: float = kw.get('alpha', 0.01)
+        self.beta: float = kw.get('beta', 0.01)
+        self.threshold: float = kw.get('threshold', 0.9)
+        self.adaptive: bool = kw.get('adaptive', False)
+        self.q0: np.ndarray = kw.get('q0')
+        if self.acc is not None:
             self.Q = self._compute_all()
 
     def _compute_all(self):
         """Estimate all quaternions with given sensor values"""
-        if self.acc.shape != self.gyr.shape:
-            raise ValueError("acc and gyr are not the same size")
-        num_samples = len(self.gyr)
+        _assert_iterables(self.acc, 'Accelerometer data')
+        # A single sample was given
+        if self.acc.ndim < 2:
+            if self.mag is None:
+                return self.estimate(self.acc)
+            _assert_iterables(self.mag, 'Magnetometer data')
+            _assert_same_shapes(self.acc, self.mag, ['acc', 'mag'])
+            return self.estimate(self.acc, self.mag)
+        # Multiple samples were given
+        num_samples = len(self.acc)
         Q = np.zeros((num_samples, 4))
-        # Compute with IMU architecture
         if self.mag is None:
             Q[0] = self.estimate(self.acc[0]) if self.q0 is None else self.q0.copy()
+            if self.gyr is not None:
+                _assert_iterables(self.gyr, 'Gyroscope data')
+                _assert_same_shapes(self.acc, self.gyr, ['acc', 'gyr'])
+                for t in range(1, num_samples):
+                    Q[t] = self.updateIMU(Q[t-1], self.gyr[t], self.acc[t])
+                return Q
             for t in range(1, num_samples):
-                Q[t] = self.updateIMU(Q[t-1], self.gyr[t], self.acc[t])
+                Q[t] = self.estimate(self.acc[t])
             return Q
-        # Compute with MARG architecture
-        if self.mag.shape != self.gyr.shape:
-            raise ValueError("mag and gyr are not the same size")
-        Q[0] = self.estimate(self.acc[0], self.mag[0]) if self.q0 is None else np.copy(self.q0)
+        Q[0] = self.estimate(self.acc[0], self.mag[0]) if self.q0 is None else self.q0.copy()
+        if self.gyr is not None:
+            _assert_iterables(self.mag, 'Magnetometer data')
+            _assert_iterables(self.gyr, 'Gyroscope data')
+            _assert_same_shapes(self.acc, self.mag, ['acc', 'mag'])
+            _assert_same_shapes(self.acc, self.gyr, ['acc', 'gyr'])
+            for t in range(1, num_samples):
+                Q[t] = self.updateMARG(Q[t-1], self.gyr[t], self.acc[t], self.mag[t])
+            return Q
         for t in range(1, num_samples):
-            Q[t] = self.updateMARG(Q[t-1], self.gyr[t], self.acc[t], self.mag[t])
+            Q[t] = self.estimate(self.acc[t], self.mag[t])
         return Q
 
     def Omega(self, x: np.ndarray) -> np.ndarray:
@@ -873,7 +903,7 @@ class AQUA:
 
         Parameters
         ----------
-        acc : numpy.ndarray, default: None
+        acc : numpy.ndarray
             Sample of tri-axial Accelerometer in m/s^2
         mag : numpy.ndarray, default: None
             Sample of tri-axial Magnetometer in mT
@@ -886,7 +916,7 @@ class AQUA:
         ax, ay, az = acc/np.linalg.norm(acc)
         # Quaternion from Accelerometer Readings (eq. 25)
         if az >= 0:
-            q_acc = np.array([np.sqrt((az+1)/2), -ay/np.sqrt(2*(1-ax)), ax/np.sqrt(2*(az+1)), 0.0])
+            q_acc = np.array([np.sqrt((az+1)/2), -ay/np.sqrt(2*(az+1)), ax/np.sqrt(2*(az+1)), 0.0])
         else:
             q_acc = np.array([-ay/np.sqrt(2*(1-az)), np.sqrt((1-az)/2.0), 0.0, ax/np.sqrt(2*(1-az))])
         q_acc /= np.linalg.norm(q_acc)
@@ -894,7 +924,7 @@ class AQUA:
             m_norm = np.linalg.norm(mag)
             if m_norm == 0:
                 raise ValueError(f"Invalid geomagnetic field. Its magnitude must be greater than zero.")
-            lx, ly, lz = q2R(q_acc).T @ (mag/np.linalg.norm(mag))   # (eq. 26)
+            lx, ly, _ = q2R(q_acc).T @ (mag/np.linalg.norm(mag))   # (eq. 26)
             Gamma = lx**2 + ly**2                                   # (eq. 28)
             # Quaternion from Magnetometer Readings (eq. 35)
             if lx >= 0:
@@ -1010,7 +1040,7 @@ class AQUA:
         m_norm = np.linalg.norm(mag)
         if not m_norm > 0:
             return q_prime
-        lx, ly, lz = q2R(q_prime).T @ (mag/m_norm)          # World frame magnetic vector (eq. 54)
+        lx, ly, _ = q2R(q_prime).T @ (mag/m_norm)          # World frame magnetic vector (eq. 54)
         Gamma = lx**2 + ly**2                               # (eq. 28)
         q_mag = np.array([np.sqrt(Gamma+lx*np.sqrt(Gamma))/np.sqrt(2*Gamma), 0.0, 0.0, ly/np.sqrt(2*(Gamma+lx*np.sqrt(Gamma)))])    # (eq. 58)
         q_mag = slerp_I(q_mag, self.beta, self.threshold)
