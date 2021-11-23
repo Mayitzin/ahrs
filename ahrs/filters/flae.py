@@ -332,12 +332,19 @@ References
 
 """
 
+import warnings
 import numpy as np
 from ..common.mathfuncs import *
+
+warnings.filterwarnings('error')
 
 # Reference Observations in Munich, Germany
 from ..utils.wmm import WMM
 MAG = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT).magnetic_elements
+
+def _assert_iterables(item, item_name: str = 'iterable'):
+    if not isinstance(item, (list, tuple, np.ndarray)):
+        raise TypeError(f"{item_name} must be given as an array. Got {type(item)}")
 
 class FLAE:
     """Fast Linear Attitude Estimator
@@ -417,6 +424,8 @@ class FLAE:
         """
         if self.acc.shape != self.mag.shape:
             raise ValueError("acc and mag are not the same size")
+        if self.acc.ndim < 2:
+            return self.estimate(self.acc, self.mag)
         num_samples = len(self.acc)
         Q = np.zeros((num_samples, 4))
         for t in range(num_samples):
@@ -429,7 +438,7 @@ class FLAE:
         for i in range(3):
             A[i] /= A[i, i]
             for j in range(4):
-                if i!=j:
+                if i != j:
                     A[j] -= A[j, i]*A[i]
         return A
 
@@ -487,46 +496,48 @@ class FLAE:
 
         """
         if acc.size!=3:
-            raise ValueError("Accelerometer sample must be a (3,) array. Got array of shape {}".format(acc.shape))
+            raise ValueError(f"Accelerometer sample must be a (3,) array. Got array of shape {acc.shape}")
         if mag.size!=3:
-            raise ValueError("Magnetometer sample must be a (3,) array. Got array of shape {}".format(mag.shape))
+            raise ValueError(f"Magnetometer sample must be a (3,) array. Got array of shape {mag.shape}")
         if method.lower() not in ['eig', 'symbolic', 'newton']:
             raise ValueError(f"Given method '{method}' is not valid. Try 'symbolic', 'eig' or 'newton'")
         Db = np.r_[[acc/np.linalg.norm(acc)], [mag/np.linalg.norm(mag)]]
         H = self.a * Db.T @ self.ref                            # (eq. 42)
         W = self.P1Hx(H[0]) + self.P2Hy(H[1]) + self.P3Hz(H[2]) # (eq. 44)
-        if method.lower()=='eig':
+        if method.lower() == 'eig':
             V, D = np.linalg.eig(W)
             q = D[:, np.argmax(V)]
-            return q/np.linalg.norm(q)
+            return q / np.linalg.norm(q)
         # Polynomial parameters                             (eq. 49)
         t1 = -2*np.trace(H@H.T)
         t2 = -8*np.linalg.det(H.T)
         t3 = np.linalg.det(W)
-        if method.lower()=='newton':
+        if method.lower() == 'newton':
             lam = lam_old = 1.0
             i = 0
-            while abs(lam_old-lam)>1e-8 or i<=30:
+            while abs(lam_old-lam) > 1e-8 or i <= 30:
                 lam_old = lam
                 f = lam**4 + t1*lam**2 + t2*lam + t3        # (eq. 48)
                 fp = 4*lam**3 + 2*t1*lam + t2               # (eq. 50)
                 lam -= f/fp                                 # (eq. 51)
                 i += 1
-        if method.lower()=='symbolic':
+        if method.lower() == 'symbolic':
             # Parameters (eq. 53)
             T0 = 2*t1**3 + 27*t2**2 - 72*t1*t3
-            T1 = np.cbrt(T0 + np.sqrt(abs(-4*(t1**2 + 12*t3)**3 + T0**2)))
-            T2 = np.sqrt(abs(-4*t1 + 2**(4/3)*(t1**2 + 12*t3)/T1 + 2**(2/3)*T1))
+            try:
+                T1 = ((T0 + np.emath.sqrt(-4*(t1**2 + 12*t3)**3 + T0**2).real).real**(1/3)).real
+            except RuntimeWarning:
+                T1 = np.cbrt(T0 + np.emath.sqrt(-4*(t1**2 + 12*t3)**3 + T0**2).real)
+            T2 = np.emath.sqrt(abs(-4*t1 + 2**(4/3)*(t1**2 + 12*t3)/T1 + (2**(2/3))*T1))
             # Solutions to polynomial (eq. 52)
             L = np.zeros(4)
-            k1 = -T2**2 - 12*t1
-            k2 = 12*np.sqrt(6)*t2/T2
-            L[0] =   T2 - np.sqrt(abs(k1 - k2))
-            L[1] =   T2 + np.sqrt(abs(k1 - k2))
-            L[2] = -(T2 + np.sqrt(abs(k1 + k2)))
-            L[3] = -(T2 - np.sqrt(abs(k1 + k2)))
-            L /= 2*np.sqrt(6)
+            L[0] =   T2 - np.emath.sqrt(-T2**2 - 12*t1 - 12*np.sqrt(6)*t2/T2).real
+            L[1] =   T2 + np.emath.sqrt(-T2**2 - 12*t1 - 12*np.sqrt(6)*t2/T2).real
+            L[2] = -(T2 + np.emath.sqrt(-T2**2 - 12*t1 + 12*np.sqrt(6)*t2/T2).real)
+            L[3] = -(T2 - np.emath.sqrt(-T2**2 - 12*t1 + 12*np.sqrt(6)*t2/T2).real)
+            L *= 1.0/(2.0*np.sqrt(6))
             lam = L[(np.abs(L-1.0)).argmin()]               # Eigenvalue closest to 1
+            # lam = max(L)
         N = W - lam*np.identity(4)                          # (eq. 54)
         N = self._row_reduction(N)                          # (eq. 55)
         q = np.array([N[0, 3], N[1, 3], N[2, 3], -1])       # (eq. 58)
