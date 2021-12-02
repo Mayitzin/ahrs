@@ -288,7 +288,8 @@ Footnotes
     geometric transformations and the notation (w, x, y, z) is preferred.
 .. [#] Any unit vector :math:`\\mathbf{v}\\in\\mathbb{R}^3` has, per definition,
     a magnitude equal to 1, which means :math:`\\|\\mathbf{v}\\|=1`.
-.. [#] This is the reason why some early authors call the quaternions *Euler Parameters*.
+.. [#] This is the reason why some early authors call the quaternions *Euler
+    Parameters*.
 .. [#] Many authors decide to use the symbol :math:`\\otimes` to indicate a
     quaternion product, but here is not used in order to avoid any confusions
     with the `outer product <https://en.wikipedia.org/wiki/Outer_product>`_.
@@ -310,6 +311,9 @@ References
     spacecraft attitude representation. TU Berlin. 2012.
     (http://www.tu-berlin.de/fileadmin/fg169/miscellaneous/Quaternions.pdf)
 .. [Hughes] P. Hughes. Spacecraft Attitude Dynamics. 1986. p. 18
+.. [Kuffner] James J. Kuffner. Effective Sampling and Distance Metrics for 3D
+    Rigid Body Path Planning. Proc. 2004 IEEE International Conference on
+    Robotics and Automation. 2004.
 .. [Kuipers] Kuipers, Jack. Quaternions and Rotation Sequences. Princenton
     University Press. 1999.
 .. [Markley2007] F. Landis Markley. Averaging Quaternions. Journal of Guidance,
@@ -334,6 +338,7 @@ References
 
 import numpy as np
 from typing import Union, Any, Tuple
+
 # Functions to convert DCM to quaternion representation
 from .orientation import shepperd
 from .orientation import hughes
@@ -388,6 +393,55 @@ def slerp(q0: np.ndarray, q1: np.ndarray, t_array: np.ndarray, threshold: float 
     s0 = np.cos(theta) - qdot*sin_theta/sin_theta_0
     s1 = sin_theta/sin_theta_0
     return s0[:,np.newaxis]*q0[np.newaxis,:] + s1[:,np.newaxis]*q1[np.newaxis,:]
+
+def random_attitudes(n: int = 1, representation: str = 'quaternion') -> np.ndarray:
+    """
+    Generate random quaternions
+
+    To generate a random quaternion a mapping in SO(3) is first created and
+    then transformed as explained originally by [Shoemake]_ and summarized in
+    [Kuffner]_.
+
+    Parameters
+    ----------
+    n : int, default: 1
+        Number of random quaternions to generate. Default is 1.
+    representation : str, default ``'quaternion'``
+        Attitude representation. Options are ``'quaternion'`` or ``'rotmat'``.
+
+    Returns
+    -------
+    Q : numpy.ndarray
+        Array of n random quaternions.
+    """
+    if not isinstance(n, int):
+        raise ValueError(f"n must be an integer. Got {type(n)}.")
+    if n < 1:
+        raise ValueError(f"n must be greater than 0. Got {n}.")
+    if not isinstance(representation, str):
+        raise TypeError(f"representation must be a string. Got {type(representation)}")
+    if representation.lower() not in ['rotmat', 'quaternion']:
+        raise ValueError(f"Given representation '{representation}' is NOT valid. Try 'rotmat', or 'quaternion'")
+    u = np.random.random((3, n))
+    s1 = np.sqrt(1.0 - u[0])
+    s2 = np.sqrt(u[0])
+    t1 = 2.0 * np.pi * u[1]
+    t2 = 2.0 * np.pi * u[2]
+    Q = np.zeros((n, 4))
+    Q[:, 0] = s2 * np.cos(t2)
+    Q[:, 1] = s1 * np.sin(t1)
+    Q[:, 2] = s1 * np.cos(t1)
+    Q[:, 3] = s2 * np.sin(t2)
+    if n < 2:
+        q = Q.flatten()
+        q /= np.linalg.norm(q)
+        if representation.lower() == 'rotmat':
+            return Quaternion(q).to_DCM()
+        return q
+    Q = Q / np.linalg.norm(Q, axis=1)[:, None]
+    if representation.lower() == 'rotmat':
+        return QuaternionArray(Q).to_DCM()
+    return Q
 
 class Quaternion(np.ndarray):
     """
@@ -496,8 +550,7 @@ class Quaternion(np.ndarray):
                 q = Quaternion.from_rpy(Quaternion, kwargs.pop("rpy"))
             if "angles" in kwargs:  # Older call to rpy
                 q = Quaternion.from_angles(Quaternion, kwargs.pop("angles"))
-        if not isinstance(q, (list, np.ndarray)):
-            raise TypeError(f"Expected `q` must be a list or a numpy array. Got {type(q)}")
+        _assert_iterables(q, 'q')
         q = np.array(q, dtype=float)
         if q.ndim != 1 or q.shape[-1] not in [3, 4]:
             raise ValueError(f"Expected `q` to have shape (4,) or (3,), got {q.shape}.")
@@ -1818,15 +1871,7 @@ class Quaternion(np.ndarray):
         q : numpy.ndarray
             Random array corresponding to a valid quaternion
         """
-        u = np.random.random(3)
-        q = np.zeros(4)
-        s2pi = np.sin(2.0*np.pi)
-        c2pi = np.cos(2.0*np.pi)
-        q[0] = np.sqrt(1.0-u[0])*s2pi*u[1]
-        q[1] = np.sqrt(1.0-u[0])*c2pi*u[1]
-        q[2] = np.sqrt(u[0])*s2pi*u[2]
-        q[3] = np.sqrt(u[0])*c2pi*u[2]
-        return q / np.linalg.norm(q)
+        return random_attitudes(1)
 
 class QuaternionArray(np.ndarray):
     """Array of Quaternions
@@ -1950,7 +1995,10 @@ class QuaternionArray(np.ndarray):
     def __new__(subtype, q: np.ndarray = None, versors: bool = True):
         if q is None:
             q = np.array([[1.0, 0.0, 0.0, 0.0]])
-        _assert_iterables(q, 'Quaternion Array')
+        if isinstance(q, int):
+            q = np.atleast_2d(random_attitudes(q))
+        else:
+            _assert_iterables(q, 'Quaternion Array')
         q = np.array(q, dtype=float)
         if q.ndim != 2 or q.shape[-1] not in [3, 4]:
             raise ValueError(f"Expected array to have shape (N, 4) or (N, 3), got {q.shape}.")
