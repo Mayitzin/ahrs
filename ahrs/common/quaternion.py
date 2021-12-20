@@ -396,7 +396,7 @@ def slerp(q0: np.ndarray, q1: np.ndarray, t_array: np.ndarray, threshold: float 
 
 def random_attitudes(n: int = 1, representation: str = 'quaternion') -> np.ndarray:
     """
-    Generate random quaternions
+    Generate random attitudes
 
     To generate a random quaternion a mapping in SO(3) is first created and
     then transformed as explained originally by [Shoemake]_ and summarized in
@@ -405,8 +405,8 @@ def random_attitudes(n: int = 1, representation: str = 'quaternion') -> np.ndarr
     Parameters
     ----------
     n : int, default: 1
-        Number of random quaternions to generate. Default is 1.
-    representation : str, default ``'quaternion'``
+        Number of random atitudes to generate. Default is 1.
+    representation : str, default: ``'quaternion'``
         Attitude representation. Options are ``'quaternion'`` or ``'rotmat'``.
 
     Returns
@@ -541,14 +541,16 @@ class Quaternion(np.ndarray):
     '(0.0000 +0.2673i +0.5345j +0.8018k)'
 
     """
-    def __new__(subtype, q: Union[list, np.ndarray] = None, versor: bool = True, **kwargs):
+    def __new__(subtype, q: Union[int, list, np.ndarray] = None, versor: bool = True, **kwargs):
         if q is None:
             q = np.array([1.0, 0.0, 0.0, 0.0])
-            if "dcm" in kwargs:
+            if kwargs.pop('random', False):
+                q = random_attitudes()
+            if 'dcm' in kwargs:
                 q = Quaternion.from_DCM(Quaternion, kwargs.pop("dcm"), **kwargs)
-            if "rpy" in kwargs:
+            if 'rpy' in kwargs:
                 q = Quaternion.from_rpy(Quaternion, kwargs.pop("rpy"))
-            if "angles" in kwargs:  # Older call to rpy
+            if 'angles' in kwargs:  # Older call to rpy
                 q = Quaternion.from_angles(Quaternion, kwargs.pop("angles"))
         _assert_iterables(q, 'q')
         q = np.array(q, dtype=float)
