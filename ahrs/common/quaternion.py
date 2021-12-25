@@ -415,9 +415,9 @@ def random_attitudes(n: int = 1, representation: str = 'quaternion') -> np.ndarr
         Array of n random quaternions.
     """
     if not isinstance(n, int):
-        raise ValueError(f"n must be an integer. Got {type(n)}.")
+        raise TypeError(f"n must be an integer. Got {type(n)}")
     if n < 1:
-        raise ValueError(f"n must be greater than 0. Got {n}.")
+        raise ValueError(f"n must be greater than 0. Got {n}")
     if not isinstance(representation, str):
         raise TypeError(f"representation must be a string. Got {type(representation)}")
     if representation.lower() not in ['rotmat', 'quaternion']:
@@ -2710,3 +2710,27 @@ class QuaternionArray(np.ndarray):
         qQ[:, 3] = q[0]*self.array[:, 3] + q[1]*self.array[:, 2] - q[2]*self.array[:, 1] + q[3]*self.array[:, 0]
         qQ /= np.linalg.norm(qQ, axis=1)[:, None]
         return qQ
+
+    def angular_velocities(self, dt: float) -> np.ndarray:
+        """Compute the angular velocity between N Quaternions.
+
+        Parameters
+        ----------
+        dt : float
+            Time step, in seconds, between consecutive Quaternions.
+
+        Returns
+        -------
+        w : numpy.ndarray
+            (N-1)-by-3 array with angular velocities in rad/s.
+
+        """
+        w = np.zeros((self.num_qts - 1, 3))
+        for i in range(1, self.num_qts - 1):
+            q1 = self.array[i - 1]
+            q2 = self.array[i]
+            B1 = np.array([[q1[0], q1[1], q1[2], q1[3]], [-q1[1], q1[0], q1[3], -q1[2]], [-q1[2], -q1[3], q1[0], q1[1]], [-q1[3], q1[2], -q1[1], q1[0]]])
+            B2 = np.array([[q2[0], q2[1], q2[2], q2[3]], [-q2[1], q2[0], q2[3], -q2[2]], [-q2[2], -q2[3], q2[0], q2[1]], [-q2[3], q2[2], -q2[1], q2[0]]])
+            W = 2.0*(B1@B2.T - np.identity(4))/dt
+            w[i] = W[1:, 0]
+        return w
