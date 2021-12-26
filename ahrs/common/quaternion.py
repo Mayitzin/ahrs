@@ -2726,10 +2726,8 @@ class QuaternionArray(np.ndarray):
             (N-1)-by-3 array with angular velocities in rad/s.
 
         """
-        w = np.zeros((self.num_qts-1, 3))
-        for i in range(1, self.num_qts-1):
-            w[i] = np.array([
-                self.array[i-1, 0]*self.array[i, 1] - self.array[i-1, 1]*self.array[i, 0] - self.array[i-1, 2]*self.array[i, 3] + self.array[i-1, 3]*self.array[i, 2],
-                self.array[i-1, 0]*self.array[i, 2] + self.array[i-1, 1]*self.array[i, 3] - self.array[i-1, 2]*self.array[i, 0] - self.array[i-1, 3]*self.array[i, 1],
-                self.array[i-1, 0]*self.array[i, 3] - self.array[i-1, 1]*self.array[i, 2] + self.array[i-1, 2]*self.array[i, 1] - self.array[i-1, 3]*self.array[i, 0]])
+        w = np.c_[
+            self.array[:-1, 0]*self.array[1:, 1] - self.array[:-1, 1]*self.array[1:, 0] - self.array[:-1, 2]*self.array[1:, 3] + self.array[:-1, 3]*self.array[1:, 2],
+            self.array[:-1, 0]*self.array[1:, 2] + self.array[:-1, 1]*self.array[1:, 3] - self.array[:-1, 2]*self.array[1:, 0] - self.array[:-1, 3]*self.array[1:, 1],
+            self.array[:-1, 0]*self.array[1:, 3] - self.array[:-1, 1]*self.array[1:, 2] + self.array[:-1, 2]*self.array[1:, 1] - self.array[:-1, 3]*self.array[1:, 0]]
         return 2.0 * w / dt
