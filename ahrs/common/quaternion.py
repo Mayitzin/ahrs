@@ -337,7 +337,7 @@ References
 """
 
 import numpy as np
-from typing import Union, Any, Tuple
+from typing import Union, Tuple
 
 # Functions to convert DCM to quaternion representation
 from .orientation import shepperd
@@ -345,6 +345,7 @@ from .orientation import hughes
 from .orientation import chiaverini
 from .orientation import itzhack
 from .orientation import sarabandi
+from .mathfuncs import skew
 
 def _assert_iterables(item, item_name: str = 'iterable'):
     if not isinstance(item, (list, tuple, np.ndarray)):
@@ -1023,7 +1024,7 @@ class Quaternion(np.ndarray):
         """
         return f"({self.w:-.4f} {self.x:+.4f}i {self.y:+.4f}j {self.z:+.4f}k)"
 
-    def __add__(self, p: Any):
+    def __add__(self, p: np.ndarray):
         """
         Add quaternions
 
@@ -1050,7 +1051,7 @@ class Quaternion(np.ndarray):
         """
         return Quaternion(self.to_array() + p)
 
-    def __sub__(self, p: Any):
+    def __sub__(self, p: np.ndarray):
         """
         Difference of quaternions
 
@@ -1072,7 +1073,7 @@ class Quaternion(np.ndarray):
         """
         return Quaternion(self.to_array() - p)
 
-    def __mul__(self, q: np.ndarray) -> Any:
+    def __mul__(self, q: np.ndarray) -> np.ndarray:
         """
         Product between quaternions
 
@@ -2725,12 +2726,10 @@ class QuaternionArray(np.ndarray):
             (N-1)-by-3 array with angular velocities in rad/s.
 
         """
-        w = np.zeros((self.num_qts - 1, 3))
-        for i in range(1, self.num_qts - 1):
-            q1 = self.array[i - 1]
-            q2 = self.array[i]
-            B1 = np.array([[q1[0], q1[1], q1[2], q1[3]], [-q1[1], q1[0], q1[3], -q1[2]], [-q1[2], -q1[3], q1[0], q1[1]], [-q1[3], q1[2], -q1[1], q1[0]]])
-            B2 = np.array([[q2[0], q2[1], q2[2], q2[3]], [-q2[1], q2[0], q2[3], -q2[2]], [-q2[2], -q2[3], q2[0], q2[1]], [-q2[3], q2[2], -q2[1], q2[0]]])
-            W = 2.0*(B1@B2.T - np.identity(4))/dt
-            w[i] = W[1:, 0]
-        return w
+        w = np.zeros((self.num_qts-1, 3))
+        for i in range(1, self.num_qts-1):
+            w[i] = np.array([
+                self.array[i-1, 0]*self.array[i, 1] - self.array[i-1, 1]*self.array[i, 0] - self.array[i-1, 2]*self.array[i, 3] + self.array[i-1, 3]*self.array[i, 2],
+                self.array[i-1, 0]*self.array[i, 2] + self.array[i-1, 1]*self.array[i, 3] - self.array[i-1, 2]*self.array[i, 0] - self.array[i-1, 3]*self.array[i, 1],
+                self.array[i-1, 0]*self.array[i, 3] - self.array[i-1, 1]*self.array[i, 2] + self.array[i-1, 2]*self.array[i, 1] - self.array[i-1, 3]*self.array[i, 0]])
+        return 2.0 * w / dt
