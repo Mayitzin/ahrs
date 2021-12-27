@@ -557,7 +557,7 @@ class Madgwick:
             Q[t] = self.updateMARG(Q[t-1], self.gyr[t], self.acc[t], self.mag[t])
         return Q
 
-    def updateIMU(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray) -> np.ndarray:
+    def updateIMU(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, dt: float = None) -> np.ndarray:
         """
         Quaternion Estimation with IMU architecture.
 
@@ -569,6 +569,8 @@ class Madgwick:
             Sample of tri-axial Gyroscope in rad/s
         acc : numpy.ndarray
             Sample of tri-axial Accelerometer in m/s^2
+        dt : float, default: None
+            Time step, in seconds, between consecutive Quaternions.
 
         Returns
         -------
@@ -601,6 +603,7 @@ class Madgwick:
         _assert_iterables(q, 'Quaternion')
         _assert_iterables(gyr, 'Tri-axial gyroscope sample')
         _assert_iterables(acc, 'Tri-axial accelerometer sample')
+        dt = self.Dt if dt is None else dt
         if gyr is None or not np.linalg.norm(gyr) > 0:
             return q
         qDot = 0.5 * q_prod(q, [0, *gyr])                           # (eq. 12)
@@ -619,11 +622,11 @@ class Madgwick:
             gradient = J.T@f                                        # (eq. 34)
             gradient /= np.linalg.norm(gradient)
             qDot -= self.gain*gradient                              # (eq. 33)
-        q += qDot*self.Dt                                           # (eq. 13)
+        q += qDot*dt                                           # (eq. 13)
         q /= np.linalg.norm(q)
         return q
 
-    def updateMARG(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, mag: np.ndarray) -> np.ndarray:
+    def updateMARG(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, mag: np.ndarray, dt: float = None) -> np.ndarray:
         """
         Quaternion Estimation with a MARG architecture.
 
@@ -637,6 +640,8 @@ class Madgwick:
             Sample of tri-axial Accelerometer in m/s^2
         mag : numpy.ndarray
             Sample of tri-axial Magnetometer in nT
+        dt : float, default: None
+            Time step, in seconds, between consecutive Quaternions.
 
         Returns
         -------
@@ -671,6 +676,7 @@ class Madgwick:
         _assert_iterables(gyr, 'Tri-axial gyroscope sample')
         _assert_iterables(acc, 'Tri-axial accelerometer sample')
         _assert_iterables(mag, 'Tri-axial magnetometer sample')
+        dt = self.Dt if dt is None else dt
         if gyr is None or not np.linalg.norm(gyr) > 0:
             return q
         if mag is None or not np.linalg.norm(mag) > 0:
@@ -701,6 +707,6 @@ class Madgwick:
             gradient = J.T@f                                        # (eq. 34)
             gradient /= np.linalg.norm(gradient)
             qDot -= self.gain*gradient                              # (eq. 33)
-        q += qDot*self.Dt                                           # (eq. 13)
+        q += qDot*dt                                          # (eq. 13)
         q /= np.linalg.norm(q)
         return q

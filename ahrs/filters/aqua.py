@@ -936,7 +936,7 @@ class AQUA:
             return q/np.linalg.norm(q)
         return q_acc
 
-    def updateIMU(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray) -> np.ndarray:
+    def updateIMU(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, dt: float = None) -> np.ndarray:
         """
         Quaternion Estimation with a IMU architecture.
 
@@ -958,6 +958,8 @@ class AQUA:
             Sample of tri-axial Gyroscope in rad/s.
         acc : numpy.ndarray
             Sample of tri-axial Accelerometer in m/s^2
+        dt : float, default: None
+            Time step, in seconds, between consecutive Quaternions.
 
         Returns
         -------
@@ -965,11 +967,12 @@ class AQUA:
             Estimated quaternion.
 
         """
+        dt = self.Dt if dt is None else dt
         if gyr is None or not np.linalg.norm(gyr) > 0:
             return q
         # PREDICTION
         qDot = 0.5*self.Omega(gyr) @ q                      # Quaternion derivative (eq. 39)
-        qInt = q + qDot*self.Dt                             # Quaternion integration (eq. 42)
+        qInt = q + qDot*dt                             # Quaternion integration (eq. 42)
         qInt /= np.linalg.norm(qInt)
         # CORRECTION
         a_norm = np.linalg.norm(acc)
@@ -984,7 +987,7 @@ class AQUA:
         q_prime = q_prod(qInt, q_acc)                       # (eq. 53)
         return q_prime/np.linalg.norm(q_prime)
 
-    def updateMARG(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, mag: np.ndarray) -> np.ndarray:
+    def updateMARG(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, mag: np.ndarray, dt: float = None) -> np.ndarray:
         """
         Quaternion Estimation with a MARG architecture.
 
@@ -1010,6 +1013,8 @@ class AQUA:
             Sample of tri-axial Accelerometer in m/s^2
         mag : numpy.ndarray
             Sample of tri-axial Magnetometer in mT
+        dt : float, default: None
+            Time step, in seconds, between consecutive Quaternions.
 
         Returns
         -------
@@ -1017,11 +1022,12 @@ class AQUA:
             Estimated quaternion.
 
         """
+        dt = self.Dt if dt is None else dt
         if gyr is None or not np.linalg.norm(gyr)>0:
             return q
         # PREDICTION
         qDot = 0.5*self.Omega(gyr) @ q                      # Quaternion derivative (eq. 39)
-        qInt = q + qDot*self.Dt                             # Quaternion integration (eq. 42)
+        qInt = q + qDot*dt                             # Quaternion integration (eq. 42)
         qInt /= np.linalg.norm(qInt)
         # CORRECTION
         a_norm = np.linalg.norm(acc)

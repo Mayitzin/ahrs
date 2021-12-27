@@ -371,7 +371,7 @@ class AngularRate:
             Q[t] = self.update(Q[t-1], self.gyr[t], method=self.method, order=self.order)
         return Q
 
-    def update(self, q: np.ndarray, gyr: np.ndarray, method: str = 'closed', order: int = 1) -> np.ndarray:
+    def update(self, q: np.ndarray, gyr: np.ndarray, method: str = 'closed', order: int = 1, dt: float = None) -> np.ndarray:
         """Update the quaternion estimation
 
         Estimate quaternion :math:`\\mathbf{q}_{t+1}` from given a-priori
@@ -408,6 +408,8 @@ class AngularRate:
             Estimation method to use. Options are: ``'series'`` or ``'closed'``.
         order : int
             Truncation order, if method ``'series'`` is used.
+        dt : float, default: None
+            Time step, in seconds, between consecutive Quaternions.
 
         Returns
         -------
@@ -436,6 +438,7 @@ class AngularRate:
                [-0.92504595, -0.23174096,  0.20086376, -0.22414251]])
 
         """
+        dt = self.Dt if dt is None else dt
         if method.lower() not in ['series', 'closed']:
             raise ValueError(f"Invalid method '{method}'. Try 'series' or 'closed'")
         q = np.copy(q)
@@ -448,11 +451,11 @@ class AngularRate:
             [gyr[2],  gyr[1], -gyr[0],     0.0]])
         if method.lower() == 'closed':
             w = np.linalg.norm(gyr)
-            A = np.cos(w*self.Dt/2.0)*np.eye(4) + np.sin(w*self.Dt/2.0)*Omega/w
+            A = np.cos(w*dt/2.0)*np.eye(4) + np.sin(w*dt/2.0)*Omega/w
         else:
             if order < 0:
                 raise ValueError(f"The order must be an int equal to or greater than 0. Got {order}")
-            S = 0.5 * self.Dt * Omega
+            S = 0.5 * dt * Omega
             A = np.identity(4)
             for i in range(1, order+1):
                 A += S**i / np.math.factorial(i)

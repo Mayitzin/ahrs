@@ -450,7 +450,7 @@ class Mahony:
             Q[t] = self.updateMARG(Q[t-1], self.gyr[t], self.acc[t], self.mag[t])
         return Q
 
-    def updateIMU(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray) -> np.ndarray:
+    def updateIMU(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, dt: float = None) -> np.ndarray:
         """
         Attitude Estimation with a IMU architecture.
 
@@ -462,6 +462,8 @@ class Mahony:
             Sample of tri-axial Gyroscope in rad/s.
         acc : numpy.ndarray
             Sample of tri-axial Accelerometer in m/s^2.
+        dt : float, default: None
+            Time step, in seconds, between consecutive Quaternions.
 
         Returns
         -------
@@ -476,6 +478,7 @@ class Mahony:
         ...     Q[t] = orientation.updateIMU(Q[t-1], gyr=gyro_data[t], acc=acc_data[t])
 
         """
+        dt = self.Dt if dt is None else dt
         if gyr is None or not np.linalg.norm(gyr)>0:
             return q
         Omega = np.copy(gyr)
@@ -489,11 +492,11 @@ class Mahony:
             Omega = Omega - b + self.k_P*omega_mes  # Gyro correction
         p = np.array([0.0, *Omega])
         qDot = 0.5*q_prod(q, p)                     # Rate of change of quaternion (eqs. 45 and 48b)
-        q += qDot*self.Dt                           # Update orientation
+        q += qDot*dt                           # Update orientation
         q /= np.linalg.norm(q)                      # Normalize Quaternion (Versor)
         return q
 
-    def updateMARG(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, mag: np.ndarray) -> np.ndarray:
+    def updateMARG(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, mag: np.ndarray, dt: float = None) -> np.ndarray:
         """
         Attitude Estimation with a MARG architecture.
 
@@ -507,6 +510,8 @@ class Mahony:
             Sample of tri-axial Accelerometer in m/s^2.
         mag : numpy.ndarray
             Sample of tri-axail Magnetometer in uT.
+        dt : float, default: None
+            Time step, in seconds, between consecutive Quaternions.
 
         Returns
         -------
@@ -521,6 +526,7 @@ class Mahony:
         ...     Q[t] = orientation.updateMARG(Q[t-1], gyr=gyro_data[t], acc=acc_data[t], mag=mag_data[t])
 
         """
+        dt = self.Dt if dt is None else dt
         if gyr is None or not np.linalg.norm(gyr)>0:
             return q
         Omega = np.copy(gyr)
@@ -543,6 +549,6 @@ class Mahony:
             Omega = Omega - b + self.k_P*omega_mes  # Gyro correction
         p = np.array([0.0, *Omega])
         qDot = 0.5*q_prod(q, p)                     # Rate of change of quaternion (eqs. 45 and 48b)
-        q += qDot*self.Dt                           # Update orientation
+        q += qDot*dt                           # Update orientation
         q /= np.linalg.norm(q)                      # Normalize Quaternion (Versor)
         return q
