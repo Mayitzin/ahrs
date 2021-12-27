@@ -353,12 +353,12 @@ class AngularRate:
 
     """
     def __init__(self, gyr: np.ndarray = None, q0: np.ndarray = None, frequency: float = 100.0, order: int = 1, **kw):
-        self.gyr = gyr
-        self.frequency = frequency
-        self.order = order
-        self.method = kw.get('method', 'closed')
-        self.q0 = kw.get('q0', np.array([1.0, 0.0, 0.0, 0.0]))
-        self.Dt = kw.get('Dt', 1.0/self.frequency)
+        self.gyr: np.ndarray = gyr
+        self.q0: np.ndarray = q0 if q0 is not None else np.array([1.0, 0.0, 0.0, 0.0])
+        self.frequency: float = frequency
+        self.order: int = order
+        self.method: str = kw.get('method', 'closed')
+        self.Dt: float = kw.get('Dt', 1.0/self.frequency)
         if self.gyr is not None:
             self.Q = self._compute_all()
 
@@ -451,7 +451,7 @@ class AngularRate:
             A = np.cos(w*self.Dt/2.0)*np.eye(4) + np.sin(w*self.Dt/2.0)*Omega/w
         else:
             if order < 0:
-                raise ValueError(f"The order must be an int equal or greater than 0. Got {order}")
+                raise ValueError(f"The order must be an int equal to or greater than 0. Got {order}")
             S = 0.5 * self.Dt * Omega
             A = np.identity(4)
             for i in range(1, order+1):
