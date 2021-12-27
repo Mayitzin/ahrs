@@ -29,14 +29,14 @@ Orientation from angular rate
 -----------------------------
 
 The orientation of the Earth frame relative to the sensor frame
-:math:`\,\\mathbf{q}_{\\omega, t}=\\begin{bmatrix}q_w & q_x & q_y & q_z\\end{bmatrix}`
+:math:`\\mathbf{q}_{\\omega, t}=\\begin{bmatrix}q_w & q_x & q_y & q_z\\end{bmatrix}`
 at time :math:`t` can be computed by numerically integrating the quaternion
 derivative :math:`\\dot{\\mathbf{q}}_t=\\frac{1}{2}\\mathbf{q}_{t-1}\\mathbf{\\omega}_t` as:
 
 .. math::
     \\begin{array}{rcl}
-    \\mathbf{q}_{\\omega, t} &=& \,\\mathbf{q}_{t-1} + \,\\dot{\\mathbf{q}}_{\\omega, t}\\Delta t\\\\
-    &=& \,\\mathbf{q}_{t-1} + \\frac{1}{2}\\big(\,\\mathbf{q}_{t-1}\\mathbf{\,^S\\omega_t}\\big)\\Delta t
+    \\mathbf{q}_{\\omega, t} &=& \\,\\mathbf{q}_{t-1} + \\,\\dot{\\mathbf{q}}_{\\omega, t}\\Delta t\\\\
+    &=& \\,\\mathbf{q}_{t-1} + \\frac{1}{2}\\big(\\,\\mathbf{q}_{t-1}\\mathbf{\\,^S\\omega_t}\\big)\\Delta t
     \\end{array}
 
 where :math:`\\Delta t` is the sampling period and :math:`^S\\omega=\\begin{bmatrix}0 & \\omega_x & \\omega_y & \\omega_z\\end{bmatrix}`
@@ -73,7 +73,7 @@ is:
 
 .. math::
     \\begin{array}{rcl}
-    f( \\mathbf{q}, \,^E\\mathbf{d}, \,^S\\mathbf{s}) &=&  \\mathbf{q}^*\,^E\\mathbf{d} \,\\mathbf{q}-\,^S\\mathbf{s} \\\\
+    f( \\mathbf{q}, \\,^E\\mathbf{d}, \\,^S\\mathbf{s}) &=&  \\mathbf{q}^*\\,^E\\mathbf{d} \\,\\mathbf{q}-\\,^S\\mathbf{s} \\\\
     &=&\\begin{bmatrix}
     2d_x(\\frac{1}{2}-q_y^2q_z^2) + 2d_y(q_wq_z+q_xq_y) + 2d_z(q_xq_z-q_wq_y) - s_x \\\\
     2d_x(q_xq_y-q_wq_z) + 2d_y(\\frac{1}{2}-q_x^2q_z^2) + 2d_z(q_wq_x+q_yq_z) - s_y \\\\
@@ -86,7 +86,7 @@ of :math:`\\mathbf{q}`. Consequently, :math:`\\mathbf{q}` is found as
 the solution to:
 
 .. math::
-    \\mathrm{min}\; f( \\mathbf{q}, \,^E\\mathbf{d}, \,^S\\mathbf{s})
+    \\mathrm{min}\\; f( \\mathbf{q}, \\,^E\\mathbf{d}, \\,^S\\mathbf{s})
 
 The suggested approach of this estimator is to use the `Gradient Descent
 Algorithm <https://en.wikipedia.org/wiki/Gradient_descent>`_ to compute the
@@ -97,24 +97,24 @@ the GDA for :math:`n` iterations, which estimates :math:`n+1` orientations, is
 described as:
 
 .. math::
-     \\mathbf{q}_{k+1} =  \\mathbf{q}_k-\\mu\\frac{\\nabla f( \\mathbf{q}_k, \,^E\\mathbf{d}, \,^S\\mathbf{s})}{\\|\\nabla f( \\mathbf{q}_k, \,^E\\mathbf{d}, \,^S\\mathbf{s})\\|}
+     \\mathbf{q}_{k+1} =  \\mathbf{q}_k-\\mu\\frac{\\nabla f( \\mathbf{q}_k, \\,^E\\mathbf{d}, \\,^S\\mathbf{s})}{\\|\\nabla f( \\mathbf{q}_k, \\,^E\\mathbf{d}, \\,^S\\mathbf{s})\\|}
 
 where :math:`k=0,1,2\\dots n`, and the `gradient <https://en.wikipedia.org/wiki/Gradient>`_
 of the solution is defined by the objective function and its Jacobian:
 
 .. math::
-    \\nabla f( \\mathbf{q}_k, \,^E\\mathbf{d}, \,^S\\mathbf{s}) = J( \\mathbf{q}_k, \,^E\\mathbf{d})^T f( \\mathbf{q}_k, \,^E\\mathbf{d}, \,^S\\mathbf{s})
+    \\nabla f( \\mathbf{q}_k, \\,^E\\mathbf{d}, \\,^S\\mathbf{s}) = J( \\mathbf{q}_k, \\,^E\\mathbf{d})^T f( \\mathbf{q}_k, \\,^E\\mathbf{d}, \\,^S\\mathbf{s})
 
 The `Jacobian <https://en.wikipedia.org/wiki/Jacobian_matrix_and_determinant>`_
 of the objective function is:
 
 .. math::
     \\begin{array}{rcl}
-    J( \\mathbf{q}_k, \,^E\\mathbf{d}) &=&\\begin{bmatrix}
-    \\frac{\\partial f( \\mathbf{q}, \,^E\\mathbf{d}, \,^S\\mathbf{s})}{\\partial q_w} &
-    \\frac{\\partial f( \\mathbf{q}, \,^E\\mathbf{d}, \,^S\\mathbf{s})}{\\partial q_x} &
-    \\frac{\\partial f( \\mathbf{q}, \,^E\\mathbf{d}, \,^S\\mathbf{s})}{\\partial q_y} &
-    \\frac{\\partial f( \\mathbf{q}, \,^E\\mathbf{d}, \,^S\\mathbf{s})}{\\partial q_z} &
+    J( \\mathbf{q}_k, \\,^E\\mathbf{d}) &=&\\begin{bmatrix}
+    \\frac{\\partial f( \\mathbf{q}, \\,^E\\mathbf{d}, \\,^S\\mathbf{s})}{\\partial q_w} &
+    \\frac{\\partial f( \\mathbf{q}, \\,^E\\mathbf{d}, \\,^S\\mathbf{s})}{\\partial q_x} &
+    \\frac{\\partial f( \\mathbf{q}, \\,^E\\mathbf{d}, \\,^S\\mathbf{s})}{\\partial q_y} &
+    \\frac{\\partial f( \\mathbf{q}, \\,^E\\mathbf{d}, \\,^S\\mathbf{s})}{\\partial q_z} &
     \\end{bmatrix}\\\\
     &=& \\begin{bmatrix}
     2d_yq_z-2d_zq_y  & 2d_yq_y+2d_zq_z         & -4d_xq_y+2d_yq_x-2d_zq_w & -4d_xq_z+2d_yq_w+2d_zq_x \\\\
@@ -138,7 +138,7 @@ An optimal value of :math:`\\mu_t` ensures that the convergence rate of
 rate. It can be calculated with:
 
 .. math::
-    \\mu_t = \\alpha\\|\,\\dot{\\mathbf{q}}_{\\omega, t}\\|\\Delta t
+    \\mu_t = \\alpha\\|\\,\\dot{\\mathbf{q}}_{\\omega, t}\\|\\Delta t
 
 with :math:`\\dot{\\mathbf{q}}_{\\omega, t}` being the physical orientation
 rate measured by the gyroscopes, and :math:`\\alpha>1` is an augmentation of
@@ -233,7 +233,7 @@ objective function and its Jacobian particular to the acceleration:
 
 .. math::
     \\begin{array}{c}
-    f_g( \\mathbf{q}, \,^S\\mathbf{a}) = \\begin{bmatrix}
+    f_g( \\mathbf{q}, \\,^S\\mathbf{a}) = \\begin{bmatrix}
     2(q_xq_z-q_wq_y)-a_x \\\\ 2(q_wq_x+q_yq_z)-a_y \\\\ 2(\\frac{1}{2}-q_x^2-q_y^2)-a_z
     \\end{bmatrix} \\\\ \\\\
     J_g( \\mathbf{q})=\\begin{bmatrix}
@@ -246,7 +246,7 @@ objective function and its Jacobian particular to the acceleration:
 The function gradient is defined by the sensor measurements at time :math:`t`:
 
 .. math::
-    \\nabla f = J_g^T( \\mathbf{q}_{t-1})f_g( \\mathbf{q}_{t-1}, \,^S\\mathbf{a}_t)
+    \\nabla f = J_g^T( \\mathbf{q}_{t-1})f_g( \\mathbf{q}_{t-1}, \\,^S\\mathbf{a}_t)
 
 So, the estimation of the orientation using inertial sensors only (gyroscopes
 and accelerometers) becomes:
@@ -255,7 +255,7 @@ and accelerometers) becomes:
     \\begin{array}{rcl}
      \\mathbf{q}_t &=&  \\mathbf{q}_{t-1} +  \\dot{\\mathbf{q}}_t\\Delta t \\\\
     &=&  \\mathbf{q}_{t-1} + \\Big( \\dot{\\mathbf{q}}_{\\omega, t} - \\beta\\frac{\\nabla f}{\\|\\nabla f\\|}\\Big) \\Delta t \\\\
-    &=&  \\mathbf{q}_{t-1} + \\Big( \\dot{\\mathbf{q}}_{\\omega, t} - \\beta\\frac{J_g^T( \\mathbf{q}_{t-1})f_g( \\mathbf{q}_{t-1}, \,^S\\mathbf{a}_t)}{\\|J_g^T( \\mathbf{q}_{t-1})f_g( \\mathbf{q}_{t-1}, \,^S\\mathbf{a}_t)\\|}\\Big) \\Delta t
+    &=&  \\mathbf{q}_{t-1} + \\Big( \\dot{\\mathbf{q}}_{\\omega, t} - \\beta\\frac{J_g^T( \\mathbf{q}_{t-1})f_g( \\mathbf{q}_{t-1}, \\,^S\\mathbf{a}_t)}{\\|J_g^T( \\mathbf{q}_{t-1})f_g( \\mathbf{q}_{t-1}, \\,^S\\mathbf{a}_t)\\|}\\Big) \\Delta t
     \\end{array}
 
 Orientation from MARG
@@ -292,7 +292,7 @@ of the sensor computed in the previous estimation, :math:`\\mathbf{q}_{t-1}`.
 
 .. math::
     ^E\\mathbf{h}_t = \\begin{bmatrix}0 & h_x & h_y & h_z\\end{bmatrix} =
-    \,\\mathbf{q}_{t-1}\,^S\\mathbf{m}_t\,\\mathbf{q}_{t-1}^*
+    \\,\\mathbf{q}_{t-1}\\,^S\\mathbf{m}_t\\,\\mathbf{q}_{t-1}^*
 
 The effect of an erroneous inclination of the measured direction Earth's
 magnetic field, :math:`^E\\mathbf{h}_t`, can be corrected if the filter's
@@ -313,12 +313,12 @@ Substituting :math:`^E\\mathbf{b}` and the normalized magnetometer normalized
 
 .. math::
     \\begin{array}{c}
-    f_b( \\mathbf{q}, \,^E\\mathbf{b}, \,^S\\mathbf{m}) = \\begin{bmatrix}
+    f_b( \\mathbf{q}, \\,^E\\mathbf{b}, \\,^S\\mathbf{m}) = \\begin{bmatrix}
     2b_x(\\frac{1}{2}-q_y^2-q_z^2) + 2b_z(q_xq_z-q_wq_y)-m_x \\\\
     2b_x(q_xq_y-q_wq_z) + 2b_z(q_wq_x+q_yq_z)-m_y \\\\
     2b_x(q_wq_y+q_xq_z) + 2b_z(\\frac{1}{2}-q_x^2-q_y^2)-m_z
     \\end{bmatrix} \\\\ \\\\
-    J_b( \\mathbf{q}, \,^E\\mathbf{b})=\\begin{bmatrix}
+    J_b( \\mathbf{q}, \\,^E\\mathbf{b})=\\begin{bmatrix}
     -2b_zq_y          & 2b_zq_z         & -4b_xq_y-2b_zq_w & -4b_xq_z+2b_zq_x \\\\
     -2b_xq_z+2b_zq_x  & 2b_xq_y+2b_zq_w & 2b_xq_x+2b_zq_z  & -2b_xq_w+2b_zq_y \\\\
     2b_xq_y           & 2b_xq_z-4b_zq_x & 2b_xq_w-4b_zq_y  & 2b_xq_x
@@ -331,17 +331,17 @@ single point, as long as the northerly magnetic intensity is defined (:math:`b_x
 
 .. math::
     \\begin{array}{c}
-    f_{g,b}( \\mathbf{q}, \,^S\\mathbf{a}, \,^E\\mathbf{b}, \,^S\\mathbf{m})=
-    \\begin{bmatrix}f_g( \\mathbf{q}, \,^S\\mathbf{a}) \\\\ f_b( \\mathbf{q}, \,^E\\mathbf{b}, \,^S\\mathbf{m})\\end{bmatrix}\\\\ \\\\
-    J_{g,b}( \\mathbf{q}, \,^E\\mathbf{b})=
-    \\begin{bmatrix}J_g^T( \\mathbf{q}) \\\\ J_b^T( \\mathbf{q}, \,^E\\mathbf{b})\\end{bmatrix}
+    f_{g,b}( \\mathbf{q}, \\,^S\\mathbf{a}, \\,^E\\mathbf{b}, \\,^S\\mathbf{m})=
+    \\begin{bmatrix}f_g( \\mathbf{q}, \\,^S\\mathbf{a}) \\\\ f_b( \\mathbf{q}, \\,^E\\mathbf{b}, \\,^S\\mathbf{m})\\end{bmatrix}\\\\ \\\\
+    J_{g,b}( \\mathbf{q}, \\,^E\\mathbf{b})=
+    \\begin{bmatrix}J_g^T( \\mathbf{q}) \\\\ J_b^T( \\mathbf{q}, \\,^E\\mathbf{b})\\end{bmatrix}
     \\end{array}
 
 Simliar to the implementation with IMU, the estimation of the new quaternion
 will be:
 
 .. math::
-     \\mathbf{q}_t =  \\mathbf{q}_{t-1} + \\Big( \\dot{\\mathbf{q}}_{\\omega, t} - \\beta\\frac{J_{g,b}^T( \\mathbf{q}_{t-1}, \,^E\\mathbf{b})f_{g,b}( \\mathbf{q}_{t-1}, \,^S\\mathbf{a}, \,^E\\mathbf{b}, \,^S\\mathbf{m})}{\\|J_{g,b}^T( \\mathbf{q}_{t-1}, \,^E\\mathbf{b})f_{g,b}( \\mathbf{q}_{t-1}, \,^S\\mathbf{a}, \,^E\\mathbf{b}, \,^S\\mathbf{m})\\|}\\Big) \\Delta t
+     \\mathbf{q}_t =  \\mathbf{q}_{t-1} + \\Big( \\dot{\\mathbf{q}}_{\\omega, t} - \\beta\\frac{J_{g,b}^T( \\mathbf{q}_{t-1}, \\,^E\\mathbf{b})f_{g,b}( \\mathbf{q}_{t-1}, \\,^S\\mathbf{a}, \\,^E\\mathbf{b}, \\,^S\\mathbf{m})}{\\|J_{g,b}^T( \\mathbf{q}_{t-1}, \\,^E\\mathbf{b})f_{g,b}( \\mathbf{q}_{t-1}, \\,^S\\mathbf{a}, \\,^E\\mathbf{b}, \\,^S\\mathbf{m})\\|}\\Big) \\Delta t
 
 Filter gain
 -----------

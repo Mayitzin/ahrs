@@ -69,7 +69,7 @@ The measurement vectors :math:`\\mathbf{v}_a` and :math:`\\mathbf{v}_m` are
 used to build an instantaneous algebraic rotation :math:`\\mathbf{R}`:
 
 .. math::
-    \\mathbf{R} \\approx \\mathbf{R}_y=\\underset{\\mathbf{R}\\in SO(3)}{\\operatorname{arg\,min}} (\\lambda_1|e_3-\\mathbf{Rv}_a|^2 + \\lambda_2|\\mathbf{v}_m^*-\\mathbf{Rv}_m|^2)
+    \\mathbf{R} \\approx \\mathbf{R}_y=\\underset{\\mathbf{R}\\in SO(3)}{\\operatorname{arg\\,min}} (\\lambda_1|e_3-\\mathbf{Rv}_a|^2 + \\lambda_2|\\mathbf{v}_m^*-\\mathbf{Rv}_m|^2)
 
 where :math:`\\mathbf{v}_m^*` is the referential direction of the local
 magnetic field.
