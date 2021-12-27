@@ -5,7 +5,7 @@ Algebraic Quaternion Algorithm
 
 Roberto Valenti's Algebraic Quaterion Algorithm (AQUA) [Valenti2015]_ estimates
 a quaternion with the algebraic solution of a system from inertial/magnetic
-observations, solving [Wahba's Problem](https://en.wikipedia.org/wiki/Wahba%27s_problem).
+observations, solving `Wahba's Problem <https://en.wikipedia.org/wiki/Wahba%27s_problem>`.
 
 AQUA computes the "tilt" quaternion and the "heading" quaternion separately in
 two sub-parts. This avoids the impact of the magnetic disturbances on the roll
