@@ -321,7 +321,7 @@ class Fourati:
             Q[t] = self.update(Q[t-1], self.gyr[t], self.acc[t], self.mag[t])
         return Q
 
-    def update(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, mag: np.ndarray) -> np.ndarray:
+    def update(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, mag: np.ndarray, dt: float = None) -> np.ndarray:
         """
         Quaternion Estimation with a MARG architecture.
 
@@ -335,6 +335,8 @@ class Fourati:
             Sample of tri-axial Accelerometer in m/s^2
         mag : numpy.ndarray
             Sample of tri-axial Magnetometer in mT
+        dt : float, default: None
+            Time step, in seconds, between consecutive Quaternions.
 
         Returns
         -------
@@ -342,6 +344,7 @@ class Fourati:
             Estimated quaternion.
 
         """
+        dt = self.Dt if dt is None else dt
         if gyr is None or not np.linalg.norm(gyr)>0:
             return q
         qDot = 0.5 * q_prod(q, [0, *gyr])                           # (eq. 5)
@@ -359,5 +362,5 @@ class Fourati:
             K = self.gain*np.linalg.inv(X.T@X + lam*np.eye(3))@X.T  # Filter gain (eq. 24)
             Delta = [1, *K@dq]                                      # Correction term (eq. 25)
             qDot = q_prod(qDot, Delta)                              # Corrected quaternion rate (eq. 7)
-        q += qDot*self.Dt
+        q += qDot*dt
         return q/np.linalg.norm(q)

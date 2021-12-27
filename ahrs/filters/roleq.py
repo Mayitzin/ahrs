@@ -197,7 +197,7 @@ class ROLEQ:
             Q[t] = self.update(Q[t-1], self.gyr[t], self.acc[t], self.mag[t])
         return Q
 
-    def attitude_propagation(self, q: np.ndarray, omega: np.ndarray) -> np.ndarray:
+    def attitude_propagation(self, q: np.ndarray, omega: np.ndarray, dt: float) -> np.ndarray:
         """Attitude estimation from previous quaternion and current angular velocity.
 
         .. math::
@@ -215,6 +215,8 @@ class ROLEQ:
             A-priori quaternion.
         omega : numpy.ndarray
             Angular velocity, in rad/s.
+        dt : float
+            Time step, in seconds, between consecutive Quaternions.
 
         Returns
         -------
@@ -226,7 +228,7 @@ class ROLEQ:
             [omega[0],   0.0,  omega[2], -omega[1]],
             [omega[1], -omega[2],   0.0,  omega[0]],
             [omega[2],  omega[1], -omega[0],   0.0]])
-        q_omega = (np.identity(4) + 0.5*self.Dt*Omega_t) @ q    # (eq. 37)
+        q_omega = (np.identity(4) + 0.5*dt*Omega_t) @ q    # (eq. 37)
         return q_omega/np.linalg.norm(q_omega)
 
     def WW(self, Db, Dr):
@@ -295,7 +297,7 @@ class ROLEQ:
         q = R @ q_omega                         # (eq. 25)
         return q / np.linalg.norm(q)
 
-    def update(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, mag: np.ndarray) -> np.ndarray:
+    def update(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, mag: np.ndarray, dt: float = None) -> np.ndarray:
         """Update Attitude with a Recursive OLEQ
 
         Parameters
@@ -308,6 +310,8 @@ class ROLEQ:
             Sample of tri-axial Accelerometer in m/s^2
         mag : numpy.ndarray
             Sample of tri-axial Magnetometer in mT
+        dt : float, default: None
+            Time step, in seconds, between consecutive Quaternions.
 
         Returns
         -------
@@ -315,6 +319,7 @@ class ROLEQ:
             Estimated quaternion.
 
         """
-        q_g = self.attitude_propagation(q, gyr)     # Quaternion from previous quaternion and angular velocity
-        q = self.oleq(acc, mag, q_g)                # Second stage: Estimate with OLEQ
+        dt = self.Dt if dt is None else dt
+        q_g = self.attitude_propagation(q, gyr, dt)     # Quaternion from previous quaternion and angular velocity
+        q = self.oleq(acc, mag, q_g)                    # Second stage: Estimate with OLEQ
         return q

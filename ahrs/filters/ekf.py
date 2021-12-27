@@ -1105,7 +1105,7 @@ class EKF:
             [x[1], -x[2],   0.0,  x[0]],
             [x[2],  x[1], -x[0],   0.0]])
 
-    def f(self, q: np.ndarray, omega: np.ndarray) -> np.ndarray:
+    def f(self, q: np.ndarray, omega: np.ndarray, dt: float) -> np.ndarray:
         """Linearized function of Process Model (Prediction.)
 
         .. math::
@@ -1123,6 +1123,8 @@ class EKF:
             A-priori quaternion.
         omega : numpy.ndarray
             Angular velocity, in rad/s.
+        dt : float
+            Time step, in seconds, between consecutive Quaternions.
 
         Returns
         -------
@@ -1130,9 +1132,9 @@ class EKF:
             Linearized estimated quaternion in **Prediction** step.
         """
         Omega_t = self.Omega(omega)
-        return (np.identity(4) + 0.5*self.Dt*Omega_t) @ q
+        return (np.identity(4) + 0.5*dt*Omega_t) @ q
 
-    def dfdq(self, omega: np.ndarray) -> np.ndarray:
+    def dfdq(self, omega: np.ndarray, dt: float) -> np.ndarray:
         """Jacobian of linearized predicted state.
 
         .. math::
@@ -1148,13 +1150,15 @@ class EKF:
         ----------
         omega : numpy.ndarray
             Angular velocity in rad/s.
+        dt : float
+            Time step, in seconds, between consecutive Quaternions.
 
         Returns
         -------
         F : numpy.ndarray
             Jacobian of state.
         """
-        x = 0.5*self.Dt*omega
+        x = 0.5*dt*omega
         return np.identity(4) + self.Omega(x)
 
     def h(self, q: np.ndarray) -> np.ndarray:
@@ -1277,7 +1281,7 @@ class EKF:
             H = np.vstack((H, H_2))
         return 2.0*H
 
-    def update(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, mag: np.ndarray = None) -> np.ndarray:
+    def update(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, mag: np.ndarray = None, dt: float = None) -> np.ndarray:
         """
         Perform an update of the state.
 
@@ -1291,6 +1295,8 @@ class EKF:
             Sample of tri-axial Accelerometer in m/s^2.
         mag : numpy.ndarray
             Sample of tri-axial Magnetometer in uT.
+        dt : float, default: None
+            Time step, in seconds, between consecutive Quaternions.
 
         Returns
         -------
@@ -1298,6 +1304,7 @@ class EKF:
             Estimated a-posteriori orientation as quaternion.
 
         """
+        dt = self.Dt if dt is None else dt
         if not np.isclose(np.linalg.norm(q), 1.0):
             raise ValueError("A-priori quaternion must have a norm equal to 1.")
         # Current Measurements
@@ -1315,10 +1322,10 @@ class EKF:
             self.z = np.r_[a, mag/m_norm]
         self.R = np.diag(np.repeat(self.noises[1:] if mag is not None else self.noises[1], 3))
         # ----- Prediction -----
-        q_t = self.f(q, g)                  # Predicted State
-        F   = self.dfdq(g)                  # Linearized Fundamental Matrix
-        W   = 0.5*self.Dt * np.r_[[-q[1:]], q[0]*np.identity(3) + skew(q[1:])]  # Jacobian W = df/dω
-        Q_t = 0.5*self.Dt * self.g_noise * W@W.T    # Process Noise Covariance
+        q_t = self.f(q, g, dt)                  # Predicted State
+        F   = self.dfdq(g, dt)                  # Linearized Fundamental Matrix
+        W   = 0.5*dt * np.r_[[-q[1:]], q[0]*np.identity(3) + skew(q[1:])]  # Jacobian W = df/dω
+        Q_t = 0.5*dt * self.g_noise * W@W.T    # Process Noise Covariance
         P_t = F@self.P@F.T + Q_t            # Predicted Covariance Matrix
         # ----- Correction -----
         y   = self.h(q_t)                   # Expected Measurement function

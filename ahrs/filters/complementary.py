@@ -183,7 +183,7 @@ class Complementary:
             Q[t] = self.update(Q[t-1], self.gyr[t], self.acc[t], self.mag[t])
         return Q
 
-    def attitude_propagation(self, q: np.ndarray, omega: np.ndarray) -> np.ndarray:
+    def attitude_propagation(self, q: np.ndarray, omega: np.ndarray, dt: float) -> np.ndarray:
         """
         Attitude propagation of the orientation.
 
@@ -209,13 +209,15 @@ class Complementary:
             A-priori quaternion.
         omega : numpy.ndarray
             Tri-axial angular velocity, in rad/s.
+        dt : float
+            Time step, in seconds, between consecutive Quaternions.
 
         Returns
         -------
         q_omega : numpy.ndarray
             Estimated orientation, as quaternion.
         """
-        w = 0.5*self.Dt*omega
+        w = 0.5*dt*omega
         A = np.array([
             [1.0,  -w[0], -w[1], -w[2]],
             [w[0],   1.0,  w[2], -w[1]],
@@ -304,7 +306,7 @@ class Complementary:
             sz*cy*cx - cz*sy*sx])
         return q_am / np.linalg.norm(q_am)
 
-    def update(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, mag: np.ndarray = None) -> np.ndarray:
+    def update(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, mag: np.ndarray = None, dt: float = None) -> np.ndarray:
         """
         Attitude Estimation from given measurements and previous orientation.
 
@@ -328,6 +330,8 @@ class Complementary:
             Sample of tri-axial Accelerometer in m/s^2.
         mag : numpy.ndarray, default: None
             Sample of tri-axial Magnetometer in uT.
+        dt : float, default: None
+            Time step, in seconds, between consecutive Quaternions.
 
         Returns
         -------
@@ -335,9 +339,10 @@ class Complementary:
             Estimated quaternion.
 
         """
+        dt = self.Dt if dt is None else dt
         if gyr is None or not np.linalg.norm(gyr)>0:
             return q
-        q_omega = self.attitude_propagation(q, gyr)
+        q_omega = self.attitude_propagation(q, gyr, dt)
         q_am = self.am_estimation(acc, mag)
         # Complementary Estimation
         q = (1.0 - self.gain)*q_omega + self.gain*q_am
