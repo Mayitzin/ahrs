@@ -200,6 +200,13 @@ class SAAM:
         The full estimation is vectorized, to avoid the use of a time-wasting
         loop.
 
+        Parameters
+        ----------
+        acc : numpy.ndarray
+            Sample of tri-axial Accelerometer.
+        mag : numpy.ndarray
+            Sample of tri-axial Magnetometer.
+
         Returns
         -------
         Q : numpy.ndarray
@@ -228,15 +235,15 @@ class SAAM:
         Q = np.c_[qw, qx, qy, qz]
         return Q/np.linalg.norm(Q, axis=1)[:, None]
 
-    def estimate(self, acc: np.ndarray = None, mag: np.ndarray = None) -> np.ndarray:
+    def estimate(self, acc: np.ndarray, mag: np.ndarray) -> np.ndarray:
         """
         Attitude Estimation
 
         Parameters
         ----------
-        a : numpy.ndarray
+        acc : numpy.ndarray
             Sample of tri-axial Accelerometer.
-        m : numpy.ndarray
+        mag : numpy.ndarray
             Sample of tri-axial Magnetometer.
 
         Returns
