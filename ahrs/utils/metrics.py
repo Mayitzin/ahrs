@@ -111,7 +111,7 @@ def euclidean(x: np.ndarray, y: np.ndarray, **kwargs) -> float:
         raise ValueError(f"Cannot compare x of shape {x.shape} and y of shape {y.shape}")
     return np.linalg.norm(x-y, **kwargs)
 
-def chordal(R1: np.ndarray, R2: np.ndarray) -> float:
+def chordal(R1: np.ndarray, R2: np.ndarray) -> Union[float, np.ndarray]:
     """
     Chordal Distance
 
@@ -137,7 +137,7 @@ def chordal(R1: np.ndarray, R2: np.ndarray) -> float:
 
     Returns
     -------
-    d : float
+    d : float or numpy.ndarray
         Chordal distance between matrices.
 
     Examples
@@ -155,7 +155,9 @@ def chordal(R1: np.ndarray, R2: np.ndarray) -> float:
     """
     _rotations_guard_clauses(R1, R2)
     R1, R2 = np.copy(R1), np.copy(R2)
-    return np.linalg.norm(R1-R2, 'fro')
+    if R1.ndim < 3:
+        return np.linalg.norm(R1-R2, 'fro')
+    return np.array([np.linalg.norm(r1-r2, 'fro') for r1, r2 in zip(R1, R2)])
 
 def identity_deviation(R1: np.ndarray, R2: np.ndarray) -> float:
     """
