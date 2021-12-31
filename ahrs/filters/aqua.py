@@ -584,7 +584,7 @@ def _assert_same_shapes(item1, item2, item_names: list = None):
             raise TypeError(f"{item} must be an array. Got {type(item)}")
     if item_names is None:
         item_names = ['item1', 'item2']
-    item1, tem2 = np.copy(item1), np.copy(item2)
+    item1, item2 = np.copy(item1), np.copy(item2)
     if item1.shape != item2.shape:
         raise ValueError(f"{item_names[0]} and {item_names[1]} must have the same shape. Got {item1.shape} and {item2.shape}")
 
@@ -924,7 +924,7 @@ class AQUA:
             m_norm = np.linalg.norm(mag)
             if m_norm == 0:
                 raise ValueError(f"Invalid geomagnetic field. Its magnitude must be greater than zero.")
-            lx, ly, _ = q2R(q_acc).T @ (mag/np.linalg.norm(mag))   # (eq. 26)
+            lx, ly, _ = q2R(q_acc).T @ (mag/np.linalg.norm(mag))    # (eq. 26)
             Gamma = lx**2 + ly**2                                   # (eq. 28)
             # Quaternion from Magnetometer Readings (eq. 35)
             if lx >= 0:
@@ -972,7 +972,7 @@ class AQUA:
             return q
         # PREDICTION
         qDot = 0.5*self.Omega(gyr) @ q                      # Quaternion derivative (eq. 39)
-        qInt = q + qDot*dt                             # Quaternion integration (eq. 42)
+        qInt = q + qDot*dt                                  # Quaternion integration (eq. 42)
         qInt /= np.linalg.norm(qInt)
         # CORRECTION
         a_norm = np.linalg.norm(acc)
@@ -1027,7 +1027,7 @@ class AQUA:
             return q
         # PREDICTION
         qDot = 0.5*self.Omega(gyr) @ q                      # Quaternion derivative (eq. 39)
-        qInt = q + qDot*dt                             # Quaternion integration (eq. 42)
+        qInt = q + qDot*dt                                  # Quaternion integration (eq. 42)
         qInt /= np.linalg.norm(qInt)
         # CORRECTION
         a_norm = np.linalg.norm(acc)
@@ -1046,7 +1046,7 @@ class AQUA:
         m_norm = np.linalg.norm(mag)
         if not m_norm > 0:
             return q_prime
-        lx, ly, _ = q2R(q_prime).T @ (mag/m_norm)          # World frame magnetic vector (eq. 54)
+        lx, ly, _ = q2R(q_prime).T @ (mag/m_norm)           # World frame magnetic vector (eq. 54)
         Gamma = lx**2 + ly**2                               # (eq. 28)
         q_mag = np.array([np.sqrt(Gamma+lx*np.sqrt(Gamma))/np.sqrt(2*Gamma), 0.0, 0.0, ly/np.sqrt(2*(Gamma+lx*np.sqrt(Gamma)))])    # (eq. 58)
         q_mag = slerp_I(q_mag, self.beta, self.threshold)
