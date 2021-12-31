@@ -24,7 +24,7 @@ and they are related by the `direction cosine matrix <../dcm.html>`_
 :math:`\\mathbf{C}\\in SO(3)` with the minimization of Wahba's problem as:
 
 .. math::
-    \\mathrm{min} \\big(w\\|\,^b\\mathbf{a}-\\mathbf{C}\,^r\\mathbf{a}\\|^2+(1-w)\\|\,^b\\mathbf{m}-\\mathbf{C}\,^r\\mathbf{m}\\|^2\\big)
+    \\mathrm{min} \\big(w\\|\\,^b\\mathbf{a}-\\mathbf{C}\\,^r\\mathbf{a}\\|^2+(1-w)\\|\\,^b\\mathbf{m}-\\mathbf{C}\\,^r\\mathbf{m}\\|^2\\big)
 
 where :math:`w` is the weight of the accelerometer correlation and :math:`1-w`
 is the one of the magnetometer.
@@ -45,7 +45,7 @@ and the helper arrays are:
 
 .. math::
     \\begin{array}{rcl}
-    \\mathbf{B} &=& w\,^b\\mathbf{a}\,^r\\mathbf{a}^T + (1-w)\,^b\\mathbf{m}\,^r\\mathbf{m}^T \\\\
+    \\mathbf{B} &=& w\\,^b\\mathbf{a}\\,^r\\mathbf{a}^T + (1-w)\\,^b\\mathbf{m}\\,^r\\mathbf{m}^T \\\\
     \\mathbf{z} &=& \\begin{bmatrix}B_{23}-B_{32}\\\\B_{31}-B_{13}\\\\B_{12}-B_{21}\\end{bmatrix}
     \\end{array}
 
