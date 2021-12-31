@@ -1881,16 +1881,19 @@ class QuaternionArray(np.ndarray):
 
     Class to represent quaternion arrays. It can be built from N-by-3 or N-by-4
     arrays. The objects are **always normalized** to represent rotations in 3D
-    space (versors), unless explicitly specified setting the parameter ``versors``
-    to ``False``.
+    space (versors), unless explicitly specified setting the parameter
+    ``versors`` to ``False``.
 
     If an N-by-3 array is given, it is assumed to represent pure quaternions,
     setting their scalar part equal to zero.
 
     Parameters
     ----------
-    q : array-like, default: None
-        N-by-4 or N-by-3 array containing the quaternion values to use.
+    q : array-like or int, default: None
+        N-by-4 or N-by-3 array containing the quaternion values to use. If an
+        integer is given, it creates ``N`` random quaternions, where ``N`` is
+        the given int. If None is given, a single identity quaternion is
+        stored in a 2d array.
     versors : bool, default: True
         Treat quaternions as versors. It will normalize them immediately.
 
@@ -2715,6 +2718,9 @@ class QuaternionArray(np.ndarray):
     def angular_velocities(self, dt: float) -> np.ndarray:
         """Compute the angular velocity between N Quaternions.
 
+        It assumes a constant sampling rate of ``dt`` seconds, and returns the
+        angular velocity around the X-, Y- and Z-axis, in radians per second.
+
         Parameters
         ----------
         dt : float
@@ -2726,6 +2732,10 @@ class QuaternionArray(np.ndarray):
             (N-1)-by-3 array with angular velocities in rad/s.
 
         """
+        if not isinstance(dt, float):
+            raise TypeError(f"dt must be a float. Got {type(dt)}.")
+        if dt <= 0:
+            raise ValueError(f"dt must be greater than zero. Got {dt}.")
         w = np.c_[
             self.array[:-1, 0]*self.array[1:, 1] - self.array[:-1, 1]*self.array[1:, 0] - self.array[:-1, 2]*self.array[1:, 3] + self.array[:-1, 3]*self.array[1:, 2],
             self.array[:-1, 0]*self.array[1:, 2] + self.array[:-1, 1]*self.array[1:, 3] - self.array[:-1, 2]*self.array[1:, 0] - self.array[:-1, 3]*self.array[1:, 1],
