@@ -17,7 +17,7 @@ Hemipshere and drifts westward at about 55 to 60 km per year, whereas the other
 pole, just outside the Antarctic Circle, drifts by about 10 to 15 km per year.
 
 The strongest contribution to Earth's magnetism is the magnetic field produced
-by the Earth’s liquid-iron outer core, called the "core field". Magnetic
+by the Earth's liquid-iron outer core, called the "core field". Magnetic
 minerals in the crust and upper mantle make a further contribution that can be
 locally significant. All these fields of "internal" origin and their large
 scale components are included in the WMM.
@@ -189,7 +189,7 @@ References
 ----------
 .. [Chulliat] Chulliat, A., W. Brown, P. Alken, C. Beggan, M. Nair, G. Cox, A.
     Woods, S. Macmillan, B. Meyer and M. Paniccia, The US/UK World Magnetic
-    Model for 2020­-2025: Technical Report, National Centers for Environmental
+    Model for 2020-2025: Technical Report, National Centers for Environmental
     Information, NOAA, doi:10.25923/ytk1-yx35, 2020.
     (https://www.ngdc.noaa.gov/geomag/WMM/data/WMM2020/WMM2020_Report.pdf)
 .. [Heiskanen] W. A. Heiskanen and H. Moritz. Physical Geodesy. TU Graz. 1993.
@@ -217,6 +217,7 @@ from typing import Union, Tuple, Dict
 # Third-Party Dependencies
 import numpy as np
 from ..common.constants import *
+from ..common.frames import ned2enu
 
 def geodetic2spherical(lat: float, lon: float, h: float, a: float = EARTH_EQUATOR_RADIUS/1000.0, b: float = EARTH_POLAR_RADIUS/1000.0) -> Tuple[float, float, float]:
     """
@@ -323,6 +324,9 @@ class WMM:
         Longitude, in decimal degrees, in geodetic coordinates.
     height : float, default: 0.0
         Mean Sea Level Height, in kilometers.
+    frame : str, default: 'NED'
+        Local tangent plane coordinate frame. Valid options are right-handed
+        ``'NED'`` for North-East-Down and ``'ENU'`` for East-North-Up.
 
     Attributes
     ----------
@@ -375,14 +379,34 @@ class WMM:
     'D': -9.73078560629778, 'GV': -9.73078560629778}
 
     """
-    def __init__(self, date: Union[datetime.date, int, float] = None, latitude: float = None, longitude: float = None, height: float = 0.0) -> None:
+    def __init__(self,
+                 date: Union[datetime.date, int, float] = None,
+                 latitude: float = MUNICH_LATITUDE,
+                 longitude: float = MUNICH_LONGITUDE,
+                 height: float = MUNICH_HEIGHT,
+                 frame: str = 'NED') -> None:
         self.reset_coefficients(date)
         self.__dict__.update(dict.fromkeys(['X', 'Y', 'Z', 'H', 'F', 'I', 'D', 'GV']))
-        self.latitude = latitude
-        self.longitude = longitude
-        self.height = height
+        self.latitude: float = latitude
+        self.longitude: float = longitude
+        self.height: float = height
+        self.frame: str = frame
+        self._guard_clauses()
         if all([self.latitude, self.longitude]):
             self.magnetic_field(self.latitude, self.longitude, self.height, date=self.date)
+
+    def _guard_clauses(self):
+        for item in ['latitude', 'longitude', 'height']:
+            if not isinstance(self.__getattribute__(item), (int, float)):
+                raise TypeError(f"{item} must be int or float. Got {type(self.__getattribute__(item))}")
+        if not isinstance(self.frame, str):
+            raise TypeError(f"frame must be str. Got {type(self.frame)}")
+        if abs(self.latitude) > 90:
+            raise ValueError(f"Latitude must be between -90 and 90. Got {self.latitude}")
+        if abs(self.longitude) > 180:
+            raise ValueError(f"Longitude must be between -180 and 180. Got {self.longitude}")
+        if self.frame.upper() not in ['NED', 'ENU']:
+            raise ValueError(f"{self.frame} is not a valid frame. Try 'NED' or 'ENU'")
 
     def reset_coefficients(self, date: Union[datetime.date, int, float] = None) -> None:
         """
@@ -525,7 +549,7 @@ class WMM:
             self.date = date
             self.date_dec = self.date.year + self.date.timetuple().tm_yday/365.0
         else:
-            raise TypeError("Date must be an instance of datetime.date or a decimalized year.")
+            raise TypeError(f"Date must be an instance of datetime.date or a decimalized year. Got {type(date)}")
         if self.date.year < 2015:
             raise ValueError("No available coefficients for dates before 2015.")
         self.wmm_filename = 'WMM2015/WMM.COF' if self.date_dec < 2020.0 else 'WMM2020/WMM.COF'
@@ -809,6 +833,9 @@ class WMM:
         self.X = Xp*np.cos(lat_prime-latitude) - Zp*np.sin(lat_prime-latitude)
         self.Y = Yp
         self.Z = Xp*np.sin(lat_prime-latitude) + Zp*np.cos(lat_prime-latitude)
+        # Rotate elements if ENU frame
+        if self.frame.upper() == 'ENU':
+            self.X, self.Y, self.Z = ned2enu([self.X, self.Y, self.Z])
         # Total Intensity, Inclination and Declination (eq. 19)
         self.H = np.linalg.norm([self.X, self.Y])       # sqrt(X^2+Y^2)
         self.F = np.linalg.norm([self.H, self.Z])       # sqrt(H^2+Z^2)
