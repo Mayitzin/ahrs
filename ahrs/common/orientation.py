@@ -1097,18 +1097,33 @@ def chiaverini(dcm: np.ndarray) -> np.ndarray:
     Parameters
     ----------
     dcm : numpy.ndarray
-        3-by-3 Direction Cosine Matrix.
+        3-by-3 or N-by-3-by-3 Direction Cosine Matrix.
 
     Returns
     -------
     q : numpy.ndarray
-        Quaternion.
+        4-dimensional or N-by-4 Quaternion array.
     """
-    n = 0.5*np.sqrt(dcm.trace() + 1.0)
-    e = np.array([0.5*np.sign(dcm[2, 1]-dcm[1, 2])*np.sqrt(dcm[0, 0]-dcm[1, 1]-dcm[2, 2]+1.0),
-                  0.5*np.sign(dcm[0, 2]-dcm[2, 0])*np.sqrt(dcm[1, 1]-dcm[2, 2]-dcm[0, 0]+1.0),
-                  0.5*np.sign(dcm[1, 0]-dcm[0, 1])*np.sqrt(dcm[2, 2]-dcm[0, 0]-dcm[1, 1]+1.0)])
-    return np.array([n, *e])
+    if dcm.ndim not in [2, 3]:
+        raise ValueError('dcm must be a 2- or 3-dimensional array.')
+    if dcm.shape[-2:] != (3, 3):
+        raise ValueError(f"dcm must be an array of shape 3-by-3 or N-by-3-by-3. Got {dcm.shape}")
+    if dcm.ndim < 3:
+        q = np.zeros(4)
+        q[0] = 0.5*np.sqrt(dcm.trace() + 1.0)
+        q[1] = 0.5*np.sign(dcm[2, 1]-dcm[1, 2])*np.sqrt(np.clip(dcm[0, 0]-dcm[1, 1]-dcm[2, 2], -1.0, 1.0)+1.0)
+        q[2] = 0.5*np.sign(dcm[0, 2]-dcm[2, 0])*np.sqrt(np.clip(dcm[1, 1]-dcm[2, 2]-dcm[0, 0], -1.0, 1.0)+1.0)
+        q[3] = 0.5*np.sign(dcm[1, 0]-dcm[0, 1])*np.sqrt(np.clip(dcm[2, 2]-dcm[0, 0]-dcm[1, 1], -1.0, 1.0)+1.0)
+        q /= np.linalg.norm(q)
+        return q
+    else:
+        Q = np.zeros((dcm.shape[0], 4))
+        Q[:, 0] = 0.5*np.sqrt(dcm.trace(axis1=1, axis2=2) + 1.0)
+        Q[:, 1] = 0.5*np.sign(dcm[:, 2, 1] - dcm[:, 1, 2])*np.sqrt(np.clip(dcm[:, 0, 0]-dcm[:, 1, 1]-dcm[:, 2, 2], -1.0, 1.0) + 1.0)
+        Q[:, 2] = 0.5*np.sign(dcm[:, 0, 2] - dcm[:, 2, 0])*np.sqrt(np.clip(dcm[:, 1, 1]-dcm[:, 2, 2]-dcm[:, 0, 0], -1.0, 1.0) + 1.0)
+        Q[:, 3] = 0.5*np.sign(dcm[:, 1, 0] - dcm[:, 0, 1])*np.sqrt(np.clip(dcm[:, 2, 2]-dcm[:, 0, 0]-dcm[:, 1, 1], -1.0, 1.0) + 1.0)
+        Q /= np.linalg.norm(Q, axis=1)[:, None]
+        return Q
 
 def hughes(dcm: np.ndarray) -> np.ndarray:
     """
