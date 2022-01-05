@@ -98,6 +98,18 @@ def _assert_iterables(item, item_name: str = 'iterable'):
     if not isinstance(item, (list, tuple, np.ndarray)):
         raise TypeError(f"{item_name} must be given as an array, got {type(item)}")
 
+def _assert_SO3(array: np.ndarray, R_name: str = 'R'):
+    if array.shape[-2:] != (3, 3) or array.ndim not in [2, 3]:
+        raise ValueError(f"{R_name} must have shape (3, 3) or (N, 3, 3), got {array.shape}.")
+    if array.ndim < 3:
+        in_SO3 = np.isclose(np.linalg.det(array), 1.0)
+        in_SO3 &= np.allclose(array@array.T, np.identity(3))
+    else:
+        in_SO3 = np.allclose(np.linalg.det(array), np.ones(array.shape[0]))
+        in_SO3 &= np.allclose([x@x.T for x in array], np.identity(3))
+    if not in_SO3:
+        raise ValueError("Given attitude is not in SO(3)")
+
 class DCM(np.ndarray):
     """
     Direction Cosine Matrix in SO(3)
@@ -226,12 +238,7 @@ class DCM(np.ndarray):
                 ax, ang = kwargs.pop('axang')
                 array = DCM.from_axisangle(DCM, np.array(ax), ang)
         _assert_iterables(array, "Direction Cosine Matrix")
-        if array.shape[-2:] != (3, 3):
-            raise ValueError(f"Direction Cosine Matrix must have shape (3, 3) or (N, 3, 3), got {array.shape}.")
-        in_SO3 = np.isclose(np.linalg.det(array), 1.0)
-        in_SO3 &= np.allclose(array@array.T, np.identity(3))
-        if not in_SO3:
-            raise ValueError("Given attitude is not in SO(3)")
+        _assert_SO3(array, "Direction Cosine Matrix")
         # Create the ndarray instance of type DCM. This will call the standard
         # ndarray constructor, but return an object of type DCM.
         obj = super(DCM, subtype).__new__(subtype, array.shape, float, array)
@@ -526,7 +533,7 @@ class DCM(np.ndarray):
 
         .. note::
             The axis-angle representation is not unique since a rotation of
-            :math:`−\\theta` about :math:`−\\mathbf{k}` is the same as a
+            :math:`-\\theta` about :math:`-\\mathbf{k}` is the same as a
             rotation of :math:`\\theta` about :math:`\\mathbf{k}`.
 
         Returns
