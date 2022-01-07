@@ -7,6 +7,25 @@ wmm = ahrs.utils.WMM(latitude=ahrs.MUNICH_LATITUDE, longitude=ahrs.MUNICH_LONGIT
 REFERENCE_MAGNETIC_VECTOR = np.array([wmm.X, wmm.Y, wmm.Z])
 GRAVITY = ahrs.utils.WGS().normal_gravity(ahrs.MUNICH_LATITUDE, ahrs.MUNICH_HEIGHT)
 
+def gauss_filter(input, size = 10, sigma = 1.0):
+    x = np.linspace(-sigma*4, sigma*4, size)
+    phi_x = np.exp(-0.5*x**2/sigma**2)
+    phi_x /= phi_x.sum()
+    if input.ndim < 2:
+        return np.correlate(input, phi_x, mode='same')
+    return np.array([np.correlate(col, phi_x, mode='same') for col in input.T]).T
+
+def random_angvel(num_samples: int = 500, max_rotations: int = 4, span: list = None) -> np.ndarray:
+    span = span if isinstance(span, (list, tuple)) else [-0.5*np.pi, 0.5*np.pi]
+    all_angs = [np.random.uniform(span[0], span[1], np.random.randint(1, max_rotations)) for _ in np.arange(3)]
+    gyros = np.zeros((num_samples, 3))
+    for j, angs in enumerate(all_angs):
+        num_angs = len(angs)
+        idxs = np.sort(np.random.randint(0, num_samples, 2*num_angs)).reshape((num_angs, 2))
+        for i, idx in enumerate(idxs):
+            gyros[idx[0]:idx[1], j] = angs[i]
+    return gauss_filter(gyros, size=50, sigma=5)
+
 class TestTRIAD(unittest.TestCase):
     def setUp(self) -> None:
         self.decimal_precision = 1e-7
