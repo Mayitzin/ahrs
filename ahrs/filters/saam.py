@@ -232,7 +232,7 @@ class SAAM:
         qy = (az-1)*my + ay*(mD-mz)
         qz = az*mD - ax*mN-mz
         # Final quaternion (eq. 18)
-        Q = np.c_[qw, qx, qy, qz]
+        Q = np.c_[-qw, qx, qy, qz]
         return Q/np.linalg.norm(Q, axis=1)[:, None]
 
     def estimate(self, acc: np.ndarray, mag: np.ndarray) -> np.ndarray:
@@ -277,5 +277,5 @@ class SAAM:
         qy = (az-1)*my + ay*(mD-mz)
         qz = az*mD - ax*mN-mz
         # Final quaternion (eq. 18)
-        q = np.array([qw, qx, qy, qz])
+        q = np.array([-qw, qx, qy, qz])
         return q / np.linalg.norm(q)
