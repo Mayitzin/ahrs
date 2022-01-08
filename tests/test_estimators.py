@@ -10,6 +10,9 @@ REFERENCE_MAGNETIC_VECTOR = np.array([wmm.X, wmm.Y, wmm.Z])
 def __gaussian_filter(input, size = 10, sigma = 1.0):
     """Gaussian filter over an array
 
+    This implementation tries to mimic the behavior of Scipy's function
+    ``gaussian_filter1d``, in order to avoid the dependency on Scipy.
+
     Parameters
     ----------
     input : np.ndarray
@@ -65,16 +68,18 @@ def random_angvel(num_samples: int = 500, max_rotations: int = 4, num_axes: int 
 
 class TestTRIAD(unittest.TestCase):
     def setUp(self) -> None:
-        num_samples, self.noise = 500, 1e-10
-        angular_velocities = random_angvel(span=(-np.pi, np.pi))
+        # Generate random attitudes
+        num_samples = 500
+        angular_velocities = random_angvel(num_samples=num_samples, span=(-np.pi, np.pi))
         self.R = ahrs.QuaternionArray(ahrs.filters.AngularRate(angular_velocities).Q).to_DCM()
         # Rotated reference vectors + noise
-        self.Rg = np.array([R @ REFERENCE_GRAVITY_VECTOR for R in self.R]) + np.random.randn(num_samples, 3) * self.noise
-        self.Rm = np.array([R @ REFERENCE_MAGNETIC_VECTOR for R in self.R]) + np.random.randn(num_samples, 3) * self.noise
+        self.noise_sigma = 1e-5
+        self.Rg = np.array([R @ REFERENCE_GRAVITY_VECTOR for R in self.R]) + np.random.randn(num_samples, 3) * self.noise_sigma
+        self.Rm = np.array([R @ REFERENCE_MAGNETIC_VECTOR for R in self.R]) + np.random.randn(num_samples, 3) * self.noise_sigma
 
     def test_multiple_values(self):
         R2 = ahrs.filters.TRIAD(self.Rg, self.Rm, v1=REFERENCE_GRAVITY_VECTOR, v2=REFERENCE_MAGNETIC_VECTOR)
-        self.assertLess(np.nanmean(ahrs.utils.metrics.chordal(self.R, R2.A)), self.noise*10)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.chordal(self.R, R2.A)), self.noise_sigma*10)
 
     def test_wrong_frame(self):
         self.assertRaises(TypeError, ahrs.filters.TRIAD, frame=1.0)
@@ -87,15 +92,16 @@ class TestTRIAD(unittest.TestCase):
 
 class TestSAAM(unittest.TestCase):
     def setUp(self) -> None:
-        # Create random attitudes
-        num_samples = 1000
-        self.Qts = ahrs.QuaternionArray(np.random.random((num_samples, 4)) - 0.5)
-        self.rotations = self.Qts.to_DCM()
-        # Add noise to reference vectors and rotate them by the random attitudes
-        noises = np.random.randn(2*num_samples, 3)*1e-3
-        self.Rg = np.array([R.T @ (REFERENCE_GRAVITY_VECTOR + noises[i]) for i, R in enumerate(self.rotations)])
-        self.Rm = np.array([R.T @ (REFERENCE_MAGNETIC_VECTOR + noises[i+num_samples]) for i, R in enumerate(self.rotations)])
         self.decimal_precision = 7e-2
+        # Generate random attitudes
+        num_samples = 500
+        angular_velocities = random_angvel(num_samples=num_samples, span=(-np.pi, np.pi))
+        self.Qts = ahrs.QuaternionArray(ahrs.filters.AngularRate(angular_velocities).Q)
+        self.R = self.Qts.to_DCM()
+        # Rotated reference vectors + noise
+        noise_sigma = 1e-5
+        self.Rg = np.array([R @ REFERENCE_GRAVITY_VECTOR for R in self.R]) + np.random.randn(num_samples, 3) * noise_sigma
+        self.Rm = np.array([R @ REFERENCE_MAGNETIC_VECTOR for R in self.R]) + np.random.randn(num_samples, 3) * noise_sigma
 
     def test_single_values(self):
         saam = ahrs.filters.SAAM(self.Rg[0], self.Rm[0])
@@ -103,7 +109,7 @@ class TestSAAM(unittest.TestCase):
 
     def test_single_values_as_rotation(self):
         saam = ahrs.filters.SAAM(self.Rg[0], self.Rm[0], representation='rotmat')
-        np.testing.assert_allclose(saam.A, self.rotations[0], atol=self.decimal_precision)
+        np.testing.assert_allclose(saam.A, self.R[0], atol=self.decimal_precision)
 
     def test_multiple_values(self):
         saam = ahrs.filters.SAAM(self.Rg, self.Rm)
@@ -111,7 +117,7 @@ class TestSAAM(unittest.TestCase):
 
     def test_multiple_values_as_rotations(self):
         saam = ahrs.filters.SAAM(self.Rg, self.Rm, representation='rotmat')
-        np.testing.assert_allclose(saam.A, self.rotations, atol=self.decimal_precision*2.0)
+        np.testing.assert_allclose(saam.A, self.R, atol=self.decimal_precision*2.0)
 
     def test_wrong_input_vectors(self):
         self.assertRaises(TypeError, ahrs.filters.SAAM, acc=1.0, mag=2.0)
