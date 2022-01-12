@@ -148,7 +148,7 @@ where:
 .. math::
     \\begin{array}{rcl}
     a &=& \\sigma^2-\\kappa \\\\ && \\\\
-    b &=& \\sigma^2 + \\mathbf{Z}^T+\\mathbf{Z} \\\\ && \\\\
+    b &=& \\sigma^2 + \\mathbf{Z}^T\\mathbf{Z} \\\\ && \\\\
     c &=& \\Delta + \\mathbf{Z}^T\\mathbf{SZ} \\\\ && \\\\
     d &=& \\mathbf{Z}^T\\mathbf{S}^2\\mathbf{Z} \\\\ && \\\\
     \\sigma &=& \\frac{1}{2}\\mathrm{tr}\\mathbf{S} \\\\ && \\\\
@@ -171,7 +171,7 @@ word is exhausted after only one iteration.
 Finally, the **optimal quaternion** describing the attitude is found as:
 
 .. math::
-    \\bar{\\mathbf{q}}_\\mathrm{opt} = \\frac{1}{\\sqrt{\\gamma^2+|\\mathbf{Y}|^2}} = \\begin{bmatrix}\\mathbf{Y}\\\\ \\gamma \\end{bmatrix}
+    \\bar{\\mathbf{q}}_\\mathrm{opt} = \\frac{1}{\\sqrt{\\gamma^2+|\\mathbf{X}|^2}} \\begin{bmatrix}\\mathbf{X}\\\\ \\gamma \\end{bmatrix}
 
 with:
 
@@ -199,14 +199,68 @@ References
 
 """
 
+from typing import Union
 import numpy as np
-from ..common.mathfuncs import *
 
+from ..common.mathfuncs import *
 from ..utils.wmm import WMM
 from ..utils.wgs84 import WGS
 # Reference Observations in Munich, Germany
-MAG = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT).magnetic_elements
 GRAVITY = WGS().normal_gravity(MUNICH_LATITUDE, MUNICH_HEIGHT)
+
+def _assert_iterables(item, item_name: str = 'iterable'):
+    if not isinstance(item, (list, tuple, np.ndarray)):
+        raise TypeError(f"{item_name} must be given as an array. Got {type(item)}")
+
+def _set_magnetic_field_vector(self, magnetic_dip: Union[int, float, list, tuple, np.ndarray]):
+    """
+    Set the magnetic reference vector.
+
+    Parameters
+    ----------
+    magnetic_dip : float
+        Magnetic dip, in degrees.
+
+    """
+    if isinstance(magnetic_dip, (float, int)):
+        magnetic_field = np.array([cosd(magnetic_dip), 0., sind(magnetic_dip)])
+    elif isinstance(magnetic_dip, (list, tuple, np.ndarray)):
+        magnetic_field = np.copy(magnetic_dip)
+    elif magnetic_dip is None:
+        MAG = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT).magnetic_elements
+        magnetic_field = np.array([MAG['X'], MAG['Y'], MAG['Z']])
+    else:
+        raise TypeError(f"magnetic_dip must be given as a float, list, tuple or NumPy array. Got {type(magnetic_dip)}")
+    if magnetic_field.shape != (3,):
+        raise ValueError(f"magnetic_dip must be given as a float, list, tuple or NumPy array with 3 elements. Got {magnetic_field.shape}")
+    return magnetic_field
+
+def _set_gravitational_acceleration_vector(self, gravitational_acceleration: Union[int, float, list, tuple, np.ndarray]):
+    """
+    Set the gravitational acceleration vector.
+
+    Parameters
+    ----------
+    gravitational_acceleration : float or array-like
+        Gravitational acceleration, in m/s^2.
+
+    Returns
+    -------
+    gravitaty_vector : numpy.ndarray
+        Gravitational acceleration vector, in m/s^2.
+
+    """
+    if isinstance(gravitational_acceleration, (float, int)):
+        gravity_vector = np.array([0., 0., gravitational_acceleration])
+    elif isinstance(gravitational_acceleration, (list, tuple, np.ndarray)):
+        gravity_vector = np.copy(gravitational_acceleration)
+    elif gravitational_acceleration is None:
+        gravity_vector = np.array([0., 0., GRAVITY])
+    else:
+        raise TypeError(f"gravity must be given as a float, list, tuple or NumPy array. Got {type(gravitational_acceleration)}")
+    if gravity_vector.shape != (3,):
+        raise ValueError(f"gravity must be given as a float, list, tuple or NumPy array with 3 elements. Got {gravity_vector.shape}")
+    return gravity_vector
 
 class QUEST:
     """
@@ -241,14 +295,12 @@ class QUEST:
 
     """
     def __init__(self, acc: np.ndarray = None, mag: np.ndarray = None, **kw):
-        self.acc = acc
-        self.mag = mag
-        self.w = kw.get('weights', np.ones(2))
+        self.acc: np.ndarray = acc
+        self.mag: np.ndarray = mag
+        self.w: np.ndarray = kw.get('weights', 0.5*np.ones(2))
         # Reference measurements
-        mdip = kw.get('magnetic_dip')                           # Magnetic dip, in degrees
-        self.m_q = np.array([MAG['X'], MAG['Y'], MAG['Z']]) if mdip is None else np.array([cosd(mdip), 0., sind(mdip)])
-        g = kw.get('gravity', GRAVITY)                          # Earth's normal gravity in m/s^2
-        self.g_q = np.array([0.0, 0.0, g])                      # Normal Gravity vector
+        self.m_q: np.ndarray = _set_magnetic_field_vector(self, kw.get('magnetic_dip'))
+        self.g_q: np.ndarray = _set_gravitational_acceleration_vector(self, kw.get('gravity'))  # Normal Gravity vector
         if self.acc is not None and self.mag is not None:
             self.Q = self._compute_all()
 
@@ -266,13 +318,15 @@ class QUEST:
         """
         if self.acc.shape != self.mag.shape:
             raise ValueError("acc and mag are not the same size")
+        if self.acc.ndim < 2:
+            return self.estimate(self.acc, self.mag)
         num_samples = len(self.acc)
         Q = np.zeros((num_samples, 4))
         for t in range(num_samples):
             Q[t] = self.estimate(self.acc[t], self.mag[t])
         return Q
 
-    def estimate(self, acc: np.ndarray = None, mag: np.ndarray = None) -> np.ndarray:
+    def estimate(self, acc: np.ndarray, mag: np.ndarray) -> np.ndarray:
         """Attitude Estimation.
 
         Parameters
@@ -288,31 +342,37 @@ class QUEST:
             Estimated attitude as a quaternion.
 
         """
+        _assert_iterables(acc, 'Gravitational acceleration vector')
+        _assert_iterables(mag, 'Geomagnetic field vector')
         B = self.w[0]*np.outer(acc, self.g_q) + self.w[1]*np.outer(mag, self.m_q)   # Attitude profile matrix
         S = B + B.T
-        z = np.array([B[1, 2]-B[2, 1], B[2, 0]-B[0, 2], B[0, 1]-B[1, 0]])   # Pseudovector (Axial vector)
+        z = np.array([B[1, 2]-B[2, 1], B[2, 0]-B[0, 2], B[0, 1]-B[1, 0]])   # Pseudovector (Axial vector))
         # Parameters of characeristic equation (eq. 63)
         sigma = B.trace()
         Delta = np.linalg.det(S)
-        kappa = (Delta*np.linalg.inv(S)).trace()
-        # (eq. 71)
+        adjS = Delta*np.linalg.inv(S)
+        kappa = adjS.trace()
+        ### Elements of characteristic polynomial (eq. 71)
         a = sigma**2 - kappa
-        b = sigma**2 + z@z
-        c = Delta + z@S@z
-        d = z@S**2@z
+        b = sigma**2 + z.T @ z
+        c = Delta + z.T @ S @ z
+        d = z.T @ S@S @ z
         # Newton-Raphson method (eq. 70)
         k = a*b + c*sigma - d
-        lam = lam_0 = self.w.sum()
-        while abs(lam-lam_0)>=1e-12:
-            lam_0 = lam
-            phi = lam**4 - (a+b)*lam**2 - c*lam + k
-            phi_prime = 4*lam**3 - 2*(a+b)*lam - c
-            lam -= phi/phi_prime
+        l_max = l_old = self.w.sum()
+        num_iters = 0
+        while abs(l_old-l_max) > 1e-8 or num_iters <= 10:
+            l_old = l_max
+            phi = l_max**4 - (a+b)*l_max**2 - c*l_max + k
+            phi_prime = 4.0*l_max**3 - 2.0*(a+b)*l_max - c
+            l_max -= phi/phi_prime
+            num_iters += 1
         # (eq. 66)
-        alpha = lam**2 - sigma**2 + kappa
-        beta = lam - sigma
-        gamma = alpha*(lam+sigma) - Delta
-        Chi = (alpha*np.eye(3) + beta*S + S**2)@z       # (eq. 68)
+        alpha = l_max**2 - sigma**2 + kappa
+        beta = l_max - sigma
+        gamma = (l_max + sigma)*alpha - Delta
+        Chi = (alpha*np.identity(3) + beta*S + S@S)@ z      # (eq. 68)
         # Optimal Quaternion (eq. 69)
-        q = np.array([gamma, *Chi])
-        return q/np.linalg.norm(q)
+        q = [gamma, *Chi]
+        q /= np.linalg.norm(q)
+        return q
