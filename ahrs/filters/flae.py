@@ -188,9 +188,9 @@ q-method.
 This has the advantage of returning a normalized and valid quaternion, which is
 used to represent the attitude.
 
-The disadvantages include its computational load and, mainly,
-:math:`(\\mathbf{W}-\\mathbf{I})` suffering from rank-deficient problems in the
-sensor outputs.
+This method's main disadvantage is :math:`(\\mathbf{W}-\\mathbf{I})` suffering
+from rank-deficient problems in the sensor outputs, besides its computational
+cost.
 
 Characteristic Polynomial
 -------------------------
@@ -346,6 +346,11 @@ def _assert_iterables(item, item_name: str = 'iterable'):
     if not isinstance(item, (list, tuple, np.ndarray)):
         raise TypeError(f"{item_name} must be given as an array. Got {type(item)}")
 
+def _assert_valid_method(method : str, valid_methods : list) -> None:
+    if method not in valid_methods:
+        joint_methods = "', '".join(valid_methods[:-1]) + "' or '" + valid_methods[-1]
+        raise ValueError(f"Given method '{method}' is not valid. Try '{joint_methods}'")
+
 class FLAE:
     """Fast Linear Attitude Estimator
 
@@ -355,9 +360,9 @@ class FLAE:
         N-by-3 array with measurements of acceleration in in m/s^2
     mag : numpy.ndarray, default: None
         N-by-3 array with measurements of magnetic field in mT
-    method : str, default: 'symbolic'
-        Method used to estimate the attitude. Options are: 'symbolic', 'eig'
-        and 'newton'.
+    method : str, default: ``'symbolic'``
+        Method used to estimate the attitude. Options are: ``'symbolic'``,
+        ``'eig'``, and ``'newton'``.
     weights : np.ndarray, default: [0.5, 0.5]
         Weights used for each sensor. They must add up to 1.
     magnetic_dip : float
@@ -395,8 +400,6 @@ class FLAE:
         self.acc = acc
         self.mag = mag
         self.method = method
-        if self.method.lower() not in ['eig', 'symbolic', 'newton']:
-            raise ValueError(f"Given method '{self.method}' is not valid. Try 'symbolic', 'eig' or 'newton'")
         # Reference measurements
         mdip = kw.get('magnetic_dip')                       # Magnetic dip, in degrees
         mag_ref = np.array([MAG['X'], MAG['Y'], MAG['Z']]) if mdip is None else np.array([cosd(mdip), 0., -sind(mdip)])
@@ -432,31 +435,21 @@ class FLAE:
             Q[t] = self.estimate(self.acc[t], self.mag[t], method=self.method)
         return Q
 
-    def _row_reduction(self, A: np.ndarray) -> np.ndarray:
-        """Gaussian elimination
-        """
-        for i in range(3):
-            A[i] /= A[i, i]
-            for j in range(4):
-                if i != j:
-                    A[j] -= A[j, i]*A[i]
-        return A
-
-    def P1Hx(self, Hx: np.ndarray) -> np.ndarray:
+    def _P1Hx(self, Hx: np.ndarray) -> np.ndarray:
         return np.array([
             [ Hx[0],   0.0, -Hx[2],  Hx[1]],
             [ 0.0,   Hx[0],  Hx[1],  Hx[2]],
             [-Hx[2], Hx[1], -Hx[0],   0.0],
             [ Hx[1], Hx[2],    0.0, -Hx[0]]])
 
-    def P2Hy(self, Hy: np.ndarray) -> np.ndarray:
+    def _P2Hy(self, Hy: np.ndarray) -> np.ndarray:
         return np.array([
             [ Hy[1],  Hy[2],    0.0, -Hy[0]],
             [ Hy[2], -Hy[1],  Hy[0],    0.0],
             [ 0.0,    Hy[0],  Hy[1],  Hy[2]],
             [-Hy[0],    0.0,  Hy[2], -Hy[1]]])
 
-    def P3Hz(self, Hz: np.ndarray) -> np.ndarray:
+    def _P3Hz(self, Hz: np.ndarray) -> np.ndarray:
         return np.array([
             [ Hz[2], -Hz[1],  Hz[0], 0.0],
             [-Hz[1], -Hz[2],    0.0, Hz[0]],
@@ -495,15 +488,16 @@ class FLAE:
         array([ 0.42455176,  0.68971918, -0.58315259, -0.06305803])
 
         """
-        if acc.size!=3:
+        _assert_valid_method(method, ['symbolic', 'eig', 'newton'])
+        _assert_iterables(acc, 'Gravitational acceleration vector')
+        _assert_iterables(mag, 'Geomagnetic field vector')
+        if acc.size != 3:
             raise ValueError(f"Accelerometer sample must be a (3,) array. Got array of shape {acc.shape}")
-        if mag.size!=3:
+        if mag.size != 3:
             raise ValueError(f"Magnetometer sample must be a (3,) array. Got array of shape {mag.shape}")
-        if method.lower() not in ['eig', 'symbolic', 'newton']:
-            raise ValueError(f"Given method '{method}' is not valid. Try 'symbolic', 'eig' or 'newton'")
         Db = np.r_[[acc/np.linalg.norm(acc)], [mag/np.linalg.norm(mag)]]
-        H = self.a * Db.T @ self.ref                            # (eq. 42)
-        W = self.P1Hx(H[0]) + self.P2Hy(H[1]) + self.P3Hz(H[2]) # (eq. 44)
+        H = self.a * Db.T @ self.ref                                # (eq. 42)
+        W = self._P1Hx(H[0]) + self._P2Hy(H[1]) + self._P3Hz(H[2])  # (eq. 44)
         if method.lower() == 'eig':
             V, D = np.linalg.eig(W)
             q = D[:, np.argmax(V)]
@@ -524,21 +518,21 @@ class FLAE:
         if method.lower() == 'symbolic':
             # Parameters (eq. 53)
             T0 = 2*t1**3 + 27*t2**2 - 72*t1*t3
-            try:
-                T1 = ((T0 + np.emath.sqrt(-4*(t1**2 + 12*t3)**3 + T0**2).real).real**(1/3)).real
-            except RuntimeWarning:
-                T1 = np.cbrt(T0 + np.emath.sqrt(-4*(t1**2 + 12*t3)**3 + T0**2).real)
-            T2 = np.emath.sqrt(abs(-4*t1 + 2**(4/3)*(t1**2 + 12*t3)/T1 + (2**(2/3))*T1))
+            T1 = np.cbrt(T0 + np.emath.sqrt(-4*(t1**2 + 12*t3)**3 + T0**2).real)
+            T2 = np.sqrt(-4*t1 + np.cbrt(16)*(t1**2 + 12*t3)/T1 + np.cbrt(4)*T1)
             # Solutions to polynomial (eq. 52)
             L = np.zeros(4)
-            L[0] =   T2 - np.emath.sqrt(-T2**2 - 12*t1 - 12*np.sqrt(6)*t2/T2).real
-            L[1] =   T2 + np.emath.sqrt(-T2**2 - 12*t1 - 12*np.sqrt(6)*t2/T2).real
-            L[2] = -(T2 + np.emath.sqrt(-T2**2 - 12*t1 + 12*np.sqrt(6)*t2/T2).real)
-            L[3] = -(T2 - np.emath.sqrt(-T2**2 - 12*t1 + 12*np.sqrt(6)*t2/T2).real)
+            L[0] =   T2 - np.sqrt(-T2**2 - 12*t1 - 12*np.sqrt(6)*t2/T2)
+            L[1] =   T2 + np.sqrt(-T2**2 - 12*t1 - 12*np.sqrt(6)*t2/T2)
+            L[2] = -(T2 + np.sqrt(-T2**2 - 12*t1 + 12*np.sqrt(6)*t2/T2))
+            L[3] = -(T2 - np.sqrt(-T2**2 - 12*t1 + 12*np.sqrt(6)*t2/T2))
             L *= 1.0/(2.0*np.sqrt(6))
             lam = L[(np.abs(L-1.0)).argmin()]               # Eigenvalue closest to 1
-            # lam = max(L)
         N = W - lam*np.identity(4)                          # (eq. 54)
-        N = self._row_reduction(N)                          # (eq. 55)
-        q = np.array([N[0, 3], N[1, 3], N[2, 3], -1])       # (eq. 58)
-        return q/np.linalg.norm(q)
+        # Return identity quaternion if N is singular matrix
+        if np.linalg.matrix_rank(N[1:, :-1]) != N[1:, :-1].shape[0]:
+            return np.array([1., 0., 0., 0.])
+        # Solve for N and get fundamental solution
+        r = np.linalg.solve(N[1:, :-1], N[1:, -1])          # (eq. 55)
+        q = np.array([*r, -1])                              # (eq. 58)
+        return q / np.linalg.norm(q)
