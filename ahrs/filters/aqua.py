@@ -928,9 +928,9 @@ class AQUA:
             Gamma = lx**2 + ly**2                                   # (eq. 28)
             # Quaternion from Magnetometer Readings (eq. 35)
             if lx >= 0:
-                q_mag = np.array([np.sqrt(Gamma+lx*np.sqrt(Gamma))/np.sqrt(2*Gamma), 0.0, 0.0, ly/np.sqrt(2)*np.sqrt(Gamma+lx*np.sqrt(Gamma))])
+                q_mag = np.array([np.sqrt(Gamma+lx*np.sqrt(Gamma))/np.sqrt(2*Gamma), 0.0, 0.0, ly/(np.sqrt(2)*np.sqrt(Gamma+lx*np.sqrt(Gamma)))])
             else:
-                q_mag = np.array([ly/np.sqrt(2)*np.sqrt(Gamma-lx*np.sqrt(Gamma)), 0.0, 0.0, np.sqrt(Gamma-lx*np.sqrt(Gamma))/np.sqrt(2*Gamma)])
+                q_mag = np.array([ly/(np.sqrt(2)*np.sqrt(Gamma-lx*np.sqrt(Gamma))), 0.0, 0.0, np.sqrt(Gamma-lx*np.sqrt(Gamma))/np.sqrt(2*Gamma)])
             # Generalized Quaternion Orientation (eq. 36)
             q = q_prod(q_acc, q_mag)
             return q/np.linalg.norm(q)
