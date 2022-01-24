@@ -5,7 +5,8 @@ import ahrs
 
 wmm = ahrs.utils.WMM(latitude=ahrs.MUNICH_LATITUDE, longitude=ahrs.MUNICH_LONGITUDE, height=ahrs.MUNICH_HEIGHT)
 REFERENCE_MAGNETIC_VECTOR = np.array([wmm.X, wmm.Y, wmm.Z])
-REFERENCE_GRAVITY_VECTOR = np.array([0.0, 0.0, ahrs.utils.WGS().normal_gravity(ahrs.MUNICH_LATITUDE, ahrs.MUNICH_HEIGHT)])
+NORMAL_GRAVITY = ahrs.utils.WGS().normal_gravity(ahrs.MUNICH_LATITUDE, ahrs.MUNICH_HEIGHT)
+REFERENCE_GRAVITY_VECTOR = np.array([0.0, 0.0, NORMAL_GRAVITY])
 
 def __gaussian_filter(input, size = 10, sigma = 1.0):
     """Gaussian filter over an array
@@ -34,7 +35,7 @@ def __gaussian_filter(input, size = 10, sigma = 1.0):
         return np.correlate(input, phi_x, mode='same')
     return np.array([np.correlate(col, phi_x, mode='same') for col in input.T]).T
 
-def random_angvel(num_samples: int = 500, max_rotations: int = 4, num_axes: int = 3, span: list = None) -> np.ndarray:
+def random_angvel(num_samples: int = 500, max_rotations: int = 4, num_axes: int = 3, span: list = None, **kwargs) -> np.ndarray:
     """Random angular velocities
 
     Create an array of synthetic random angular velocities with reference to a
@@ -65,7 +66,7 @@ def random_angvel(num_samples: int = 500, max_rotations: int = 4, num_axes: int 
         idxs = np.sort(np.random.randint(0, num_samples, 2*num_angs)).reshape((num_angs, 2))
         for i, idx in enumerate(idxs):
             angvels[idx[0]:idx[1], j] = angs[i]
-    return __gaussian_filter(angvels, size=50, sigma=5)
+    return __gaussian_filter(angvels, size=kwargs.pop('gauss_size', 50 if num_samples > 50 else num_samples//5), sigma=5)
 
 class TestTRIAD(unittest.TestCase):
     def setUp(self) -> None:
@@ -220,13 +221,30 @@ class TestAQUA(unittest.TestCase):
         self.rotations = self.Qts.to_DCM()
         # Add noise to reference vectors and rotate them by the random attitudes
         self.noise_sigma = 1e-2
-        self.decimal_precision = self.noise_sigma * 10.0
         self.Rg = np.array([R @ REFERENCE_GRAVITY_VECTOR for R in self.rotations]) + np.random.standard_normal((num_samples, 3)) * self.noise_sigma * np.ptp(REFERENCE_GRAVITY_VECTOR)
         self.Rm = np.array([R @ REFERENCE_MAGNETIC_VECTOR for R in self.rotations]) + np.random.standard_normal((num_samples, 3)) * self.noise_sigma * np.ptp(REFERENCE_MAGNETIC_VECTOR)
 
     def test_acc_mag(self):
         orientation = ahrs.filters.AQUA(acc=self.Rg, mag=self.Rm)
         self.assertLess(np.nanmean(ahrs.utils.metrics.qad(orientation.Q, self.Qts)), self.noise_sigma * 10)
+
+class TestFQA(unittest.TestCase):
+    def setUp(self) -> None:
+        # Create random attitudes
+        a_ref = np.array([0.0, 0.0, -NORMAL_GRAVITY])
+        m_ref = REFERENCE_MAGNETIC_VECTOR
+        num_samples = 1000
+        angular_velocities = random_angvel(num_samples=num_samples, span=(-np.pi, np.pi))
+        self.Qts = ahrs.QuaternionArray(ahrs.filters.AngularRate(angular_velocities).Q)
+        rotations = self.Qts.to_DCM()
+        # Add noise to reference vectors and rotate them by the random attitudes
+        self.noise_sigma = 1e-5
+        self.Rg = np.array([R.T @ a_ref for R in rotations]) + np.random.standard_normal((num_samples, 3)) * self.noise_sigma
+        self.Rm = np.array([R.T @ m_ref for R in rotations]) + np.random.standard_normal((num_samples, 3)) * self.noise_sigma
+
+    def test_acc_mag(self):
+        orientation = ahrs.filters.FQA(acc=self.Rg, mag=self.Rm)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(self.Qts, orientation.Q)), self.noise_sigma)
 
 if __name__ == '__main__':
     unittest.main()
