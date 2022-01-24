@@ -20,12 +20,12 @@ through all orientations.
     linear accelerations due to dynamic motion are present, unless it is used
     in a complementary or optimal filter together with angular rate information.
 
-The *Earth-fixed coordinate system* :math:`(^ex,\,^ey,\,^ez)` is defined following
+The *Earth-fixed coordinate system* :math:`(^ex,\\,^ey,\\,^ez)` is defined following
 the `North-East-Down <https://en.wikipedia.org/wiki/Local_tangent_plane_coordinates#Local_north,_east,_down_(NED)_coordinates>`_
 (NED) convention.
 
-A *body coordinate system* :math:`(^bx,\,^by,\,^bz)` is attached to the rigid
-body whose orientation is being measured, and the *sensor frame* :math:`(^sx,\,^sy,\,^sz)`
+A *body coordinate system* :math:`(^bx,\\,^by,\\,^bz)` is attached to the rigid
+body whose orientation is being measured, and the *sensor frame* :math:`(^sx,\\,^sy,\\,^sz)`
 corresponds to the sensor module conformed by the accelerometer/magnetometer
 system.
 
@@ -159,7 +159,7 @@ normalized magnetic readings :math:`^b\\mathbf{m}` into an intermediate
 coordinate system through the elevation and roll quaternions:
 
 .. math::
-    ^e\\mathbf{m} = \\mathbf{q}_e\\mathbf{q}_r \,^b\\mathbf{m}\\mathbf{q}_r^{-1}\\mathbf{q}_e^{-1}
+    ^e\\mathbf{m} = \\mathbf{q}_e\\mathbf{q}_r \\,^b\\mathbf{m}\\mathbf{q}_r^{-1}\\mathbf{q}_e^{-1}
 
 where :math:`^b\\mathbf{m}=\\begin{pmatrix}0 & ^bm_x & ^bm_y & ^bm_z\\end{pmatrix}`
 is the magnetic field measured in the body frame, and represented as a pure
@@ -239,6 +239,20 @@ from ..common.orientation import q_prod, q_conj
 from ..utils.wmm import WMM
 MAG = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT).magnetic_elements
 
+def _assert_iterables(item, item_name: str = 'iterable'):
+    if not isinstance(item, (list, tuple, np.ndarray)):
+        raise TypeError(f"{item_name} must be given as an array. Got {type(item)}")
+
+def _assert_same_shapes(item1, item2, item_names: list = None):
+    for item in [item1, item2]:
+        if not isinstance(item, (list, tuple, np.ndarray)):
+            raise TypeError(f"{item} must be an array. Got {type(item)}")
+    if item_names is None:
+        item_names = ['item1', 'item2']
+    item1, tem2 = np.copy(item1), np.copy(item2)
+    if item1.shape != item2.shape:
+        raise ValueError(f"{item_names[0]} and {item_names[1]} must have the same shape. Got {item1.shape} and {item2.shape}")
+
 class FQA:
     """
     Factored Quaternion Algorithm
@@ -275,8 +289,8 @@ class FQA:
         self.mag = mag
         # Reference measurements
         self.m_ref = np.array([MAG['X'], MAG['Y'], MAG['Z']]) if mag_ref is None else mag_ref
-        self.m_ref = self.m_ref[:2]/np.linalg.norm(self.m_ref[:2])
-        if self.acc is not None and self.mag is not None:
+        self.m_ref /= np.linalg.norm(self.m_ref)
+        if self.acc is not None:
             self.Q = self._compute_all()
 
     def _compute_all(self) -> np.ndarray:
@@ -292,15 +306,26 @@ class FQA:
             of samples.
 
         """
-        if self.acc.shape != self.mag.shape:
-            raise ValueError("acc and mag are not the same size")
+        if self.acc.ndim < 2:
+            _assert_iterables(self.acc, 'acc')
+            if self.mag is not None:
+                _assert_iterables(self.mag, 'mag')
+                _assert_same_shapes(self.acc, self.mag, ['acc', 'mag'])
+                return self.estimate(self.acc, self.mag)
+            return self.estimate(self.acc)
+        # Estimate multiple observations
         num_samples = len(self.acc)
         Q = np.zeros((num_samples, 4))
-        for t in range(num_samples):
-            Q[t] = self.estimate(self.acc[t], self.mag[t])
+        if self.mag is not None:
+            _assert_same_shapes(self.acc, self.mag, ['acc', 'mag'])
+            for t in range(num_samples):
+                Q[t] = self.estimate(self.acc[t], self.mag[t])
+        else:
+            for t in range(num_samples):
+                Q[t] = self.estimate(self.acc[t])
         return Q
 
-    def estimate(self, acc: np.ndarray = None, mag: np.ndarray = None) -> np.ndarray:
+    def estimate(self, acc: np.ndarray, mag: np.ndarray = None) -> np.ndarray:
         """Attitude Estimation.
 
         Parameters
@@ -319,42 +344,46 @@ class FQA:
         a_norm = np.linalg.norm(acc)
         if a_norm == 0:     # handle NaN
             return np.array([1., 0., 0., 0.])
-        a = acc/a_norm
+        a_x, a_y, a_z = acc/a_norm                                  # (eq. 20)
         # Elevation Quaternion
-        s_theta = a[0]                                              # (eq. 21)
+        s_theta = np.clip(a_x, -1.0, 1.0)                           # (eq. 21)
         c_theta = np.sqrt(1.0-s_theta**2)                           # (eq. 22)
         s_theta_2 = np.sign(s_theta)*np.sqrt((1.0-c_theta)/2.0)     # (eq. 23)
         c_theta_2 = np.sqrt((1.0+c_theta)/2.0)                      # (eq. 24)
         q_e = np.array([c_theta_2, 0.0, s_theta_2, 0.0])            # (eq. 25)
         q_e /= np.linalg.norm(q_e)
         # Roll Quaternion
-        is_singular = c_theta==0.0
-        s_phi = 0.0 if is_singular else -a[1]/c_theta               # (eq. 30)
-        c_phi = 0.0 if is_singular else -a[2]/c_theta               # (eq. 31)
-        s_phi_2 = np.sign(s_phi)*np.sqrt((1.0-c_phi)/2.0)
+        is_singular = c_theta == 0.0        # X-axis is vertically oriented
+        s_phi = 0.0 if is_singular else -a_y/c_theta                # (eq. 30)
+        c_phi = 0.0 if is_singular else -a_z/c_theta                # (eq. 31)
+        c_phi = np.clip(c_phi, -1.0, 1.0)
+        sign_s_phi = np.sign(s_phi)
+        if c_phi == -1.0 and s_phi == 0.0:
+            sign_s_phi = 1
+        s_phi_2 = sign_s_phi*np.sqrt((1.0-c_phi)/2.0)
         c_phi_2 = np.sqrt((1.0+c_phi)/2.0)
         q_r = np.array([c_phi_2, s_phi_2, 0.0, 0.0])                # (eq. 32)
         q_r /= np.linalg.norm(q_r)
         q_er = q_prod(q_e, q_r)
         q_er /= np.linalg.norm(q_er)
+        if mag is None:
+            return q_er
         # Azimuth Quaternion
         m_norm = np.linalg.norm(mag)
-        if not m_norm>0:
+        if not m_norm > 0:
             return q_er
-        q_a = np.array([1., 0., 0., 0.])
-        if m_norm>0:
-            m = mag/m_norm
-            bm = np.array([0.0, *m])
-            em = q_prod(q_e, q_prod(q_r, q_prod(bm, q_prod(q_conj(q_r), q_conj(q_e)))))     # (eq. 34)
-            # em = [0.0, *q2R(q_e)@q2R(q_r)@m]
-            # N = self.m_ref[:2].copy()                               # (eq. 36)
-            N = self.m_ref.copy()                                   # (eq. 36)
-            _, Mx, My, _ = em/np.linalg.norm(em)                    # (eq. 37)
-            c_psi, s_psi = np.array([[Mx, My], [-My, Mx]])@N        # (eq. 39)
-            s_psi_2 = np.sign(s_psi)*np.sqrt((1.0-c_psi)/2.0)
-            c_psi_2 = np.sqrt((1.0+c_psi)/2.0)
-            q_a = np.array([c_psi_2, 0.0, 0.0, s_psi_2])            # (eq. 40)
-            q_a /= np.linalg.norm(q_a)
-        # Final Quaternion
-        q = q_prod(q_a, q_er)                                       # (eq. 41)
+        mag /= np.linalg.norm(mag)
+        bm = np.array([0.0, *mag])
+        em = q_prod(q_e, q_prod(q_r, q_prod(bm, q_prod(q_conj(q_r), q_conj(q_e)))))     # (eq. 34)
+        nx, ny, _ = self.m_ref
+        N = np.array([nx, ny])/np.linalg.norm([nx, ny])             # (eq. 36)
+        Mx, My = em[1:-1] / np.linalg.norm(em[1:-1])                # (eq. 37)
+        c_psi, s_psi = np.array([[Mx, My], [-My, Mx]])@N            # (eq. 39)
+        c_psi = np.clip(c_psi, -1.0, 1.0)
+        s_psi_2 = np.sign(s_psi)*np.sqrt((1.0-c_psi)/2.0)
+        c_psi_2 = np.sqrt((1.0+c_psi)/2.0)
+        q_a = np.array([c_psi_2, 0.0, 0.0, s_psi_2])                # (eq. 40)
+        q_a /= np.linalg.norm(q_a)
+        # Final Quaternion (eq. 41)
+        q = q_prod(q_a, q_er)
         return q/np.linalg.norm(q)
