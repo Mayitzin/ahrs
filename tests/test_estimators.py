@@ -246,5 +246,29 @@ class TestFQA(unittest.TestCase):
         orientation = ahrs.filters.FQA(acc=self.Rg, mag=self.Rm)
         self.assertLess(np.nanmean(ahrs.utils.metrics.qad(self.Qts, orientation.Q)), self.noise_sigma)
 
+class TestMadgwick(unittest.TestCase):
+    def setUp(self) -> None:
+        # Create random attitudes
+        num_samples = 1000
+        a_ref = np.array([0.0, 0.0, NORMAL_GRAVITY])
+        m_ref = ahrs.common.frames.ned2enu(REFERENCE_MAGNETIC_VECTOR)
+        gyros = random_angvel(num_samples=num_samples, span=(-np.pi, np.pi))
+        self.Qts = ahrs.QuaternionArray(ahrs.filters.AngularRate(gyros).Q)
+        rotations = self.Qts.to_DCM()
+        # Add noise to reference vectors and rotate them by the random attitudes
+        self.noise_sigma = 1e-2
+        self.gyr = gyros + np.random.standard_normal((num_samples, 3)) * self.noise_sigma
+        self.Rg = np.array([R @ a_ref for R in rotations]) + np.random.standard_normal((num_samples, 3)) * self.noise_sigma
+        self.Rm = np.array([R @ m_ref for R in rotations]) + np.random.standard_normal((num_samples, 3)) * self.noise_sigma
+        self.gain = np.sqrt(3/4) * self.noise_sigma
+
+    def test_imu(self):
+        orientation = ahrs.filters.Madgwick(gyr=self.gyr, acc=self.Rg, gain=self.gain)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(self.Qts, orientation.Q)), self.noise_sigma*10)
+
+    def test_marg(self):
+        orientation = ahrs.filters.Madgwick(gyr=self.gyr, acc=self.Rg, mag=self.Rm, gain=self.gain)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(self.Qts, orientation.Q)), self.noise_sigma*10)
+
 if __name__ == '__main__':
     unittest.main()
