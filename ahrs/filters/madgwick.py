@@ -512,7 +512,6 @@ class Madgwick:
         self.frequency: float = kwargs.get('frequency', 100.0)
         self.Dt: float = kwargs.get('Dt', 1.0/self.frequency)
         self.q0: np.ndarray = kwargs.get('q0')
-        _assert_iterables(self.q0, 'Initial quaternion')
         self._set_gain(**kwargs)
         if self.acc is not None and self.gyr is not None:
             self.Q = self._compute_all()
@@ -611,17 +610,19 @@ class Madgwick:
         if a_norm > 0:
             a = acc/a_norm
             qw, qx, qy, qz = q/np.linalg.norm(q)
-            # Gradient objective function (eq. 25) and Jacobian (eq. 26)
+            # Objective function (eq. 25)
             f = np.array([2.0*(qx*qz - qw*qy)   - a[0],
                           2.0*(qw*qx + qy*qz)   - a[1],
-                          2.0*(0.5-qx**2-qy**2) - a[2]])            # (eq. 25)
-            J = np.array([[-2.0*qy,  2.0*qz, -2.0*qw, 2.0*qx],
-                          [ 2.0*qx,  2.0*qw,  2.0*qz, 2.0*qy],
-                          [ 0.0,    -4.0*qx, -4.0*qy, 0.0   ]])     # (eq. 26)
-            # Objective Function Gradient
-            gradient = J.T@f                                        # (eq. 34)
-            gradient /= np.linalg.norm(gradient)
-            qDot -= self.gain*gradient                              # (eq. 33)
+                          2.0*(0.5-qx**2-qy**2) - a[2]])
+            if np.linalg.norm(f) > 0:
+                # Jacobian (eq. 26)
+                J = np.array([[-2.0*qy,  2.0*qz, -2.0*qw, 2.0*qx],
+                              [ 2.0*qx,  2.0*qw,  2.0*qz, 2.0*qy],
+                              [ 0.0,    -4.0*qx, -4.0*qy, 0.0   ]])
+                # Objective Function Gradient
+                gradient = J.T@f                                    # (eq. 34)
+                gradient /= np.linalg.norm(gradient)
+                qDot -= self.gain*gradient                          # (eq. 33)
         q += qDot*dt                                           # (eq. 13)
         q /= np.linalg.norm(q)
         return q
@@ -691,22 +692,23 @@ class Madgwick:
             bx = np.linalg.norm([h[1], h[2]])                       # (eq. 46)
             bz = h[3]
             qw, qx, qy, qz = q/np.linalg.norm(q)
-            # Gradient objective function (eq. 31) and Jacobian (eq. 32)
+            # Objective function (eq. 31)
             f = np.array([2.0*(qx*qz - qw*qy)   - a[0],
                           2.0*(qw*qx + qy*qz)   - a[1],
                           2.0*(0.5-qx**2-qy**2) - a[2],
                           2.0*bx*(0.5 - qy**2 - qz**2) + 2.0*bz*(qx*qz - qw*qy)       - m[0],
                           2.0*bx*(qx*qy - qw*qz)       + 2.0*bz*(qw*qx + qy*qz)       - m[1],
-                          2.0*bx*(qw*qy + qx*qz)       + 2.0*bz*(0.5 - qx**2 - qy**2) - m[2]])  # (eq. 31)
+                          2.0*bx*(qw*qy + qx*qz)       + 2.0*bz*(0.5 - qx**2 - qy**2) - m[2]])
+            # Jacobian (eq. 32)
             J = np.array([[-2.0*qy,               2.0*qz,              -2.0*qw,               2.0*qx             ],
                           [ 2.0*qx,               2.0*qw,               2.0*qz,               2.0*qy             ],
                           [ 0.0,                 -4.0*qx,              -4.0*qy,               0.0                ],
                           [-2.0*bz*qy,            2.0*bz*qz,           -4.0*bx*qy-2.0*bz*qw, -4.0*bx*qz+2.0*bz*qx],
                           [-2.0*bx*qz+2.0*bz*qx,  2.0*bx*qy+2.0*bz*qw,  2.0*bx*qx+2.0*bz*qz, -2.0*bx*qw+2.0*bz*qy],
-                          [ 2.0*bx*qy,            2.0*bx*qz-4.0*bz*qx,  2.0*bx*qw-4.0*bz*qy,  2.0*bx*qx          ]]) # (eq. 32)
+                          [ 2.0*bx*qy,            2.0*bx*qz-4.0*bz*qx,  2.0*bx*qw-4.0*bz*qy,  2.0*bx*qx          ]])
             gradient = J.T@f                                        # (eq. 34)
             gradient /= np.linalg.norm(gradient)
             qDot -= self.gain*gradient                              # (eq. 33)
-        q += qDot*dt                                          # (eq. 13)
+        q += qDot*dt                                                # (eq. 13)
         q /= np.linalg.norm(q)
         return q
