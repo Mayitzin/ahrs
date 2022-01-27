@@ -506,7 +506,7 @@ class WGS:
         .. math::
             g = \\frac{ag_e \\cos^2\\phi + bg_p\\sin^2\\phi}{\\sqrt{a^2cos^2\\phi + b^2\\sin^2\\phi}}
 
-        For numerical computation, a more convenient form is:
+        For numerical computations, a more convenient form is:
 
         .. math::
             g = g_e\\frac{1+k\\sin^2\\phi}{\\sqrt{1-e^2\\sin^2\\phi}}

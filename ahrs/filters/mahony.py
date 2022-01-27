@@ -218,11 +218,11 @@ In this case, the cost function :math:`E_\\mathrm{mes}` becomes:
 
 .. tip::
     When the IMU is subject to high magnitude accelerations (takeoff, landing
-    manoeuvres, etc.) it may be wise to reduce the relative weighting of the
+    manoeuvres, etc.) it may be wise to reduce the relative weighing of the
     accelerometer data (:math:`k_1 \\ll k_2`) compared to the magnetometer data.
-    Conversely, sometimes the IMU is mounted in the proximity of powerful
-    electric motors leading to low confidence in the magnetometer readings
-    (choose :math:`k_1 \\gg k_2`).
+    Conversely, when the IMU is mounted in the proximity of powerful electric
+    motors leading to low confidence in the magnetometer readings choose
+    :math:`k_1 \\gg k_2`.
 
 Expressing the kinematics of the Explicit Complementary Filter as quaternions
 we get:
@@ -267,7 +267,7 @@ References
 """
 
 import numpy as np
-from ..common.orientation import q_prod, q_conj, acc2q, am2q, q2R
+from ..common.orientation import q_prod, acc2q, am2q, q2R
 
 class Mahony:
     """Mahony's Nonlinear Complementary Filter on SO(3)

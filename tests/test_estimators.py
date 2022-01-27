@@ -250,7 +250,7 @@ class TestMadgwick(unittest.TestCase):
     def setUp(self) -> None:
         # Create random attitudes
         num_samples = 1000
-        a_ref = np.array([0.0, 0.0, NORMAL_GRAVITY])
+        a_ref = REFERENCE_GRAVITY_VECTOR
         m_ref = ahrs.common.frames.ned2enu(REFERENCE_MAGNETIC_VECTOR)
         gyros = random_angvel(num_samples=num_samples, span=(-np.pi, np.pi))
         self.Qts = ahrs.QuaternionArray(ahrs.filters.AngularRate(gyros).Q)

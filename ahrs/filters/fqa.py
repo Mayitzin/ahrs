@@ -63,7 +63,7 @@ and this component, in turn, depends only on the elevation angle.
 Starting with the rigid body in its reference orientation, the X-axis
 accelerometer is perpendicular to gravity and thus registers zero acceleration.
 The Y-axis accelerometer also reads zero, while the Z-axis accelerometer reads
-:math:`−g`. If the body is then rotated in azimuth about its Z-axis, the X-axis
+:math:`-g`. If the body is then rotated in azimuth about its Z-axis, the X-axis
 accelerometer still reads zero, regardless of the azimuth angle.
 
 If the rigid body is next rotated up through an angle :math:`\\theta`, the
@@ -249,7 +249,7 @@ def _assert_same_shapes(item1, item2, item_names: list = None):
             raise TypeError(f"{item} must be an array. Got {type(item)}")
     if item_names is None:
         item_names = ['item1', 'item2']
-    item1, tem2 = np.copy(item1), np.copy(item2)
+    item1, item2 = np.copy(item1), np.copy(item2)
     if item1.shape != item2.shape:
         raise ValueError(f"{item_names[0]} and {item_names[1]} must have the same shape. Got {item1.shape} and {item2.shape}")
 

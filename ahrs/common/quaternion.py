@@ -44,7 +44,7 @@ quaternion [#]_:
 
 .. math::
     \\mathbf{q}\\triangleq
-    \\begin{bmatrix}q_w \\\\ \\mathbf{q}_v\\end{bmatrix} = 
+    \\begin{bmatrix}q_w \\\\ \\mathbf{q}_v\\end{bmatrix} =
     \\begin{bmatrix}q_w \\\\ q_x \\\\ q_y \\\\ q_z\\end{bmatrix}
 
 Sadly, many authors use different notations for the same type of quaternions.
@@ -345,7 +345,6 @@ from .orientation import hughes
 from .orientation import chiaverini
 from .orientation import itzhack
 from .orientation import sarabandi
-from .mathfuncs import skew
 
 def _assert_iterables(item, item_name: str = 'iterable'):
     if not isinstance(item, (list, tuple, np.ndarray)):
@@ -571,7 +570,8 @@ class Quaternion(np.ndarray):
 
     @property
     def w(self) -> float:
-        """Scalar part of the Quaternion.
+        """
+        Scalar part of the Quaternion.
 
         Given a quaternion :math:`\\mathbf{q}=\\begin{pmatrix}q_w & \\mathbf{q}_v\\end{pmatrix} = \\begin{pmatrix}q_w & q_x & q_y & q_z\\end{pmatrix}`,
         the scalar part, a.k.a. *real* part, is :math:`q_w`.
@@ -598,7 +598,8 @@ class Quaternion(np.ndarray):
 
     @property
     def x(self) -> float:
-        """First element of the vector part of the Quaternion.
+        """
+        First element of the vector part of the Quaternion.
 
         Given a quaternion :math:`\\mathbf{q}=\\begin{pmatrix}q_w & \\mathbf{q}_v\\end{pmatrix} = \\begin{pmatrix}q_w & q_x & q_y & q_z\\end{pmatrix}`,
         the first element of the vector part is :math:`q_x`.
@@ -625,7 +626,8 @@ class Quaternion(np.ndarray):
 
     @property
     def y(self) -> float:
-        """Second element of the vector part of the Quaternion.
+        """
+        Second element of the vector part of the Quaternion.
 
         Given a quaternion :math:`\\mathbf{q}=\\begin{pmatrix}q_w & \\mathbf{q}_v\\end{pmatrix} = \\begin{pmatrix}q_w & q_x & q_y & q_z\\end{pmatrix}`,
         the third element of the vector part is :math:`q_y`.
@@ -652,7 +654,8 @@ class Quaternion(np.ndarray):
 
     @property
     def z(self) -> float:
-        """Third element of the vector part of the Quaternion.
+        """
+        Third element of the vector part of the Quaternion.
 
         Given a quaternion :math:`\\mathbf{q}=\\begin{pmatrix}q_w & \\mathbf{q}_v\\end{pmatrix} = \\begin{pmatrix}q_w & q_x & q_y & q_z\\end{pmatrix}`,
         the third element of the vector part is :math:`q_z`.
@@ -679,7 +682,8 @@ class Quaternion(np.ndarray):
 
     @property
     def v(self) -> np.ndarray:
-        """Vector part of the Quaternion.
+        """
+        Vector part of the Quaternion.
 
         Given a quaternion :math:`\\mathbf{q}=\\begin{pmatrix}q_w & q_x & q_y & q_z\\end{pmatrix}`
         the vector part, a.k.a. *imaginary* part, is
@@ -743,7 +747,8 @@ class Quaternion(np.ndarray):
 
     @property
     def conj(self) -> np.ndarray:
-        """Synonym of property :meth:`conjugate`
+        """
+        Synonym of property :meth:`conjugate`
 
         Returns
         -------
@@ -894,7 +899,8 @@ class Quaternion(np.ndarray):
 
     @property
     def exp(self) -> np.ndarray:
-        """Synonym of property :meth:`exponential`
+        """
+        Synonym of property :meth:`exponential`
 
         Returns
         -------
@@ -918,7 +924,8 @@ class Quaternion(np.ndarray):
 
     @property
     def logarithm(self) -> np.ndarray:
-        """Logarithm of Quaternion.
+        """
+        Logarithm of Quaternion.
 
         The logarithm of a **general quaternion**
         :math:`\\mathbf{q}=\\begin{pmatrix}q_w & \\mathbf{q_v}\\end{pmatrix}`
@@ -971,7 +978,7 @@ class Quaternion(np.ndarray):
         Quaternion([ 0.        ,  0.26726124, -0.53452248,  0.80178373])
         >>> q.logarithm
         array([ 0.        ,  0.41981298, -0.83962595,  1.25943893])
-        
+
         """
         u = self.v/np.linalg.norm(self.v)
         if self.is_versor():
@@ -985,7 +992,8 @@ class Quaternion(np.ndarray):
 
     @property
     def log(self) -> np.ndarray:
-        """Synonym of property :meth:`logarithm`
+        """
+        Synonym of property :meth:`logarithm`
 
         Returns
         -------
