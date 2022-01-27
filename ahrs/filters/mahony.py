@@ -479,11 +479,11 @@ class Mahony:
 
         """
         dt = self.Dt if dt is None else dt
-        if gyr is None or not np.linalg.norm(gyr)>0:
+        if gyr is None or not np.linalg.norm(gyr) > 0:
             return q
         Omega = np.copy(gyr)
         a_norm = np.linalg.norm(acc)
-        if a_norm>0:
+        if a_norm > 0:
             R = q2R(q)
             v_a = R.T@np.array([0.0, 0.0, 1.0])     # Expected Earth's gravity
             # ECF
@@ -492,7 +492,7 @@ class Mahony:
             Omega = Omega - b + self.k_P*omega_mes  # Gyro correction
         p = np.array([0.0, *Omega])
         qDot = 0.5*q_prod(q, p)                     # Rate of change of quaternion (eqs. 45 and 48b)
-        q += qDot*dt                           # Update orientation
+        q += qDot*dt                                # Update orientation
         q /= np.linalg.norm(q)                      # Normalize Quaternion (Versor)
         return q
 
@@ -527,11 +527,11 @@ class Mahony:
 
         """
         dt = self.Dt if dt is None else dt
-        if gyr is None or not np.linalg.norm(gyr)>0:
+        if gyr is None or not np.linalg.norm(gyr) > 0:
             return q
         Omega = np.copy(gyr)
         a_norm = np.linalg.norm(acc)
-        if a_norm>0:
+        if a_norm > 0:
             m_norm = np.linalg.norm(mag)
             if not m_norm>0:
                 return self.updateIMU(q, gyr, acc)
@@ -541,7 +541,7 @@ class Mahony:
             v_a = R.T@np.array([0.0, 0.0, 1.0])     # Expected Earth's gravity
             # Rotate magnetic field to inertial frame
             h = R@m
-            v_m = R.T@np.array([-np.linalg.norm([h[0], h[1]]), 0.0, h[2]])
+            v_m = R.T@np.array([0.0, np.linalg.norm([h[0], h[1]]), h[2]])
             v_m /= np.linalg.norm(v_m)
             # ECF
             omega_mes = np.cross(a, v_a) + np.cross(m, v_m) # Cost function (eqs. 32c and 48a)
@@ -549,6 +549,6 @@ class Mahony:
             Omega = Omega - b + self.k_P*omega_mes  # Gyro correction
         p = np.array([0.0, *Omega])
         qDot = 0.5*q_prod(q, p)                     # Rate of change of quaternion (eqs. 45 and 48b)
-        q += qDot*dt                           # Update orientation
+        q += qDot*dt                                # Update orientation
         q /= np.linalg.norm(q)                      # Normalize Quaternion (Versor)
         return q
