@@ -257,23 +257,6 @@ class Fourati:
     gravity : float
         Normal gravity, in m/s^2.
 
-    Attributes
-    ----------
-    gyr : numpy.ndarray
-        N-by-3 array with N gyroscope samples.
-    acc : numpy.ndarray
-        N-by-3 array with N accelerometer samples.
-    mag : numpy.ndarray
-        N-by-3 array with N magnetometer samples.
-    frequency : float
-        Sampling frequency in Herz
-    Dt : float
-        Sampling step in seconds. Inverse of sampling frequency.
-    gain : float
-        Filter gain factor.
-    q0 : numpy.ndarray
-        Initial orientation, as a versor (normalized quaternion).
-
     Raises
     ------
     ValueError
@@ -286,7 +269,7 @@ class Fourati:
         self.mag = mag
         self.frequency = kwargs.get('frequency', 100.0)
         self.Dt = kwargs.get('Dt', 1.0/self.frequency)
-        self.gain = kwargs.get('gain', 0.1)
+        self.gain = kwargs.get('gain', 0.01)
         self.q0 = kwargs.get('q0')
         # Reference measurements
         mdip = kwargs.get('magnetic_dip')             # Magnetic dip, in degrees
@@ -345,12 +328,12 @@ class Fourati:
 
         """
         dt = self.Dt if dt is None else dt
-        if gyr is None or not np.linalg.norm(gyr)>0:
+        if gyr is None or not np.linalg.norm(gyr) > 0:
             return q
         qDot = 0.5 * q_prod(q, [0, *gyr])                           # (eq. 5)
         a_norm = np.linalg.norm(acc)
         m_norm = np.linalg.norm(mag)
-        if a_norm>0 and m_norm>0 and self.gain>0:
+        if a_norm > 0 and m_norm > 0 and self.gain > 0:
             # Levenberg Marquardt Algorithm
             fhat = q_prod(q_conj(q), q_prod(self.g_q, q))           # (eq. 21)
             hhat = q_prod(q_conj(q), q_prod(self.m_q, q))           # (eq. 22)
