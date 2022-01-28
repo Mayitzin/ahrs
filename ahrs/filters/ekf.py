@@ -1028,7 +1028,7 @@ class EKF:
             self.m_ref = np.copy(mref)
         self.m_ref /= np.linalg.norm(self.m_ref)
         # Gravitational Reference Vector
-        self.a_ref = np.array([0.0, 0.0, -1.0]) if frame.upper() == 'NED' else np.array([0.0, 0.0, 1.0])
+        self.a_ref = np.array([0.0, 0.0, 1.0]) if frame.upper() == 'NED' else np.array([0.0, 0.0, -1.0])
 
     def _compute_all(self, frame: str) -> np.ndarray:
         """
