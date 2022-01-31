@@ -14,7 +14,7 @@ Notes
 from typing import Tuple, Union
 import numpy as np
 from .mathfuncs import cosd, sind
-from .constants import *
+from .constants import RAD2DEG, DEG2RAD
 
 def q_conj(q: np.ndarray) -> np.ndarray:
     """
@@ -61,8 +61,8 @@ def q_conj(q: np.ndarray) -> np.ndarray:
     .. [2] https://en.wikipedia.org/wiki/Quaternion#Conjugation,_the_norm,_and_reciprocal
 
     """
-    if q.ndim>2 or q.shape[-1]!=4:
-        raise ValueError("Quaternion must be of shape (4,) or (N, 4), but has shape {}".format(q.shape))
+    if q.ndim > 2 or q.shape[-1] != 4:
+        raise ValueError(f"Quaternion must be of shape (4,) or (N, 4), but has shape {q.shape}")
     return np.array([1., -1., -1., -1.])*np.array(q)
 
 def q_random(size: int = 1) -> np.ndarray:
@@ -95,11 +95,11 @@ def q_random(size: int = 1) -> np.ndarray:
     array([1., 1., 1., 1., 1.])
 
     """
-    if size<1 or not isinstance(size, int):
+    if size < 1 or not isinstance(size, int):
         raise ValueError("size must be a positive non-zero integer value.")
     q = np.random.random((size, 4))-0.5
     q /= np.linalg.norm(q, axis=1)[:, np.newaxis]
-    if size==1:
+    if size == 1:
         return q[0]
     return q
 
@@ -147,9 +147,9 @@ def q_norm(q: np.ndarray) -> np.ndarray:
     .. [WV1] https://en.wikipedia.org/wiki/Versor
 
     """
-    if q.ndim>2 or q.shape[-1]!=4:
-        raise ValueError("Quaternion must be of shape (4,) or (N, 4), but has shape {}".format(q.shape))
-    if q.ndim>1:
+    if q.ndim > 2 or q.shape[-1] != 4:
+        raise ValueError(f"Quaternion must be of shape (4,) or (N, 4), but has shape {q.shape}")
+    if q.ndim > 1:
         return q/np.linalg.norm(q, axis=1)[:, np.newaxis]
     return q/np.linalg.norm(q)
 
@@ -332,7 +332,7 @@ def axang2quat(axis: np.ndarray, angle: Union[int, float], rad: bool = True) -> 
     """
     if axis is None:
         return [1.0, 0.0, 0.0, 0.0]
-    if len(axis)!= 3:
+    if len(axis) != 3:
         raise ValueError()
     axis /= np.linalg.norm(axis)
     qw = np.cos(angle/2.0) if rad else cosd(angle/2.0)
@@ -391,8 +391,8 @@ def q_correct(q: np.ndarray) -> np.ndarray:
     new_q : numpy.ndarray
         Corrected array of quaternions.
     """
-    if q.ndim<2 or q.shape[-1]!=4:
-        raise ValueError("Input must be of shape (N, 4). Got {}".format(q.shape))
+    if q.ndim < 2 or q.shape[-1] != 4:
+        raise ValueError(f"Input must be of shape (N, 4). Got {q.shape}")
     q_diff = np.diff(q, axis=0)
     norms = np.linalg.norm(q_diff, axis=1)
     binaries = np.where(norms>1, 1, 0)
@@ -446,9 +446,9 @@ def q2R(q: np.ndarray) -> np.ndarray:
     """
     if q is None:
         return np.identity(3)
-    if q.shape[-1]!= 4:
+    if q.shape[-1] != 4:
         raise ValueError("Quaternion Array must be of the form (4,) or (N, 4)")
-    if q.ndim>1:
+    if q.ndim > 1:
         q /= np.linalg.norm(q, axis=1)[:, None]     # Normalize all quaternions
         R = np.zeros((q.shape[0], 3, 3))
         R[:, 0, 0] = 1.0 - 2.0*(q[:, 2]**2 + q[:, 3]**2)
@@ -583,7 +583,7 @@ def rotation(ax: Union[str, int] = None, ang: float = 0.0) -> np.ndarray:
     valid_axes = list('xyzXYZ')
     I_3 = np.identity(3)
     # Handle input
-    if ang==0.0:
+    if ang == 0.0:
         return I_3
     if ax is None:
         ax = "z"
@@ -593,18 +593,18 @@ def rotation(ax: Union[str, int] = None, ang: float = 0.0) -> np.ndarray:
         ax = valid_axes[ax] if ax < 3 else "z"
     try:
         ang = float(ang)
-    except:
+    except ValueError:
         return I_3
     # Return 3-by-3 Identity matrix if invalid input
     if ax not in valid_axes:
         return I_3
     # Compute rotation
     ca, sa = cosd(ang), sind(ang)
-    if ax.lower()=="x":
+    if ax.lower() == "x":
         return np.array([[1.0, 0.0, 0.0], [0.0, ca, -sa], [0.0, sa, ca]])
-    if ax.lower()=="y":
+    if ax.lower() == "y":
         return np.array([[ca, 0.0, sa], [0.0, 1.0, 0.0], [-sa, 0.0, ca]])
-    if ax.lower()=="z":
+    if ax.lower() == "z":
         return np.array([[ca, -sa, 0.0], [sa, ca, 0.0], [0.0, 0.0, 1.0]])
 
 def rot_seq(axes: Union[list, str] = None, angles: Union[list, float] = None) -> np.ndarray:
@@ -630,7 +630,7 @@ def rot_seq(axes: Union[list, str] = None, angles: Union[list, float] = None) ->
     --------
     >>> import numpy as np
     >>> import random
-    >>> from ahrs import quaternion
+    >>> from ahrs.orientation import rot_seq
     >>> num_rotations = 5
     >>> axis_order = random.choices("XYZ", k=num_rotations)
     >>> axis_order
@@ -639,7 +639,7 @@ def rot_seq(axes: Union[list, str] = None, angles: Union[list, float] = None) ->
     >>> angles
     array([-139.24498146,  99.8691407, -171.30712526, -60.57132043,
              17.4475838 ])
-    >>> R = quaternion.rot_seq(axis_order, angles)
+    >>> R = rot_seq(axis_order, angles)
     >>> R   # R = R_z(-139.24) R_z(99.87) R_x(-171.31) R_z(-60.57) R_y(17.45)
     array([[ 0.85465231  0.3651317   0.36911822]
            [ 0.3025091  -0.92798938  0.21754072]
@@ -691,9 +691,9 @@ def dcm2quat(R: np.ndarray) -> np.ndarray:
         Measurements.
 
     """
-    if(R.shape[0] != R.shape[1]):
+    if R.shape[0] != R.shape[1]:
         raise ValueError('Input is not a square matrix')
-    if(R.shape[0] != 3):
+    if R.shape[0] != 3:
         raise ValueError('Input needs to be a 3x3 array or matrix')
     q = np.array([1., 0., 0., 0.])
     q[0] = 0.5*np.sqrt(1.0 + R.trace())
@@ -727,7 +727,7 @@ def rpy2q(angles: np.ndarray, in_deg: bool = False) -> np.ndarray:
         raise ValueError("Input angles must be an array with three elements.")
     if in_deg:
         angles *= DEG2RAD
-    if angles.ndim<2:
+    if angles.ndim < 2:
         yaw, pitch, roll = angles
     else:
         yaw, pitch, roll = angles.T
@@ -838,7 +838,7 @@ def ecompass(a: np.ndarray, m: np.ndarray, frame: str = 'ENU', representation: s
     if representation.lower() == 'axisangle':
         angle = np.arccos((R.trace()-1)/2)
         axis = np.zeros(3)
-        if angle!=0:
+        if angle != 0:
             S = np.array([R[2, 1]-R[1, 2], R[0, 2]-R[2, 0], R[1, 0]-R[0, 1]])
             axis = S/(2*np.sin(angle))
         return (axis, angle)
@@ -878,7 +878,7 @@ def am2DCM(a: np.ndarray, m: np.ndarray, frame: str = 'ENU') -> np.ndarray:
     H /= np.linalg.norm(H)
     a /= np.linalg.norm(a)
     M = np.cross(a, H)
-    if frame.upper()=='ENU':
+    if frame.upper() == 'ENU':
         return np.array([[H[0], M[0], a[0]],
                          [H[1], M[1], a[1]],
                          [H[2], M[2], a[2]]])
@@ -963,7 +963,7 @@ def acc2q(a: np.ndarray, return_euler: bool = False) -> np.ndarray:
     """
     q = np.array([1.0, 0.0, 0.0, 0.0])
     ex, ey, ez = 0.0, 0.0, 0.0
-    if np.linalg.norm(a)>0 and len(a)==3:
+    if np.linalg.norm(a) > 0 and len(a) == 3:
         ax, ay, az = a
         # Normalize accelerometer measurements
         a_norm = np.linalg.norm(a)
@@ -1009,9 +1009,9 @@ def am2angles(a: np.ndarray, m: np.ndarray, in_deg: bool = False) -> np.ndarray:
       e-compass. ST Technical Document DT0058. October 2018.
       (https://www.st.com/resource/en/design_tip/dm00269987.pdf)
     """
-    if a.ndim<2:
+    if a.ndim < 2:
         a = np.atleast_2d(a)
-    if m.ndim<2:
+    if m.ndim < 2:
         m = np.atleast_2d(m)
     # Normalization of 2D arrays
     a /= np.linalg.norm(a, axis=1)[:, None]
@@ -1270,11 +1270,11 @@ def shepperd(dcm: np.ndarray) -> np.ndarray:
     d = np.diag(dcm)
     b = np.array([dcm.trace(), *d])
     i = b.argmax()
-    if i==0:
+    if i == 0:
         q = np.array([1.0+sum(d), dcm[1, 2]-dcm[2, 1], dcm[2, 0]-dcm[0, 2], dcm[0, 1]-dcm[1, 0]])
-    elif i==1:
+    elif i == 1:
         q = np.array([dcm[1, 2]-dcm[2, 1], 1.0+d[0]-d[1]-d[2], dcm[1, 0]+dcm[0, 1], dcm[2, 0]+dcm[0, 2]])
-    elif i==2:
+    elif i == 2:
         q = np.array([dcm[2, 0]-dcm[0, 2], dcm[1, 0]+dcm[0, 1], 1.0-d[0]+d[1]-d[2], dcm[2, 1]+dcm[1, 2]])
     else:
         q = np.array([dcm[0, 1]-dcm[1, 0], dcm[2, 0]+dcm[0, 2], dcm[2, 1]+dcm[1, 2], 1.0-d[0]-d[1]+d[2]])
