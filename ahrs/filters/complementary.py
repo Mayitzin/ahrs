@@ -108,6 +108,7 @@ linearly interpolate quaternions with small differences between them.
 """
 
 import numpy as np
+from ..common.orientation import ecompass
 
 class Complementary:
     """
@@ -142,7 +143,7 @@ class Complementary:
         acc: np.ndarray = None,
         mag: np.ndarray = None,
         frequency: float = 100.0,
-        gain = 0.1,
+        gain = 0.9,
         **kwargs):
         self.gyr: np.ndarray = gyr
         self.acc: np.ndarray = acc
@@ -150,7 +151,7 @@ class Complementary:
         self.frequency: float = frequency
         self.gain: float = gain
         if not(0.0 <= self.gain <= 1.0):
-            raise ValueError(f"Filter gain must be in the range [0, 1]. Got{self.gain}")
+            raise ValueError(f"Filter gain must be in the range [0, 1]. Got {self.gain}")
         self.Dt: float = kwargs.get('Dt', 1.0/self.frequency)
         self.q0: np.ndarray = kwargs.get('q0')
         # Process of given data
@@ -158,7 +159,8 @@ class Complementary:
             self.Q = self._compute_all()
 
     def _compute_all(self) -> np.ndarray:
-        """Estimate the quaternions given all data
+        """
+        Estimate the quaternions given all data
 
         Attributes ``gyr``, ``acc`` and, optionally, ``mag`` must contain data.
 
@@ -194,15 +196,6 @@ class Complementary:
         It is computed by numerically integrating the angular velocity and
         adding it to the previous orientation.
 
-        .. math::
-            \\mathbf{q}_\\omega =
-            \\begin{bmatrix}
-            q_w - \\frac{\\Delta t}{2} \\omega_x q_x - \\frac{\\Delta t}{2} \\omega_y q_y - \\frac{\\Delta t}{2} \\omega_z q_z\\\\
-            q_x + \\frac{\\Delta t}{2} \\omega_x q_w - \\frac{\\Delta t}{2} \\omega_y q_z + \\frac{\\Delta t}{2} \\omega_z q_y\\\\
-            q_y + \\frac{\\Delta t}{2} \\omega_x q_z + \\frac{\\Delta t}{2} \\omega_y q_w - \\frac{\\Delta t}{2} \\omega_z q_x\\\\
-            q_z - \\frac{\\Delta t}{2} \\omega_x q_y + \\frac{\\Delta t}{2} \\omega_y q_x + \\frac{\\Delta t}{2} \\omega_z q_w
-            \\end{bmatrix}
-
         Parameters
         ----------
         q : numpy.ndarray
@@ -217,7 +210,7 @@ class Complementary:
         q_omega : numpy.ndarray
             Estimated orientation, as quaternion.
         """
-        w = 0.5*dt*omega
+        w = -0.5*dt*omega
         A = np.array([
             [1.0,  -w[0], -w[1], -w[2]],
             [w[0],   1.0,  w[2], -w[1]],
@@ -227,44 +220,8 @@ class Complementary:
         return q_omega / np.linalg.norm(q_omega)
 
     def am_estimation(self, acc: np.ndarray, mag: np.ndarray = None) -> np.ndarray:
-        """Attitude estimation from an Accelerometer-Magnetometer architecture.
-
-        First estimate the tilt from a given accelerometer sample
-        :math:`\\mathbf{a}=\\begin{bmatrix}a_x & a_y & a_z\\end{bmatrix}^T` as:
-
-        .. math::
-            \\begin{array}{rcl}
-            \\theta &=& \\mathrm{arctan2}(a_y, a_z) \\\\
-            \\phi &=& \\mathrm{arctan2}\\big(-a_x, \\sqrt{a_y^2+a_z^2}\\big)
-            \\end{array}
-
-        Then the yaw angle, :math:`\\psi`, is computed, if a magnetometer 
-        sample :math:`\\mathbf{m}=\\begin{bmatrix}m_x & m_y & m_z\\end{bmatrix}^T`
-        is available:
-
-        .. math::
-            \\psi = \\mathrm{arctan2}(-b_y, b_x)
-
-        where
-
-        .. math::
-            \\begin{array}{rcl}
-            b_x &=& m_x\\cos\\theta + m_y\\sin\\theta\\sin\\phi + m_z\\sin\\theta\\cos\\phi \\\\
-            b_y &=& m_y\\cos\\phi - m_z\\sin\\phi
-            \\end{array}
-
-        And the roll-pitch-yaw angles are transformed to a quaternion that is
-        then returned:
-
-        .. math::
-            \\mathbf{q}_{am} =
-            \\begin{pmatrix}q_w\\\\q_x\\\\q_y\\\\q_z\\end{pmatrix} =
-            \\begin{pmatrix}
-            \\cos\\Big(\\frac{\\phi}{2}\\Big)\\cos\\Big(\\frac{\\theta}{2}\\Big)\\cos\\Big(\\frac{\\psi}{2}\\Big) + \\sin\\Big(\\frac{\\phi}{2}\\Big)\\sin\\Big(\\frac{\\theta}{2}\\Big)\\sin\\Big(\\frac{\\psi}{2}\\Big) \\\\
-            \\sin\\Big(\\frac{\\phi}{2}\\Big)\\cos\\Big(\\frac{\\theta}{2}\\Big)\\cos\\Big(\\frac{\\psi}{2}\\Big) - \\cos\\Big(\\frac{\\phi}{2}\\Big)\\sin\\Big(\\frac{\\theta}{2}\\Big)\\sin\\Big(\\frac{\\psi}{2}\\Big) \\\\
-            \\cos\\Big(\\frac{\\phi}{2}\\Big)\\sin\\Big(\\frac{\\theta}{2}\\Big)\\cos\\Big(\\frac{\\psi}{2}\\Big) + \\sin\\Big(\\frac{\\phi}{2}\\Big)\\cos\\Big(\\frac{\\theta}{2}\\Big)\\sin\\Big(\\frac{\\psi}{2}\\Big) \\\\
-            \\cos\\Big(\\frac{\\phi}{2}\\Big)\\cos\\Big(\\frac{\\theta}{2}\\Big)\\sin\\Big(\\frac{\\psi}{2}\\Big) - \\sin\\Big(\\frac{\\phi}{2}\\Big)\\sin\\Big(\\frac{\\theta}{2}\\Big)\\cos\\Big(\\frac{\\psi}{2}\\Big)
-            \\end{pmatrix}
+        """
+        Attitude estimation from an Accelerometer-Magnetometer architecture.
 
         Parameters
         ----------
@@ -278,33 +235,7 @@ class Complementary:
         q_am : numpy.ndarray
             Estimated attitude.
         """
-        if acc.shape[-1] != 3:
-            raise ValueError(f"Accelerometer sample must have three elements. It has {acc.shape[-1]}")
-        a_norm = np.linalg.norm(acc)
-        if a_norm == 0.0:
-            raise ValueError(f"Accelerometer sample does not describe any direction.")
-        ax, ay, az = np.copy(acc)/a_norm
-        # Estimate Tilt from Accelerometer sample
-        ex = np.arctan2( ay, az)                        # Roll
-        ey = np.arctan2(-ax, np.sqrt(ay**2 + az**2))    # Pitch
-        cx, sx = np.cos(ex/2.0), np.sin(ex/2.0)
-        cy, sy = np.cos(ey/2.0), np.sin(ey/2.0)
-        if mag is None:
-            q_a = np.array([cy*cx, cy*sx, sy*cx, -sy*sx])
-            return q_a / np.linalg.norm(q_a)
-        # Estimate Yaw from compensated compass
-        mx, my, mz = np.copy(mag)/np.linalg.norm(mag)
-        bx = mz*np.sin(ex) - my*np.cos(ex)
-        by = mx*np.cos(ey) + np.sin(ey)*(my*np.sin(ex) + mz*np.cos(ex))
-        ez = np.arctan2(-by, bx)
-        # Roll-Pitch-Yaw to Quaternion
-        cz, sz = np.cos(ez/2.0), np.sin(ez/2.0)
-        q_am = np.array([
-            cz*cy*cx + sz*sy*sx,
-            cz*cy*sx - sz*sy*cx,
-            sz*cy*sx + cz*sy*cx,
-            sz*cy*cx - cz*sy*sx])
-        return q_am / np.linalg.norm(q_am)
+        return ecompass(acc, mag, frame='NED', representation='quaternion')
 
     def update(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, mag: np.ndarray = None, dt: float = None) -> np.ndarray:
         """
@@ -340,7 +271,7 @@ class Complementary:
 
         """
         dt = self.Dt if dt is None else dt
-        if gyr is None or not np.linalg.norm(gyr)>0:
+        if gyr is None or not np.linalg.norm(gyr) > 0:
             return q
         q_omega = self.attitude_propagation(q, gyr, dt)
         q_am = self.am_estimation(acc, mag)
