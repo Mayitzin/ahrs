@@ -706,7 +706,7 @@ def dcm2quat(R: np.ndarray) -> np.ndarray:
 def rpy2q(angles: np.ndarray, in_deg: bool = False) -> np.ndarray:
     """
     Quaternion from roll-pitch-yaw angles
-    
+
     Roll is the first rotation (about X-axis), pitch is the second rotation
     (about Y-axis), and yaw is the last rotation (about Z-axis.)
 
@@ -747,7 +747,7 @@ def rpy2q(angles: np.ndarray, in_deg: bool = False) -> np.ndarray:
     return q
 
 def cardan2q(angles: np.ndarray, in_deg: bool = False) -> np.ndarray:
-    """synonym to function :func:`rpy2q`."""
+    """Synonym to function :func:`rpy2q`."""
     return rpy2q(angles, in_deg=in_deg)
 
 def q2rpy(q: np.ndarray, in_deg: bool = False) -> np.ndarray:
@@ -780,7 +780,7 @@ def q2rpy(q: np.ndarray, in_deg: bool = False) -> np.ndarray:
     return angles
 
 def q2cardan(q: np.ndarray, in_deg: bool = False) -> np.ndarray:
-    """synonym to function :func:`q2rpy`."""
+    """Synonym to function :func:`q2rpy`."""
     return q2rpy(q, in_deg=in_deg)
 
 def ecompass(a: np.ndarray, m: np.ndarray, frame: str = 'ENU', representation: str = 'rotmat') -> np.ndarray:
