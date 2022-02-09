@@ -350,7 +350,7 @@ class TestTilt(unittest.TestCase):
         self.Rg = np.array([R.T @ a_ref for R in rotations]) + np.random.standard_normal((num_samples, 3)) * self.noise_sigma
         self.Rm = np.array([R.T @ m_ref for R in rotations]) + np.random.standard_normal((num_samples, 3)) * self.noise_sigma
 
-    def test_gyr_acc(self):
+    def test_acc_mag(self):
         orientation = ahrs.filters.Tilt(acc=self.Rg, mag=self.Rm)
         self.assertLess(np.nanmean(ahrs.utils.metrics.qad(self.Qts, orientation.Q)), self.noise_sigma*10.0)
 
@@ -369,9 +369,27 @@ class TestComplementary(unittest.TestCase):
         self.Rg = np.array([R.T @ a_ref for R in rotations]) + np.random.standard_normal((num_samples, 3)) * self.noise_sigma
         self.Rm = np.array([R.T @ m_ref for R in rotations]) + np.random.standard_normal((num_samples, 3)) * self.noise_sigma
 
-    def test_gyr_acc(self):
+    def test_gyr_acc_mag(self):
         orientation = ahrs.filters.Complementary(gyr=self.gyr, acc=self.Rg, mag=self.Rm)
         self.assertLess(np.nanmean(ahrs.utils.metrics.qad(self.Qts, orientation.Q)), 0.2)
+
+class TestOLEQ(unittest.TestCase):
+    def setUp(self) -> None:
+        # Create random attitudes
+        num_samples = 1000
+        a_ref = -REFERENCE_GRAVITY_VECTOR
+        m_ref = np.array([ahrs.common.mathfuncs.sind(wmm.I), 0.0, ahrs.common.mathfuncs.cosd(wmm.I)])
+        gyros = random_angvel(num_samples=num_samples, span=(-np.pi, np.pi))
+        self.Qts = ahrs.QuaternionArray(ahrs.filters.AngularRate(gyros).Q)
+        rotations = self.Qts.to_DCM()
+        # Add noise to reference vectors and rotate them by the random attitudes
+        self.noise_sigma = 1e-2
+        self.Rg = np.array([R.T @ a_ref for R in rotations]) + np.random.standard_normal((num_samples, 3)) * self.noise_sigma
+        self.Rm = np.array([R.T @ m_ref for R in rotations]) + np.random.standard_normal((num_samples, 3)) * self.noise_sigma
+
+    def test_estimation(self):
+        orientation = ahrs.filters.OLEQ(acc=self.Rg, mag=self.Rm)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(self.Qts, orientation.Q)), self.noise_sigma*10.0)
 
 if __name__ == '__main__':
     unittest.main()
