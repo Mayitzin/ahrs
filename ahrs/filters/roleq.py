@@ -158,30 +158,33 @@ class ROLEQ:
     def _set_reference_frames(self, mref: float, frame: str = 'NED'):
         if frame.upper() not in ['NED', 'ENU']:
             raise ValueError(f"Invalid frame '{frame}'. Try 'NED' or 'ENU'")
-        # Magnetic Reference Vector
+        #### Magnetic Reference Vector ####
         if mref is None:
             # Local magnetic reference of Munich, Germany
-            from ..common.mathfuncs import MUNICH_LATITUDE, MUNICH_LONGITUDE, MUNICH_HEIGHT
+            from ..common.constants import MUNICH_LATITUDE, MUNICH_LONGITUDE, MUNICH_HEIGHT
             from ..utils.wmm import WMM
             wmm = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT)
-            self.m_ref = np.array([wmm.X, wmm.Y, wmm.Z]) if frame.upper() == 'NED' else np.array([wmm.Y, wmm.X, -wmm.Z])
+            cd, sd = cosd(wmm.I), sind(wmm.I)
+            self.m_ref = np.array([sd, 0.0, cd]) if frame.upper() == 'NED' else np.array([0.0, cd, -sd])
         elif isinstance(mref, (int, float)):
+            # Use given magnetic dip angle (in degrees)
             cd, sd = cosd(mref), sind(mref)
-            self.m_ref = np.array([cd, 0.0, sd]) if frame.upper() == 'NED' else np.array([0.0, cd, -sd])
+            self.m_ref = np.array([sd, 0.0, cd]) if frame.upper() == 'NED' else np.array([0.0, cd, -sd])
         else:
             self.m_ref = np.copy(mref)
         self.m_ref /= np.linalg.norm(self.m_ref)
-        # Gravitational Reference Vector
+       #### Gravitational Reference Vector ####
         self.a_ref = np.array([0.0, 0.0, -1.0]) if frame.upper() == 'NED' else np.array([0.0, 0.0, 1.0])
 
     def _compute_all(self) -> np.ndarray:
-        """Estimate the quaternions given all data.
+        """
+        Estimate the quaternions given all data.
 
         Attributes ``gyr``, ``acc`` and ``mag`` must contain data.
 
         Returns
         -------
-        Q : array
+        Q : numpy.ndarray
             M-by-4 Array with all estimated quaternions, where M is the number
             of samples.
 
@@ -190,15 +193,18 @@ class ROLEQ:
             raise ValueError("acc and gyr are not the same size")
         if self.acc.shape != self.mag.shape:
             raise ValueError("acc and mag are not the same size")
-        num_samples = len(self.acc)
+        num_samples = np.atleast_2d(self.acc).shape[0]
+        if num_samples < 2:
+            raise ValueError("ROLEQ needs at least 2 samples of each sensor")
         Q = np.zeros((num_samples, 4))
-        Q[0] = ecompass(self.acc[0], self.mag[0], frame=self.frame, representation='quaternion')
+        Q[0] = ecompass(-self.acc[0], self.mag[0], frame=self.frame, representation='quaternion') if self.q0 is None else self.q0
         for t in range(1, num_samples):
             Q[t] = self.update(Q[t-1], self.gyr[t], self.acc[t], self.mag[t])
         return Q
 
     def attitude_propagation(self, q: np.ndarray, omega: np.ndarray, dt: float) -> np.ndarray:
-        """Attitude estimation from previous quaternion and current angular velocity.
+        """
+        Attitude estimation from previous quaternion and current angular velocity.
 
         .. math::
             \\mathbf{q}_\\omega = \\Big(\\mathbf{I}_4 + \\frac{\\Delta t}{2}\\boldsymbol\\Omega_t\\Big)\\mathbf{q}_{t-1} =
@@ -232,7 +238,8 @@ class ROLEQ:
         return q_omega/np.linalg.norm(q_omega)
 
     def WW(self, Db, Dr):
-        """W Matrix
+        """
+        W Matrix
 
         .. math::
             \\mathbf{W} = D_x^r\\mathbf{M}_1 + D_y^r\\mathbf{M}_2 + D_z^r\\mathbf{M}_3
@@ -269,7 +276,8 @@ class ROLEQ:
         return rx*M1 + ry*M2 + rz*M3    # (eq. 20)
 
     def oleq(self, acc: np.ndarray, mag: np.ndarray, q_omega: np.ndarray) -> np.ndarray:
-        """OLEQ with a single rotation by R.
+        """
+        OLEQ with a single rotation by R.
 
         Parameters
         ----------
@@ -282,7 +290,7 @@ class ROLEQ:
 
         Returns
         -------
-        q : np.ndarray
+        q : numpy.ndarray
             Final quaternion.
 
         """
@@ -298,7 +306,8 @@ class ROLEQ:
         return q / np.linalg.norm(q)
 
     def update(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, mag: np.ndarray, dt: float = None) -> np.ndarray:
-        """Update Attitude with a Recursive OLEQ
+        """
+        Update Attitude with a Recursive OLEQ
 
         Parameters
         ----------
