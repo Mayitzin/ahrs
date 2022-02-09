@@ -201,20 +201,23 @@ class OLEQ:
     def _set_reference_frames(self, mref: float, frame: str = 'NED') -> None:
         if frame.upper() not in ['NED', 'ENU']:
             raise ValueError(f"Invalid frame '{frame}'. Try 'NED' or 'ENU'")
-        # Magnetic Reference Vector
+        #### Magnetic Reference Vector ####
         if mref is None:
             # Local magnetic reference of Munich, Germany
-            from ..common.mathfuncs import MUNICH_LATITUDE, MUNICH_LONGITUDE, MUNICH_HEIGHT
+            from ..common.constants import MUNICH_LATITUDE, MUNICH_LONGITUDE, MUNICH_HEIGHT
             from ..utils.wmm import WMM
             wmm = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT)
-            self.m_ref = np.array([wmm.X, wmm.Y, wmm.Z]) if frame.upper() == 'NED' else np.array([wmm.Y, wmm.X, -wmm.Z])
+            cd, sd = cosd(wmm.I), sind(wmm.I)
+            self.m_ref = np.array([sd, 0.0, cd]) if frame.upper() == 'NED' else np.array([0.0, cd, -sd])
         elif isinstance(mref, (int, float)):
+            # Use given magnetic dip angle (in degrees)
             cd, sd = cosd(mref), sind(mref)
-            self.m_ref = np.array([cd, 0.0, sd]) if frame.upper() == 'NED' else np.array([0.0, cd, -sd])
+            self.m_ref = np.array([sd, 0.0, cd]) if frame.upper() == 'NED' else np.array([0.0, cd, -sd])
         else:
+            # Magnetic reference is given as a vector
             self.m_ref = np.copy(mref)
         self.m_ref /= np.linalg.norm(self.m_ref)
-        # Gravitational Reference Vector
+        #### Gravitational Reference Vector ####
         self.a_ref = np.array([0.0, 0.0, -1.0]) if frame.upper() == 'NED' else np.array([0.0, 0.0, 1.0])
 
     def _compute_all(self) -> np.ndarray:
@@ -224,18 +227,17 @@ class OLEQ:
 
         Returns
         -------
-        Q : array
+        Q : numpy.ndarray
             M-by-4 Array with all estimated quaternions, where M is the number
             of samples.
 
         """
         if self.acc.shape != self.mag.shape:
             raise ValueError("acc and mag are not the same size")
-        num_samples = len(self.acc)
-        Q = np.zeros((num_samples, 4))
-        for t in range(num_samples):
-            Q[t] = self.estimate(self.acc[t], self.mag[t])
-        return Q
+        num_samples = np.atleast_2d(self.acc).shape[0]
+        if num_samples < 2:
+            return self.estimate(self.acc, self.mag)
+        return np.array([self.estimate(self.acc[t], self.mag[t]) for t in range(num_samples)])
 
     def WW(self, Db: np.ndarray, Dr: np.ndarray) -> np.ndarray:
         """W Matrix
@@ -256,7 +258,7 @@ class OLEQ:
             W Matrix.
         """
         bx, by, bz = Db
-        rx, ry, rz = Dr
+        Dx, Dy, Dz = Dr
         M1 = np.array([
             [bx, 0.0, bz, -by],
             [0.0, bx, by, bz],
@@ -272,7 +274,7 @@ class OLEQ:
             [by, -bz, 0.0, bx],
             [-bx, 0.0, -bz, by],
             [0.0, bx, by, bz]])         # (eq. 18c)
-        return rx*M1 + ry*M2 + rz*M3    # (eq. 20)
+        return Dx*M1 + Dy*M2 + Dz*M3    # (eq. 20)
 
     def estimate(self, acc: np.ndarray, mag: np.ndarray) -> np.ndarray:
         """Attitude Estimation
@@ -299,7 +301,8 @@ class OLEQ:
         mag = np.copy(mag)/m_norm
         sum_aW = self.a[0]*self.WW(acc, self.a_ref) + self.a[1]*self.WW(mag, self.m_ref) # (eq. 31)
         R = 0.5*(np.identity(4) + sum_aW)       # (eq. 33)
-        q = np.array([0., 0., 0., 1.])          # "random" quaternion
+        q = np.random.random(4)-0.5             # "random" quaternion (eq. 25)
+        q /= np.linalg.norm(q)
         last_q = np.array([1., 0., 0., 0.])
         i = 0
         while np.linalg.norm(q-last_q) > 1e-8 and i <= 20:
