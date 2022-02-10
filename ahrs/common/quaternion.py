@@ -462,6 +462,10 @@ class Quaternion(np.ndarray):
     rpy : array-like
         Create quaternion object from roll-pitch-yaw angles. It is built only
         if no array was given to build.
+    order : str, default: 'H'
+        Specify the layout of the Quaternion, where the scalar part precedes
+        the vector part by default. If the order is 'S' the vector part
+        precedes the scalar part.
 
     Attributes
     ----------
@@ -540,6 +544,17 @@ class Quaternion(np.ndarray):
     >>> str(q)
     '(0.0000 +0.2673i +0.5345j +0.8018k)'
 
+    If the parameter ``order`` is set to 'S' the vector part will precede the
+    scalar part.
+
+    >>> q = Quaternion([2., -3., 4., -5.], order='S')
+    >>> q.w
+    -0.6804138174397717
+    >>> q.v
+    array([ 0.27216553, -0.40824829,  0.54433105])
+    >>> print(q)
+    (0.2722i -0.4082j +0.5443k -0.6804)
+
     """
     def __new__(subtype, q: Union[int, list, np.ndarray] = None, versor: bool = True, **kwargs):
         if q is None:
@@ -566,6 +581,7 @@ class Quaternion(np.ndarray):
         # standard ndarray constructor, but return an object of type Quaternion.
         obj = super(Quaternion, subtype).__new__(subtype, q.shape, float, q)
         obj.A = q
+        obj.scalar_vector = False if kwargs.get('order', 'H') == 'S' else True
         return obj
 
     @property
@@ -594,7 +610,7 @@ class Quaternion(np.ndarray):
         >>> q[0]
         0.2721655269759087
         """
-        return self.A[0]
+        return self.A[0] if self.scalar_vector else self.A[3]
 
     @property
     def x(self) -> float:
@@ -622,7 +638,7 @@ class Quaternion(np.ndarray):
         >>> q[1]
         -0.408248290463863
         """
-        return self.A[1]
+        return self.A[1] if self.scalar_vector else self.A[0]
 
     @property
     def y(self) -> float:
@@ -650,7 +666,7 @@ class Quaternion(np.ndarray):
         >>> q[2]
         0.5443310539518174
         """
-        return self.A[2]
+        return self.A[2] if self.scalar_vector else self.A[1]
 
     @property
     def z(self) -> float:
@@ -678,7 +694,7 @@ class Quaternion(np.ndarray):
         >>> q[3]
         -0.6804138174397717
         """
-        return self.A[3]
+        return self.A[3] if self.scalar_vector else self.A[2]
 
     @property
     def v(self) -> np.ndarray:
@@ -708,7 +724,7 @@ class Quaternion(np.ndarray):
         >>> q[1:]
         Quaternion([-0.40824829,  0.54433105, -0.68041382])
         """
-        return self.A[1:]
+        return self.A[1:] if self.scalar_vector else self.A[:3]
 
     @property
     def conjugate(self) -> np.ndarray:
@@ -743,7 +759,7 @@ class Quaternion(np.ndarray):
         array([0.603297, -0.749259, -0.176548, -0.20850 ])
 
         """
-        return self.A*np.array([1.0, -1.0, -1.0, -1.0])
+        return self.A*np.array([1.0, -1.0, -1.0, -1.0]) if self.scalar_vector else self.A*np.array([-1.0, -1.0, -1.0, 1.0])
 
     @property
     def conj(self) -> np.ndarray:
@@ -1030,7 +1046,9 @@ class Quaternion(np.ndarray):
         >>> str(q)
         '(0.5575 +0.1296i +0.5737j +0.5859k)'
         """
-        return f"({self.w:-.4f} {self.x:+.4f}i {self.y:+.4f}j {self.z:+.4f}k)"
+        if self.scalar_vector:
+            return f"({self.w:-.4f} {self.x:+.4f}i {self.y:+.4f}j {self.z:+.4f}k)"
+        return f"({self.x:-.4f}i {self.y:+.4f}j {self.z:+.4f}k {self.w:+.4f})"
 
     def __add__(self, p: np.ndarray):
         """
