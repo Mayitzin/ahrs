@@ -125,7 +125,7 @@ class TestQuaternionArray(unittest.TestCase):
         np.testing.assert_equal(self.Q1.x, [0.0, 1.0, 0.0, 0.0])
         np.testing.assert_equal(self.Q1.y, [0.0, 0.0, 1.0, 0.0])
         np.testing.assert_equal(self.Q1.z, [0.0, 0.0, 0.0, 1.0])
-        np.testing.assert_equal(self.Q1.v, np.identity(4)[:, 1:])
+        np.testing.assert_equal(self.Q1.v, np.eye(4, 3, k=-1))
 
     def test_quaternion_average(self):
         # Create 10 continuous quaternions representing rotations around the
@@ -138,6 +138,16 @@ class TestQuaternionArray(unittest.TestCase):
         self.assertRaises(TypeError, ahrs.QuaternionArray, True)
         self.assertRaises(TypeError, ahrs.QuaternionArray, 3.0)
         self.assertRaises(TypeError, ahrs.QuaternionArray, "[[1.0, 2.0, 3.0, 4.0]]")
+        self.assertRaises(ValueError, ahrs.QuaternionArray, np.random.random(4))
+        self.assertRaises(ValueError, ahrs.QuaternionArray, [[1., 2., 3., 4.], [1., 2., 3.]])
+
+    def test_is_pure(self):
+        Q = ahrs.QuaternionArray([[0., 1., 2., 3.], [1., 2., 3., 4.], [0., 0., 0., 1.]])
+        self.assertListEqual(Q.is_pure().tolist(), [True, False, True])
+
+    def test_is_real(self):
+        Q = ahrs.QuaternionArray([[1., 0., 0., 0.], [1., 2., 3., 4.], [-1., 0., 0., 0.]])
+        self.assertListEqual(Q.is_real().tolist(), [True, False, True])
 
 if __name__ == "__main__":
     unittest.main()
