@@ -106,7 +106,11 @@ References
 """
 
 import numpy as np
-from ..common.mathfuncs import *
+from ..common.constants import MUNICH_LONGITUDE
+from ..common.constants import MUNICH_LATITUDE
+from ..common.constants import MUNICH_HEIGHT
+from ..common.mathfuncs import cosd
+from ..common.mathfuncs import sind
 
 # Reference Observations in Munich, Germany
 from ..utils.wmm import WMM
@@ -130,7 +134,7 @@ class Davenport:
         Magnetic Inclination angle, in degrees. Defaults to magnetic dip of
         Munich, Germany.
     gravity : float
-        Normal gravity, in m/s^2. Defaults to normal gravity of Munich,
+        Normal gravity, in m/s^2. Defaults to normal gravity in Munich,
         Germany.
 
     Attributes
@@ -178,10 +182,7 @@ class Davenport:
         if self.acc.ndim < 2:
             return self.estimate(self.acc, self.mag)
         num_samples = len(self.acc)
-        Q = np.zeros((num_samples, 4))
-        for t in range(num_samples):
-            Q[t] = self.estimate(self.acc[t], self.mag[t])
-        return Q
+        return np.array([self.estimate(self.acc[t], self.mag[t]) for t in range(num_samples)])
 
     def estimate(self, acc: np.ndarray = None, mag: np.ndarray = None) -> np.ndarray:
         """
