@@ -162,7 +162,8 @@ References
 import numpy as np
 
 class FAMC:
-    """Fast Accelerometer-Magnetometer Combination
+    """
+    Fast Accelerometer-Magnetometer Combination
 
     Parameters
     ----------
@@ -212,7 +213,8 @@ class FAMC:
             self.Q = self._compute_all()
 
     def _compute_all(self) -> np.ndarray:
-        """Estimate the quaternions given all data.
+        """
+        Estimate the quaternions given all data.
 
         Attributes ``acc`` and ``mag`` must contain data.
 
@@ -228,13 +230,11 @@ class FAMC:
         if self.acc.ndim < 2:
             return self.estimate(self.acc, self.mag)
         num_samples = len(self.acc)
-        Q = np.zeros((num_samples, 4))
-        for t in range(num_samples):
-            Q[t] = self.estimate(self.acc[t], self.mag[t])
-        return Q
+        return np.array([self.estimate(self.acc[t], self.mag[t]) for t in range(num_samples)])
 
     def estimate(self, acc: np.ndarray, mag: np.ndarray) -> np.ndarray:
-        """Attitude Estimation
+        """
+        Attitude Estimation
 
         Parameters
         ----------
