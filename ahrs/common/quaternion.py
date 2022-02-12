@@ -351,7 +351,8 @@ def _assert_iterables(item, item_name: str = 'iterable'):
         raise TypeError(f"{item_name} must be given as an array, got {type(item)}")
 
 def slerp(q0: np.ndarray, q1: np.ndarray, t_array: np.ndarray, threshold: float = 0.9995) -> np.ndarray:
-    """Spherical Linear Interpolation between two quaternions.
+    """
+    Spherical Linear Interpolation between two quaternions.
 
     Return a valid quaternion rotation at a specified distance along the minor
     arc of a great circle passing through any two existing quaternion endpoints
@@ -1182,9 +1183,7 @@ class Quaternion(np.ndarray):
         >>> str(q3)
         '(-0.3635 +0.3896i +0.3419j +0.7740k)'
         """
-        if not hasattr(q, 'A'):
-            q = Quaternion(q)
-        return self.product(q.A)
+        return self.product(q)
 
     def __pow__(self, a: float) -> np.ndarray:
         """
@@ -1354,8 +1353,7 @@ class Quaternion(np.ndarray):
         return np.allclose(self.A, np.array([1.0, 0.0, 0.0, 0.0]))
 
     def normalize(self) -> None:
-        """Normalize the quaternion
-        """
+        """Normalize the quaternion"""
         self.A /= np.linalg.norm(self.A)
 
     def product(self, q: np.ndarray) -> np.ndarray:
@@ -1432,13 +1430,17 @@ class Quaternion(np.ndarray):
 
         """
         if isinstance(q, Quaternion):
-            q = q.A.copy()
-        q /= np.linalg.norm(q)
-        return np.array([
-            self.w*q[0] - self.x*q[1] - self.y*q[2] - self.z*q[3],
-            self.w*q[1] + self.x*q[0] + self.y*q[3] - self.z*q[2],
-            self.w*q[2] - self.x*q[3] + self.y*q[0] + self.z*q[1],
-            self.w*q[3] + self.x*q[2] - self.y*q[1] + self.z*q[0]])
+            qw, qx, qy, qz = q
+        elif isinstance(q, (np.ndarray, list, tuple)):
+            qw, qx, qy, qz = Quaternion(q)
+        else:
+            raise TypeError(f"q must be a Quaternion or an array, not {type(q)}")
+        pq = np.array([
+            self.w*qw - self.x*qx - self.y*qy - self.z*qz,
+            self.w*qx + self.x*qw + self.y*qz - self.z*qy,
+            self.w*qy - self.x*qz + self.y*qw + self.z*qx,
+            self.w*qz + self.x*qy - self.y*qx + self.z*qw])
+        return pq / np.linalg.norm(pq)
 
     def mult_L(self) -> np.ndarray:
         """
@@ -1499,7 +1501,8 @@ class Quaternion(np.ndarray):
             [self.z,  self.y, -self.x,  self.w]])
 
     def rotate(self, a: np.ndarray) -> np.ndarray:
-        """Rotate array :math:`\\mathbf{a}` through quaternion :math:`\\mathbf{q}`.
+        """
+        Rotate array :math:`\\mathbf{a}` through quaternion :math:`\\mathbf{q}`.
 
         Parameters
         ----------
@@ -1903,7 +1906,8 @@ class Quaternion(np.ndarray):
         return random_attitudes(1)
 
 class QuaternionArray(np.ndarray):
-    """Array of Quaternions
+    """
+    Array of Quaternions
 
     Class to represent quaternion arrays. It can be built from N-by-3 or N-by-4
     arrays. The objects are **always normalized** to represent rotations in 3D
@@ -2048,7 +2052,8 @@ class QuaternionArray(np.ndarray):
 
     @property
     def w(self) -> np.ndarray:
-        """Scalar parts of all Quaternions.
+        """
+        Scalar parts of all Quaternions.
 
         Having the quaternion elements :math:`\\mathbf{q}_i=\\begin{pmatrix}w_i & \\mathbf{v}_i\\end{pmatrix}=\\begin{pmatrix}w_i & x_i & y_i & z_i\\end{pmatrix}\\in\\mathbb{R}^4`
         stacked vertically in an :math:`N\\times 4` matrix :math:`\\mathbf{Q}`:
@@ -2088,7 +2093,8 @@ class QuaternionArray(np.ndarray):
 
     @property
     def x(self) -> np.ndarray:
-        """First elements of the vector part of all Quaternions.
+        """
+        First elements of the vector part of all Quaternions.
 
         Having the quaternion elements :math:`\\mathbf{q}_i=\\begin{pmatrix}w_i & \\mathbf{v}_i\\end{pmatrix}=\\begin{pmatrix}w_i & x_i & y_i & z_i\\end{pmatrix}\\in\\mathbb{R}^4`
         stacked vertically in an :math:`N\\times 4` matrix :math:`\\mathbf{Q}`:
@@ -2128,7 +2134,8 @@ class QuaternionArray(np.ndarray):
 
     @property
     def y(self) -> np.ndarray:
-        """Second elements of the vector part of all Quaternions.
+        """
+        Second elements of the vector part of all Quaternions.
 
         Having the quaternion elements :math:`\\mathbf{q}_i=\\begin{pmatrix}w_i & \\mathbf{v}_i\\end{pmatrix}=\\begin{pmatrix}w_i & x_i & y_i & z_i\\end{pmatrix}\\in\\mathbb{R}^4`
         stacked vertically in an :math:`N\\times 4` matrix :math:`\\mathbf{Q}`:
@@ -2168,7 +2175,8 @@ class QuaternionArray(np.ndarray):
 
     @property
     def z(self) -> np.ndarray:
-        """Third elements of the vector part of all Quaternions.
+        """
+        Third elements of the vector part of all Quaternions.
 
         Having the quaternion elements :math:`\\mathbf{q}_i=\\begin{pmatrix}w_i & \\mathbf{v}_i\\end{pmatrix}=\\begin{pmatrix}w_i & x_i & y_i & z_i\\end{pmatrix}\\in\\mathbb{R}^4`
         stacked vertically in an :math:`N\\times 4` matrix :math:`\\mathbf{Q}`:
@@ -2208,7 +2216,8 @@ class QuaternionArray(np.ndarray):
 
     @property
     def v(self) -> np.ndarray:
-        """Vector part of all Quaternions.
+        """
+        Vector part of all Quaternions.
 
         Having the quaternion elements :math:`\\mathbf{q}_i=\\begin{pmatrix}w_i & \\mathbf{v}_i\\end{pmatrix}=\\begin{pmatrix}w_i & x_i & y_i & z_i\\end{pmatrix}\\in\\mathbb{R}^4`
         stacked vertically in an :math:`N\\times 4` matrix :math:`\\mathbf{Q}`:
@@ -2253,7 +2262,8 @@ class QuaternionArray(np.ndarray):
         return self.array[:, 1:]
 
     def is_pure(self) -> np.ndarray:
-        """Returns an array of boolean values, where a value is ``True`` if its
+        """
+        Returns an array of boolean values, where a value is ``True`` if its
         corresponding quaternion is pure.
 
         A pure quaternion has a scalar part equal to zero: :math:`\\mathbf{q} = 0 + xi + yj + zk`
@@ -2285,7 +2295,8 @@ class QuaternionArray(np.ndarray):
         return np.isclose(self.w, np.zeros_like(self.w.shape[0]))
 
     def is_real(self) -> np.ndarray:
-        """Returns an array of boolean values, where a value is ``True`` if its
+        """
+        Returns an array of boolean values, where a value is ``True`` if its
         corresponding quaternion is real.
 
         A real quaternion has all elements of its vector part equal to zero:
@@ -2318,7 +2329,8 @@ class QuaternionArray(np.ndarray):
         return np.all(np.isclose(self.v, np.zeros_like(self.v)), axis=1)
 
     def is_versor(self) -> np.ndarray:
-        """Returns an array of boolean values, where a value is ``True`` if its
+        """
+        Returns an array of boolean values, where a value is ``True`` if its
         corresponding quaternion has a norm equal to one.
 
         A **versor** is a quaternion, whose `euclidean norm
@@ -2352,7 +2364,8 @@ class QuaternionArray(np.ndarray):
         return np.isclose(np.linalg.norm(self.array, axis=1), 1.0)
 
     def is_identity(self) -> np.ndarray:
-        """Returns an array of boolean values, where a value is ``True`` if its
+        """
+        Returns an array of boolean values, where a value is ``True`` if its
         quaternion is equal to the identity quaternion.
 
         An **identity quaternion** has its scalar part equal to 1, and its
@@ -2413,7 +2426,8 @@ class QuaternionArray(np.ndarray):
         return self.array*np.array([1.0, -1.0, -1.0, -1.0])
 
     def conj(self) -> np.ndarray:
-        """Synonym of :meth:`conjugate`
+        """
+        Synonym of :meth:`conjugate`
 
         Returns
         -------
@@ -2518,7 +2532,7 @@ class QuaternionArray(np.ndarray):
 
         .. code-block:: python
 
-            >>> Q = QuaternionArray(np.random.random((3, 4))-0.5)   # Three random quaternions
+            >>> Q = QuaternionArray(3)  # Three random quaternions
             >>> Q.view()
             QuaternionArray([[-0.75641558,  0.42233104,  0.39637415,  0.30390704],
                              [-0.52953832, -0.7187872 , -0.44551683,  0.06669994],
@@ -2551,7 +2565,8 @@ class QuaternionArray(np.ndarray):
         return R
 
     def average(self, span: Tuple[int, int] = None, weights: np.ndarray = None) -> np.ndarray:
-        """Average quaternion using Markley's method [Markley2007]_
+        """
+        Average quaternion using Markley's method [Markley2007]_
 
         It has to be clear that we intend to average **atttitudes** rather than
         quaternions. It just happens that we represent these attitudes with
@@ -2703,7 +2718,8 @@ class QuaternionArray(np.ndarray):
             self.array[j[0]:j[1]] *= -1.0
 
     def rotate_by(self, q: np.ndarray) -> np.ndarray:
-        """Rotate all Quaternions in the array around quaternion :math:`\\mathbf{q}`.
+        """
+        Rotate all Quaternions in the array around quaternion :math:`\\mathbf{q}`.
 
         Parameters
         ----------
@@ -2742,7 +2758,8 @@ class QuaternionArray(np.ndarray):
         return qQ
 
     def angular_velocities(self, dt: float) -> np.ndarray:
-        """Compute the angular velocity between N Quaternions.
+        """
+        Compute the angular velocity between N Quaternions.
 
         It assumes a constant sampling rate of ``dt`` seconds, and returns the
         angular velocity around the X-, Y- and Z-axis, in radians per second.
