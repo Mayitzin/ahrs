@@ -223,7 +223,12 @@ References
 
 import numpy as np
 from ..common.orientation import q_prod, q_conj, am2q
-from ..common.mathfuncs import *
+from ..common.constants import MUNICH_LONGITUDE
+from ..common.constants import MUNICH_LATITUDE
+from ..common.constants import MUNICH_HEIGHT
+from ..common.mathfuncs import cosd
+from ..common.mathfuncs import sind
+from ..common.mathfuncs import skew
 
 # Reference Observations in Munich, Germany
 from ..utils.wmm import WMM
@@ -288,7 +293,7 @@ class Fourati:
 
         Returns
         -------
-        Q : array
+        Q : numpy.ndarray
             M-by-4 Array with all estimated quaternions, where M is the number
             of samples.
 
