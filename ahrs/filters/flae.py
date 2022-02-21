@@ -430,10 +430,7 @@ class FLAE:
         if self.acc.ndim < 2:
             return self.estimate(self.acc, self.mag)
         num_samples = len(self.acc)
-        Q = np.zeros((num_samples, 4))
-        for t in range(num_samples):
-            Q[t] = self.estimate(self.acc[t], self.mag[t], method=self.method)
-        return Q
+        return np.array([self.estimate(self.acc[t], self.mag[t], method=self.method) for t in range(num_samples)])
 
     def _P1Hx(self, Hx: np.ndarray) -> np.ndarray:
         return np.array([

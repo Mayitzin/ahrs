@@ -221,7 +221,8 @@ class OLEQ:
         self.a_ref = np.array([0.0, 0.0, -1.0]) if frame.upper() == 'NED' else np.array([0.0, 0.0, 1.0])
 
     def _compute_all(self) -> np.ndarray:
-        """Estimate the quaternions given all data.
+        """
+        Estimate the quaternions given all data.
 
         Attributes ``acc`` and ``mag`` must contain data.
 
@@ -240,7 +241,8 @@ class OLEQ:
         return np.array([self.estimate(self.acc[t], self.mag[t]) for t in range(num_samples)])
 
     def WW(self, Db: np.ndarray, Dr: np.ndarray) -> np.ndarray:
-        """W Matrix
+        """
+        W Matrix
 
         .. math::
             \\mathbf{W} = D_x^r\\mathbf{M}_1 + D_y^r\\mathbf{M}_2 + D_z^r\\mathbf{M}_3
@@ -277,7 +279,8 @@ class OLEQ:
         return Dx*M1 + Dy*M2 + Dz*M3    # (eq. 20)
 
     def estimate(self, acc: np.ndarray, mag: np.ndarray) -> np.ndarray:
-        """Attitude Estimation
+        """
+        Attitude Estimation
 
         Parameters
         ----------

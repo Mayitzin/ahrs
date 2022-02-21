@@ -315,18 +315,14 @@ class FQA:
             return self.estimate(self.acc)
         # Estimate multiple observations
         num_samples = len(self.acc)
-        Q = np.zeros((num_samples, 4))
         if self.mag is not None:
             _assert_same_shapes(self.acc, self.mag, ['acc', 'mag'])
-            for t in range(num_samples):
-                Q[t] = self.estimate(self.acc[t], self.mag[t])
-        else:
-            for t in range(num_samples):
-                Q[t] = self.estimate(self.acc[t])
-        return Q
+            return np.array([self.estimate(self.acc[t], self.mag[t]) for t in range(num_samples)])
+        return np.array([self.estimate(self.acc[t]) for t in range(num_samples)])
 
     def estimate(self, acc: np.ndarray, mag: np.ndarray = None) -> np.ndarray:
-        """Attitude Estimation.
+        """
+        Attitude Estimation.
 
         Parameters
         ----------
