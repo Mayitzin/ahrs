@@ -34,9 +34,14 @@ pip install ahrs
 
 AHRS depends merely on [NumPy](https://numpy.org/). More packages are avoided, to reduce its third-party dependency.
 
-## New in 0.3
+## Important novelties in 0.3
 
-- The **World Magnetic Model** ([WMM](https://www.ngdc.noaa.gov/geomag/WMM/DoDWMM.shtml)) is fully implemented. It can be used to estimate all magnetic field elements on any given place of Earth for dates between 2015 and 2025.
+(Click on each topic to see more details.)
+
+<details>
+<summary>The <b>World Magnetic Model</b> (<a href="https://www.ngdc.noaa.gov/geomag/WMM/DoDWMM.shtml">WMM</a>) is fully implemented.</summary>
+
+It is a re-implementation of the Spherical Harmonics approximation used by the United States' <a href="https://www.ngdc.noaa.gov/geomag/WMM/">National Geopatial-Intelligence Agency</a>. It can be used to estimate all magnetic field elements on any given place of Earth for dates between 2015 and 2025.
 
 ```python
 >>> from ahrs.utils import WMM
@@ -46,8 +51,13 @@ AHRS depends merely on [NumPy](https://numpy.org/). More packages are avoided, t
 'H': 30944.850352270452, 'F': 30992.427998627096, 'I': -3.1751692563622993,
 'D': -9.73078560629778, 'GV': -9.73078560629778}
 ```
+</details>
 
-- The _ellipsoid model_ of the **World Geodetic System** ([WGS84](https://earth-info.nga.mil/GandG/update/index.php?dir=wgs84&action=wgs84)) is included. A full implementation of the **Earth Gravitational Model** ([EGM2008](https://earth-info.nga.mil/GandG/wgs84/gravitymod/egm2008/egm08_wgs84.html)) is _NOT_ available here, but the estimation of the main and derived parameters of the WGS84 using the ellipsoid model are implemented:
+<details>
+<summary>
+The <i>Ellipsoid model</i> of the <b>World Geodetic System</b> (<a href="https://earth-info.nga.mil/GandG/update/index.php?dir=wgs84&action=wgs84">WGS84</a>) is also included.</summary>
+
+The estimation of the main and derived parameters of the WGS84 using the ellipsoid model are implemented:
 
 ```python
 >>> from ahrs.utils import WGS
@@ -109,7 +119,13 @@ Setting the fundamental parameters (`a`, `f`, `GM`, `w`) yields a different elli
 False
 ```
 
-- The [International Gravity Formula](http://earth.geology.yale.edu/~ajs/1945A/360.pdf) and the EU's [WELMEC](https://www.welmec.org/documents/guides/2/) normal gravity reference system are also implemented.
+A full implementation of the **Earth Gravitational Model** ([EGM2008](https://earth-info.nga.mil/GandG/wgs84/gravitymod/egm2008/egm08_wgs84.html)) using Spherical Harmonics is **NOT** available here.
+
+</details>
+
+<details>
+<summary>The <a href="http://earth.geology.yale.edu/~ajs/1945A/360.pdf">International Gravity Formula</a> and the EU's <a href="https://www.welmec.org/documents/guides/2/">WELMEC</a> normal gravity reference system are also implemented.
+</summary>
 
 ```python
 >>> ahrs.utils.international_gravity(50.0)       # Latitude = 50° N
@@ -118,7 +134,12 @@ False
 9.809152687885897
 ```
 
-- New class `DCM` (derived from `numpy.ndarray`) for orientation/rotation representations as 3x3 Direction Cosine Matrices.
+</details>
+
+<details>
+<summary>New class <a href="https://ahrs.readthedocs.io/en/latest/classDCM.html">DCM</a> (derived from <a href="https://numpy.org/doc/stable/reference/generated/numpy.array.html">numpy.ndarray</a>).</summary>
+
+This new class represents 3x3 Direction Cosine Matrices used to describe orientations / rotations operations.
 
 ```python
 >>> from ahrs import DCM
@@ -142,8 +163,13 @@ array([0.94371436, 0.12767944, 0.14487813, 0.26853582])
 >>> R.to_quaternion(method='itzhack', version=2)
 array([ 0.94371436, -0.12767944, -0.14487813, -0.26853582])
 ```
+</details>
 
-- New class `QuaternionArray` to simultaneously handle an array with more quaternions at once.
+<details>
+<summary>New class <a href="https://ahrs.readthedocs.io/en/latest/quaternion/classQuaternionArray.html">QuaternionArray</a> (derived from <a href="https://numpy.org/doc/stable/reference/generated/numpy.array.html">numpy.ndarray</a>).</summary>
+
+This class can be used to simultaneously handle an array with several quaternions at once.
+
 
 ```python
 >>> Q = QuaternionArray(np.random.random((3, 4))-0.5)
@@ -172,6 +198,7 @@ array([[ 0.31638467, -0.59313477,  0.62538687,  0.39621099],
 >>> Q.average()
 array([ 0.19537239,  0.17826049, -0.87872408, -0.39736232])
 ```
+</details>
 
 - [Type hints](https://www.python.org/dev/peps/pep-0484/) are added.
 - NumPy is now the only third-party dependency.
