@@ -1814,7 +1814,7 @@ class Quaternion(np.ndarray):
         for angle in angles:
             if angle < -2.0* np.pi or angle > 2.0 * np.pi:
                 raise ValueError(f"Expected `angles` must be in the range [-2pi, 2pi], got {angles}.")
-        yaw, pitch, roll = angles
+        roll, pitch, yaw = angles
         cy = np.cos(0.5*yaw)
         sy = np.sin(0.5*yaw)
         cp = np.cos(0.5*pitch)
