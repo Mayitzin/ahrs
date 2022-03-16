@@ -245,8 +245,8 @@ class Tilt:
             is set to ``True``.
 
         """
-        if self.acc.shape[-1]!=3:
-            raise ValueError("Input data must be of shape (N, 3). Got shape {}".format(self.acc.shape))
+        if self.acc.shape[-1] != 3:
+            raise ValueError(f"Input data must be of shape (N, 3). Got shape {self.acc.shape}")
         num_samples = len(self.acc)
         Q = np.zeros((num_samples, 3)) if self.as_angles else np.zeros((num_samples, 4))
         # Normalization of 2D arrays
@@ -317,7 +317,7 @@ class Tilt:
 
         """
         a_norm = np.linalg.norm(acc)
-        if not a_norm>0:
+        if not a_norm > 0:
             if self.as_angles:
                 return np.zeros(3)
             return np.array([1.0, 0.0, 0.0, 0.0])

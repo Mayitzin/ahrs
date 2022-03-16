@@ -1070,7 +1070,8 @@ class EKF:
         return Q
 
     def Omega(self, x: np.ndarray) -> np.ndarray:
-        """Omega operator.
+        """
+        Omega operator.
 
         Given a vector :math:`\\mathbf{x}\\in\\mathbb{R}^3`, return a
         :math:`4\\times 4` matrix of the form:
@@ -1106,7 +1107,8 @@ class EKF:
             [x[2],  x[1], -x[0],   0.0]])
 
     def f(self, q: np.ndarray, omega: np.ndarray, dt: float) -> np.ndarray:
-        """Linearized function of Process Model (Prediction.)
+        """
+        Linearized function of Process Model (Prediction.)
 
         .. math::
             \\mathbf{f}(\\mathbf{q}_{t-1}) = \\Big(\\mathbf{I}_4 + \\frac{\\Delta t}{2}\\boldsymbol\\Omega_t\\Big)\\mathbf{q}_{t-1} =
@@ -1135,7 +1137,8 @@ class EKF:
         return (np.identity(4) + 0.5*dt*Omega_t) @ q
 
     def dfdq(self, omega: np.ndarray, dt: float) -> np.ndarray:
-        """Jacobian of linearized predicted state.
+        """
+        Jacobian of linearized predicted state.
 
         .. math::
             \\mathbf{F} = \\frac{\\partial\\mathbf{f}(\\mathbf{q}_{t-1})}{\\partial\\mathbf{q}} =
@@ -1162,7 +1165,8 @@ class EKF:
         return np.identity(4) + self.Omega(x)
 
     def h(self, q: np.ndarray) -> np.ndarray:
-        """Measurement Model
+        """
+        Measurement Model
 
         If only the gravitational acceleration is used to correct the
         estimation, a vector with 3 elements is used:
@@ -1205,7 +1209,8 @@ class EKF:
         return np.r_[C @ self.a_ref, C @ self.m_ref]
 
     def dhdq(self, q: np.ndarray, mode: str = 'normal') -> np.ndarray:
-        """Linearization of observations with Jacobian.
+        """
+        Linearization of observations with Jacobian.
 
         If only the gravitational acceleration is used to correct the
         estimation, a :math:`3\\times 4` matrix:
@@ -1245,14 +1250,15 @@ class EKF:
         .. warning::
             The refactored mode might lead to slightly different results as it
             employs more and different operations than the normal mode,
-            created by the nummerical capabilities of the host system.
+            originated by the nummerical capabilities of the host system.
 
         Parameters
         ----------
         q : numpy.ndarray
             Predicted state estimate.
-        mode : str, default: 'normal'
-            Computation mode for Observation matrix.
+        mode : str, default: ``'normal'``
+            Computation mode for Observation matrix. Options are: ``'normal'``,
+            or ``'refactored'``.
 
         Returns
         -------
@@ -1308,7 +1314,7 @@ class EKF:
         if not np.isclose(np.linalg.norm(q), 1.0):
             raise ValueError("A-priori quaternion must have a norm equal to 1.")
         # Current Measurements
-        g = np.copy(gyr)                # Gyroscope data as control vector
+        g = np.copy(gyr)                        # Gyroscope data (control vector)
         a = np.copy(acc)
         a_norm = np.linalg.norm(a)
         if a_norm == 0:
@@ -1325,15 +1331,15 @@ class EKF:
         q_t = self.f(q, g, dt)                  # Predicted State
         F   = self.dfdq(g, dt)                  # Linearized Fundamental Matrix
         W   = 0.5*dt * np.r_[[-q[1:]], q[0]*np.identity(3) + skew(q[1:])]  # Jacobian W = df/dω
-        Q_t = 0.5*dt * self.g_noise * W@W.T    # Process Noise Covariance
-        P_t = F@self.P@F.T + Q_t            # Predicted Covariance Matrix
+        Q_t = 0.5*dt * self.g_noise * W@W.T     # Process Noise Covariance
+        P_t = F@self.P@F.T + Q_t                # Predicted Covariance Matrix
         # ----- Correction -----
-        y   = self.h(q_t)                   # Expected Measurement function
-        v   = self.z - y                    # Innovation (Measurement Residual)
-        H   = self.dhdq(q_t)                # Linearized Measurement Matrix
-        S   = H@P_t@H.T + self.R            # Measurement Prediction Covariance
-        K   = P_t@H.T@np.linalg.inv(S)      # Kalman Gain
+        y   = self.h(q_t)                       # Expected Measurement function
+        v   = self.z - y                        # Innovation (Measurement Residual)
+        H   = self.dhdq(q_t)                    # Linearized Measurement Matrix
+        S   = H@P_t@H.T + self.R                # Measurement Prediction Covariance
+        K   = P_t@H.T@np.linalg.inv(S)          # Kalman Gain
         self.P = (np.identity(4) - K@H)@P_t
-        self.q = q_t + K@v                  # Corrected state
+        self.q = q_t + K@v                      # Corrected state
         self.q /= np.linalg.norm(self.q)
         return self.q
