@@ -173,10 +173,10 @@ References
 
 """
 
-import cmath
+import math
 
 # TRIGONOMETRY
-M_PI = cmath.pi
+M_PI = math.pi
 DEG2RAD = M_PI/180
 RAD2DEG = 180/M_PI
 
