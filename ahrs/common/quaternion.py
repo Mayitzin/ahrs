@@ -466,7 +466,8 @@ class Quaternion(np.ndarray):
     order : str, default: 'H'
         Specify the layout of the Quaternion, where the scalar part precedes
         the vector part by default. If the order is 'S' the vector part
-        precedes the scalar part.
+        precedes the scalar part. The default is 'H' for a Hamiltonian notation
+        with the scalar part first.
 
     Attributes
     ----------
@@ -2033,8 +2034,7 @@ class QuaternionArray(np.ndarray):
             q = np.array([[1.0, 0.0, 0.0, 0.0]])
         if isinstance(q, int):
             q = np.atleast_2d(random_attitudes(q))
-        else:
-            _assert_iterables(q, 'Quaternion Array')
+        _assert_iterables(q, 'Quaternion Array')
         q = np.array(q, dtype=float)
         if q.ndim != 2 or q.shape[-1] not in [3, 4]:
             raise ValueError(f"Expected array to have shape (N, 4) or (N, 3), got {q.shape}.")
