@@ -149,5 +149,12 @@ class TestQuaternionArray(unittest.TestCase):
         Q = ahrs.QuaternionArray([[1., 0., 0., 0.], [1., 2., 3., 4.], [-1., 0., 0., 0.]])
         self.assertListEqual(Q.is_real().tolist(), [True, False, True])
 
+    def test_to_DCM(self):
+        R = self.Q1.to_DCM()
+        np.testing.assert_equal(R[0], np.identity(3))
+        np.testing.assert_equal(R[1], np.diag([1., -1., -1.]))
+        np.testing.assert_equal(R[2], np.diag([-1., 1., -1.]))
+        np.testing.assert_equal(R[3], np.diag([-1., -1., 1.]))
+
 if __name__ == "__main__":
     unittest.main()
