@@ -276,5 +276,8 @@ class Complementary:
         q_omega = self.attitude_propagation(q, gyr, dt)
         q_am = self.am_estimation(acc, mag)
         # Complementary Estimation
-        q = (1.0 - self.gain)*q_omega + self.gain*q_am
+        if np.linalg.norm(q_omega + q_am) < np.sqrt(2):
+            q = (1.0 - self.gain)*q_omega - self.gain*q_am
+        else:
+            q = (1.0 - self.gain)*q_omega + self.gain*q_am
         return q/np.linalg.norm(q)
