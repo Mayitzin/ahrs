@@ -214,6 +214,11 @@ One of the biggest improvements in this version is the addition of many new atti
 
 All estimators are refactored to be consistent with the corresponding articles describing them. They have in-code references to the equations, so that you can follow the original articles along with the code.
 
+These estimators are based on two main solutions:
+
+- [Wahba's Problem](https://en.wikipedia.org/wiki/Wahba%27s_problem) (WP), which finds a rotation matrix between two coordinate systems. This means we compare measurement vectors against reference vectors. Their difference is the rotation. The solution to Wahba's problem mainly compares accelerometers and magnetometers against the gravitational and geomagnetic vectors, correspondingly.
+- [Dead Reckoning](https://en.wikipedia.org/wiki/Dead_reckoning) (DR) integrating the measured local angular velocity to increasingly estimate the angular position of the sensor.
+
 Implemented attitude estimators are:
 
 | Algorithm     | Gyroscope | Accelerometer | Magnetometer |
@@ -235,22 +240,6 @@ Implemented attitude estimators are:
 | SAAM          | NO        | YES           | YES          |
 | Tilt          | NO        | YES           | Optional     |
 | TRIAD         | NO        | YES           | YES          |
-
-More Estimators are still a _Work In Progress_, or _planned_ to be added in the future.
-
-| Algorithm | Gyroscope | Accelerometer | Magnetometer | Status  |
-|-----------|:---------:|:-------------:|:------------:|:-------:|
-| ESOQ      | NO        | YES           | YES          | WIP     |
-| ESOQ-2    | NO        | YES           | YES          | WIP     |
-| FKF       | NO        | YES           | YES          | WIP     |
-| FCF       | NO        | YES           | YES          | Planned |
-| FOAM      | NO        | YES           | YES          | Planned |
-| GDA-LKF   | YES       | YES           | YES          | Planned |
-| MAGYQ     | YES       | YES           | YES          | Planned |
-| QRAUKF    | YES       | YES           | YES          | Planned |
-| REQUEST   | NO        | YES           | YES          | Planned |
-| Sabatini  | YES       | YES           | YES          | Planned |
-| SOLEQ     | NO        | YES           | YES          | Planned |
 
 To use the sensor data to estimate the attitude simply pass the data to a desired estimator, and it will automatically estimate the quaternions with the given parameters.
 
