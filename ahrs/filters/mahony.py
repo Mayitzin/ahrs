@@ -269,6 +269,7 @@ References
 import numpy as np
 from ..common.orientation import q_prod, acc2q, am2q, q2R
 
+
 class Mahony:
     """Mahony's Nonlinear Complementary Filter on SO(3)
 
@@ -403,12 +404,14 @@ class Mahony:
         k_P: float = 1.0,
         k_I: float = 0.3,
         q0: np.ndarray = None,
+        b0: np.ndarray = None,
         **kwargs):
         self.gyr = gyr
         self.acc = acc
         self.mag = mag
         self.frequency = frequency
         self.q0 = q0
+        self.b = b0 or np.zeros([3])
         self.k_P = k_P
         self.k_I = k_I
         # Old parameter names for backward compatibility
@@ -417,7 +420,7 @@ class Mahony:
         self.Dt = kwargs.get('Dt', 1.0/self.frequency)
         # Estimate all orientations if sensor data is given
         if self.gyr is not None and self.acc is not None:
-            self.Q = self._compute_all()
+            self.Q, self.Omega = self._compute_all()
 
     def _compute_all(self):
         """
@@ -488,8 +491,9 @@ class Mahony:
             v_a = R.T@np.array([0.0, 0.0, 1.0])     # Expected Earth's gravity
             # ECF
             omega_mes = np.cross(acc/a_norm, v_a)   # Cost function (eqs. 32c and 48a)
-            b = -self.k_I*omega_mes                 # Estimated Gyro bias (eq. 48c)
-            Omega = Omega - b + self.k_P*omega_mes  # Gyro correction
+            bDot = -self.k_I*omega_mes                   # Estimated change in Gyro bias
+            self.b += bDot * dt                          # Estimated Gyro bias (eq. 48c)
+            Omega = Omega - self.b + self.k_P*omega_mes  # Gyro correction
         p = np.array([0.0, *Omega])
         qDot = 0.5*q_prod(q, p)                     # Rate of change of quaternion (eqs. 45 and 48b)
         q += qDot*dt                                # Update orientation
@@ -545,8 +549,9 @@ class Mahony:
             v_m /= np.linalg.norm(v_m)
             # ECF
             omega_mes = np.cross(a, v_a) + np.cross(m, v_m) # Cost function (eqs. 32c and 48a)
-            b = -self.k_I*omega_mes                 # Estimated Gyro bias (eq. 48c)
-            Omega = Omega - b + self.k_P*omega_mes  # Gyro correction
+            bDot = -self.k_I*omega_mes                   # Estimated change in Gyro bias
+            self.b += bDot * dt                          # Estimated Gyro bias (eq. 48c)
+            Omega = Omega - self.b + self.k_P*omega_mes  # Gyro correction
         p = np.array([0.0, *Omega])
         qDot = 0.5*q_prod(q, p)                     # Rate of change of quaternion (eqs. 45 and 48b)
         q += qDot*dt                                # Update orientation
