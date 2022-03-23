@@ -393,7 +393,7 @@ def slerp(q0: np.ndarray, q1: np.ndarray, t_array: np.ndarray, threshold: float 
     sin_theta = np.sin(theta)
     s0 = np.cos(theta) - qdot*sin_theta/sin_theta_0
     s1 = sin_theta/sin_theta_0
-    return s0[:,np.newaxis]*q0[np.newaxis,:] + s1[:,np.newaxis]*q1[np.newaxis,:]
+    return s0[:, np.newaxis]*q0[np.newaxis, :] + s1[:, np.newaxis]*q1[np.newaxis, :]
 
 def random_attitudes(n: int = 1, representation: str = 'quaternion') -> np.ndarray:
     """
@@ -1927,6 +1927,10 @@ class QuaternionArray(np.ndarray):
         stored in a 2d array.
     versors : bool, default: True
         Treat quaternions as versors. It will normalize them immediately.
+    order : str, default: 'H'
+        Specify the layout of the Quaternions, where the default is 'H' for a
+        Hamiltonian notation with the scalar parts preceding the vector parts.
+        If order is 'S' the vector parts precede the scalar parts.
 
     Attributes
     ----------
@@ -2029,7 +2033,7 @@ class QuaternionArray(np.ndarray):
                      [ 0.17094453, -0.3723117 ,  0.54109885, -0.73442086],
                      [ 0.1862619 , -0.38421818,  0.5260265 , -0.73551276]])
     """
-    def __new__(subtype, q: np.ndarray = None, versors: bool = True):
+    def __new__(subtype, q: np.ndarray = None, versors: bool = True, order: str = 'H'):
         if q is None:
             q = np.array([[1.0, 0.0, 0.0, 0.0]])
         if isinstance(q, int):
@@ -2047,6 +2051,7 @@ class QuaternionArray(np.ndarray):
         # QuaternionArray.
         obj = super(QuaternionArray, subtype).__new__(subtype, q.shape, float, q)
         obj.array = q
+        obj.scalar_vector = False if order == 'S' else True
         obj.num_qts = q.shape[0]
         return obj
 
@@ -2089,7 +2094,7 @@ class QuaternionArray(np.ndarray):
         >>> Q[:, 0]
         QuaternionArray([ 0.39338362,  0.65459935, -0.42837174])
         """
-        return self.array[:, 0]
+        return self.array[:, 0] if self.scalar_vector else self.array[:, 3]
 
     @property
     def x(self) -> np.ndarray:
@@ -2130,7 +2135,7 @@ class QuaternionArray(np.ndarray):
         >>> Q[:, 1]
         QuaternionArray([-0.29206111,  0.14192058,  0.85451579])
         """
-        return self.array[:, 1]
+        return self.array[:, 1] if self.scalar_vector else self.array[:, 0]
 
     @property
     def y(self) -> np.ndarray:
@@ -2171,7 +2176,7 @@ class QuaternionArray(np.ndarray):
         >>> Q[:, 2]
         QuaternionArray([-0.07445273, -0.69722158, -0.02786928])
         """
-        return self.array[:, 2]
+        return self.array[:, 2] if self.scalar_vector else self.array[:, 1]
 
     @property
     def z(self) -> np.ndarray:
@@ -2212,7 +2217,7 @@ class QuaternionArray(np.ndarray):
         >>> Q[:, 3]
         QuaternionArray([0.86856573, 0.25542183, 0.29244439])
         """
-        return self.array[:, 3]
+        return self.array[:, 3] if self.scalar_vector else self.array[:, 2]
 
     @property
     def v(self) -> np.ndarray:
@@ -2259,7 +2264,7 @@ class QuaternionArray(np.ndarray):
                          [ 0.14192058, -0.69722158,  0.25542183],
                          [ 0.85451579, -0.02786928,  0.29244439]])
         """
-        return self.array[:, 1:]
+        return self.array[:, 1:] if self.scalar_vector else self.array[:, :3]
 
     def is_pure(self) -> np.ndarray:
         """
@@ -2396,7 +2401,9 @@ class QuaternionArray(np.ndarray):
         array([False,  True, False])
 
         """
-        return np.all(np.isclose(self.array, np.tile([1., 0., 0., 0.], (self.array.shape[0], 1))), axis=1)
+        if self.scalar_vector:
+            return np.all(np.isclose(self.array, np.tile([1., 0., 0., 0.], (self.array.shape[0], 1))), axis=1)
+        return np.all(np.isclose(self.array, np.tile([0., 0., 0., 1.], (self.array.shape[0], 1))), axis=1)
 
     def conjugate(self) -> np.ndarray:
         """
@@ -2423,7 +2430,9 @@ class QuaternionArray(np.ndarray):
                [ 0.57515971, -0.33286283, -0.23442397, -0.70953439],
                [-0.34067259,  0.24989624, -0.5950285 ,  0.68369229]])
         """
-        return self.array*np.array([1.0, -1.0, -1.0, -1.0])
+        if self.scalar_vector:
+            return self.array*np.array([1.0, -1.0, -1.0, -1.0])
+        return self.array*np.array([-1.0, -1.0, -1.0, 1.0])
 
     def conj(self) -> np.ndarray:
         """
@@ -2491,9 +2500,9 @@ class QuaternionArray(np.ndarray):
                [-2.92779394, -0.4437908 , -0.15391635]])
 
         """
-        phi = np.arctan2(2.0*(self.array[:, 0]*self.array[:, 1] + self.array[:, 2]*self.array[:, 3]), 1.0 - 2.0*(self.array[:, 1]**2 + self.array[:, 2]**2))
-        theta = np.arcsin(2.0*(self.array[:, 0]*self.array[:, 2] - self.array[:, 3]*self.array[:, 1]))
-        psi = np.arctan2(2.0*(self.array[:, 0]*self.array[:, 3] + self.array[:, 1]*self.array[:, 2]), 1.0 - 2.0*(self.array[:, 2]**2 + self.array[:, 3]**2))
+        phi = np.arctan2(2.0*(self.w*self.x + self.y*self.z), 1.0 - 2.0*(self.x**2 + self.y**2))
+        theta = np.arcsin(2.0*(self.w*self.y - self.z*self.x))
+        psi = np.arctan2(2.0*(self.w*self.z + self.x*self.y), 1.0 - 2.0*(self.y**2 + self.z**2))
         return np.c_[phi, theta, psi]
 
     def to_DCM(self) -> np.ndarray:
@@ -2553,22 +2562,22 @@ class QuaternionArray(np.ndarray):
         if not all(self.is_versor()):
             raise AttributeError("All quaternions must be versors to be represented as Direction Cosine Matrices.")
         R = np.zeros((self.num_qts, 3, 3))
-        R[:, 0, 0] = 1.0 - 2.0*(self.array[:, 2]**2 + self.array[:, 3]**2)
-        R[:, 1, 0] = 2.0*(self.array[:, 1]*self.array[:, 2]+self.array[:, 0]*self.array[:, 3])
-        R[:, 2, 0] = 2.0*(self.array[:, 1]*self.array[:, 3]-self.array[:, 0]*self.array[:, 2])
-        R[:, 0, 1] = 2.0*(self.array[:, 1]*self.array[:, 2]-self.array[:, 0]*self.array[:, 3])
-        R[:, 1, 1] = 1.0 - 2.0*(self.array[:, 1]**2 + self.array[:, 3]**2)
-        R[:, 2, 1] = 2.0*(self.array[:, 0]*self.array[:, 1]+self.array[:, 2]*self.array[:, 3])
-        R[:, 0, 2] = 2.0*(self.array[:, 1]*self.array[:, 3]+self.array[:, 0]*self.array[:, 2])
-        R[:, 1, 2] = 2.0*(self.array[:, 2]*self.array[:, 3]-self.array[:, 0]*self.array[:, 1])
-        R[:, 2, 2] = 1.0 - 2.0*(self.array[:, 1]**2 + self.array[:, 2]**2)
+        R[:, 0, 0] = 1.0 - 2.0*(self.y**2 + self.z**2)
+        R[:, 1, 0] = 2.0*(self.x*self.y+self.w*self.z)
+        R[:, 2, 0] = 2.0*(self.x*self.z-self.w*self.y)
+        R[:, 0, 1] = 2.0*(self.x*self.y-self.w*self.z)
+        R[:, 1, 1] = 1.0 - 2.0*(self.x**2 + self.z**2)
+        R[:, 2, 1] = 2.0*(self.w*self.x+self.y*self.z)
+        R[:, 0, 2] = 2.0*(self.x*self.z+self.w*self.y)
+        R[:, 1, 2] = 2.0*(self.y*self.z-self.w*self.x)
+        R[:, 2, 2] = 1.0 - 2.0*(self.x**2 + self.y**2)
         return R
 
     def average(self, span: Tuple[int, int] = None, weights: np.ndarray = None) -> np.ndarray:
         """
         Average quaternion using Markley's method [Markley2007]_
 
-        It has to be clear that we intend to average **atttitudes** rather than
+        It has to be clear that we intend to average **attitudes** rather than
         quaternions. It just happens that we represent these attitudes with
         unit quaternions, that is :math:`\\|\\mathbf{q}\\|=1`.
 
@@ -2639,15 +2648,15 @@ class QuaternionArray(np.ndarray):
         Example
         -------
         >>> qts = np.tile([1., -2., 3., -4], (5, 1))    # Five equal quaternions
-        >>> v = np.random.randn(5, 4)*0.1               # Gaussian noise
-        >>> Q1 = QuaternionArray(qts + v)
-        >>> Q1.view()
+        >>> v = np.random.standard_normal((5, 4))*0.1   # Zero-mean gaussian noise
+        >>> Q = QuaternionArray(qts + v)
+        >>> Q.view()
         QuaternionArray([[ 0.17614144, -0.39173347,  0.56303067, -0.70605634],
                          [ 0.17607515, -0.3839024 ,  0.52673809, -0.73767437],
                          [ 0.16823806, -0.35898889,  0.53664261, -0.74487424],
                          [ 0.17094453, -0.3723117 ,  0.54109885, -0.73442086],
                          [ 0.1862619 , -0.38421818,  0.5260265 , -0.73551276]])
-        >>> Q1.average()
+        >>> Q.average()
         array([-0.17557859,  0.37832975, -0.53884688,  0.73190355])
 
         The result is as expected, remembering that a quaternion with opposite
@@ -2655,7 +2664,7 @@ class QuaternionArray(np.ndarray):
         """
         if not all(self.is_versor()):
             raise AttributeError("All quaternions must be versors to be averaged.")
-        q = self.array.copy()
+        q = np.c_[self.w, self.v]
         if span is not None:
             if hasattr(span, '__iter__') and len(span) == 2:
                 q = q[span[0]:span[1]]
@@ -2668,7 +2677,10 @@ class QuaternionArray(np.ndarray):
                 raise ValueError("The number of weights do not match the number of quaternions.")
             q *= weights[:, None]
         eigvals, eigvecs = np.linalg.eig(q.T@q)
-        return eigvecs[:, eigvals.argmax()]
+        q_avg = eigvecs[:, eigvals.argmax()]
+        if self.scalar_vector:
+            return q_avg
+        return np.roll(q_avg, -1)
 
     def remove_jumps(self) -> None:
         """
@@ -2711,13 +2723,13 @@ class QuaternionArray(np.ndarray):
         """
         q_diff = np.diff(self.array, axis=0)
         jumps = np.nonzero(np.where(np.linalg.norm(q_diff, axis=1)>1, 1, 0))[0]+1
-        if len(jumps)%2:
+        if len(jumps) % 2:
             jumps = np.append(jumps, [len(q_diff)+1])
         jump_pairs = jumps.reshape((len(jumps)//2, 2))
         for j in jump_pairs:
             self.array[j[0]:j[1]] *= -1.0
 
-    def rotate_by(self, q: np.ndarray) -> np.ndarray:
+    def rotate_by(self, q: np.ndarray, order: str = 'H') -> np.ndarray:
         """
         Rotate all Quaternions in the array around quaternion :math:`\\mathbf{q}`.
 
@@ -2750,10 +2762,12 @@ class QuaternionArray(np.ndarray):
             raise ValueError("Given quaternion to rotate about must have 4 elements.")
         q /= np.linalg.norm(q)
         qQ = np.zeros_like(self.array)
-        qQ[:, 0] = q[0]*self.array[:, 0] - q[1]*self.array[:, 1] - q[2]*self.array[:, 2] - q[3]*self.array[:, 3]
-        qQ[:, 1] = q[0]*self.array[:, 1] + q[1]*self.array[:, 0] + q[2]*self.array[:, 3] - q[3]*self.array[:, 2]
-        qQ[:, 2] = q[0]*self.array[:, 2] - q[1]*self.array[:, 3] + q[2]*self.array[:, 0] + q[3]*self.array[:, 1]
-        qQ[:, 3] = q[0]*self.array[:, 3] + q[1]*self.array[:, 2] - q[2]*self.array[:, 1] + q[3]*self.array[:, 0]
+        if order.upper() == 'S':
+            q = np.roll(q, -1)
+        qQ[:, 0] = q[0]*self.w - q[1]*self.x - q[2]*self.y - q[3]*self.z
+        qQ[:, 1] = q[0]*self.x + q[1]*self.w + q[2]*self.z - q[3]*self.y
+        qQ[:, 2] = q[0]*self.y - q[1]*self.z + q[2]*self.w + q[3]*self.x
+        qQ[:, 3] = q[0]*self.z + q[1]*self.y - q[2]*self.x + q[3]*self.w
         qQ /= np.linalg.norm(qQ, axis=1)[:, None]
         return qQ
 
@@ -2780,7 +2794,7 @@ class QuaternionArray(np.ndarray):
         if dt <= 0:
             raise ValueError(f"dt must be greater than zero. Got {dt}.")
         w = np.c_[
-            self.array[:-1, 0]*self.array[1:, 1] - self.array[:-1, 1]*self.array[1:, 0] - self.array[:-1, 2]*self.array[1:, 3] + self.array[:-1, 3]*self.array[1:, 2],
-            self.array[:-1, 0]*self.array[1:, 2] + self.array[:-1, 1]*self.array[1:, 3] - self.array[:-1, 2]*self.array[1:, 0] - self.array[:-1, 3]*self.array[1:, 1],
-            self.array[:-1, 0]*self.array[1:, 3] - self.array[:-1, 1]*self.array[1:, 2] + self.array[:-1, 2]*self.array[1:, 1] - self.array[:-1, 3]*self.array[1:, 0]]
+            self.w[:-1]*self.x[1:] - self.x[:-1]*self.w[1:] - self.y[:-1]*self.z[1:] + self.z[:-1]*self.y[1:],
+            self.w[:-1]*self.y[1:] + self.x[:-1]*self.z[1:] - self.y[:-1]*self.w[1:] - self.z[:-1]*self.x[1:],
+            self.w[:-1]*self.z[1:] - self.x[:-1]*self.y[1:] + self.y[:-1]*self.x[1:] - self.z[:-1]*self.w[1:]]
         return 2.0 * w / dt
