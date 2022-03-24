@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """
+
 Fast Accelerometer-Magnetometer Combination
 ===========================================
 
@@ -161,6 +162,10 @@ References
 
 import numpy as np
 
+def _assert_iterables(item, item_name: str = 'iterable'):
+    if not isinstance(item, (list, tuple, np.ndarray)):
+        raise TypeError(f"{item_name} must be given as an array. Got {type(item)}")
+
 class FAMC:
     """
     Fast Accelerometer-Magnetometer Combination
@@ -206,8 +211,8 @@ class FAMC:
 
     """
     def __init__(self, acc: np.ndarray = None, mag: np.ndarray = None):
-        self.acc = acc.copy()
-        self.mag = mag.copy()
+        self.acc: np.ndarray = acc
+        self.mag: np.ndarray = mag
         self.Q = None
         if self.acc is not None and self.mag is not None:
             self.Q = self._compute_all()
@@ -220,11 +225,13 @@ class FAMC:
 
         Returns
         -------
-        Q : array
+        Q : numpy.ndarray
             M-by-4 Array with all estimated quaternions, where M is the number
             of samples.
 
         """
+        _assert_iterables(self.acc, 'acc')
+        _assert_iterables(self.mag, 'mag')
         if self.acc.shape != self.mag.shape:
             raise ValueError("acc and mag are not the same size")
         if self.acc.ndim < 2:
