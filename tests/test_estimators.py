@@ -8,15 +8,16 @@ REFERENCE_MAGNETIC_VECTOR = np.array([wmm.X, wmm.Y, wmm.Z])
 NORMAL_GRAVITY = ahrs.utils.WGS().normal_gravity(ahrs.MUNICH_LATITUDE, ahrs.MUNICH_HEIGHT)
 REFERENCE_GRAVITY_VECTOR = np.array([0.0, 0.0, NORMAL_GRAVITY])
 
-def __gaussian_filter(input, size = 10, sigma = 1.0):
-    """Gaussian filter over an array
+def __gaussian_filter(in_array: np.ndarray, size: int = 10, sigma: float = 1.0) -> np.ndarray:
+    """
+    Gaussian filter over an array
 
     This implementation tries to mimic the behavior of Scipy's function
     ``gaussian_filter1d``, in order to avoid the dependency on Scipy.
 
     Parameters
     ----------
-    input : np.ndarray
+    in_array : np.ndarray
         Input array to be filtered.
     size : int, default: 10
         Size of Kernel used over the input array.
@@ -31,12 +32,13 @@ def __gaussian_filter(input, size = 10, sigma = 1.0):
     x = np.linspace(-sigma*4, sigma*4, size)
     phi_x = np.exp(-0.5*x**2/sigma**2)
     phi_x /= phi_x.sum()
-    if input.ndim < 2:
-        return np.correlate(input, phi_x, mode='same')
-    return np.array([np.correlate(col, phi_x, mode='same') for col in input.T]).T
+    if in_array.ndim < 2:
+        return np.correlate(in_array, phi_x, mode='same')
+    return np.array([np.correlate(col, phi_x, mode='same') for col in in_array.T]).T
 
 def random_angvel(num_samples: int = 500, max_rotations: int = 4, num_axes: int = 3, span: list = None, **kwargs) -> np.ndarray:
-    """Random angular velocities
+    """
+    Random angular velocities
 
     Create an array of synthetic random angular velocities with reference to a
     local sensor coordinate frame.
@@ -186,7 +188,7 @@ class TestQUEST(unittest.TestCase):
         self.decimal_precision = noise_sigma * 10.0
         self.Rg = np.array([R.T @ REFERENCE_GRAVITY_VECTOR for R in self.rotations]) + np.random.standard_normal((num_samples, 3)) * noise_sigma
         self.Rm = np.array([R.T @ REFERENCE_MAGNETIC_VECTOR for R in self.rotations]) + np.random.standard_normal((num_samples, 3)) * noise_sigma
-        
+
     def test_multiple_values(self):
         quest = ahrs.filters.QUEST(self.Rg, self.Rm)
         self.assertLess(np.nanmean(ahrs.utils.metrics.qad(self.Qts, quest.Q)), self.decimal_precision)
