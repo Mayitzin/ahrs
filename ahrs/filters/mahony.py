@@ -420,7 +420,7 @@ class Mahony:
         self.Dt = kwargs.get('Dt', 1.0/self.frequency)
         # Estimate all orientations if sensor data is given
         if self.gyr is not None and self.acc is not None:
-            self.Q, self.Omega = self._compute_all()
+            self.Q = self._compute_all()
 
     def _compute_all(self):
         """
