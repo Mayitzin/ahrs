@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-Common mathematical routines.
+Common mathematical routines
+============================
+
+These functions can be used at different scripts and submodules.
 
 """
 
 import numpy as np
-from .constants import *
+from .constants import DEG2RAD
 
 def cosd(x):
     """
@@ -16,13 +19,13 @@ def cosd(x):
 
     Parameters
     ----------
-    x : float
-        Angle in Degrees
+    x : float or array-like
+        Angle in Degrees.
 
     Returns
     -------
-    y : float
-        Cosine of given angle
+    y : float or numpy.ndarray
+        Cosine of given angle.
 
     Examples
     --------
@@ -35,8 +38,8 @@ def cosd(x):
     -0.5
 
     """
-    if isinstance(x, list):
-        x = np.asarray(x)
+    if isinstance(x, (list, tuple, np.ndarray)):
+        x = np.copy(x)
     return np.cos(x*DEG2RAD)
 
 def sind(x):
@@ -48,13 +51,13 @@ def sind(x):
 
     Parameters
     ----------
-    x : float
-        Angle in Degrees
+    x : float or array-like
+        Angle in Degrees.
 
     Returns
     -------
-    y : float
-        Sine of given angle
+    y : float or numpy.ndarray
+        Sine of given angle.
 
     Examples
     --------
@@ -67,8 +70,8 @@ def sind(x):
     -0.86602540378
 
     """
-    if isinstance(x, list):
-        x = np.asarray(x)
+    if isinstance(x, (list, tuple, np.ndarray)):
+        x = np.copy(x)
     return np.sin(x*DEG2RAD)
 
 def skew(x):
@@ -77,12 +80,12 @@ def skew(x):
 
     Parameters
     ----------
-    x : array
+    x : array-like
         3-element array with values to be ordered in a skew-symmetric matrix.
 
     Returns
     -------
-    X : ndarray
+    X : numpy.ndarray
         3-by-3 numpy array of the skew-symmetric matrix.
 
     Examples
@@ -104,6 +107,8 @@ def skew(x):
     .. [Wiki_skew] https://en.wikipedia.org/wiki/Skew-symmetric_matrix
 
     """
+    if isinstance(x, (list, tuple, np.ndarray)):
+        x = np.copy(x)
     if len(x) != 3:
         raise ValueError("Input must be an array with three elements")
     return np.array([[0, -x[2], x[1]], [x[2], 0, -x[0]], [-x[1], x[0], 0.0]])
