@@ -331,7 +331,7 @@ def axang2quat(axis: np.ndarray, angle: Union[int, float], rad: bool = True) -> 
 
     """
     if axis is None:
-        return [1.0, 0.0, 0.0, 0.0]
+        return np.array([1.0, 0.0, 0.0, 0.0])
     if len(axis) != 3:
         raise ValueError()
     axis /= np.linalg.norm(axis)
@@ -362,9 +362,9 @@ def quat2axang(q: np.ndarray) -> Tuple[np.ndarray, float]:
 
     """
     if q is None:
-        return [0.0, 0.0, 0.0], 1.0
+        return np.array([0.0, 0.0, 0.0]), 1.0
     if len(q) != 4:
-        return None
+        raise ValueError(f"The quaternion must be a 4-element array, not {len(q)}-element array.")
     # Normalize input quaternion
     q /= np.linalg.norm(q)
     axis = np.copy(q[1:])
@@ -609,7 +609,7 @@ def rotation(ax: Union[str, int] = None, ang: float = 0.0) -> np.ndarray:
 
 def rot_seq(axes: Union[list, str] = None, angles: Union[list, float] = None) -> np.ndarray:
     """
-    Direciton Cosine Matrix from set of axes and angles.
+    Direction Cosine Matrix from set of axes and angles.
 
     The rotation matrix :math:`\\mathbf{R}` is created from the given list of
     angles rotating around the given axes order.
@@ -673,7 +673,7 @@ def rot_seq(axes: Union[list, str] = None, angles: Union[list, float] = None) ->
 
 def dcm2quat(R: np.ndarray) -> np.ndarray:
     """
-    Quaternion from Direct Cosine Matrix.
+    Quaternion from Direction Cosine Matrix.
 
     Parameters
     ----------
