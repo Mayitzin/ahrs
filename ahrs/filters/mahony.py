@@ -271,7 +271,8 @@ from ..common.orientation import q_prod, acc2q, am2q, q2R
 
 
 class Mahony:
-    """Mahony's Nonlinear Complementary Filter on SO(3)
+    """
+    Mahony's Nonlinear Complementary Filter on SO(3)
 
     If ``acc`` and ``gyr`` are given as parameters, the orientations will be
     immediately computed with method ``updateIMU``.

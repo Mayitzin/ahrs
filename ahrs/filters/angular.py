@@ -372,7 +372,8 @@ class AngularRate:
         return Q
 
     def update(self, q: np.ndarray, gyr: np.ndarray, method: str = 'closed', order: int = 1, dt: float = None) -> np.ndarray:
-        """Update the quaternion estimation
+        """
+        Update the quaternion estimation
 
         Estimate quaternion :math:`\\mathbf{q}_{t+1}` from given a-priori
         quaternion :math:`\\mathbf{q}_t` with a given angular rate measurement

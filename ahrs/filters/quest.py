@@ -202,9 +202,14 @@ References
 from typing import Union
 import numpy as np
 
-from ..common.mathfuncs import *
+from ..common.mathfuncs import cosd
+from ..common.mathfuncs import sind
+from ..common.constants import MUNICH_LATITUDE
+from ..common.constants import MUNICH_LONGITUDE
+from ..common.constants import MUNICH_HEIGHT
 from ..utils.wmm import WMM
 from ..utils.wgs84 import WGS
+
 # Reference Observations in Munich, Germany
 GRAVITY = WGS().normal_gravity(MUNICH_LATITUDE, MUNICH_HEIGHT)
 wmm = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT)
@@ -280,7 +285,8 @@ class QUEST:
             self.Q = self._compute_all()
 
     def _compute_all(self) -> np.ndarray:
-        """Estimate the quaternions given all data.
+        """
+        Estimate the quaternions given all data.
 
         Attributes ``acc`` and ``mag`` must contain data.
 
@@ -299,7 +305,8 @@ class QUEST:
         return np.array([self.estimate(self.acc[t], self.mag[t]) for t in range(num_samples)])
 
     def estimate(self, acc: np.ndarray, mag: np.ndarray) -> np.ndarray:
-        """Attitude Estimation.
+        """
+        Attitude Estimation.
 
         Parameters
         ----------

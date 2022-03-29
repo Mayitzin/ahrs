@@ -696,9 +696,9 @@ def adaptive_gain(gain: float, a_local: np.ndarray, t1: float = 0.1, t2: float =
     a_local : numpy.ndarray
         Measured local acceleration vector.
     t1 : float, default: 0.1
-        First threshold
+        First threshold.
     t2 : float, default: 0.2
-        Second threshold
+        Second threshold.
     g : float, default: 9.809196
         Reference gravitational acceleration in m/s^2. The estimated gravity in
         Munich, Germany (``9.809196``) is used as default reference value.
@@ -706,7 +706,7 @@ def adaptive_gain(gain: float, a_local: np.ndarray, t1: float = 0.1, t2: float =
     Returns
     -------
     alpha : float
-        Gain factor
+        Gain factor.
 
     Examples
     --------
@@ -842,7 +842,8 @@ class AQUA:
         return Q
 
     def Omega(self, x: np.ndarray) -> np.ndarray:
-        """Omega operator.
+        """
+        Omega operator.
 
         Given a vector :math:`\\mathbf{x}\\in\\mathbb{R}^3`, return a
         :math:`4\\times 4` matrix of the form:
@@ -892,7 +893,7 @@ class AQUA:
         Quaternion from Earth-Field Observations
 
         Algebraic estimation of a quaternion as a function of an observation of
-        the Earth's gravitational and magnetic fields.
+        the Earth's gravitational force and magnetic fields.
 
         It decomposes the quaternion :math:`\\mathbf{q}` into two auxiliary
         quaternions :math:`\\mathbf{q}_{\\mathrm{acc}}` and

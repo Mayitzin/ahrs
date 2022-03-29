@@ -232,10 +232,12 @@ References
 """
 
 import numpy as np
-from ..common.constants import *
+from ..common.constants import MUNICH_LATITUDE
+from ..common.constants import MUNICH_LONGITUDE
+from ..common.constants import MUNICH_HEIGHT
 from ..common.orientation import q_prod, q_conj
 
-# Reference Observations in Munich, Germany
+# Reference Observations in Munich, Germany at current date
 from ..utils.wmm import WMM
 MAG = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT).magnetic_elements
 

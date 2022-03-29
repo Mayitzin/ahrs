@@ -517,7 +517,7 @@ class Madgwick:
             self.Q = self._compute_all()
 
     def _set_gain(self, **kwargs) -> None:
-        """Set the gain parameter"""
+        """Set the gain parameter."""
         self.gain_imu: float = kwargs.get('gain_imu', 0.033)
         self.gain_marg: float = kwargs.get('gain_marg', 0.041)
         self.gain: float = kwargs.get('beta')  # Setting gain with `beta` will be removed in the future.

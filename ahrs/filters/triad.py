@@ -243,7 +243,11 @@ References
 
 import numpy as np
 from ..common.orientation import chiaverini
-from ..common.mathfuncs import *
+from ..common.constants import MUNICH_LATITUDE
+from ..common.constants import MUNICH_LONGITUDE
+from ..common.constants import MUNICH_HEIGHT
+from ..common.mathfuncs import cosd
+from ..common.mathfuncs import sind
 
 # Reference Observations in Munich, Germany
 from ..utils.wmm import WMM

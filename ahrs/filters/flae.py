@@ -334,7 +334,11 @@ References
 
 import warnings
 import numpy as np
-from ..common.mathfuncs import *
+from ..common.mathfuncs import cosd
+from ..common.mathfuncs import sind
+from ..common.constants import MUNICH_LATITUDE
+from ..common.constants import MUNICH_LONGITUDE
+from ..common.constants import MUNICH_HEIGHT
 
 warnings.filterwarnings('error')
 
@@ -352,7 +356,8 @@ def _assert_valid_method(method : str, valid_methods : list) -> None:
         raise ValueError(f"Given method '{method}' is not valid. Try '{joint_methods}'")
 
 class FLAE:
-    """Fast Linear Attitude Estimator
+    """
+    Fast Linear Attitude Estimator
 
     Parameters
     ----------

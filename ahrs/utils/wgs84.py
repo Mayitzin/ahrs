@@ -495,7 +495,8 @@ class WGS:
         self.is_geodetic &= np.isclose(self.w, EARTH_ROTATION)
 
     def normal_gravity(self, lat: float, h: float = 0.0) -> float:
-        """Normal Gravity on (or above) Ellipsoidal Surface
+        """
+        Normal Gravity on (or above) Ellipsoidal Surface
 
         Estimate the normal gravity on or above the surface of an ellipsoidal
         body using Somigliana's formula (on surface) and a series expansion
@@ -1060,7 +1061,8 @@ class WGS:
         return np.sqrt(5)*self.mass*self.a**2*((1-1/DYNAMIC_ELLIPTICITY)*EARTH_C20_DYN + EARTH_C22_DYN/np.sqrt(3))
 
 class WGSTest(unittest.TestCase):
-    """Test Gravitational Models
+    """
+    Test Gravitational Models
 
     All values used to test the WGS model are retrieved from its latest report
     as defined in Appendix B.
@@ -1070,7 +1072,7 @@ class WGSTest(unittest.TestCase):
 
     """
     def test_wgs84(self):
-        """Test WGS84 with Earth's properties"""
+        """Test WGS84 with Earth's properties."""
         wgs = WGS()
         self.assertAlmostEqual(wgs.a, 6_378_137.0, 1)
         self.assertAlmostEqual(wgs.f, 1/298.257223563, 7)

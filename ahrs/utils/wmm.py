@@ -214,9 +214,17 @@ import datetime
 import pkgutil
 from io import StringIO
 from typing import Union, Tuple, Dict
+
 # Third-Party Dependencies
 import numpy as np
-from ..common.constants import *
+from ..common.constants import EARTH_EQUATOR_RADIUS
+from ..common.constants import EARTH_POLAR_RADIUS
+from ..common.constants import EARTH_MEAN_RADIUS
+from ..common.constants import MUNICH_LATITUDE
+from ..common.constants import MUNICH_LONGITUDE
+from ..common.constants import MUNICH_HEIGHT
+from ..common.constants import DEG2RAD
+from ..common.constants import RAD2DEG
 from ..common.frames import ned2enu
 
 def geodetic2spherical(lat: float, lon: float, h: float, a: float = EARTH_EQUATOR_RADIUS/1000.0, b: float = EARTH_POLAR_RADIUS/1000.0) -> Tuple[float, float, float]:
@@ -555,7 +563,8 @@ class WMM:
         self.wmm_filename = 'WMM2015/WMM.COF' if self.date_dec < 2020.0 else 'WMM2020/WMM.COF'
 
     def denormalize_coefficients(self, latitude: float) -> None:
-        """Recursively estimate associated Legendre polynomials and derivatives
+        """
+        Recursively estimate associated Legendre polynomials and derivatives
         done in a recursive way as described by Michael Plett in [Wertz]_ for
         an efficient computation.
 
@@ -594,7 +603,7 @@ class WMM:
         where :math:`K` is either :math:`(n-m)/2` or :math:`(n-m-1)/2`,
         whichever is an integer. For a computational improvement, the terms are
         calculated recursively.
-        
+
         We have to denormalize the coefficients from Schmidt to Gauss. The
         Gauss functions :math:`P^{n, m}` are related to Schmidt functions
         :math:`P_n^m` as:
@@ -850,7 +859,8 @@ class WMM:
 
     @property
     def magnetic_elements(self) -> Dict[str, float]:
-        """Main geomagnetic elements in a dictionary
+        """
+        Main geomagnetic elements in a dictionary
 
         =======  =============================================
         Element  Definition

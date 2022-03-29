@@ -873,8 +873,12 @@ References
 """
 
 import numpy as np
-from ..common.orientation import q2R, ecompass, acc2q
-from ..common.mathfuncs import cosd, sind, skew
+from ..common.orientation import q2R
+from ..common.orientation import ecompass
+from ..common.orientation import acc2q
+from ..common.mathfuncs import cosd
+from ..common.mathfuncs import sind
+from ..common.mathfuncs import skew
 
 class EKF:
     """
@@ -1017,7 +1021,7 @@ class EKF:
         # Magnetic Reference Vector
         if mref is None:
             # Local magnetic reference of Munich, Germany
-            from ..common.mathfuncs import MUNICH_LATITUDE, MUNICH_LONGITUDE, MUNICH_HEIGHT
+            from ..common.constants import MUNICH_LATITUDE, MUNICH_LONGITUDE, MUNICH_HEIGHT
             from ..utils.wmm import WMM
             wmm = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT)
             self.m_ref = np.array([wmm.X, wmm.Y, wmm.Z]) if frame.upper() == 'NED' else np.array([wmm.Y, wmm.X, -wmm.Z])
@@ -1324,7 +1328,7 @@ class EKF:
         if mag is not None:
             m_norm = np.linalg.norm(mag)
             if m_norm == 0:
-                raise ValueError(f"Invalid geomagnetic field. Its magnitude must be greater than zero.")
+                raise ValueError("Invalid geomagnetic field. Its magnitude must be greater than zero.")
             self.z = np.r_[a, mag/m_norm]
         self.R = np.diag(np.repeat(self.noises[1:] if mag is not None else self.noises[1], 3))
         # ----- Prediction -----
