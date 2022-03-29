@@ -9,6 +9,6 @@ from . import orientation
 from . import geometry
 from . import frames
 
-from .mathfuncs import M_PI, DEG2RAD, RAD2DEG
+from .constants import M_PI, DEG2RAD, RAD2DEG
 from .quaternion import Quaternion
 from .dcm import DCM
