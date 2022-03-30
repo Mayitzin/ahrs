@@ -1060,55 +1060,5 @@ class WGS:
             raise NotImplementedError("The model must be Geodetic.")
         return np.sqrt(5)*self.mass*self.a**2*((1-1/DYNAMIC_ELLIPTICITY)*EARTH_C20_DYN + EARTH_C22_DYN/np.sqrt(3))
 
-class WGSTest(unittest.TestCase):
-    """
-    Test Gravitational Models
-
-    All values used to test the WGS model are retrieved from its latest report
-    as defined in Appendix B.
-
-    For the WELMEC reference gravity, only two example cases are provided,
-    which are also used to test it.
-
-    """
-    def test_wgs84(self):
-        """Test WGS84 with Earth's properties."""
-        wgs = WGS()
-        self.assertAlmostEqual(wgs.a, 6_378_137.0, 1)
-        self.assertAlmostEqual(wgs.f, 1/298.257223563, 7)
-        self.assertAlmostEqual(wgs.gm, 3.986004418e14, 7)
-        self.assertAlmostEqual(wgs.w, 7.292115e-5, 7)
-        self.assertAlmostEqual(wgs.b, 6_356_752.3142, 4)
-        self.assertAlmostEqual(wgs.first_eccentricity_squared, 8.1819190842622e-2**2, 7)
-        self.assertAlmostEqual(wgs.second_eccentricity_squared, 8.2094437949696e-2**2, 7)
-        self.assertAlmostEqual(wgs.linear_eccentricity, 5.2185400842339e5, 7)
-        self.assertAlmostEqual(wgs.aspect_ratio, 9.966471893352525e-1, 10)
-        self.assertAlmostEqual(wgs.curvature_polar_radius, 6399593.6258, 4)
-        self.assertAlmostEqual(wgs.arithmetic_mean_radius, 6371008.7714, 4)
-        self.assertAlmostEqual(wgs.authalic_sphere_radius, 6371007.181, 3)
-        self.assertAlmostEqual(wgs.equivolumetric_sphere_radius, 6371000.79, 2)
-        self.assertAlmostEqual(wgs.normal_gravity_constant, 3.44978650684084e-3, 10)
-        self.assertAlmostEqual(wgs.dynamical_form_factor, 1.082629821313e-3, 10)
-        self.assertAlmostEqual(wgs.second_degree_zonal_harmonic, -4.84166774985e-4, 10)
-        self.assertAlmostEqual(wgs.normal_gravity_potential, 6.26368517146e7, 4)
-        self.assertAlmostEqual(wgs.equatorial_normal_gravity, 9.7803253359, 10)
-        self.assertAlmostEqual(wgs.polar_normal_gravity, 9.8321849379, 10)
-        self.assertAlmostEqual(wgs.mean_normal_gravity, 9.7976432223, 10)
-        self.assertAlmostEqual(wgs.mass, 5.9721864e24, delta=1e17)
-        self.assertAlmostEqual(wgs.atmosphere_gravitational_constant, 3.43592e8, delta=1e3)
-        self.assertAlmostEqual(wgs.gravitational_constant_without_atmosphere, 3.986000982e14, delta=1e4)
-        self.assertAlmostEqual(wgs.dynamic_inertial_moment_about_Z, 8.0340094e37, delta=1e30)   # FAILS with report's reference
-        self.assertAlmostEqual(wgs.dynamic_inertial_moment_about_X, 8.00792178e37, delta=1e29)
-        self.assertAlmostEqual(wgs.dynamic_inertial_moment_about_Y, 8.0080748e37, delta=1e30)
-        self.assertAlmostEqual(wgs.geometric_inertial_moment_about_Z, 8.07302937e37, delta=1e29)
-        self.assertAlmostEqual(wgs.geometric_inertial_moment, 8.04672663e37, delta=1e29)
-        self.assertAlmostEqual(wgs.geometric_dynamic_ellipticity, 3.2581004e-3, 9)
-        del wgs
-
-    def test_welmec(self):
-        """Test WELMEC reference gravity"""
-        self.assertAlmostEqual(welmec_gravity(52.3, 80.0), 9.812484, 6)     # Braunschweig, Germany
-        self.assertAlmostEqual(welmec_gravity(60.0, 250.0), 9.818399, 6)    # Uppsala, Sweden
-
 if __name__ == '__main__':
     unittest.main()
