@@ -62,8 +62,8 @@ class TestAngularDistance(unittest.TestCase):
     def test_correct_values(self):
         self.assertEqual(ahrs.utils.angular_distance(np.identity(3), np.identity(3)), 0.0)
         self.assertGreaterEqual(ahrs.utils.angular_distance(np.random.random((3, 3))-0.5, np.random.random((3, 3))-0.5), 0.0)
-        self.assertEqual(ahrs.utils.angular_distance(self.R1, self.R2), 1.282213683073497)
-        self.assertEqual(ahrs.utils.angular_distance(self.R1.tolist(), self.R2.tolist()), 1.282213683073497)
+        self.assertAlmostEqual(ahrs.utils.angular_distance(self.R1, self.R2), 1.282213683073497)
+        self.assertAlmostEqual(ahrs.utils.angular_distance(self.R1.tolist(), self.R2.tolist()), 1.282213683073497)
 
     def test_guard_clauses(self):
         self.assertRaises(TypeError, ahrs.utils.angular_distance, np.identity(3), 3.0)
