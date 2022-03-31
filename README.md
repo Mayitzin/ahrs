@@ -170,7 +170,6 @@ array([ 0.94371436, -0.12767944, -0.14487813, -0.26853582])
 
 This class can be used to simultaneously handle an array with several quaternions at once.
 
-
 ```python
 >>> Q = QuaternionArray(np.random.random((3, 4))-0.5)
 >>> Q.view()

@@ -1354,7 +1354,7 @@ class Quaternion(np.ndarray):
         return np.allclose(self.A, np.array([1.0, 0.0, 0.0, 0.0]))
 
     def normalize(self) -> None:
-        """Normalize the quaternion"""
+        """Normalize the quaternion."""
         self.A /= np.linalg.norm(self.A)
 
     def product(self, q: np.ndarray) -> np.ndarray:
