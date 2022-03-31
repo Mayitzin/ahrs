@@ -249,10 +249,6 @@ from ..common.constants import MUNICH_HEIGHT
 from ..common.mathfuncs import cosd
 from ..common.mathfuncs import sind
 
-# Reference Observations in Munich, Germany
-from ..utils.wmm import WMM
-MAG = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT).magnetic_elements
-
 class TRIAD:
     """
     Tri-Axial Attitude Determination
@@ -322,28 +318,28 @@ class TRIAD:
         v2: np.ndarray = None,
         representation: str = 'rotmat',
         frame: str = 'NED'):
-        self._guard_clauses_parameters(representation, frame)
-        self._guard_clauses_vectors(w1, w2, v1, v2)
         self.representation: str = representation
         self.frame: str = frame
+        self._guard_clauses_parameters()
+        self._guard_clauses_vectors(w1, w2, v1, v2)
         # Input values
         self.w1: np.ndarray = np.copy(w1) if isinstance(w1, (list, np.ndarray)) else None
         self.w2: np.ndarray = np.copy(w2) if isinstance(w2, (list, np.ndarray)) else None
         # Reference frames
-        self.v1: np.ndarray = self._set_first_triad_reference(v1, frame)
-        self.v2: np.ndarray = self._set_second_triad_reference(v2, frame)
+        self.v1: np.ndarray = self._set_first_triad_reference(v1)
+        self.v2: np.ndarray = self._set_second_triad_reference(v2)
         # Compute values if samples given
         if self.w1 is not None and self.w2 is not None:
             self.A: np.ndarray = self._compute_all(self.representation)
 
-    def _guard_clauses_parameters(self, representation: str, frame: str) -> None:
-        for item in [representation, frame]:
+    def _guard_clauses_parameters(self) -> None:
+        for item in [self.representation, self.frame]:
             if not isinstance(item, str):
                 raise TypeError(f"{item} must be a string. Got {type(item)}")
-        if representation.lower() not in ['rotmat', 'quaternion']:
-            raise ValueError(f"Given representation '{representation}' is NOT valid. Try 'rotmat', or 'quaternion'")
-        if frame.upper() not in ['NED', 'ENU']:
-            raise ValueError(f"Given frame '{frame}' is NOT valid. Try 'NED' or 'ENU'")
+        if self.representation.lower() not in ['rotmat', 'quaternion']:
+            raise ValueError(f"Given representation '{self.representation}' is NOT valid. Try 'rotmat', or 'quaternion'")
+        if self.frame.upper() not in ['NED', 'ENU']:
+            raise ValueError(f"Given frame '{self.frame}' is NOT valid. Try 'NED' or 'ENU'")
 
     def _guard_clauses_vectors(self, *vectors) -> None:
         for item in vectors:
@@ -356,23 +352,24 @@ class TRIAD:
         if w1.shape != w2.shape:
             raise ValueError(f"Vectors must have the same shape. w1: {w1.shape}, w2: {w2.shape}")
 
-    def _set_first_triad_reference(self, value: np.ndarray, frame: str) -> None:
-        if value is None:
-            ref = np.array([0.0, 0.0, 1.0]) if frame.upper == 'NED' else np.array([0.0, 0.0, -1.0])
-        else:
-            ref = np.copy(value)
-            ref /= np.linalg.norm(ref)
-        return ref
+    def _set_first_triad_reference(self, vector: np.ndarray) -> np.ndarray:
+        if vector is None:
+            ref = np.array([0.0, 0.0, 1.0]) if self.frame.upper() == 'NED' else np.array([0.0, 0.0, -1.0])
+            return ref
+        return np.copy(vector)/np.linalg.norm(vector)
 
-    def _set_second_triad_reference(self, value: np.ndarray, frame: str) -> None:
+    def _set_second_triad_reference(self, value: np.ndarray) -> np.ndarray:
         if isinstance(value, float):
             if abs(value) > 90:
                 raise ValueError(f"Dip Angle must be within range [-90, 90]. Got {value}")
-            ref = np.array([cosd(value), 0.0, sind(value)]) if frame.upper() == 'NED' else np.array([0.0, cosd(value), -sind(value)])
+            ref = np.array([cosd(value), 0.0, sind(value)]) if self.frame.upper() == 'NED' else np.array([0.0, cosd(value), -sind(value)])
         elif isinstance(value, (np.ndarray, list)):
             ref = np.copy(value)
         else:
-            ref = np.array([MAG['X'], MAG['Y'], MAG['Z']])
+            # Reference Observations in Munich, Germany
+            from ..utils.wmm import WMM
+            mag = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT).magnetic_elements
+            ref = np.array([mag['X'], mag['Y'], mag['Z']])
         return ref/np.linalg.norm(ref)
 
     def _compute_all(self, representation: str) -> np.ndarray:
@@ -442,7 +439,7 @@ class TRIAD:
 
         """
         if representation.lower() not in ['rotmat', 'quaternion']:
-            raise ValueError("Wrong representation type. Try 'rotmat', or 'quaternion'")
+            raise ValueError(f"Given representation '{representation}' is NOT valid. Try 'rotmat', or 'quaternion'")
         w1, w2 = np.copy(w1), np.copy(w2)
         # Normalized Vectors
         w1 /= np.linalg.norm(w1)                            # (eq. 12-39a)
