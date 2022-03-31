@@ -965,7 +965,7 @@ class EKF:
     acc : numpy.ndarray, default: None
         N-by-3 array with measurements of acceleration in in m/s^2
     mag : numpy.ndarray, default: None
-        N-by-3 array with measurements of magnetic field in mT
+        N-by-3 array with measurements of magnetic field in nT
     frequency : float, default: 100.0
         Sampling frequency in Herz.
     frame : str, default: 'NED'
@@ -1304,7 +1304,7 @@ class EKF:
         acc : numpy.ndarray
             Sample of tri-axial Accelerometer in m/s^2.
         mag : numpy.ndarray
-            Sample of tri-axial Magnetometer in uT.
+            Sample of tri-axial Magnetometer in nT.
         dt : float, default: None
             Time step, in seconds, between consecutive Quaternions.
 
