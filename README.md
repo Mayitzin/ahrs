@@ -1,6 +1,6 @@
 # AHRS: Attitude and Heading Reference Systems
 
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/Mayitzin/ahrs/Build%20Python%20Package)
+[![Python application](https://github.com/Mayitzin/ahrs/actions/workflows/python-app.yml/badge.svg)](https://github.com/Mayitzin/ahrs/actions/workflows/python-app.yml)
 ![docs](https://readthedocs.org/projects/ahrs/badge/?version=latest)
 ![PyPI - License](https://img.shields.io/pypi/l/ahrs)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/ahrs)
@@ -263,6 +263,6 @@ A comprehensive documentation, with examples, is now available in
 
 ## Note for future versions
 
-`ahrs` moves away from plotting and data handling submodules to better focus in the algorithmic parts. Submodules `io` and `plot` are not built in the package anymore and, eventually, will be entirely removed from the base code.
+`ahrs` moves away from plotting and data handling submodules to better focus in the algorithmic parts. Submodules `io` and `plot` are not built in the package anymore, and will be entirely removed from the base code in the next release.
 
 This way you can also choose your favorite libraries for data loading and visualization. This also means, getting rid of its dependency on `matplotlib` too.
