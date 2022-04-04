@@ -1104,30 +1104,32 @@ def chiaverini(dcm: np.ndarray) -> np.ndarray:
 
     .. math::
         \\begin{array}{rcl}
-        \\q_w &=& \\cos(\\theta / 2) \\\\
-        \\mathbf{q}_v &=& \\sin(\\theta / 2) \\mathbf{r}
+        q_w &=& \\cos \\big(\\frac{\\theta}{2}\\big) \\\\
+        \\mathbf{q}_v &=& \\sin \\big(\\frac{\\theta}{2}\\big) \\mathbf{r}
+        \\end{array}
 
     with :math:`q_w \\geq 0` for :math:`\\theta \\in [-\\pi, \\pi]`; :math:`q_w`
     is the scalar part, while :math:`\\mathbf{q}_v` is the vector part, and
     :math:`\\theta` is the rotation about the axis :math:`\\mathbf{r}`.
 
-    Knowing that the rotation matrix of a given unit quaternion is:
+    We know the rotation matrix of a given unit quaternion is:
 
-    .. math:
+    .. math::
         \\mathbf{R}(q_w, \\mathbf{q}_v) = (q_w^2 - \\mathbf{q}_v^T\\mathbf{q}_v)\\mathbf{I}_3 + 2\\mathbf{q}_v\\mathbf{q}_v^T + 2 q_w\\lfloor\\mathbf{q}_v\\rfloor
 
     where :math:`\\mathbf{I}_3` is the :math:`3\\times 3` identity matrix, and
-    :math:`\\lfloor\\mathbf{q}_v\\rfloor` is the [skew-symmetric matrix](https://en.wikipedia.org/wiki/Skew-symmetric_matrix)
-    of the vector part. Solving the equation above for the scalar and vector
-    parts:
+    :math:`\\lfloor\\mathbf{q}_v\\rfloor` is the `skew-symmetric matrix
+    <https://en.wikipedia.org/wiki/Skew-symmetric_matrix>`_ of the vector part.
+    Solving the equation above for the scalar and vector parts we get the
+    unitary quaternion:
 
     .. math::
         \\begin{array}{rcl}
-        q_w &=& \\frac{1}{2} \\sqrt{r_{00} + r_{11} + r_{22} + 1} \\\\
+        q_w &=& \\frac{1}{2} \\sqrt{R_{00} + R_{11} + R_{22} + 1} \\\\
         \\mathbf{q}_v &=& \\begin{bmatrix}
-            \\frac{1}{2} \\mathrm{sgn}(r_{21} - r_{12}) \\sqrt{r_{00} - r_{11} - r_{22} + 1} \\\\
-            \\frac{1}{2} \\mathrm{sgn}(r_{02} - r_{20}) \\sqrt{r_{11} - r_{22} - r_{00} + 1} \\\\
-            \\frac{1}{2} \\mathrm{sgn}(r_{10} - r_{01}) \\sqrt{r_{22} - r_{00} - r_{11} + 1}
+            \\frac{1}{2} \\mathrm{sgn}(R_{21} - R_{12}) \\sqrt{R_{00} - R_{11} - R_{22} + 1} \\\\
+            \\frac{1}{2} \\mathrm{sgn}(R_{02} - R_{20}) \\sqrt{R_{11} - R_{22} - R_{00} + 1} \\\\
+            \\frac{1}{2} \\mathrm{sgn}(R_{10} - R_{01}) \\sqrt{R_{22} - R_{00} - R_{11} + 1}
         \\end{bmatrix}
         \\end{array}
 
