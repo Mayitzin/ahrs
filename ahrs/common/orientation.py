@@ -1092,12 +1092,60 @@ def logR(R: np.ndarray) -> np.ndarray:
 
 def chiaverini(dcm: np.ndarray) -> np.ndarray:
     """
-    Quaternion from a Direction Cosine Matrix with Chiaverini's algebraic method [Chiaverini]_.
+    Quaternion from a Direction Cosine Matrix with Chiaverini's algebraic
+    method [Chiaverini]_.
+
+    Defining the unit quaternion as:
+
+    .. math::
+        \\mathbf{q} = \\begin{bmatrix} q_w & \\mathbf{q}_v \\end{bmatrix}
+
+    where
+
+    .. math::
+        \\begin{array}{rcl}
+        \\q_w &=& \\cos(\\theta / 2) \\\\
+        \\mathbf{q}_v &=& \\sin(\\theta / 2) \\mathbf{r}
+
+    with :math:`q_w \\geq 0` for :math:`\\theta \\in [-\\pi, \\pi]`; :math:`q_w`
+    is the scalar part, while :math:`\\mathbf{q}_v` is the vector part, and
+    :math:`\\theta` is the rotation about the axis :math:`\\mathbf{r}`.
+
+    Knowing that the rotation matrix of a given unit quaternion is:
+
+    .. math:
+        \\mathbf{R}(q_w, \\mathbf{q}_v) = (q_w^2 - \\mathbf{q}_v^T\\mathbf{q}_v)\\mathbf{I}_3 + 2\\mathbf{q}_v\\mathbf{q}_v^T + 2 q_w\\lfloor\\mathbf{q}_v\\rfloor
+
+    where :math:`\\mathbf{I}_3` is the :math:`3\\times 3` identity matrix, and
+    :math:`\\lfloor\\mathbf{q}_v\\rfloor` is the [skew-symmetric matrix](https://en.wikipedia.org/wiki/Skew-symmetric_matrix)
+    of the vector part. Solving the equation above for the scalar and vector
+    parts:
+
+    .. math::
+        \\begin{array}{rcl}
+        q_w &=& \\frac{1}{2} \\sqrt{r_{00} + r_{11} + r_{22} + 1} \\\\
+        \\mathbf{q}_v &=& \\begin{bmatrix}
+            \\frac{1}{2} \\mathrm{sgn}(r_{21} - r_{12}) \\sqrt{r_{00} - r_{11} - r_{22} + 1} \\\\
+            \\frac{1}{2} \\mathrm{sgn}(r_{02} - r_{20}) \\sqrt{r_{11} - r_{22} - r_{00} + 1} \\\\
+            \\frac{1}{2} \\mathrm{sgn}(r_{10} - r_{01}) \\sqrt{r_{22} - r_{00} - r_{11} + 1}
+        \\end{bmatrix}
+        \\end{array}
+
+    where :math:`\\mathrm{sgn}` is the sign function:
+
+    .. math::
+        \\mathrm{sgn}(x) =
+        \\left\\{
+        \\begin{array}{ll}
+            \\mathrm{-1} & \\: x < 0 \\\\
+            \\mathrm{1} & \\: \\mathrm{otherwise}
+        \\end{array}
+        \\right.
 
     Parameters
     ----------
     dcm : numpy.ndarray
-        3-by-3 or N-by-3-by-3 Direction Cosine Matrix.
+        3-by-3 or N-by-3-by-3 Direction Cosine Matrix (or Matrices).
 
     Returns
     -------
