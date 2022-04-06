@@ -119,6 +119,7 @@ CDI     Course Deviation Indicator
 CGM     Corrected Geomagnetic Coordinates
 CIRAS   Coriolis Inertial Rate and Acceleration Sensor
 CIRS    Conventional Inertial Reference System
+CLIK    Closed-Loop Inverse Kinematics
 CRS     Conventional Celestial Reference System
 CTP     Conventional Terrestrial Pole
 CTRS    Conventional Terrestrial Reference System
@@ -225,6 +226,7 @@ PDR     Pedestrian Dead Reckoning
 PF      Particle Filtering
 PIGA    Pendulous Integrating Gyroscopic Accelerometer
 PLC     Programmable Logic Controller
+PUMA    Programmable Universal Manipulation Arm
 QD      Quasi-Dipole
 QUEST   Quaternion Estimator
 RHR     Right-Hand Rule
