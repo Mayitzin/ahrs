@@ -1178,7 +1178,48 @@ def chiaverini(dcm: np.ndarray) -> np.ndarray:
 
 def hughes(dcm: np.ndarray) -> np.ndarray:
     """
-    Quaternion from a Direction Cosine Matrix with Hughe's method [Hughes]_.
+    Quaternion from a Direction Cosine Matrix with Hughes' method [Hughes]_.
+
+    Defining the quaternion (reluctantly called "Euler Parameters" in Hughes'
+    book) as:
+
+    .. math::
+        \\mathbf{q} = \\begin{bmatrix} \\eta & \\boldsymbol{\\epsilon} \\end{bmatrix}
+
+    where
+
+    .. math::
+        \\begin{array}{rcl}
+        \\eta &=& \\cos \\big(\\frac{\\phi}{2}\\big) \\\\
+        \\boldsymbol{\\epsilon} &=& \\sin \\big(\\frac{\\phi}{2}\\big) \\mathbf{a}
+        \\end{array}
+
+    where the quaternion is subject to the constraint
+    :math:`\\boldsymbol{\\epsilon}^T\\boldsymbol{\\epsilon}+\\eta^2=1`, and
+    :math:`\\phi` is the rotation about the unitary axis :math:`\\mathbf{a}`.
+
+    The rotation matrix associated to the quaternion is:
+
+    .. math::
+        \\mathbf{C} = (\\eta ^2 - \\boldsymbol{\\epsilon}^T\\boldsymbol{\\epsilon})\\mathbf{I} + 2\\boldsymbol{\\epsilon}\\boldsymbol{\\epsilon}^T - 2 \\eta\\boldsymbol{\\epsilon}^\\times
+
+    where :math:`\\mathbf{I}` is the :math:`3\\times 3` identity matrix, and
+    :math:`\\boldsymbol{\\epsilon}^\\times` is the `skew-symmetric matrix
+    <https://en.wikipedia.org/wiki/Skew-symmetric_matrix>`_ of
+    :math:`\\boldsymbol{\\epsilon}`.
+
+    Given :math:`\\mathbf{C}`, the quaternion components are botained as:
+
+    .. math::
+        \\begin{array}{rcl}
+        \\eta &=& \\pm\\frac{1}{2} \\big(1 + c_{11} + c_{22} + c_{33}\\big)^{1/2} \\\\
+        \\boldsymbol{\\epsilon} &=& \\frac{1}{4\\eta} \\begin{bmatrix}
+            c_{23} - c_{32} \\\\ c_{31} - c_{13} \\\\ c_{12} - c_{21}
+        \\end{bmatrix}
+        \\end{array}
+
+    Provided :math:`\\eta\\neq 0`. If :math:`\\eta =0`, then :math:`\\eta` is
+    simply :math:`\\mathbf{a}`.
 
     Parameters
     ----------
@@ -1193,11 +1234,11 @@ def hughes(dcm: np.ndarray) -> np.ndarray:
     tr = dcm.trace()
     if np.isclose(tr, 3.0):
         return np.array([1., 0., 0., 0.])   # No rotation. DCM is identity.
-    n = 0.5*np.sqrt(1.0 + tr)
+    n = 0.5*np.sqrt(1.0 + tr)       # (eq. 15)
     if np.isclose(n, 0):    # trace = -1: q_w = 0 (Pure Quaternion)
         e = np.sqrt((1.0+np.diag(dcm))/2.0)
     else:
-        e = 0.25*np.array([dcm[1, 2]-dcm[2, 1], dcm[2, 0]-dcm[0, 2], dcm[0, 1]-dcm[1, 0]])/n
+        e = 0.25*np.array([dcm[1, 2]-dcm[2, 1], dcm[2, 0]-dcm[0, 2], dcm[0, 1]-dcm[1, 0]])/n    # (eq. 16)
     return np.array([n, *e])
 
 def sarabandi(dcm: np.ndarray, eta: float = 0.0) -> np.ndarray:
