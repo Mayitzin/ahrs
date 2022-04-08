@@ -105,7 +105,6 @@ Loading and visualizing the data is left to the preference of the user.
    :hidden:
 
    constants
-   specialClasses
    attitude_representations
    metrics
    nomenclature
