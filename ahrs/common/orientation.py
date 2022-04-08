@@ -1176,7 +1176,7 @@ def chiaverini(dcm: np.ndarray) -> np.ndarray:
     Q /= np.linalg.norm(Q, axis=1)[:, None]
     return Q
 
-def hughes(dcm: np.ndarray) -> np.ndarray:
+def hughes(C: np.ndarray) -> np.ndarray:
     """
     Quaternion from a Direction Cosine Matrix with Hughes' method [Hughes]_.
 
@@ -1223,23 +1223,37 @@ def hughes(dcm: np.ndarray) -> np.ndarray:
 
     Parameters
     ----------
-    dcm : numpy.ndarray
-        3-by-3 Direction Cosine Matrix.
+    C : numpy.ndarray
+        3-by-3 or N-by-3-by-3 Direction Cosine Matrix (or Matrices).
 
     Returns
     -------
     q : numpy.ndarray
-        Quaternion.
+        4-dimensional or N-by-4 Quaternion array.
     """
-    tr = dcm.trace()
-    if np.isclose(tr, 3.0):
-        return np.array([1., 0., 0., 0.])   # No rotation. DCM is identity.
-    n = 0.5*np.sqrt(1.0 + tr)       # (eq. 15)
-    if np.isclose(n, 0):    # trace = -1: q_w = 0 (Pure Quaternion)
-        e = np.sqrt((1.0+np.diag(dcm))/2.0)
-    else:
-        e = 0.25*np.array([dcm[1, 2]-dcm[2, 1], dcm[2, 0]-dcm[0, 2], dcm[0, 1]-dcm[1, 0]])/n    # (eq. 16)
-    return np.array([n, *e])
+    C = np.copy(C)
+    if C.ndim not in [2, 3]:
+        raise ValueError(f"C must be a 2- or 3-dimensional array. It is {C.ndim}-dimensional.")
+    if C.shape[-2:] != (3, 3):
+        raise ValueError(f"C must be an array of shape 3-by-3 or N-by-3-by-3. Got {C.shape}")
+    if C.ndim < 3:
+        tr = C.trace()
+        if np.isclose(tr, 3.0):
+            return np.array([1., 0., 0., 0.])   # No rotation. DCM is identity.
+        n = 0.5*np.sqrt(1.0 + tr)               # (eq. 15)
+        if np.isclose(n, 0):                    # trace = -1: q_w = 0 (Pure Quaternion)
+            e = np.sqrt((1.0+np.diag(C))/2.0)
+        else:
+            e = 0.25*np.array([C[1, 2]-C[2, 1], C[2, 0]-C[0, 2], C[0, 1]-C[1, 0]])/n    # (eq. 16)
+        return np.array([n, *e])
+    tr = np.trace(C, axis1=1, axis2=2)
+    Q = np.zeros((C.shape[0], 4))
+    Q[:, 0] = 0.5*np.sqrt(1.0 + tr)             # (eq. 15)
+    Q[:, 1] = np.array(C[:, 1, 2]-C[:, 2, 1])   # (eq. 16)
+    Q[:, 2] = np.array(C[:, 2, 0]-C[:, 0, 2])
+    Q[:, 3] = np.array(C[:, 0, 1]-C[:, 1, 0])
+    Q[:, 1:] /= 4.0*Q[:, 0][:, None]
+    return Q
 
 def sarabandi(dcm: np.ndarray, eta: float = 0.0) -> np.ndarray:
     """
