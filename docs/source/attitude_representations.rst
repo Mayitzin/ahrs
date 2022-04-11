@@ -5,8 +5,8 @@ Attitude Representations
 An attitude describes the orientation of a frame with respect to a reference
 frame.
 
-Common attitude representations include Euler angles, Euler-Rodrigues, Gibb's
-vectors quaternions, and more.
+Common attitude representations include Rotation Matrices, Euler angles,
+Euler-Rodrigues, Gibb's vectors quaternions, and more.
 
 Two main representations are considered:
 

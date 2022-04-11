@@ -1194,7 +1194,7 @@ def hughes(C: np.ndarray) -> np.ndarray:
         \\boldsymbol{\\epsilon} &=& \\sin \\big(\\frac{\\phi}{2}\\big) \\mathbf{a}
         \\end{array}
 
-    where the quaternion is subject to the constraint
+    The quaternion is subject to the constraint
     :math:`\\boldsymbol{\\epsilon}^T\\boldsymbol{\\epsilon}+\\eta^2=1`, and
     :math:`\\phi` is the rotation about the unitary axis :math:`\\mathbf{a}`.
 

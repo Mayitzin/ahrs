@@ -104,8 +104,8 @@ Loading and visualizing the data is left to the preference of the user.
    :caption: Tools
    :hidden:
 
-   constants
    attitude_representations
+   constants
    metrics
    nomenclature
 
