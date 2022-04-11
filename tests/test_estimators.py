@@ -93,6 +93,14 @@ class TestTRIAD(unittest.TestCase):
     def test_wrong_vectors(self):
         self.assertRaises(ValueError, ahrs.filters.TRIAD, w1=[1.0, 2.0], w2=[2.0, 3.0, 4.0])
         self.assertRaises(ValueError, ahrs.filters.TRIAD, w1=np.copy(1.0), w2=[2.0, 3.0, 4.0])
+        self.assertRaises(ValueError, ahrs.filters.TRIAD, w1=[2.0, 3.0, 4.0], w2=np.copy(1.0))
+        self.assertRaises(ValueError, ahrs.filters.TRIAD, w1=np.zeros(3), w2=[2.0, 3.0, 4.0])
+        self.assertRaises(ValueError, ahrs.filters.TRIAD, w1=[2.0, 3.0, 4.0], w2=np.zeros(3))
+        self.assertRaises(ValueError, ahrs.filters.TRIAD, w1=[1., 2., 3.], w2=[2., 3., 4.], v1=[1.0, 2.0], v2=[2.0, 3.0, 4.0])
+        self.assertRaises(ValueError, ahrs.filters.TRIAD, w1=[1., 2., 3.], w2=[2., 3., 4.], v1=np.copy(1.0), v2=[2.0, 3.0, 4.0])
+        self.assertRaises(ValueError, ahrs.filters.TRIAD, w1=[1., 2., 3.], w2=[2., 3., 4.], v1=[2.0, 3.0, 4.0], v2=np.copy(1.0))
+        self.assertRaises(ValueError, ahrs.filters.TRIAD, w1=[1., 2., 3.], w2=[2., 3., 4.], v1=np.zeros(3), v2=[2.0, 3.0, 4.0])
+        self.assertRaises(ValueError, ahrs.filters.TRIAD, w1=[1., 2., 3.], w2=[2., 3., 4.], v1=[2.0, 3.0, 4.0], v2=np.zeros(3))
 
 class TestSAAM(unittest.TestCase):
     def setUp(self) -> None:
