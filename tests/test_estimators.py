@@ -91,6 +91,12 @@ class TestTRIAD(unittest.TestCase):
         self.assertRaises(ValueError, ahrs.filters.TRIAD, frame='Up')
 
     def test_wrong_vectors(self):
+        self.assertRaises(TypeError, ahrs.filters.TRIAD, w1=1.0)
+        self.assertRaises(TypeError, ahrs.filters.TRIAD, w2=1.0)
+        self.assertRaises(TypeError, ahrs.filters.TRIAD, w1=1.0, w2=2.0)
+        self.assertRaises(TypeError, ahrs.filters.TRIAD, w1="[1., 2., 3.]", w2="[2., 3., 4.]")
+        self.assertRaises(TypeError, ahrs.filters.TRIAD, w1=True)
+        self.assertRaises(TypeError, ahrs.filters.TRIAD, w2=True)
         self.assertRaises(ValueError, ahrs.filters.TRIAD, w1=[1.0, 2.0], w2=[2.0, 3.0, 4.0])
         self.assertRaises(ValueError, ahrs.filters.TRIAD, w1=np.copy(1.0), w2=[2.0, 3.0, 4.0])
         self.assertRaises(ValueError, ahrs.filters.TRIAD, w1=[2.0, 3.0, 4.0], w2=np.copy(1.0))
