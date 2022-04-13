@@ -344,7 +344,9 @@ class TRIAD:
     def _guard_clauses_vectors(self, *vectors) -> None:
         for item in vectors:
             if not isinstance(item, (list, np.ndarray, type(None))):
-                raise TypeError(f"{item} must be a list or numpy.ndarray. It is {type(item)}")
+                raise TypeError(f"Vectors must be given in a list or numpy.ndarray. It is {type(item)}")
+            if isinstance(item, type(None)):
+                continue
             if np.linalg.norm(item) == 0:
                 raise ValueError("Vector must be non-zero.")
             item_copy = np.copy(item)
@@ -353,7 +355,7 @@ class TRIAD:
             if item_copy.shape[-1] != 3:
                 raise ValueError(f"Vector must have 3 items. It has {item_copy.shape[-1]}.")
         w1, w2, *_ = vectors
-        if w1 is None and w2 is None:
+        if w1 is None or w2 is None:
             return None
         w1, w2 = np.copy(w1), np.copy(w2)
         if w1.shape != w2.shape:
