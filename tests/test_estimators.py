@@ -142,8 +142,18 @@ class TestSAAM(unittest.TestCase):
         self.assertRaises(TypeError, ahrs.filters.SAAM, acc=self.Rg, mag=2.0)
         self.assertRaises(TypeError, ahrs.filters.SAAM, acc=1.0, mag=self.Rm)
         self.assertRaises(TypeError, ahrs.filters.SAAM, acc="self.Rg", mag="self.Rm")
+        self.assertRaises(TypeError, ahrs.filters.SAAM, acc=[1.0, 2.0, 3.0], mag=True)
+        self.assertRaises(TypeError, ahrs.filters.SAAM, acc=True, mag=[1.0, 2.0, 3.0])
         self.assertRaises(ValueError, ahrs.filters.SAAM, acc=[1.0, 2.0], mag=[2.0, 3.0, 4.0])
         self.assertRaises(ValueError, ahrs.filters.SAAM, acc=[1.0, 2.0, 3.0, 4.0], mag=[2.0, 3.0, 4.0, 5.0])
+
+    def test_wrong_representation(self):
+        self.assertRaises(TypeError, ahrs.filters.SAAM, acc=self.Rg, mag=self.Rm, representation=1.0)
+        self.assertRaises(TypeError, ahrs.filters.SAAM, acc=self.Rg, mag=self.Rm, representation=['quaternion'])
+        self.assertRaises(TypeError, ahrs.filters.SAAM, acc=self.Rg, mag=self.Rm, representation=None)
+        self.assertRaises(ValueError, ahrs.filters.SAAM, acc=self.Rg, mag=self.Rm, representation='axisangle')
+        self.assertRaises(ValueError, ahrs.filters.SAAM, acc=self.Rg, mag=self.Rm, representation='rpy')
+        self.assertRaises(ValueError, ahrs.filters.SAAM, acc=self.Rg, mag=self.Rm, representation='DCM')
 
 class TestFAMC(unittest.TestCase):
     def setUp(self) -> None:

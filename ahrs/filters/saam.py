@@ -179,7 +179,9 @@ class SAAM:
             if representation == 'rotmat':
                 self.A = Quaternion(self.Q).to_DCM() if self.Q.ndim < 2 else QuaternionArray(self.Q).to_DCM()
 
-    def _guard_clauses_parameters(self, representation) -> None:
+    def _guard_clauses_parameters(self, representation: str) -> None:
+        if not isinstance(representation, str):
+            raise TypeError(f"Representation must be a string. Got {type(representation)}.")
         if representation.lower() not in ['rotmat', 'quaternion']:
             raise ValueError(f"Given representation '{representation}' is NOT valid. Try 'quaternion, or 'rotmat'")
 
