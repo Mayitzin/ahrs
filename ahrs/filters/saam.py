@@ -132,7 +132,7 @@ class SAAM:
     acc : numpy.ndarray, default: None
         N-by-3 array with measurements of acceleration in in m/s^2
     mag : numpy.ndarray, default: None
-        N-by-3 array with measurements of magnetic field in mT
+        N-by-3 array with measurements of magnetic field in nT
     representation : str, default: ``'quaternion'``
         Attitude representation. Options are ``'rotmat'`` or ``'quaternion'``.
 
@@ -143,8 +143,11 @@ class SAAM:
     mag : numpy.ndarray
         N-by-3 array with N magnetometer samples.
     Q : numpy.ndarray, default: None
-        M-by-4 Array with all estimated quaternions, where M is the number of
-        samples. Equal to None when no estimation is performed.
+        M-by-4 Array with all estimated orientations as quaternions, where M is
+        the number of samples. Equal to None when no estimation is performed.
+    A : numpy.ndarray, default: None
+        3-by-3 or M-by-3-by-3 Array with all estimated orientarions as rotation
+        matrices, where M is the number of rotations.
 
     Raises
     ------
@@ -173,6 +176,7 @@ class SAAM:
         self._guard_clauses_parameters(representation)
         self.acc: np.ndarray = acc
         self.mag: np.ndarray = mag
+        self.representation: str = representation
         self.Q: np.ndarray = None
         if self.acc is not None and self.mag is not None:
             self.Q = self._compute_all(self.acc, self.mag)
@@ -183,7 +187,7 @@ class SAAM:
         if not isinstance(representation, str):
             raise TypeError(f"Representation must be a string. Got {type(representation)}.")
         if representation.lower() not in ['rotmat', 'quaternion']:
-            raise ValueError(f"Given representation '{representation}' is NOT valid. Try 'quaternion, or 'rotmat'")
+            raise ValueError(f"Given representation '{representation}' is NOT valid. Try 'quaternion', or 'rotmat'")
 
     def _assert_observations(self, acc: np.ndarray, mag: np.ndarray) -> None:
         if acc.shape != mag.shape:

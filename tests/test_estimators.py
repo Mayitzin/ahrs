@@ -154,6 +154,7 @@ class TestSAAM(unittest.TestCase):
         self.assertRaises(ValueError, ahrs.filters.SAAM, acc=self.Rg, mag=self.Rm, representation='axisangle')
         self.assertRaises(ValueError, ahrs.filters.SAAM, acc=self.Rg, mag=self.Rm, representation='rpy')
         self.assertRaises(ValueError, ahrs.filters.SAAM, acc=self.Rg, mag=self.Rm, representation='DCM')
+        self.assertRaises(AttributeError, getattr, ahrs.filters.SAAM(self.Rg, self.Rm, representation='quaternion'), 'A')
 
 class TestFAMC(unittest.TestCase):
     def setUp(self) -> None:
