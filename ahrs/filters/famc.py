@@ -232,6 +232,8 @@ class FAMC:
         """
         _assert_iterables(self.acc, 'acc')
         _assert_iterables(self.mag, 'mag')
+        self.acc = np.copy(self.acc)
+        self.mag = np.copy(self.mag)
         if self.acc.shape != self.mag.shape:
             raise ValueError("acc and mag are not the same size")
         if self.acc.ndim < 2:

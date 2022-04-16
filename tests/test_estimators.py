@@ -177,6 +177,19 @@ class TestFAMC(unittest.TestCase):
         orientation = ahrs.filters.FAMC(self.Rg, self.Rm)
         self.assertLess(np.nanmean(ahrs.utils.metrics.qad(orientation.Q, self.Qts)), self.decimal_precision)
 
+    def test_wrong_input_vectors(self):
+        self.assertRaises(TypeError, ahrs.filters.FAMC, acc=1.0, mag=2.0)
+        self.assertRaises(TypeError, ahrs.filters.FAMC, acc=self.Rg, mag=2.0)
+        self.assertRaises(TypeError, ahrs.filters.FAMC, acc=1.0, mag=self.Rm)
+        self.assertRaises(TypeError, ahrs.filters.FAMC, acc="self.Rg", mag="self.Rm")
+        self.assertRaises(TypeError, ahrs.filters.FAMC, acc=[1.0, 2.0, 3.0], mag=True)
+        self.assertRaises(TypeError, ahrs.filters.FAMC, acc=True, mag=[1.0, 2.0, 3.0])
+        self.assertRaises(ValueError, ahrs.filters.FAMC, acc=[1.0, 2.0], mag=[2.0, 3.0, 4.0])
+        self.assertRaises(ValueError, ahrs.filters.FAMC, acc=[1.0, 2.0, 3.0, 4.0], mag=[2.0, 3.0, 4.0, 5.0])
+
+    def test_wrong_attribute_access(self):
+        self.assertRaises(AttributeError, getattr, ahrs.filters.FAMC(self.Rg[0], self.Rm[0]), 'A')
+
 class TestFLAE(unittest.TestCase):
     def setUp(self) -> None:
         # Create random attitudes
