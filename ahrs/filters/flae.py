@@ -351,6 +351,8 @@ def _assert_iterables(item, item_name: str = 'iterable'):
         raise TypeError(f"{item_name} must be given as an array. Got {type(item)}")
 
 def _assert_valid_method(method : str, valid_methods : list) -> None:
+    if not isinstance(method, str):
+        raise TypeError(f"method must be given as a string. Got {type(method)}")
     if method not in valid_methods:
         joint_methods = "', '".join(valid_methods[:-1]) + "' or '" + valid_methods[-1]
         raise ValueError(f"Given method '{method}' is not valid. Try '{joint_methods}'")
@@ -396,23 +398,23 @@ class FLAE:
     Or estimate all quaternions at once by giving the data to the constructor.
     All estimated quaternions are stored in attribute ``Q``.
 
-    >>> orientation = FLAE(acc=acc_data, mag=mag_Data, method='eig')
+    >>> orientation = FLAE(acc=acc_data, mag=mag_data, method='eig')
     >>> orientation.Q.shape
     (1000, 4)
 
     """
     def __init__(self, acc: np.ndarray = None, mag: np.ndarray = None, method: str = 'symbolic', **kw):
-        self.acc = acc
-        self.mag = mag
-        self.method = method
+        self.acc: np.ndarray = acc
+        self.mag: np.ndarray = mag
+        self.method: str = method
         # Reference measurements
-        mdip = kw.get('magnetic_dip')                       # Magnetic dip, in degrees
-        mag_ref = np.array([MAG['X'], MAG['Y'], MAG['Z']]) if mdip is None else np.array([cosd(mdip), 0., -sind(mdip)])
+        mdip: float = kw.get('magnetic_dip')                       # Magnetic dip, in degrees
+        mag_ref: np.ndarray = np.array([MAG['X'], MAG['Y'], MAG['Z']]) if mdip is None else np.array([cosd(mdip), 0., -sind(mdip)])
         mag_ref /= np.linalg.norm(mag_ref)
-        acc_ref = np.array([0.0, 0.0, 1.0])
+        acc_ref: np.ndarray = np.array([0.0, 0.0, 1.0])
         self.ref = np.vstack((acc_ref, mag_ref))
         # Weights of sensors
-        self.a = kw.get('weights', np.array([0.5, 0.5]))
+        self.a: np.ndarray = kw.get('weights', np.array([0.5, 0.5]))
         self.a /= np.sum(self.a)
         if self.acc is not None and self.mag is not None:
             self.Q = self._compute_all()
@@ -430,6 +432,10 @@ class FLAE:
             of samples.
 
         """
+        _assert_iterables(self.acc, 'Gravitational acceleration vector')
+        _assert_iterables(self.mag, 'Geomagnetic field vector')
+        self.acc = np.copy(self.acc)
+        self.mag = np.copy(self.mag)
         if self.acc.shape != self.mag.shape:
             raise ValueError("acc and mag are not the same size")
         if self.acc.ndim < 2:
@@ -441,7 +447,7 @@ class FLAE:
         return np.array([
             [ Hx[0],   0.0, -Hx[2],  Hx[1]],
             [ 0.0,   Hx[0],  Hx[1],  Hx[2]],
-            [-Hx[2], Hx[1], -Hx[0],   0.0],
+            [-Hx[2], Hx[1], -Hx[0],    0.0],
             [ Hx[1], Hx[2],    0.0, -Hx[0]]])
 
     def _P2Hy(self, Hy: np.ndarray) -> np.ndarray:
@@ -469,8 +475,8 @@ class FLAE:
         mag : numpy.ndarray
             Sample of tri-axial Magnetometer.
         method : str, default: 'symbolic'
-            Method used to estimate the attitude. Options are: 'symbolic', 'eig'
-            and 'newton'.
+            Method used to estimate the attitude. Options are: ``'symbolic'``,
+            ``'eig'`` and ``'newton'``.
 
         Returns
         -------
