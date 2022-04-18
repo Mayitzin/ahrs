@@ -214,6 +214,25 @@ class TestFLAE(unittest.TestCase):
         orientation = ahrs.filters.FLAE(self.Rg, self.Rm, method='newton')
         self.assertLess(np.nanmean(ahrs.utils.metrics.qad(orientation.Q, self.Qts)), self.noise_sigma)
 
+    def test_wrong_input_vectors(self):
+        self.assertRaises(TypeError, ahrs.filters.FLAE, acc=1.0, mag=2.0)
+        self.assertRaises(TypeError, ahrs.filters.FLAE, acc=self.Rg, mag=2.0)
+        self.assertRaises(TypeError, ahrs.filters.FLAE, acc=1.0, mag=self.Rm)
+        self.assertRaises(TypeError, ahrs.filters.FLAE, acc="self.Rg", mag="self.Rm")
+        self.assertRaises(TypeError, ahrs.filters.FLAE, acc=[1.0, 2.0, 3.0], mag=True)
+        self.assertRaises(TypeError, ahrs.filters.FLAE, acc=True, mag=[1.0, 2.0, 3.0])
+        self.assertRaises(ValueError, ahrs.filters.FLAE, acc=[1.0, 2.0], mag=[2.0, 3.0, 4.0])
+        self.assertRaises(ValueError, ahrs.filters.FLAE, acc=[1.0, 2.0, 3.0, 4.0], mag=[2.0, 3.0, 4.0, 5.0])
+
+    def test_wrong_method(self):
+        self.assertRaises(TypeError, ahrs.filters.FLAE, self.Rg, self.Rm, method=1)
+        self.assertRaises(TypeError, ahrs.filters.FLAE, self.Rg, self.Rm, method=3.14159)
+        self.assertRaises(TypeError, ahrs.filters.FLAE, self.Rg, self.Rm, method=False)
+        self.assertRaises(TypeError, ahrs.filters.FLAE, self.Rg, self.Rm, method=None)
+        self.assertRaises(TypeError, ahrs.filters.FLAE, self.Rg, self.Rm, method=['symbolic'])
+        self.assertRaises(TypeError, ahrs.filters.FLAE, self.Rg, self.Rm, method=('symbolic',))
+        self.assertRaises(ValueError, ahrs.filters.FLAE, self.Rg, self.Rm, method='some_method')
+
 class TestQUEST(unittest.TestCase):
     def setUp(self) -> None:
         # Create random attitudes
