@@ -155,14 +155,14 @@ References
 ----------
 .. [Liu] Zhuohua Liu, Wei Liu, Xiangyang Gong, and Jin Wu, "Simplified Attitude
     Determination Algorithm Using Accelerometer and Magnetometer with Extremely
-    Low Execution Time," Journal of Sensors, vol. 2018, Article ID 8787236,
-    11 pages, 2018. https://doi.org/10.1155/2018/8787236.
+    Low Execution Time," Journal of Sensors, vol. 2018, Article ID 8787236, 11
+    pages, 2018. https://doi.org/10.1155/2018/8787236.
 
 """
 
 import numpy as np
 
-def _assert_iterables(item, item_name: str = 'iterable'):
+def _assert_iterables(item, item_name: str = 'iterable') -> None:
     if not isinstance(item, (list, tuple, np.ndarray)):
         raise TypeError(f"{item_name} must be given as an array. Got {type(item)}")
 
@@ -210,10 +210,10 @@ class FAMC:
     (1000, 4)
 
     """
-    def __init__(self, acc: np.ndarray = None, mag: np.ndarray = None):
+    def __init__(self, acc: np.ndarray = None, mag: np.ndarray = None) -> None:
         self.acc: np.ndarray = acc
         self.mag: np.ndarray = mag
-        self.Q = None
+        self.Q: np.ndarray = None
         if self.acc is not None and self.mag is not None:
             self.Q = self._compute_all()
 
@@ -247,9 +247,9 @@ class FAMC:
 
         Parameters
         ----------
-        a : numpy.ndarray
+        acc : numpy.ndarray
             Sample of tri-axial Accelerometer.
-        m : numpy.ndarray
+        mag : numpy.ndarray
             Sample of tri-axial Magnetometer.
 
         Returns
@@ -261,8 +261,7 @@ class FAMC:
         --------
         >>> acc_data = np.array([4.098297, 8.663757, 2.1355896])
         >>> mag_data = np.array([-28.71550512, -25.92743566, 4.75683931])
-        >>> from ahrs.filters import FAMC
-        >>> famc = FAMC()
+        >>> famc = ahrs.filtersFAMC()
         >>> famc.estimate(acc=acc_data, mag=mag_data)   # Estimate attitude as quaternion
         array([-0.82311077,  0.45760535, -0.33408929, -0.0383452])
 
