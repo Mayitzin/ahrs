@@ -215,7 +215,7 @@ GRAVITY = WGS().normal_gravity(MUNICH_LATITUDE, MUNICH_HEIGHT)
 wmm = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT)
 REFERENCE_MAGNETIC_VECTOR = np.array([wmm.X, wmm.Y, wmm.Z])
 
-def _assert_iterables(item, item_name: str = 'iterable'):
+def _assert_iterables(item, item_name: str = 'iterable') -> None:
     if not isinstance(item, (list, tuple, np.ndarray)):
         raise TypeError(f"{item_name} must be given as an array. Got {type(item)}")
 
@@ -230,16 +230,20 @@ def _set_magnetic_field_vector(self, magnetic_dip: Union[int, float, list, tuple
         three-dimensional vector.
 
     """
-    if isinstance(magnetic_dip, (float, int)):
+    if isinstance(magnetic_dip, bool):
+        raise TypeError("magnetic_dip must be given as a float, list, tuple or NumPy array. Got bool")
+    elif isinstance(magnetic_dip, (float, int)):
         magnetic_field = np.array([cosd(magnetic_dip), 0., sind(magnetic_dip)])
     elif isinstance(magnetic_dip, (list, tuple, np.ndarray)):
+        if not all(isinstance(x, (float, int)) for x in magnetic_dip):
+            raise TypeError("magnetic_dip must be an array of floats. Contains non-numeric values.")
         magnetic_field = np.copy(magnetic_dip)
     elif magnetic_dip is None:
         magnetic_field = REFERENCE_MAGNETIC_VECTOR
     else:
         raise TypeError(f"magnetic_dip must be given as a float, list, tuple or NumPy array. Got {type(magnetic_dip)}")
     if magnetic_field.shape != (3,):
-        raise ValueError(f"magnetic_dip must be given as a float, list, tuple or NumPy array with 3 elements. Got {magnetic_field.shape}")
+        raise ValueError(f"magnetic_dip array must contain 3 elements. Got {magnetic_field.shape}")
     return magnetic_field / np.linalg.norm(magnetic_field)
 
 class QUEST:
@@ -282,7 +286,7 @@ class QUEST:
         self.m_q: np.ndarray = _set_magnetic_field_vector(self, kw.get('magnetic_dip'))
         self.g_q: np.ndarray = np.array([0., 0., 1.])  # Normal Gravity vector
         if self.acc is not None and self.mag is not None:
-            self.Q = self._compute_all()
+            self.Q: np.ndarray = self._compute_all()
 
     def _compute_all(self) -> np.ndarray:
         """
@@ -297,6 +301,10 @@ class QUEST:
             of samples.
 
         """
+        _assert_iterables(self.acc, 'Gravitational acceleration vector')
+        _assert_iterables(self.mag, 'Geomagnetic field vector')
+        self.acc = np.copy(self.acc)
+        self.mag = np.copy(self.mag)
         if self.acc.shape != self.mag.shape:
             raise ValueError("acc and mag are not the same size")
         if self.acc.ndim < 2:
@@ -327,7 +335,7 @@ class QUEST:
         mag = mag/np.linalg.norm(mag)
         B = self.w[0]*np.outer(acc, self.g_q) + self.w[1]*np.outer(mag, self.m_q)   # Attitude profile matrix
         S = B + B.T
-        z = np.array([B[1, 2]-B[2, 1], B[2, 0]-B[0, 2], B[0, 1]-B[1, 0]])   # Pseudovector (Axial vector))
+        z = np.array([B[1, 2]-B[2, 1], B[2, 0]-B[0, 2], B[0, 1]-B[1, 0]])   # Pseudovector (Axial vector)
         # Parameters of characeristic equation (eq. 63)
         sigma = B.trace()
         Delta = np.linalg.det(S)

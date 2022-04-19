@@ -250,6 +250,22 @@ class TestQUEST(unittest.TestCase):
         quest = ahrs.filters.QUEST(self.Rg, self.Rm)
         self.assertLess(np.nanmean(ahrs.utils.metrics.qad(self.Qts, quest.Q)), self.decimal_precision)
 
+    def test_wrong_input_vectors(self):
+        self.assertRaises(TypeError, ahrs.filters.QUEST, acc=1.0, mag=2.0)
+        self.assertRaises(TypeError, ahrs.filters.QUEST, acc=self.Rg, mag=2.0)
+        self.assertRaises(TypeError, ahrs.filters.QUEST, acc=1.0, mag=self.Rm)
+        self.assertRaises(TypeError, ahrs.filters.QUEST, acc="self.Rg", mag="self.Rm")
+        self.assertRaises(TypeError, ahrs.filters.QUEST, acc=[1.0, 2.0, 3.0], mag=True)
+        self.assertRaises(TypeError, ahrs.filters.QUEST, acc=True, mag=[1.0, 2.0, 3.0])
+        self.assertRaises(ValueError, ahrs.filters.QUEST, acc=[1.0, 2.0], mag=[2.0, 3.0, 4.0])
+        self.assertRaises(ValueError, ahrs.filters.QUEST, acc=[1.0, 2.0, 3.0, 4.0], mag=[2.0, 3.0, 4.0, 5.0])
+
+    def test_wrong_magnetic_dip(self):
+        self.assertRaises(TypeError, ahrs.filters.QUEST, self.Rg, self.Rm, magnetic_dip='34.5')
+        self.assertRaises(TypeError, ahrs.filters.QUEST, self.Rg, self.Rm, magnetic_dip=False)
+        self.assertRaises(TypeError, ahrs.filters.QUEST, self.Rg, self.Rm, magnetic_dip=['34.5'])
+        self.assertRaises(TypeError, ahrs.filters.QUEST, self.Rg, self.Rm, magnetic_dip=('34.5',))
+
 class TestDavenport(unittest.TestCase):
     def setUp(self) -> None:
         # Create random attitudes
