@@ -152,17 +152,17 @@ class Davenport:
         When dimension of input arrays ``acc`` and ``mag`` are not equal.
 
     """
-    def __init__(self, acc: np.ndarray = None, mag: np.ndarray = None, **kw):
-        self.acc = acc
-        self.mag = mag
-        self.w = kw.get('weights', np.ones(2))
+    def __init__(self, acc: np.ndarray = None, mag: np.ndarray = None, **kw) -> None:
+        self.acc: np.ndarray = acc
+        self.mag: np.ndarray = mag
+        self.w: np.ndarray = kw.get('weights', np.ones(2))
         # Reference measurements
-        mdip = kw.get('magnetic_dip')           # Magnetic dip, in degrees
-        self.m_q = np.array([MAG['X'], MAG['Y'], MAG['Z']]) if mdip is None else np.array([cosd(mdip), 0., sind(mdip)])
-        g = kw.get('gravity', GRAVITY)          # Earth's normal gravity, in m/s^2
-        self.g_q = np.array([0.0, 0.0, g])      # Normal Gravity vector
+        mdip: np.ndarray = kw.get('magnetic_dip')           # Magnetic dip, in degrees
+        self.m_q: np.ndarray = np.array([MAG['X'], MAG['Y'], MAG['Z']]) if mdip is None else np.array([cosd(mdip), 0., sind(mdip)])
+        g: float = kw.get('gravity', GRAVITY)          # Earth's normal gravity, in m/s^2
+        self.g_q: np.ndarray = np.array([0.0, 0.0, g])      # Normal Gravity vector
         if self.acc is not None and self.mag is not None:
-            self.Q = self._compute_all()
+            self.Q: np.ndarray = self._compute_all()
 
     def _compute_all(self) -> np.ndarray:
         """
