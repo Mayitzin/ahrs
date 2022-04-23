@@ -241,11 +241,11 @@ from ..common.orientation import q_prod, q_conj
 from ..utils.wmm import WMM
 MAG = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT).magnetic_elements
 
-def _assert_iterables(item, item_name: str = 'iterable'):
+def _assert_iterables(item, item_name: str = 'iterable') -> None:
     if not isinstance(item, (list, tuple, np.ndarray)):
         raise TypeError(f"{item_name} must be given as an array. Got {type(item)}")
 
-def _assert_same_shapes(item1, item2, item_names: list = None):
+def _assert_same_shapes(item1, item2, item_names: list = None) -> None:
     for item in [item1, item2]:
         if not isinstance(item, (list, tuple, np.ndarray)):
             raise TypeError(f"{item} must be an array. Got {type(item)}")
@@ -287,13 +287,13 @@ class FQA:
 
     """
     def __init__(self, acc: np.ndarray = None, mag: np.ndarray = None, mag_ref: np.ndarray = None):
-        self.acc = acc
-        self.mag = mag
+        self.acc: np.ndarray = acc
+        self.mag: np.ndarray = mag
         # Reference measurements
-        self.m_ref = np.array([MAG['X'], MAG['Y'], MAG['Z']]) if mag_ref is None else mag_ref
+        self.m_ref: np.ndarray = np.array([MAG['X'], MAG['Y'], MAG['Z']]) if mag_ref is None else mag_ref
         self.m_ref /= np.linalg.norm(self.m_ref)
         if self.acc is not None:
-            self.Q = self._compute_all()
+            self.Q: np.ndarray = self._compute_all()
 
     def _compute_all(self) -> np.ndarray:
         """
