@@ -795,7 +795,7 @@ class AQUA:
         self.mag: np.ndarray = mag
         self.frequency: float = kw.get('frequency', 100.0)
         self.frame: str = kw.get('frame', 'NED')
-        self.Dt: float = kw.get('Dt', (1.0/self.frequency) if self.frequency else None)
+        self.Dt: float = kw.get('Dt', (1.0/self.frequency) if self.frequency else 0.01)
         self.alpha: float = kw.get('alpha', 0.01)
         self.beta: float = kw.get('beta', 0.01)
         self.threshold: float = kw.get('threshold', 0.9)
@@ -1073,4 +1073,5 @@ class AQUA:
         return q/np.linalg.norm(q)
 
     def init_q(self, acc: np.ndarray, mag: np.ndarray = None) -> np.ndarray:
+        """Synonym for method `estimate`"""
         return self.estimate(acc, mag)
