@@ -642,7 +642,7 @@ def slerp_I(q: np.ndarray, ratio: float, t: float) -> np.ndarray:
         Interpolated quaternion
     """
     q_I = np.array([1.0, 0.0, 0.0, 0.0])
-    if q[0]>t:  # LERP
+    if q[0] > t:  # LERP
         q = (1.0-ratio)*q_I + ratio*q   # (eq. 50)
     else:       # SLERP
         angle = np.arccos(q[0])
@@ -795,14 +795,31 @@ class AQUA:
         self.mag: np.ndarray = mag
         self.frequency: float = kw.get('frequency', 100.0)
         self.frame: str = kw.get('frame', 'NED')
-        self.Dt: float = kw.get('Dt', 1.0/self.frequency)
+        self.Dt: float = kw.get('Dt', (1.0/self.frequency) if self.frequency else None)
         self.alpha: float = kw.get('alpha', 0.01)
         self.beta: float = kw.get('beta', 0.01)
         self.threshold: float = kw.get('threshold', 0.9)
         self.adaptive: bool = kw.get('adaptive', False)
+        self._assert_validity_of_inputs()
         self.q0: np.ndarray = kw.get('q0')
         if self.acc is not None:
             self.Q = self._compute_all()
+
+    def _assert_validity_of_inputs(self):
+        """Asserts the validity of the inputs."""
+        for item in ["frequency", "Dt", "alpha", "beta", "threshold"]:
+            if isinstance(self.__getattribute__(item), bool):
+                raise TypeError(f"Parameter '{item}' must be numeric.")
+            if not isinstance(self.__getattribute__(item), (int, float)):
+                raise TypeError(f"Parameter '{item}' is not a non-zero number.")
+            if self.__getattribute__(item) <= 0.0:
+                raise ValueError("Parameter '{item}' must be a non-zero number.")
+        if not isinstance(self.adaptive, bool):
+            raise TypeError(f"Parameter 'adaptive' is not a boolean type. It is {type(self.adaptive)}.")
+        if not isinstance(self.frame, str):
+            raise TypeError(f"Parameter 'frame' is not a string. It is {type(self.frame)}.")
+        if self.frame.upper() not in ['NED', 'ENU']:
+            raise ValueError(f"Parameter 'frame' is not a valid frame. Try 'NED' or 'ENU'.")
 
     def _compute_all(self):
         """Estimate all quaternions with given sensor values"""
