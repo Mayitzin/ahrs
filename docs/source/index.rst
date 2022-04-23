@@ -43,14 +43,13 @@ New in version 0.3
   (mainly for Geodesy) accessed from the top level of the package.
 - Docstrings are improved with further explanations, references and equations
   whenever possible.
-- New and improved estimators include a short, but clear documentation (I think)
-  and references. Many use different types of sensors. The available algorithms
-  are:
+- New and improved estimators include a short, but clear documentation with
+  references. Many use different sensor arrays. The available algorithms are:
 
 =============  =========  =============  ============
 Algorithm      Gyroscope  Accelerometer  Magnetometer
 =============  =========  =============  ============
-AQUA           YES        YES            Optional
+AQUA           Optional   YES            Optional
 Complementary  YES        YES            Optional
 Davenport's    NO         YES            YES
 EKF            YES        YES            YES
