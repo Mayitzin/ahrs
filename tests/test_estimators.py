@@ -313,6 +313,68 @@ class TestAQUA(unittest.TestCase):
         orientation = ahrs.filters.AQUA(acc=self.Rg, mag=self.Rm)
         self.assertLess(np.nanmean(ahrs.utils.metrics.qad(orientation.Q, self.Qts)), self.noise_sigma * 10)
 
+    def test_wrong_input_vectors(self):
+        self.assertRaises(TypeError, ahrs.filters.FLAE, acc=1.0, mag=2.0)
+        self.assertRaises(TypeError, ahrs.filters.FLAE, acc=self.Rg, mag=2.0)
+        self.assertRaises(TypeError, ahrs.filters.FLAE, acc=1.0, mag=self.Rm)
+        self.assertRaises(TypeError, ahrs.filters.FLAE, acc="self.Rg", mag="self.Rm")
+        self.assertRaises(TypeError, ahrs.filters.FLAE, acc=[1.0, 2.0, 3.0], mag=True)
+        self.assertRaises(TypeError, ahrs.filters.FLAE, acc=True, mag=[1.0, 2.0, 3.0])
+        self.assertRaises(ValueError, ahrs.filters.FLAE, acc=[1.0, 2.0], mag=[2.0, 3.0, 4.0])
+        self.assertRaises(ValueError, ahrs.filters.FLAE, acc=[1.0, 2.0, 3.0, 4.0], mag=[2.0, 3.0, 4.0, 5.0])
+
+    def test_wrong_input_frequency(self):
+        self.assertRaises(TypeError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, frequency="100.0")
+        self.assertRaises(TypeError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, frequency=[100.0])
+        self.assertRaises(TypeError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, frequency=(100.0,))
+        self.assertRaises(TypeError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, frequency=True)
+        self.assertRaises(ValueError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, frequency=0.0)
+        self.assertRaises(ValueError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, frequency=-100.0)
+
+    def test_wrong_input_frame(self):
+        self.assertRaises(TypeError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, frame=[100.0])
+        self.assertRaises(TypeError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, frame=(100.0,))
+        self.assertRaises(TypeError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, frame=True)
+        self.assertRaises(ValueError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, frame='NWU')
+
+    def test_wrong_input_Dt(self):
+        self.assertRaises(TypeError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, Dt="0.01")
+        self.assertRaises(TypeError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, Dt=[0.01])
+        self.assertRaises(TypeError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, Dt=(0.01,))
+        self.assertRaises(TypeError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, Dt=True)
+        self.assertRaises(ValueError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, Dt=0.0)
+        self.assertRaises(ValueError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, Dt=-0.01)
+
+    def test_wrong_input_alpha(self):
+        self.assertRaises(TypeError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, alpha="1.0")
+        self.assertRaises(TypeError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, alpha=[1.0])
+        self.assertRaises(TypeError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, alpha=(1.0,))
+        self.assertRaises(TypeError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, alpha=True)
+        self.assertRaises(ValueError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, alpha=0.0)
+        self.assertRaises(ValueError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, alpha=-1.0)
+
+    def test_wrong_input_beta(self):
+        self.assertRaises(TypeError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, beta="1.0")
+        self.assertRaises(TypeError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, beta=[1.0])
+        self.assertRaises(TypeError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, beta=(1.0,))
+        self.assertRaises(TypeError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, beta=True)
+        self.assertRaises(ValueError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, beta=0.0)
+        self.assertRaises(ValueError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, beta=-1.0)
+
+    def test_wrong_input_threshold(self):
+        self.assertRaises(TypeError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, threshold="1.0")
+        self.assertRaises(TypeError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, threshold=[1.0])
+        self.assertRaises(TypeError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, threshold=(1.0,))
+        self.assertRaises(TypeError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, threshold=True)
+        self.assertRaises(ValueError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, threshold=0.0)
+        self.assertRaises(ValueError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, threshold=-1.0)
+
+    def test_wrong_input_adaptive(self):
+        self.assertRaises(TypeError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, adaptive=1.0)
+        self.assertRaises(TypeError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, adaptive="1.0")
+        self.assertRaises(TypeError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, adaptive=[1.0])
+        self.assertRaises(TypeError, ahrs.filters.AQUA, acc=self.Rg, mag=self.Rm, adaptive=(1.0,))
+
 class TestFQA(unittest.TestCase):
     def setUp(self) -> None:
         # Create random attitudes
