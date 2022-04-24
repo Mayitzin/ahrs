@@ -393,6 +393,23 @@ class TestFQA(unittest.TestCase):
         orientation = ahrs.filters.FQA(acc=self.Rg, mag=self.Rm)
         self.assertLess(np.nanmean(ahrs.utils.metrics.qad(self.Qts, orientation.Q)), self.noise_sigma)
 
+    def test_wrong_input_vectors(self):
+        self.assertRaises(TypeError, ahrs.filters.FQA, acc=1.0, mag=2.0)
+        self.assertRaises(TypeError, ahrs.filters.FQA, acc=self.Rg, mag=2.0)
+        self.assertRaises(TypeError, ahrs.filters.FQA, acc=1.0, mag=self.Rm)
+        self.assertRaises(TypeError, ahrs.filters.FQA, acc="self.Rg", mag="self.Rm")
+        self.assertRaises(TypeError, ahrs.filters.FQA, acc=[1.0, 2.0, 3.0], mag=True)
+        self.assertRaises(TypeError, ahrs.filters.FQA, acc=True, mag=[1.0, 2.0, 3.0])
+        self.assertRaises(TypeError, ahrs.filters.FQA, acc=self.Rg, mag=self.Rm, mag_ref=1.0)
+        self.assertRaises(TypeError, ahrs.filters.FQA, acc=self.Rg, mag=self.Rm, mag_ref="1.0")
+        self.assertRaises(TypeError, ahrs.filters.FQA, acc=self.Rg, mag=self.Rm, mag_ref=['1.0', '2.0', '3.0'])
+        self.assertRaises(TypeError, ahrs.filters.FQA, acc=self.Rg, mag=self.Rm, mag_ref=('1.0', '2.0', '3.0'))
+        self.assertRaises(ValueError, ahrs.filters.FQA, acc=[1.0, 2.0], mag=[2.0, 3.0, 4.0])
+        self.assertRaises(ValueError, ahrs.filters.FQA, acc=[1.0, 2.0, 3.0, 4.0], mag=[2.0, 3.0, 4.0, 5.0])
+        self.assertRaises(ValueError, ahrs.filters.FQA, acc=self.Rg, mag=self.Rm, mag_ref=[1.0])
+        self.assertRaises(ValueError, ahrs.filters.FQA, acc=self.Rg, mag=self.Rm, mag_ref=(1.0,))
+        self.assertRaises(ValueError, ahrs.filters.FQA, acc=self.Rg, mag=self.Rm, mag_ref=np.zeros(3))
+
 class TestMadgwick(unittest.TestCase):
     def setUp(self) -> None:
         # Create random attitudes

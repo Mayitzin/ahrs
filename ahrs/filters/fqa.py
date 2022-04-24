@@ -239,7 +239,9 @@ from ..common.orientation import q_prod, q_conj
 
 # Reference Observations in Munich, Germany at current date
 from ..utils.wmm import WMM
-MAG = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT).magnetic_elements
+# MAG = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT).magnetic_elements
+wmm = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT)
+REFERENCE_MAGNETIC_VECTOR = np.array([wmm.X, wmm.Y, wmm.Z])
 
 def _assert_iterables(item, item_name: str = 'iterable') -> None:
     if not isinstance(item, (list, tuple, np.ndarray)):
@@ -254,6 +256,17 @@ def _assert_same_shapes(item1, item2, item_names: list = None) -> None:
     item1, item2 = np.copy(item1), np.copy(item2)
     if item1.shape != item2.shape:
         raise ValueError(f"{item_names[0]} and {item_names[1]} must have the same shape. Got {item1.shape} and {item2.shape}")
+
+def _assert_magnetic_reference(m: np.ndarray) -> None:
+    _assert_iterables(m, 'mag_ref')
+    m = np.copy(m)
+    for item in m:
+        if not isinstance(item, (int, float)):
+            raise TypeError(f"mag_ref must be given as an array of numbers. Got {type(item)}")
+    if m.shape != REFERENCE_MAGNETIC_VECTOR.shape:
+        raise ValueError(f"mag_ref must have shape (3,). Got {m.shape}")
+    if np.linalg.norm(m) == 0:
+        raise ValueError("mag_ref must be non-zero.")
 
 class FQA:
     """
@@ -290,8 +303,9 @@ class FQA:
         self.acc: np.ndarray = acc
         self.mag: np.ndarray = mag
         # Reference measurements
-        self.m_ref: np.ndarray = np.array([MAG['X'], MAG['Y'], MAG['Z']]) if mag_ref is None else mag_ref
-        self.m_ref /= np.linalg.norm(self.m_ref)
+        self.m_ref: np.ndarray = REFERENCE_MAGNETIC_VECTOR if mag_ref is None else mag_ref
+        _assert_magnetic_reference(self.m_ref)
+        self.m_ref = np.array(self.m_ref)/np.linalg.norm(self.m_ref)
         if self.acc is not None:
             self.Q: np.ndarray = self._compute_all()
 
@@ -308,6 +322,10 @@ class FQA:
             of samples.
 
         """
+        _assert_iterables(self.acc, 'Gravitational acceleration vector')
+        _assert_iterables(self.mag, 'Geomagnetic field vector')
+        self.acc = np.copy(self.acc)
+        self.mag = np.copy(self.mag)
         if self.acc.ndim < 2:
             _assert_iterables(self.acc, 'acc')
             if self.mag is not None:
@@ -339,6 +357,8 @@ class FQA:
             Estimated quaternion.
 
         """
+        _assert_iterables(acc, 'Gravitational acceleration vector')
+        _assert_iterables(mag, 'Geomagnetic field vector')
         a_norm = np.linalg.norm(acc)
         if a_norm == 0:     # handle NaN
             return np.array([1., 0., 0., 0.])
