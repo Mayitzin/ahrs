@@ -542,6 +542,73 @@ class TestMahony(unittest.TestCase):
         orientation = ahrs.filters.Mahony(gyr=self.gyr, acc=self.Rg, mag=self.Rm)
         self.assertLess(np.nanmean(ahrs.utils.metrics.qad(self.Qts, orientation.Q)), self.noise_sigma*10)
 
+    def test_wrong_input_vectors(self):
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=1.0, acc=self.Rg)
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr="self.gyr", acc=self.Rg)
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=True, acc=self.Rg)
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=1.0)
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc="self.Rg")
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=True)
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=1.0, mag=2.0)
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=2.0)
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=1.0, mag=self.Rm)
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc="self.Rg", mag="self.Rm")
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr[0], acc=self.Rg[0], mag=True)
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=True, mag=[1.0, 2.0, 3.0])
+        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyr[:2], acc=self.Rg, mag=self.Rm)
+        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyr, acc=[1.0, 2.0, 3.0])
+        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyr, acc=[1.0, 2.0], mag=[2.0, 3.0, 4.0])
+        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyr, acc=[1.0, 2.0, 3.0, 4.0], mag=[2.0, 3.0, 4.0, 5.0])
+
+    def test_wrong_input_frequency(self):
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, frequency="100.0")
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, frequency=[100.0])
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, frequency=(100.0,))
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, frequency=True)
+        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, frequency=0.0)
+        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, frequency=-100.0)
+
+    def test_wrong_input_Dt(self):
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, Dt="0.01")
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, Dt=[0.01])
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, Dt=(0.01,))
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, Dt=True)
+        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, Dt=0.0)
+        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, Dt=-0.01)
+
+    def test_wrong_input_kP(self):
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, k_P="0.01")
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, k_P=[0.01])
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, k_P=(0.01,))
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, k_P=True)
+        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, k_P=0.0)
+        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, k_P=-0.01)
+
+    def test_wrong_input_kI(self):
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, k_I="0.01")
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, k_I=[0.01])
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, k_I=(0.01,))
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, k_I=True)
+        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, k_I=0.0)
+        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, k_I=-0.01)
+
+    def test_wrong_initial_quaternion(self):
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, q0=1)
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, q0=1.0)
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, q0=True)
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, q0="[1.0, 0.0, 0.0, 0.0]")
+        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, q0=[1.0])
+        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, q0=[1.0, 0.0, 0.0])
+        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, q0=np.zeros(4))
+
+    def test_wrong_initial_bias(self):
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, b0=1)
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, b0=1.0)
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, b0=True)
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, b0="[0.0, 0.0, 0.0]")
+        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, b0=[0.0])
+        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, b0=np.zeros(4))
+
 class TestFourati(unittest.TestCase):
     def setUp(self) -> None:
         # Create random attitudes

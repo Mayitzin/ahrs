@@ -267,8 +267,14 @@ References
 """
 
 import numpy as np
-from ..common.orientation import q_prod, acc2q, am2q, q2R
+from ..common.orientation import q_prod
+from ..common.orientation import acc2q
+from ..common.orientation import am2q
+from ..common.orientation import q2R
 
+def _assert_iterables(item, item_name: str = 'iterable'):
+    if not isinstance(item, (list, tuple, np.ndarray)):
+        raise TypeError(f"{item_name} must be given as an array. Got {type(item)}")
 
 class Mahony:
     """
@@ -407,21 +413,49 @@ class Mahony:
         q0: np.ndarray = None,
         b0: np.ndarray = None,
         **kwargs):
-        self.gyr = gyr
-        self.acc = acc
-        self.mag = mag
-        self.frequency = frequency
-        self.q0 = q0
-        self.b = b0 or np.zeros([3])
-        self.k_P = k_P
-        self.k_I = k_I
+        self.gyr: np.ndarray = gyr
+        self.acc: np.ndarray = acc
+        self.mag: np.ndarray = mag
+        self.frequency: float = frequency
+        self.q0: np.ndarray = q0
+        self.b = b0 if b0 is not None else np.zeros(3)
+        self.k_P: float = k_P
+        self.k_I: float = k_I
         # Old parameter names for backward compatibility
-        self.k_P = kwargs.get('kp', k_P)
-        self.k_I = kwargs.get('ki', k_I)
-        self.Dt = kwargs.get('Dt', 1.0/self.frequency)
+        self.k_P: float = kwargs.get('kp', k_P)
+        self.k_I: float = kwargs.get('ki', k_I)
+        self.Dt: float = kwargs.get('Dt', 1.0/self.frequency if self.frequency else 0.01)
+        self._assert_validity_of_inputs()
         # Estimate all orientations if sensor data is given
         if self.gyr is not None and self.acc is not None:
             self.Q = self._compute_all()
+
+    def _assert_validity_of_inputs(self):
+        """Asserts the validity of the inputs."""
+        for item in ["frequency", "Dt", "k_P", "k_I"]:
+            if isinstance(self.__getattribute__(item), bool):
+                raise TypeError(f"Parameter '{item}' must be numeric.")
+            if not isinstance(self.__getattribute__(item), (int, float)):
+                raise TypeError(f"Parameter '{item}' is not a non-zero number.")
+            if self.__getattribute__(item) <= 0.0:
+                raise ValueError("Parameter '{item}' must be a non-zero number.")
+        for item in ['q0', 'b']:
+            if self.__getattribute__(item) is not None:
+                if isinstance(self.__getattribute__(item), bool):
+                    raise TypeError(f"Parameter '{item}' must be an array.")
+                if not isinstance(self.__getattribute__(item), (list, tuple, np.ndarray)):
+                    raise TypeError(f"Parameter '{item}' is not an array. Got {type(self.__getattribute__(item))}.")
+                if np.copy(self.__getattribute__(item)).ndim != 1:
+                    raise ValueError(f"Parameter '{item}' must be a 1-dimensional array.")
+                self.__setattr__(item, np.copy(self.__getattribute__(item)))
+        if self.q0 is not None:
+            if self.q0.shape != (4,):
+                raise ValueError("Parameter 'q0' must be an array with 4 elements.")
+            if not np.allclose(np.linalg.norm(self.q0), 1.0):
+                raise ValueError("Parameter 'q0' must be a unit quaternion.")
+        if self.b is not None:
+            if self.b.shape != (3,):
+                raise ValueError("Parameter 'b' must be an array with 3 elements.")
 
     def _compute_all(self):
         """
@@ -436,6 +470,10 @@ class Mahony:
             of samples.
 
         """
+        _assert_iterables(self.gyr, 'Angular velocity vector')
+        _assert_iterables(self.acc, 'Gravitational acceleration vector')
+        self.gyr = np.copy(self.gyr)
+        self.acc = np.copy(self.acc)
         if self.acc.shape != self.gyr.shape:
             raise ValueError("acc and gyr are not the same size")
         num_samples = len(self.gyr)
@@ -447,6 +485,8 @@ class Mahony:
                 Q[t] = self.updateIMU(Q[t-1], self.gyr[t], self.acc[t])
             return Q
         # Compute with MARG Architecture
+        _assert_iterables(self.mag, 'Geomagnetic field vector')
+        self.mag = np.copy(self.mag)
         if self.mag.shape != self.gyr.shape:
             raise ValueError("mag and gyr are not the same size")
         Q[0] = am2q(self.acc[0], self.mag[0]) if self.q0 is None else self.q0/np.linalg.norm(self.q0)
