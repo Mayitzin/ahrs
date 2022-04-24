@@ -510,11 +510,12 @@ class Madgwick:
         self.acc: np.ndarray = acc
         self.mag: np.ndarray = mag
         self.frequency: float = kwargs.get('frequency', 100.0)
-        self.Dt: float = kwargs.get('Dt', 1.0/self.frequency)
+        self.Dt: float = kwargs.get('Dt', (1.0/self.frequency) if self.frequency else 0.01)
         self.q0: np.ndarray = kwargs.get('q0')
         self._set_gain(**kwargs)
+        self._assert_validity_of_inputs()
         if self.acc is not None and self.gyr is not None:
-            self.Q = self._compute_all()
+            self.Q: np.ndarray = self._compute_all()
 
     def _set_gain(self, **kwargs) -> None:
         """Set the gain parameter."""
@@ -522,7 +523,27 @@ class Madgwick:
         self.gain_marg: float = kwargs.get('gain_marg', 0.041)
         self.gain: float = kwargs.get('beta')  # Setting gain with `beta` will be removed in the future.
         if self.gain is None:
-            self.gain = kwargs.get('gain', self.gain_imu if self.mag is None else self.gain_marg)
+            self.gain: float = kwargs.get('gain', self.gain_imu if self.mag is None else self.gain_marg)
+
+    def _assert_validity_of_inputs(self):
+        """Asserts the validity of the inputs."""
+        for item in ["frequency", "Dt", "gain", "gain_imu", "gain_marg"]:
+            if isinstance(self.__getattribute__(item), bool):
+                raise TypeError(f"Parameter '{item}' must be numeric.")
+            if not isinstance(self.__getattribute__(item), (int, float)):
+                raise TypeError(f"Parameter '{item}' is not a non-zero number.")
+            if self.__getattribute__(item) <= 0.0:
+                raise ValueError("Parameter '{item}' must be a non-zero number.")
+        if self.q0 is not None:
+            if isinstance(self.q0, bool):
+                raise TypeError(f"Parameter 'q0' must be an array of numeric values.")
+            if not isinstance(self.q0, (list, tuple, np.ndarray)):
+                raise TypeError(f"Parameter 'q0' must be an array. Got {type(self.q0)}.")
+            self.q0 = np.copy(self.q0)
+            if self.q0.shape != (4,):
+                raise ValueError(f"Parameter 'q0' must be an array of shape (4,). It is {self.q0.shape}.")
+            if not np.allclose(np.linalg.norm(self.q0), 1.0):
+                raise ValueError(f"Parameter 'q0' must be a versor (norm equal to 1.0). Its norm is equal to {np.linalg.norm(self.q0)}.")
 
     def _compute_all(self) -> np.ndarray:
         """
@@ -538,6 +559,10 @@ class Madgwick:
             of samples.
 
         """
+        _assert_iterables(self.gyr, 'Angular velocity vector')
+        _assert_iterables(self.acc, 'Gravitational acceleration vector')
+        self.gyr = np.copy(self.gyr)
+        self.acc = np.copy(self.acc)
         if self.acc.shape != self.gyr.shape:
             raise ValueError("acc and gyr are not the same size")
         num_samples = len(self.acc)
@@ -549,6 +574,8 @@ class Madgwick:
                 Q[t] = self.updateIMU(Q[t-1], self.gyr[t], self.acc[t])
             return Q
         # Compute with MARG architecture
+        _assert_iterables(self.mag, 'Geomagnetic field vector')
+        self.mag = np.copy(self.mag)
         if self.mag.shape != self.gyr.shape:
             raise ValueError("mag and gyr are not the same size")
         Q[0] = am2q(self.acc[0], self.mag[0]) if self.q0 is None else self.q0/np.linalg.norm(self.q0)
