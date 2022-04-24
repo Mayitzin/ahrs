@@ -371,7 +371,10 @@ References
 """
 
 import numpy as np
-from ..common.orientation import q_prod, q_conj, acc2q, am2q
+from ..common.orientation import q_prod
+from ..common.orientation import q_conj
+from ..common.orientation import acc2q
+from ..common.orientation import am2q
 
 def _assert_iterables(item, item_name: str = 'iterable'):
     if not isinstance(item, (list, tuple, np.ndarray)):
