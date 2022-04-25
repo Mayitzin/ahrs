@@ -219,7 +219,7 @@ def _assert_iterables(item, item_name: str = 'iterable') -> None:
     if not isinstance(item, (list, tuple, np.ndarray)):
         raise TypeError(f"{item_name} must be given as an array. Got {type(item)}")
 
-def _set_magnetic_field_vector(self, magnetic_dip: Union[int, float, list, tuple, np.ndarray]):
+def _set_magnetic_field_vector(magnetic_dip: Union[int, float, list, tuple, np.ndarray]):
     """
     Set the magnetic reference vector.
 
@@ -283,7 +283,7 @@ class QUEST:
         self.mag: np.ndarray = mag
         self.w: np.ndarray = kw.get('weights', 0.5*np.ones(2))
         # Reference measurements
-        self.m_q: np.ndarray = _set_magnetic_field_vector(self, kw.get('magnetic_dip'))
+        self.m_q: np.ndarray = _set_magnetic_field_vector(kw.get('magnetic_dip'))
         self.g_q: np.ndarray = np.array([0., 0., 1.])  # Normal Gravity vector
         if self.acc is not None and self.mag is not None:
             self.Q: np.ndarray = self._compute_all()
