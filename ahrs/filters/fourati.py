@@ -221,8 +221,11 @@ References
 
 """
 
+from typing import Union
 import numpy as np
-from ..common.orientation import q_prod, q_conj, am2q
+from ..common.orientation import q_prod
+from ..common.orientation import q_conj
+from ..common.orientation import am2q
 from ..common.constants import MUNICH_LONGITUDE
 from ..common.constants import MUNICH_LATITUDE
 from ..common.constants import MUNICH_HEIGHT
@@ -232,9 +235,39 @@ from ..common.mathfuncs import skew
 
 # Reference Observations in Munich, Germany
 from ..utils.wmm import WMM
-from ..utils.wgs84 import WGS
-MAG = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT).magnetic_elements
-GRAVITY = WGS().normal_gravity(MUNICH_LATITUDE, MUNICH_HEIGHT)
+wmm = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT)
+REFERENCE_MAGNETIC_VECTOR = np.array([wmm.X, wmm.Y, wmm.Z])
+
+def _assert_iterables(item, item_name: str = 'iterable'):
+    if not isinstance(item, (list, tuple, np.ndarray)):
+        raise TypeError(f"{item_name} must be given as an array. Got {type(item)}")
+
+def _set_magnetic_field_vector(magnetic_dip: Union[int, float, list, tuple, np.ndarray]):
+    """
+    Set the magnetic reference vector.
+
+    Parameters
+    ----------
+    magnetic_dip : float, array-like
+        Magnetic dip, in degrees, or local geomagnetic reference as
+        three-dimensional vector.
+
+    """
+    if isinstance(magnetic_dip, bool):
+        raise TypeError("magnetic_dip must be given as a float, list, tuple or NumPy array. Got bool")
+    elif isinstance(magnetic_dip, (float, int)):
+        magnetic_field = np.array([0.0, cosd(magnetic_dip), 0., sind(magnetic_dip)])
+    elif isinstance(magnetic_dip, (list, tuple, np.ndarray)):
+        if not all(isinstance(x, (float, int)) for x in magnetic_dip):
+            raise TypeError("magnetic_dip must be an array of floats. Contains non-numeric values.")
+        magnetic_field = np.copy(magnetic_dip)
+    elif magnetic_dip is None:
+        magnetic_field = np.array([0.0, *REFERENCE_MAGNETIC_VECTOR])
+    else:
+        raise TypeError(f"magnetic_dip must be given as a float, list, tuple or NumPy array. Got {type(magnetic_dip)}")
+    if magnetic_field.shape != (4,):
+        raise ValueError(f"magnetic_dip array must contain 4 elements. Got {magnetic_field.shape}")
+    return magnetic_field / np.linalg.norm(magnetic_field)
 
 class Fourati:
     """
@@ -257,10 +290,11 @@ class Fourati:
         Filter gain factor.
     q0 : numpy.ndarray, default: None
         Initial orientation, as a versor (normalized quaternion).
-    magnetic_dip : float
-        Magnetic Inclination angle, in degrees.
-    gravity : float
-        Normal gravity, in m/s^2.
+    magnetic_dip : float, array-like, default: None
+        Magnetic Inclination angle, in degrees, or as a local geomagnetic
+        vector in a pure quaternion of the form [0, mx, my, mz], where mx, my,
+        and mz are the three-dimensional components of the local geomagnetic
+        vector.
 
     Raises
     ------
@@ -269,21 +303,42 @@ class Fourati:
 
     """
     def __init__(self, gyr: np.ndarray = None, acc: np.ndarray = None, mag: np.ndarray = None, **kwargs):
-        self.gyr = gyr
-        self.acc = acc
-        self.mag = mag
-        self.frequency = kwargs.get('frequency', 100.0)
-        self.Dt = kwargs.get('Dt', 1.0/self.frequency)
-        self.gain = kwargs.get('gain', 0.01)
-        self.q0 = kwargs.get('q0')
-        # Reference measurements
-        mdip = kwargs.get('magnetic_dip')             # Magnetic dip, in degrees
-        self.m_q = np.array([0.0, MAG['X'], MAG['Y'], MAG['Z']]) if mdip is None else np.array([0.0, cosd(mdip), 0.0, sind(mdip)])
-        self.m_q /= np.linalg.norm(self.m_q)
-        self.g_q = np.array([0.0, 0.0, 0.0, 1.0])     # Normalized Gravity vector
+        self.gyr: np.ndarray = gyr
+        self.acc: np.ndarray = acc
+        self.mag: np.ndarray = mag
+        self.frequency: float = kwargs.get('frequency', 100.0)
+        self.Dt: float = kwargs.get('Dt', 1.0/self.frequency if self.frequency else 0.01)
+        self.gain: float = kwargs.get('gain', 0.01)
+        self.q0: np.ndarray = kwargs.get('q0')
+        # Reference vectors
+        self.m_q: np.ndarray = _set_magnetic_field_vector(kwargs.get('magnetic_dip'))
+        self.g_q: np.ndarray = np.array([0.0, 0.0, 0.0, 1.0])     # Normalized Gravity vector as pure quaternion
         # Process of given data
+        self._assert_validity_of_inputs()
         if self.acc is not None and self.gyr is not None and self.mag is not None:
             self.Q = self._compute_all()
+
+    def _assert_validity_of_inputs(self):
+        """Asserts the validity of the inputs."""
+        for item in ["frequency", "Dt", "gain"]:
+            if isinstance(self.__getattribute__(item), bool):
+                raise TypeError(f"Parameter '{item}' must be numeric.")
+            if not isinstance(self.__getattribute__(item), (int, float)):
+                raise TypeError(f"Parameter '{item}' is not a non-zero number.")
+            if self.__getattribute__(item) <= 0.0:
+                raise ValueError("Parameter '{item}' must be a non-zero number.")
+        if self.q0 is not None:
+            if isinstance(self.q0, bool):
+                raise TypeError(f"Parameter 'q0' must be an array of numeric values.")
+            if not isinstance(self.q0, (list, tuple, np.ndarray)):
+                raise TypeError(f"Parameter 'q0' must be an array. Got {type(self.q0)}.")
+            if not all(isinstance(x, (float, int)) for x in self.q0):
+                raise TypeError("Parameter 'q0' must be an array of floats. Contains non-numeric values.")
+            self.q0 = np.copy(self.q0)
+            if self.q0.shape != (4,):
+                raise ValueError(f"Parameter 'q0' must be an array of shape (4,). It is {self.q0.shape}.")
+            if not np.allclose(np.linalg.norm(self.q0), 1.0):
+                raise ValueError(f"Parameter 'q0' must be a versor (norm equal to 1.0). Its norm is equal to {np.linalg.norm(self.q0)}.")
 
     def _compute_all(self):
         """
@@ -298,13 +353,19 @@ class Fourati:
             of samples.
 
         """
+        _assert_iterables(self.gyr, 'Angular velocity vector')
+        _assert_iterables(self.acc, 'Gravitational acceleration vector')
+        _assert_iterables(self.mag, 'Geomagnetic field vector')
+        self.gyr = np.copy(self.gyr)
+        self.acc = np.copy(self.acc)
+        self.mag = np.copy(self.mag)
         if self.acc.shape != self.gyr.shape:
             raise ValueError("acc and gyr are not the same size")
         if self.mag.shape != self.gyr.shape:
             raise ValueError("mag and gyr are not the same size")
         num_samples = len(self.gyr)
         Q = np.zeros((num_samples, 4))
-        Q[0] = am2q(self.acc[0], self.mag[0]) if self.q0 is None else self.q0.copy()
+        Q[0] = am2q(self.acc[0], self.mag[0]) if self.q0 is None else self.q0/np.linalg.norm(self.q0)
         for t in range(1, num_samples):
             Q[t] = self.update(Q[t-1], self.gyr[t], self.acc[t], self.mag[t])
         return Q
@@ -332,6 +393,10 @@ class Fourati:
             Estimated quaternion.
 
         """
+        _assert_iterables(q, 'Quaternion')
+        _assert_iterables(gyr, 'Tri-axial gyroscope sample')
+        _assert_iterables(acc, 'Tri-axial accelerometer sample')
+        _assert_iterables(mag, 'Tri-axial magnetometer sample')
         dt = self.Dt if dt is None else dt
         if gyr is None or not np.linalg.norm(gyr) > 0:
             return q
