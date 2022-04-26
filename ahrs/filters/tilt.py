@@ -234,6 +234,7 @@ class Tilt:
         self.mag: np.ndarray = mag
         self.representation: str = kwargs.get('representation', 'quaternion')
         self.as_angles: bool = kwargs.get('as_angles', self.representation == 'angles') # Old parameter. Backwards compatiblity.
+        _assert_representation(self.representation)
         if self.acc is not None:
             self.Q = self._compute_all()
 
@@ -257,9 +258,9 @@ class Tilt:
 
         """
         _assert_iterables(self.acc)
+        self.acc = np.copy(self.acc)
         if self.acc.ndim < 2:
             return self.estimate(self.acc, self.mag, self.representation)
-        _assert_representation(self.representation)
         # Normalization of 2D arrays
         a = self.acc/np.linalg.norm(self.acc, axis=1)[:, None]
         angles = np.zeros((len(a), 3))   # Allocation of angles array
@@ -332,6 +333,7 @@ class Tilt:
 
         """
         _assert_iterables(acc)
+        acc = np.copy(acc)
         _assert_representation(representation)
         a_norm = np.linalg.norm(acc)
         if not a_norm > 0:

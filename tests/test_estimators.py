@@ -811,6 +811,25 @@ class TestTilt(unittest.TestCase):
         orientation = ahrs.filters.Tilt(acc=self.Rg, mag=self.Rm)
         self.assertLess(np.nanmean(ahrs.utils.metrics.qad(self.Qts, orientation.Q)), self.noise_sigma*10.0)
 
+    def test_wrong_input_vectors(self):
+        self.assertRaises(TypeError, ahrs.filters.Tilt, acc=1.0)
+        self.assertRaises(TypeError, ahrs.filters.Tilt, acc="self.Rg")
+        self.assertRaises(TypeError, ahrs.filters.Tilt, acc=True)
+        self.assertRaises(TypeError, ahrs.filters.Tilt, acc=1.0, mag=2.0)
+        self.assertRaises(TypeError, ahrs.filters.Tilt, acc=self.Rg, mag=2.0)
+        self.assertRaises(TypeError, ahrs.filters.Tilt, acc=1.0, mag=self.Rm)
+        self.assertRaises(TypeError, ahrs.filters.Tilt, acc="self.Rg", mag="self.Rm")
+        self.assertRaises(TypeError, ahrs.filters.Tilt, acc=self.Rg[0], mag=True)
+        self.assertRaises(TypeError, ahrs.filters.Tilt, acc=True, mag=[1.0, 2.0, 3.0])
+        self.assertRaises(ValueError, ahrs.filters.Tilt, acc=[1.0, 2.0], mag=[2.0, 3.0, 4.0])
+        self.assertRaises(ValueError, ahrs.filters.Tilt, acc=[1.0, 2.0, 3.0, 4.0], mag=[2.0, 3.0, 4.0, 5.0])
+
+    def test_wrong_representation(self):
+        self.assertRaises(TypeError, ahrs.filters.Tilt, representation=1)
+        self.assertRaises(TypeError, ahrs.filters.Tilt, acc=self.Rg, mag=self.Rm, representation=1)
+        self.assertRaises(ValueError, ahrs.filters.Tilt, representation="some_representation")
+        self.assertRaises(ValueError, ahrs.filters.Tilt, acc=self.Rg, mag=self.Rm, representation="some_representation")
+
 class TestComplementary(unittest.TestCase):
     def setUp(self) -> None:
         # Create random attitudes
