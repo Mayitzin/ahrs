@@ -803,7 +803,11 @@ class TestTilt(unittest.TestCase):
         self.Rg = np.array([R.T @ a_ref for R in rotations]) + np.random.standard_normal((num_samples, 3)) * self.noise_sigma
         self.Rm = np.array([R.T @ m_ref for R in rotations]) + np.random.standard_normal((num_samples, 3)) * self.noise_sigma
 
-    def test_acc_mag(self):
+    def test_acc_mag_single_sample(self):
+        orientation = ahrs.filters.Tilt(acc=self.Rg[0], mag=self.Rm[0])
+        self.assertLess(ahrs.utils.metrics.qad(self.Qts[0], orientation.Q), self.noise_sigma*10.0)
+
+    def test_acc_mag_multiple_samples(self):
         orientation = ahrs.filters.Tilt(acc=self.Rg, mag=self.Rm)
         self.assertLess(np.nanmean(ahrs.utils.metrics.qad(self.Qts, orientation.Q)), self.noise_sigma*10.0)
 
