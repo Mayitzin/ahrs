@@ -33,9 +33,9 @@ def _rotations_guard_clauses(R1: Union[list, np.ndarray], R2: Union[list, np.nda
         If the rotation matrices are not valid shapes.
 
     """
-    for rotation_matrix in [R1, R2]:
+    for label, rotation_matrix in zip(['R1', 'R2'], [R1, R2]):
         if not isinstance(rotation_matrix, (list, np.ndarray)):
-            raise TypeError(f"{rotation_matrix} must be an array. Got {type(rotation_matrix)}")
+            raise TypeError(f"{label} must be an array. Got {type(rotation_matrix)}")
     r1, r2 = np.copy(R1), np.copy(R2)
     for rotation_matrix in [r1, r2]:
         if rotation_matrix.shape[-2:] != (3, 3):
@@ -56,9 +56,9 @@ def _quaternions_guard_clauses(q1: Union[list, np.ndarray], q2: Union[list, np.n
         If the quaternions are not valid shapes.
 
     """
-    for quaternion in [q1, q2]:
+    for label, quaternion in zip(['q1', 'q2'], [q1, q2]):
         if not isinstance(quaternion, (list, np.ndarray)):
-            raise TypeError(f"{quaternion} must be an array. Got {type(quaternion)}")
+            raise TypeError(f"{label} must be an array. Got {type(quaternion)}")
     q1, q2 = np.copy(q1), np.copy(q2)
     for quaternion in [q1, q2]:
         if quaternion.shape[-1] != 4:
