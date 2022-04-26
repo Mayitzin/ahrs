@@ -880,6 +880,10 @@ from ..common.mathfuncs import cosd
 from ..common.mathfuncs import sind
 from ..common.mathfuncs import skew
 
+def _assert_iterables(item, item_name: str = 'iterable'):
+    if not isinstance(item, (list, tuple, np.ndarray)):
+        raise TypeError(f"{item_name} must be given as an array. Got {type(item)}")
+
 class EKF:
     """
     Extended Kalman Filter to estimate orientation as Quaternion.
@@ -990,32 +994,36 @@ class EKF:
         frequency: float = 100.0,
         frame: str = 'NED',
         **kwargs):
-        self.gyr = gyr
-        self.acc = acc
-        self.mag = mag
-        self.frequency = frequency
-        self.frame = frame                          # Local tangent plane coordinate frame
-        self.Dt = kwargs.get('Dt', 1.0/self.frequency)
-        self.q0 = kwargs.get('q0')
-        self.P = np.identity(4)                     # Initial state covariance
-        self.R = self._set_measurement_noise_covariance(**kwargs)
+        self.gyr: np.ndarray = gyr
+        self.acc: np.ndarray = acc
+        self.mag: np.ndarray = mag
+        self.frequency: float = frequency
+        self.frame: str = frame                          # Local tangent plane coordinate frame
+        self.Dt: float = kwargs.get('Dt', (1.0/self.frequency) if self.frequency else 0.01)
+        self.q0: np.ndarray = kwargs.get('q0')
+        self.P: np.ndarray = kwargs.get('P', np.identity(4))    # Initial state covariance
+        self.R: np.ndarray = self._set_measurement_noise_covariance(**kwargs)
         self._set_reference_frames(kwargs.get('magnetic_ref'), self.frame)
+        self._assert_validity_of_inputs()
         # Process of data is given
         if self.gyr is not None and self.acc is not None:
             self.Q = self._compute_all(self.frame)
 
     def _set_measurement_noise_covariance(self, **kw) -> np.ndarray:
-        self.noises = np.array(kw.get('noises', [0.3**2, 0.5**2, 0.8**2]))
-        if 'var_gyr' in kw:
-            self.noises[0] = kw.get('var_gyr')
-        if 'var_acc' in kw:
-            self.noises[1] = kw.get('var_acc')
-        if 'var_mag' in kw:
-            self.noises[2] = kw.get('var_mag')
+        default_noises = kw.get('noises', [0.3**2, 0.5**2, 0.8**2])
+        _assert_iterables(default_noises, 'Spectral noise variances')
+        default_noises = np.copy(default_noises)
+        if default_noises.ndim != 1:
+            raise ValueError(f"Spectral noise variances must be given in a 1-dimensional array. Got {default_noises.ndim} dimensions instead.")
+        if default_noises.size != 3:
+            raise ValueError(f"Spectral noise variances must be given in a 1-dimensional array with 3 elements. Got {default_noises.size} elements instead.")
+        self.noises = [kw.get(label, value) for label, value in zip(['var_acc', 'var_gyr', 'var_mag'], default_noises)]
         self.g_noise, self.a_noise, self.m_noise = self.noises
         return np.diag(np.repeat(self.noises[1:], 3))
 
     def _set_reference_frames(self, mref: float, frame: str = 'NED') -> None:
+        if not isinstance(frame, str):
+            raise TypeError(f"Parameter 'frame' must be a string. Got {type(frame)}.")
         if frame.upper() not in ['NED', 'ENU']:
             raise ValueError(f"Invalid frame '{frame}'. Try 'NED' or 'ENU'")
         # Magnetic Reference Vector
@@ -1025,14 +1033,55 @@ class EKF:
             from ..utils.wmm import WMM
             wmm = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT)
             self.m_ref = np.array([wmm.X, wmm.Y, wmm.Z]) if frame.upper() == 'NED' else np.array([wmm.Y, wmm.X, -wmm.Z])
+        elif isinstance(mref, bool):
+            raise TypeError("Invalid magnetic reference. Try a float or a numpy.ndarray.")
         elif isinstance(mref, (int, float)):
             cd, sd = cosd(mref), sind(mref)
             self.m_ref = np.array([cd, 0.0, sd]) if frame.upper() == 'NED' else np.array([0.0, cd, -sd])
-        else:
+        elif isinstance(mref, (list, tuple, np.ndarray)):
             self.m_ref = np.copy(mref)
+        else:
+            raise TypeError(f"mref must be given as a float, list, tuple or NumPy array. Got {type(mref)}")
+        if self.m_ref.ndim != 1:
+            raise ValueError(f"mref must be given as a 1-dimensional array. Got {self.m_ref.ndim} dimensions instead.")
+        if self.m_ref.size != 3:
+            raise ValueError(f"mref must be given as a 1-dimensional array with 3 elements. Got {self.m_ref.size} elements instead.")
+        for item in self.m_ref:
+            if not isinstance(item, (int, float)):
+                raise TypeError(f"mref must be given as a 1-dimensional array of floats. Got {type(item)} instead.")
         self.m_ref /= np.linalg.norm(self.m_ref)
         # Gravitational Reference Vector
         self.a_ref = np.array([0.0, 0.0, 1.0]) if frame.upper() == 'NED' else np.array([0.0, 0.0, -1.0])
+
+    def _assert_validity_of_inputs(self):
+        """Asserts the validity of the inputs."""
+        for item in ["frequency", "Dt"]:
+            if isinstance(self.__getattribute__(item), bool):
+                raise TypeError(f"Parameter '{item}' must be numeric.")
+            if not isinstance(self.__getattribute__(item), (int, float)):
+                raise TypeError(f"Parameter '{item}' is not a non-zero number.")
+            if self.__getattribute__(item) <= 0.0:
+                raise ValueError("Parameter '{item}' must be a non-zero number.")
+        for item in ['q0', 'P', 'R']:
+            if self.__getattribute__(item) is not None:
+                if isinstance(self.__getattribute__(item), bool):
+                    raise TypeError(f"Parameter '{item}' must be an array of numeric values.")
+                if not isinstance(self.__getattribute__(item), (list, tuple, np.ndarray)):
+                    raise TypeError(f"Parameter '{item}' is not an array. Got {type(self.__getattribute__(item))}.")
+                self.__setattr__(item, np.copy(self.__getattribute__(item)))
+        if self.q0 is not None:
+            if self.q0.ndim != 1:
+                raise ValueError(f"Parameter 'q0' must be a 1-dimensional array.")
+            if self.q0.shape != (4,):
+                raise ValueError(f"Parameter 'q0' must be an array of shape (4,). It is {self.q0.shape}.")
+            if not np.allclose(np.linalg.norm(self.q0), 1.0):
+                raise ValueError(f"Parameter 'q0' must be a versor (norm equal to 1.0). Its norm is equal to {np.linalg.norm(self.q0)}.")
+        for item in ['P', 'R']:
+            if self.__getattribute__(item).ndim != 2:
+                raise ValueError(f"Parameter '{item}' must be a 2-dimensional array.")
+            m, n = self.__getattribute__(item).shape
+            if m != n:
+                raise ValueError(f"Parameter '{item}' must be a square matrix. It is {m}x{n}.")
 
     def _compute_all(self, frame: str) -> np.ndarray:
         """
@@ -1048,6 +1097,10 @@ class EKF:
             of samples.
 
         """
+        _assert_iterables(self.gyr, 'Angular velocity vector')
+        _assert_iterables(self.acc, 'Gravitational acceleration vector')
+        self.gyr = np.copy(self.gyr)
+        self.acc = np.copy(self.acc)
         if self.acc.shape != self.gyr.shape:
             raise ValueError("acc and gyr are not the same size")
         num_samples = len(self.acc)
@@ -1055,6 +1108,8 @@ class EKF:
         Q[0] = self.q0
         if self.mag is not None:
             ###### Compute attitude with MARG architecture ######
+            _assert_iterables(self.mag, 'Geomagnetic field vector')
+            self.mag = np.copy(self.mag)
             if self.mag.shape != self.gyr.shape:
                 raise ValueError("mag and gyr are not the same size")
             if self.q0 is None:
@@ -1281,8 +1336,8 @@ class EKF:
                 H = np.vstack((H, H_2))
             return 2.0*H
         v = np.r_[self.a_ref, self.m_ref]
-        H = np.array([[-qy*v[2] + qz*v[1],  qy*v[1] + qz*v[2], -qw*v[2] + qx*v[1] - 2.0*qy*v[0],  qw*v[1] + qx*v[2] - 2.0*qz*v[0]],
-                      [ qx*v[2] - qz*v[0],  qw*v[2] - 2.0*qx*v[1] + qy*v[0],  qx*v[0] + qz*v[2], -qw*v[0] + qy*v[2] - 2.0*qz*v[1]],
+        H = np.array([[-qy*v[2] + qz*v[1],                qy*v[1] + qz*v[2], -qw*v[2] + qx*v[1] - 2.0*qy*v[0],  qw*v[1] + qx*v[2] - 2.0*qz*v[0]],
+                      [ qx*v[2] - qz*v[0],  qw*v[2] - 2.0*qx*v[1] + qy*v[0],                qx*v[0] + qz*v[2], -qw*v[0] + qy*v[2] - 2.0*qz*v[1]],
                       [-qx*v[1] + qy*v[0], -qw*v[1] - 2.0*qx*v[2] + qz*v[0],  qw*v[0] - 2.0*qy*v[2] + qz*v[1],  qx*v[0] + qy*v[1]]])
         if len(self.z) == 6:
             H_2 = np.array([[-qy*v[5] + qz*v[4],                qy*v[4] + qz*v[5], -qw*v[5] + qx*v[4] - 2.0*qy*v[3],  qw*v[4] + qx*v[5] - 2.0*qz*v[3]],
@@ -1314,6 +1369,11 @@ class EKF:
             Estimated a-posteriori orientation as quaternion.
 
         """
+        _assert_iterables(q, 'Quaternion')
+        _assert_iterables(gyr, 'Tri-axial gyroscope sample')
+        _assert_iterables(acc, 'Tri-axial accelerometer sample')
+        if mag is not None:
+            _assert_iterables(mag, 'Tri-axial magnetometer sample')
         dt = self.Dt if dt is None else dt
         if not np.isclose(np.linalg.norm(q), 1.0):
             raise ValueError("A-priori quaternion must have a norm equal to 1.")
