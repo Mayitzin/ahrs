@@ -116,7 +116,18 @@ References
 """
 
 import numpy as np
-from ..common.constants import *
+from ..common.constants import RAD2DEG
+from ..common.orientation import q2R
+
+def _assert_iterables(item, item_name: str = 'iterable'):
+    if not isinstance(item, (list, tuple, np.ndarray)):
+        raise TypeError(f"{item_name} must be given as an array. Got {type(item)}")
+
+def _assert_representation(representation: str):
+    if not isinstance(representation, str):
+        raise TypeError(f"Representation must be a string. Got {type(representation)}.")
+    if representation not in ['quaternion', 'angles', 'rotmat']:
+        raise ValueError(f"Given representation '{representation}' is NOT valid. Try 'rotmat', 'angles' or 'quaternion'")
 
 class Tilt:
     """
@@ -125,11 +136,12 @@ class Tilt:
     Parameters
     ----------
     acc : numpy.ndarray, default: None
-        N-by-3 array with measurements of acceleration in in m/s^2
+        N-by-3 array with measurements of gravitational acceleration.
     mag : numpy.ndarray, default: None
-        N-by-3 array with measurements of magnetic field in mT
-    as_angles : bool, default: False
-        Whether to return the attitude as rpy angles.
+        N-by-3 array with measurements of local geomagnetic field.
+    representation : str, default: ``'quaternion'``
+        Attitude representation. Options are ``'quaternion'``, ``'angles'`` or
+        ``'rotmat'``.
 
     Attributes
     ----------
@@ -138,14 +150,12 @@ class Tilt:
     mag : numpy.ndarray
         N-by-3 array with N tri-axial magnetometer samples.
     Q : numpy.ndarray, default: None
-        N-by-4 or N-by-3 array with
-    as_angles : bool, default: False
-        Whether to return the attitude as rpy angles.
+        N-by-4 or N-by-3 array with N quaternions.
 
     Raises
     ------
     ValueError
-        When shape of input array ``acc`` is not (N, 3)
+        When shape of input arrays are not (3,) or (N, 3).
 
     Examples
     --------
@@ -189,7 +199,7 @@ class Tilt:
     then converts them to Quaternions. If we desire the angles instead, we set
     it so in the parameters.
 
-    >>> tilt = Tilt(acc_data, as_angles=True)
+    >>> tilt = Tilt(acc_data, representation='angles')
     >>> type(tilt.Q), tilt.Q.shape
     (<class 'numpy.ndarray'>, (1000, 3))
     >>> tilt.Q[:5]
@@ -210,7 +220,7 @@ class Tilt:
     also implemented and the magnetometer will be taken into account when given
     as parameter.
 
-    >>> tilt = Tilt(acc=acc_data, mag=mag_data, as_angles=True)
+    >>> tilt = Tilt(acc=acc_data, mag=mag_data, representation='angles')
     >>> tilt.Q[:5]
     array([[8.27467200e-04,  4.36167791e-06, -4.54352439e-02],
            [9.99352822e-04,  8.38015258e-05, -4.52836926e-02],
@@ -220,9 +230,10 @@ class Tilt:
 
     """
     def __init__(self, acc: np.ndarray = None, mag: np.ndarray = None, **kwargs):
-        self.acc = acc
-        self.mag = mag
-        self.as_angles = kwargs.get('as_angles', False)
+        self.acc: np.ndarray = acc
+        self.mag: np.ndarray = mag
+        self.representation: str = kwargs.get('representation', 'quaternion')
+        self.as_angles: bool = kwargs.get('as_angles', self.representation == 'angles') # Old parameter. Backwards compatiblity.
         if self.acc is not None:
             self.Q = self._compute_all()
 
@@ -241,14 +252,14 @@ class Tilt:
         -------
         Q : numpy.ndarray
             M-by-4 array with all estimated quaternions, where M is the number
-            of samples. It returns an M-by-3 array, if the flag ``as_angles``
-            is set to ``True``.
+            of samples. It returns an M-by-3 array if ``representation`` is set
+            to ``angles``, or M-by-3-by-3 array if set to ``rotmat``.
 
         """
-        if self.acc.shape[-1] != 3:
-            raise ValueError(f"Input data must be of shape (N, 3). Got shape {self.acc.shape}")
-        num_samples = len(self.acc)
-        Q = np.zeros((num_samples, 3)) if self.as_angles else np.zeros((num_samples, 4))
+        _assert_iterables(self.acc)
+        if self.acc.ndim < 2:
+            return self.estimate(self.acc, self.mag, self.representation)
+        _assert_representation(self.representation)
         # Normalization of 2D arrays
         a = self.acc/np.linalg.norm(self.acc, axis=1)[:, None]
         angles = np.zeros((len(a), 3))   # Allocation of angles array
@@ -256,6 +267,7 @@ class Tilt:
         angles[:, 0] = np.arctan2(a[:, 1], a[:, 2])
         angles[:, 1] = np.arctan2(-a[:, 0], np.sqrt(a[:, 1]**2 + a[:, 2]**2))
         if self.mag is not None:
+            _assert_iterables(self.mag)
             # Estimate heading angle
             m = self.mag/np.linalg.norm(self.mag, axis=1)[:, None]
             my2 = m[:, 2]*np.sin(angles[:, 0]) - m[:, 1]*np.cos(angles[:, 0])
@@ -263,7 +275,7 @@ class Tilt:
             mx3 = m[:, 0]*np.cos(angles[:, 1]) + mz2*np.sin(angles[:, 1])
             angles[:, 2] = np.arctan2(my2, mx3)
         # Return angles in degrees
-        if self.as_angles:
+        if self.representation == 'angles':
             return angles*RAD2DEG
         # RPY to Quaternion
         cp = np.cos(0.5*angles[:, 1])
@@ -272,13 +284,16 @@ class Tilt:
         sr = np.sin(0.5*angles[:, 0])
         cy = np.cos(0.5*angles[:, 2])
         sy = np.sin(0.5*angles[:, 2])
+        Q = np.zeros((len(self.acc), 4))
         Q[:, 0] = cy*cp*cr + sy*sp*sr
         Q[:, 1] = cy*cp*sr - sy*sp*cr
         Q[:, 2] = sy*cp*sr + cy*sp*cr
         Q[:, 3] = sy*cp*cr - cy*sp*sr
-        return Q/np.linalg.norm(Q, axis=1)[:, None]
+        if self.representation == 'quaternion':
+            return Q/np.linalg.norm(Q, axis=1)[:, None]
+        return q2R(Q)
 
-    def estimate(self, acc: np.ndarray, mag: np.ndarray = None) -> np.ndarray:
+    def estimate(self, acc: np.ndarray, mag: np.ndarray = None, representation: str = 'quaternion') -> np.ndarray:
         """
         Estimate the quaternion from the tilting read by an orthogonal
         tri-axial array of accelerometers.
@@ -316,23 +331,29 @@ class Tilt:
         array([ 76.15281566 -24.66891862 146.02634429])
 
         """
+        _assert_iterables(acc)
+        _assert_representation(representation)
         a_norm = np.linalg.norm(acc)
         if not a_norm > 0:
-            if self.as_angles:
+            if representation == 'angles':
                 return np.zeros(3)
-            return np.array([1.0, 0.0, 0.0, 0.0])
+            if representation == 'quaternion':
+                return np.array([1.0, 0.0, 0.0, 0.0])
         ax, ay, az = acc/a_norm
         ### Tilt from Accelerometer
         ex = np.arctan2( ay, az)                        # Roll
         ey = np.arctan2(-ax, np.sqrt(ay**2 + az**2))    # Pitch
         ez = 0.0                                        # Yaw
-        if mag is not None and np.linalg.norm(mag)>0:
+        if mag is not None:
+            _assert_iterables(mag)
+            if not(np.linalg.norm(mag) > 0):
+                raise ValueError("Magnetic field must be non-zero")
             mx, my, mz = mag/np.linalg.norm(mag)
             # Get tilted reference frame
             by = my*np.cos(ex) - mz*np.sin(ex)
             bx = mx*np.cos(ey) + np.sin(ey)*(my*np.sin(ex) + mz*np.cos(ex))
             ez = np.arctan2(-by, bx)
-        if self.as_angles:
+        if representation == 'angles':
             return np.array([ex, ey, ez])*RAD2DEG
         #### Euler to Quaternion
         cp = np.cos(0.5*ey)
@@ -346,4 +367,6 @@ class Tilt:
         q[1] = cy*cp*sr - sy*sp*cr
         q[2] = sy*cp*sr + cy*sp*cr
         q[3] = sy*cp*cr - cy*sp*sr
-        return q/np.linalg.norm(q)
+        if representation == 'quaternion':
+            return q/np.linalg.norm(q)
+        return q2R(q)
