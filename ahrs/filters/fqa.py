@@ -239,7 +239,6 @@ from ..common.orientation import q_prod, q_conj
 
 # Reference Observations in Munich, Germany at current date
 from ..utils.wmm import WMM
-# MAG = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT).magnetic_elements
 wmm = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT)
 REFERENCE_MAGNETIC_VECTOR = np.array([wmm.X, wmm.Y, wmm.Z])
 

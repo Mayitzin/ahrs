@@ -536,7 +536,7 @@ class Madgwick:
             if not isinstance(self.__getattribute__(item), (int, float)):
                 raise TypeError(f"Parameter '{item}' is not a non-zero number.")
             if self.__getattribute__(item) <= 0.0:
-                raise ValueError("Parameter '{item}' must be a non-zero number.")
+                raise ValueError(f"Parameter '{item}' must be a non-zero number.")
         if self.q0 is not None:
             if isinstance(self.q0, bool):
                 raise TypeError(f"Parameter 'q0' must be an array of numeric values.")
