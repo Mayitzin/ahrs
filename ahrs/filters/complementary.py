@@ -110,6 +110,10 @@ linearly interpolate quaternions with small differences between them.
 import numpy as np
 from ..common.orientation import ecompass
 
+def _assert_iterables(item, item_name: str = 'iterable'):
+    if not isinstance(item, (list, tuple, np.ndarray)):
+        raise TypeError(f"{item_name} must be given as an array. Got {type(item)}")
+
 class Complementary:
     """
     Complementary filter for attitude estimation as quaternion.
@@ -149,14 +153,47 @@ class Complementary:
         self.acc: np.ndarray = acc
         self.mag: np.ndarray = mag
         self.frequency: float = frequency
+        self.Dt: float = kwargs.get('Dt', (1.0/self.frequency) if self.frequency else 0.01)
         self.gain: float = gain
-        if not(0.0 <= self.gain <= 1.0):
-            raise ValueError(f"Filter gain must be in the range [0, 1]. Got {self.gain}")
-        self.Dt: float = kwargs.get('Dt', 1.0/self.frequency)
         self.q0: np.ndarray = kwargs.get('q0')
+        self._assert_validity_of_inputs()
         # Process of given data
         if self.gyr is not None and self.acc is not None:
             self.Q = self._compute_all()
+
+    def _assert_validity_of_inputs(self):
+        """Asserts the validity of the inputs."""
+        # Assert float values
+        for item in ['frequency', 'Dt', 'gain']:
+            if isinstance(self.__getattribute__(item), bool):
+                raise TypeError(f"Parameter '{item}' must be numeric.")
+            if not isinstance(self.__getattribute__(item), (int, float)):
+                raise TypeError(f"Parameter '{item}' is not a non-zero number.")
+            if self.__getattribute__(item) <= 0.0:
+                raise ValueError(f"Parameter '{item}' must be a non-zero number.")
+        if self.gain > 1.0:
+            raise ValueError(f"Filter gain must be in the range [0, 1]. Got {self.gain}")
+        # Assert arrays
+        for item in ['gyr', 'acc', 'mag', 'q0']:
+            if self.__getattribute__(item) is not None:
+                if isinstance(self.__getattribute__(item), bool):
+                    raise TypeError(f"Parameter '{item}' must be an array of numeric values.")
+                _assert_iterables(self.__getattribute__(item), item)
+                self.__setattr__(item, np.copy(self.__getattribute__(item)))
+        if self.q0 is not None:
+            if self.q0.ndim != 1:
+                raise ValueError(f"Parameter 'q0' must be a 1-dimensional array.")
+            if self.q0.shape != (4,):
+                raise ValueError(f"Parameter 'q0' must be an array of shape (4,). It is {self.q0.shape}.")
+            if not np.allclose(np.linalg.norm(self.q0), 1.0):
+                raise ValueError(f"Parameter 'q0' must be a versor (norm equal to 1.0). Its norm is equal to {np.linalg.norm(self.q0)}.")
+        for item in ['gyr', 'acc', 'mag']:
+            if self.__getattribute__(item) is not None:
+                if self.__getattribute__(item).ndim > 2:
+                    raise ValueError(f"Input '{item}' must be a one- or two-dimensional array.")
+                array_shape = self.__getattribute__(item).shape
+                if array_shape[-1] != 3:
+                    raise ValueError(f"Input '{item}' must be a N-by-3 array. Got {array_shape}.")
 
     def _compute_all(self) -> np.ndarray:
         """

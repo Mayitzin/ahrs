@@ -849,6 +849,60 @@ class TestComplementary(unittest.TestCase):
         orientation = ahrs.filters.Complementary(gyr=self.gyr, acc=self.Rg, mag=self.Rm)
         self.assertLess(np.nanmean(ahrs.utils.metrics.qad(self.Qts, orientation.Q)), 0.2)
 
+    def test_wrong_input_vectors(self):
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=1.0, acc=self.Rg)
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr="self.gyr", acc=self.Rg)
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=True, acc=self.Rg)
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=1.0)
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc="self.Rg")
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=True)
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=1.0, mag=2.0)
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=2.0)
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=1.0, mag=self.Rm)
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc="self.Rg", mag="self.Rm")
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr[0], acc=self.Rg[0], mag=True)
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=True, mag=[1.0, 2.0, 3.0])
+        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr[:2], acc=self.Rg, mag=self.Rm)
+        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr, acc=[1.0, 2.0, 3.0])
+        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr, acc=[1.0, 2.0], mag=[2.0, 3.0, 4.0])
+        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr, acc=[1.0, 2.0, 3.0, 4.0], mag=[2.0, 3.0, 4.0, 5.0])
+
+    def test_wrong_input_frequency(self):
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, frequency="100.0")
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, frequency=[100.0])
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, frequency=(100.0,))
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, frequency=True)
+        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, frequency=0.0)
+        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, frequency=-100.0)
+
+    def test_wrong_input_Dt(self):
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, Dt="0.01")
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, Dt=[0.01])
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, Dt=(0.01,))
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, Dt=True)
+        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, Dt=0.0)
+        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, Dt=-0.01)
+
+    def test_wrong_input_gain(self):
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, gain="0.01")
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, gain=[0.01])
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, gain=(0.01,))
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, gain=True)
+        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, gain=0.0)
+        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, gain=-0.01)
+        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, gain=1.01)
+
+    def test_wrong_initial_quaternion(self):
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, q0=1)
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, q0=1.0)
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, q0=True)
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, q0="[1.0, 0.0, 0.0, 0.0]")
+        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, q0=[1.0])
+        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, q0=[1.0, 0.0, 0.0])
+        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, q0=[1.0, 2.0, 3.0, 4.0])
+        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, q0=np.zeros(4))
+        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, q0=np.identity(4))
+
 class TestOLEQ(unittest.TestCase):
     def setUp(self) -> None:
         # Create random attitudes
