@@ -1061,7 +1061,7 @@ class EKF:
             if not isinstance(self.__getattribute__(item), (int, float)):
                 raise TypeError(f"Parameter '{item}' is not a non-zero number.")
             if self.__getattribute__(item) <= 0.0:
-                raise ValueError("Parameter '{item}' must be a non-zero number.")
+                raise ValueError(f"Parameter '{item}' must be a non-zero number.")
         for item in ['q0', 'P', 'R']:
             if self.__getattribute__(item) is not None:
                 if isinstance(self.__getattribute__(item), bool):
