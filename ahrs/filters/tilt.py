@@ -332,15 +332,17 @@ class Tilt:
         array([ 76.15281566 -24.66891862 146.02634429])
 
         """
+        _assert_representation(representation)
         _assert_iterables(acc)
         acc = np.copy(acc)
-        _assert_representation(representation)
         a_norm = np.linalg.norm(acc)
         if not a_norm > 0:
-            if representation == 'angles':
+            if representation.lower() == 'angles':
                 return np.zeros(3)
-            if representation == 'quaternion':
+            elif representation.lower() == 'quaternion':
                 return np.array([1.0, 0.0, 0.0, 0.0])
+            else:
+                return np.identity(3)
         ax, ay, az = acc/a_norm
         ### Tilt from Accelerometer
         ex = np.arctan2( ay, az)                        # Roll
