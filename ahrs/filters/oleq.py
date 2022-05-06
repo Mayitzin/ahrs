@@ -21,7 +21,7 @@ the form:
 
 .. math::
     L(\\mathbf{C}) = \\sum_{i=1}^n a_i \\|\\mathbf{D}_i^b - \\mathbf{CD}_i^r \\|^2
-    
+
 being :math:`a_i` the weight of the *i*-th sensor output. The goal of **OLEQ**
 is to find this optimal attitude, but in the form of a quaternion [Zhou2018]_.
 
@@ -231,11 +231,11 @@ class OLEQ:
             # Magnetic reference is given as a vector
             self.m_ref = np.copy(mref)
         else:
-            raise TypeError(f"Invalid magnetic reference type. Try float, int, list, tuple or numpy.ndarray")
+            raise TypeError(f"Magnetic reference must be float, int, list, tuple or numpy.ndarray. Got{type(mref)}.")
         if self.m_ref.shape != (3,):
             raise ValueError(f"Magnetic reference vector must be of shape (3,). Got {self.m_ref.shape}.")
-        if np.linalg.norm(self.m_ref) == 0.0:
-            raise ValueError(f"Magnetic reference vector must not be zero.")
+        if not any(self.m_ref):
+            raise ValueError("Magnetic reference vector must contain non-zero values.")
         self.m_ref /= np.linalg.norm(self.m_ref)
         #### Gravitational Reference Vector ####
         self.a_ref = np.array([0.0, 0.0, -1.0]) if frame.upper() == 'NED' else np.array([0.0, 0.0, 1.0])

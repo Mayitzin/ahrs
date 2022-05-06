@@ -538,8 +538,6 @@ class Madgwick:
             if self.__getattribute__(item) <= 0.0:
                 raise ValueError(f"Parameter '{item}' must be a non-zero number.")
         if self.q0 is not None:
-            if isinstance(self.q0, bool):
-                raise TypeError(f"Parameter 'q0' must be an array of numeric values.")
             if not isinstance(self.q0, (list, tuple, np.ndarray)):
                 raise TypeError(f"Parameter 'q0' must be an array. Got {type(self.q0)}.")
             self.q0 = np.copy(self.q0)

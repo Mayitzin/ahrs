@@ -363,7 +363,7 @@ class AngularRate:
             self.Q = self._compute_all()
 
     def _compute_all(self):
-        """Estimate all quaternions with given sensor values"""
+        """Estimate all quaternions with given sensor values."""
         num_samples = len(self.gyr)
         Q = np.zeros((num_samples, 4))
         Q[0] = self.q0

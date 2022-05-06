@@ -147,7 +147,7 @@ class Complementary:
         acc: np.ndarray = None,
         mag: np.ndarray = None,
         frequency: float = 100.0,
-        gain = 0.9,
+        gain: float = 0.9,
         **kwargs):
         self.gyr: np.ndarray = gyr
         self.acc: np.ndarray = acc
@@ -176,24 +176,19 @@ class Complementary:
         # Assert arrays
         for item in ['gyr', 'acc', 'mag', 'q0']:
             if self.__getattribute__(item) is not None:
-                if isinstance(self.__getattribute__(item), bool):
-                    raise TypeError(f"Parameter '{item}' must be an array of numeric values.")
                 _assert_iterables(self.__getattribute__(item), item)
                 self.__setattr__(item, np.copy(self.__getattribute__(item)))
-        if self.q0 is not None:
-            if self.q0.ndim != 1:
-                raise ValueError(f"Parameter 'q0' must be a 1-dimensional array.")
-            if self.q0.shape != (4,):
-                raise ValueError(f"Parameter 'q0' must be an array of shape (4,). It is {self.q0.shape}.")
-            if not np.allclose(np.linalg.norm(self.q0), 1.0):
-                raise ValueError(f"Parameter 'q0' must be a versor (norm equal to 1.0). Its norm is equal to {np.linalg.norm(self.q0)}.")
-        for item in ['gyr', 'acc', 'mag']:
-            if self.__getattribute__(item) is not None:
-                if self.__getattribute__(item).ndim > 2:
-                    raise ValueError(f"Input '{item}' must be a one- or two-dimensional array.")
-                array_shape = self.__getattribute__(item).shape
-                if array_shape[-1] != 3:
-                    raise ValueError(f"Input '{item}' must be a N-by-3 array. Got {array_shape}.")
+                if item == 'q0':
+                    if self.q0.shape != (4,):
+                        raise ValueError(f"Parameter 'q0' must be an array of shape (4,). It is {self.q0.shape}.")
+                    if not np.allclose(np.linalg.norm(self.q0), 1.0):
+                        raise ValueError(f"Parameter 'q0' must be a versor (norm equal to 1.0). Its norm is equal to {np.linalg.norm(self.q0)}.")
+                else:
+                    if self.__getattribute__(item).ndim > 2:
+                        raise ValueError(f"Input '{item}' must be a one- or two-dimensional array.")
+                    array_shape = self.__getattribute__(item).shape
+                    if array_shape[-1] != 3:
+                        raise ValueError(f"Input '{item}' must be of shape (3,) or (N, 3). Got {array_shape}.")
 
     def _compute_all(self) -> np.ndarray:
         """

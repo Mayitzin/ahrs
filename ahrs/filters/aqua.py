@@ -819,10 +819,10 @@ class AQUA:
         if not isinstance(self.frame, str):
             raise TypeError(f"Parameter 'frame' is not a string. It is {type(self.frame)}.")
         if self.frame.upper() not in ['NED', 'ENU']:
-            raise ValueError(f"Parameter 'frame' is not a valid frame. Try 'NED' or 'ENU'.")
+            raise ValueError(f"Frame '{self.frame}' is not valid. Try 'NED' or 'ENU'.")
 
     def _compute_all(self):
-        """Estimate all quaternions with given sensor values"""
+        """Estimate all quaternions with given sensor values."""
         _assert_iterables(self.acc, 'Accelerometer data')
         # A single sample was given
         if self.acc.ndim < 2:
@@ -941,7 +941,7 @@ class AQUA:
         if mag is not None:
             m_norm = np.linalg.norm(mag)
             if m_norm == 0:
-                raise ValueError(f"Invalid geomagnetic field. Its magnitude must be greater than zero.")
+                raise ValueError("Invalid geomagnetic field. Its must contain non-zero values.")
             lx, ly, _ = q2R(q_acc).T @ (mag/np.linalg.norm(mag))    # (eq. 26)
             Gamma = lx**2 + ly**2                                   # (eq. 28)
             # Quaternion from Magnetometer Readings (eq. 35)
@@ -1073,5 +1073,5 @@ class AQUA:
         return q/np.linalg.norm(q)
 
     def init_q(self, acc: np.ndarray, mag: np.ndarray = None) -> np.ndarray:
-        """Synonym for method `estimate`"""
+        """Synonym of method `estimate`."""
         return self.estimate(acc, mag)

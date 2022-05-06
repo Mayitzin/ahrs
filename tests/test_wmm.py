@@ -38,7 +38,8 @@ class TestWMM(unittest.TestCase):
 
     """
     def _load_test_values(self, filename: str) -> np.ndarray:
-        """Load test values from file.
+        """
+        Load test values from file.
 
         Parameters
         ----------

@@ -183,11 +183,11 @@ class ROLEQ:
             # Magnetic reference is given as a vector
             self.m_ref = np.copy(mref)
         else:
-            raise TypeError(f"Invalid magnetic reference type. Try float, int, list, tuple or numpy.ndarray")
+            raise TypeError(f"Magnetic reference must be float, int, list, tuple or numpy.ndarray. Got {type(mref)}.")
         if self.m_ref.shape != (3,):
             raise ValueError(f"Magnetic reference vector must be of shape (3,). Got {self.m_ref.shape}.")
-        if np.linalg.norm(self.m_ref) == 0.0:
-            raise ValueError(f"Magnetic reference vector must not be zero.")
+        if not any(self.m_ref):
+            raise ValueError("Magnetic reference vector must contain non-zero values.")
         self.m_ref /= np.linalg.norm(self.m_ref)
         #### Gravitational Reference Vector ####
         self.a_ref = np.array([0.0, 0.0, -1.0]) if frame.upper() == 'NED' else np.array([0.0, 0.0, 1.0])
@@ -214,8 +214,6 @@ class ROLEQ:
         if self.mag is not None and self.acc is None:
             raise ValueError("If 'mag' is given, 'acc' must also be given.")
         if self.q0 is not None:
-            if self.q0.ndim != 1:
-                raise ValueError(f"Parameter 'q0' must be a 1-dimensional array.")
             if self.q0.shape != (4,):
                 raise ValueError(f"Parameter 'q0' must be an array of shape (4,). It is {self.q0.shape}.")
             if not np.allclose(np.linalg.norm(self.q0), 1.0):

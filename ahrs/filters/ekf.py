@@ -1070,8 +1070,6 @@ class EKF:
                     raise TypeError(f"Parameter '{item}' is not an array. Got {type(self.__getattribute__(item))}.")
                 self.__setattr__(item, np.copy(self.__getattribute__(item)))
         if self.q0 is not None:
-            if self.q0.ndim != 1:
-                raise ValueError(f"Parameter 'q0' must be a 1-dimensional array.")
             if self.q0.shape != (4,):
                 raise ValueError(f"Parameter 'q0' must be an array of shape (4,). It is {self.q0.shape}.")
             if not np.allclose(np.linalg.norm(self.q0), 1.0):
