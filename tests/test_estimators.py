@@ -954,15 +954,19 @@ class TestOLEQ(unittest.TestCase):
         self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, frame='NWU')
 
     def test_wrong_weights(self):
-        self.assertRaises(TypeError, ahrs.filters.OLEQ,acc=self.Rg, mag=self.Rm, weights=1)
-        self.assertRaises(TypeError, ahrs.filters.OLEQ,acc=self.Rg, mag=self.Rm, weights=1.0)
-        self.assertRaises(TypeError, ahrs.filters.OLEQ,acc=self.Rg, mag=self.Rm, weights=True)
-        self.assertRaises(TypeError, ahrs.filters.OLEQ,acc=self.Rg, mag=self.Rm, weights="[1.0, 0.0, 0.0, 0.0]")
-        self.assertRaises(TypeError, ahrs.filters.OLEQ,acc=self.Rg, mag=self.Rm, weights=['0.5', '0.5'])
-        self.assertRaises(ValueError, ahrs.filters.OLEQ,acc=self.Rg, mag=self.Rm, weights=[1.0])
-        self.assertRaises(ValueError, ahrs.filters.OLEQ,acc=self.Rg, mag=self.Rm, weights=[0.5, -0.5])
-        self.assertRaises(ValueError, ahrs.filters.OLEQ,acc=self.Rg, mag=self.Rm, weights=[0.0, 0.0])
-        self.assertRaises(ValueError, ahrs.filters.OLEQ,acc=self.Rg, mag=self.Rm, weights=np.zeros(4))
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, weights=1)
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, weights=1.0)
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, weights=True)
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, weights="[1.0, 1.0]")
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, weights=['1.0', '1.0'])
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, weights=['1.0', 1.0])
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, weights=[1.0, '1.0'])
+        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, weights=[[1.0], [1.0]])
+        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, weights=[[1.0, 1.0]])
+        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, weights=[1.0])
+        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, weights=[0.5, -0.5])
+        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, weights=[0.0, 0.0])
+        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, weights=np.zeros(4))
 
 class TestROLEQ(unittest.TestCase):
     def setUp(self) -> None:

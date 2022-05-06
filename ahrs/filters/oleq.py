@@ -254,7 +254,7 @@ class OLEQ:
         if self.mag is not None and self.acc is None:
             raise ValueError("If 'mag' is given, 'acc' must also be given.")
         # Assert weights
-        if self.a.shape[-1] != 2:
+        if self.a.shape != (2,):
             raise ValueError(f"Dimension of 'weights' must be (2,). Got {self.a.shape}.")
         for item in self.a:
             if not isinstance(item, (int, float)):
