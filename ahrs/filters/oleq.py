@@ -167,9 +167,9 @@ class OLEQ:
     mag : numpy.ndarray, default: None
         N-by-3 array with measurements of magnetic field in mT
     weights : numpy.ndarray, default: ``[1., 1.]``
-        N-by-2 array with weights for each sensor measurement. The first item
-        weights the observed acceleration, while second item weights the
-        observed magnetic field.
+        Array with weights for each sensor measurement. The first item weights
+        the observed acceleration, while second item weights the observed
+        magnetic field.
     magnetic_ref : float or numpy.ndarray
         Local magnetic reference.
     frame : str, default: ``'NED'``
