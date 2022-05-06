@@ -921,6 +921,49 @@ class TestOLEQ(unittest.TestCase):
         orientation = ahrs.filters.OLEQ(acc=self.Rg, mag=self.Rm)
         self.assertLess(np.nanmean(ahrs.utils.metrics.qad(self.Qts, orientation.Q)), self.noise_sigma*10.0)
 
+    def test_wrong_input_vectors(self):
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=1.0)
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc="self.Rg")
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=True)
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=1.0, mag=2.0)
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.Rg, mag=2.0)
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=1.0, mag=self.Rm)
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc="self.Rg", mag="self.Rm")
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.Rg[0], mag=True)
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=True, mag=[1.0, 2.0, 3.0])
+        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=[1.0, 2.0, 3.0])
+        self.assertRaises(ValueError, ahrs.filters.OLEQ, mag=[2.0, 3.0, 4.0])
+        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=[1.0, 2.0], mag=[2.0, 3.0, 4.0])
+        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=[1.0, 2.0, 3.0, 4.0], mag=[2.0, 3.0, 4.0, 5.0])
+
+    def test_wrong_magnetic_reference(self):
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, magnetic_ref='34.5')
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, magnetic_ref=False)
+        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, magnetic_ref=['34.5'])
+        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, magnetic_ref=('34.5',))
+        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, magnetic_ref=[1.0, 2.0])
+        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, magnetic_ref=[0.0, 0.0, 0.0])
+        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, magnetic_ref=[[1.0], [2.0], [3.0]])
+
+    def test_wrong_input_frame(self):
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, frame=1)
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, frame=1.0)
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, frame=True)
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, frame=['NED'])
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, frame=('NED',))
+        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, frame='NWU')
+
+    def test_wrong_weights(self):
+        self.assertRaises(TypeError, ahrs.filters.OLEQ,acc=self.Rg, mag=self.Rm, weights=1)
+        self.assertRaises(TypeError, ahrs.filters.OLEQ,acc=self.Rg, mag=self.Rm, weights=1.0)
+        self.assertRaises(TypeError, ahrs.filters.OLEQ,acc=self.Rg, mag=self.Rm, weights=True)
+        self.assertRaises(TypeError, ahrs.filters.OLEQ,acc=self.Rg, mag=self.Rm, weights="[1.0, 0.0, 0.0, 0.0]")
+        self.assertRaises(TypeError, ahrs.filters.OLEQ,acc=self.Rg, mag=self.Rm, weights=['0.5', '0.5'])
+        self.assertRaises(ValueError, ahrs.filters.OLEQ,acc=self.Rg, mag=self.Rm, weights=[1.0])
+        self.assertRaises(ValueError, ahrs.filters.OLEQ,acc=self.Rg, mag=self.Rm, weights=[0.5, -0.5])
+        self.assertRaises(ValueError, ahrs.filters.OLEQ,acc=self.Rg, mag=self.Rm, weights=[0.0, 0.0])
+        self.assertRaises(ValueError, ahrs.filters.OLEQ,acc=self.Rg, mag=self.Rm, weights=np.zeros(4))
+
 class TestROLEQ(unittest.TestCase):
     def setUp(self) -> None:
         # Create random attitudes

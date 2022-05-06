@@ -149,7 +149,12 @@ References
 """
 
 import numpy as np
-from ..common.mathfuncs import cosd, sind
+from ..common.mathfuncs import cosd
+from ..common.mathfuncs import sind
+
+def _assert_iterables(item, item_name: str = 'iterable'):
+    if not isinstance(item, (list, tuple, np.ndarray)):
+        raise TypeError(f"{item_name} must be given as an array. Got {type(item)}")
 
 class OLEQ:
     """
@@ -161,9 +166,13 @@ class OLEQ:
         N-by-3 array with measurements of acceleration in in m/s^2
     mag : numpy.ndarray, default: None
         N-by-3 array with measurements of magnetic field in mT
+    weights : numpy.ndarray, default: ``[1., 1.]``
+        N-by-2 array with weights for each sensor measurement. The first item
+        weights the observed acceleration, while second item weights the
+        observed magnetic field.
     magnetic_ref : float or numpy.ndarray
         Local magnetic reference.
-    frame : str, default: 'NED'
+    frame : str, default: ``'NED'``
         Local tangent plane coordinate frame. Valid options are right-handed
         ``'NED'`` for North-East-Down and ``'ENU'`` for East-North-Up.
 
@@ -189,16 +198,19 @@ class OLEQ:
         magnetic_ref: np.ndarray = None,
         frame: str = 'NED'
         ):
-        self.acc = acc
-        self.mag = mag
-        self.a = weights if weights is not None else np.ones(2)
-        self.frame = frame
+        self.acc: np.ndarray = acc
+        self.mag: np.ndarray = mag
+        self.a: np.ndarray = weights if weights is not None else np.ones(2)
+        self.frame: str = frame
         # Reference measurements
         self._set_reference_frames(magnetic_ref, self.frame)
+        self._assert_validity_of_inputs()
         if self.acc is not None and self.mag is not None:
             self.Q = self._compute_all()
 
     def _set_reference_frames(self, mref: float, frame: str = 'NED') -> None:
+        if not isinstance(frame, str):
+            raise TypeError(f"'frame' must be a string. Got {type(frame)}.")
         if frame.upper() not in ['NED', 'ENU']:
             raise ValueError(f"Invalid frame '{frame}'. Try 'NED' or 'ENU'")
         #### Magnetic Reference Vector ####
@@ -209,16 +221,48 @@ class OLEQ:
             wmm = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT)
             cd, sd = cosd(wmm.I), sind(wmm.I)
             self.m_ref = np.array([sd, 0.0, cd]) if frame.upper() == 'NED' else np.array([0.0, cd, -sd])
+        elif isinstance(mref, bool):
+            raise TypeError(f"'mref' must be a float or numpy.ndarray. Got {type(mref)}.")
         elif isinstance(mref, (int, float)):
             # Use given magnetic dip angle (in degrees)
             cd, sd = cosd(mref), sind(mref)
             self.m_ref = np.array([sd, 0.0, cd]) if frame.upper() == 'NED' else np.array([0.0, cd, -sd])
-        else:
+        elif isinstance(mref, (list, tuple, np.ndarray)):
             # Magnetic reference is given as a vector
             self.m_ref = np.copy(mref)
+        else:
+            raise TypeError(f"Invalid magnetic reference type. Try float, int, list, tuple or numpy.ndarray")
+        if self.m_ref.shape != (3,):
+            raise ValueError(f"Magnetic reference vector must be of shape (3,). Got {self.m_ref.shape}.")
+        if np.linalg.norm(self.m_ref) == 0.0:
+            raise ValueError(f"Magnetic reference vector must not be zero.")
         self.m_ref /= np.linalg.norm(self.m_ref)
         #### Gravitational Reference Vector ####
         self.a_ref = np.array([0.0, 0.0, -1.0]) if frame.upper() == 'NED' else np.array([0.0, 0.0, 1.0])
+
+    def _assert_validity_of_inputs(self):
+        """Asserts the validity of the inputs."""
+        # Assert arrays
+        for item in ['acc', 'mag', 'a', 'm_ref', 'a_ref']:
+            if self.__getattribute__(item) is not None:
+                if isinstance(self.__getattribute__(item), bool):
+                    raise TypeError(f"Parameter '{item}' must be an array of numeric values.")
+                _assert_iterables(self.__getattribute__(item), item)
+                self.__setattr__(item, np.copy(self.__getattribute__(item)))
+        if self.acc is not None and self.mag is None:
+            raise ValueError("If 'acc' is given, 'mag' must also be given.")
+        if self.mag is not None and self.acc is None:
+            raise ValueError("If 'mag' is given, 'acc' must also be given.")
+        # Assert weights
+        if self.a.shape[-1] != 2:
+            raise ValueError(f"Dimension of 'weights' must be (2,). Got {self.a.shape}.")
+        for item in self.a:
+            if not isinstance(item, (int, float)):
+                raise TypeError(f"'weights' must be an array of numeric values. Got {type(item)}.")
+            if item < 0.0:
+                raise ValueError(f"'weights' must be non-negative. Got {item}.")
+        if not any(self.a > 0):
+            raise ValueError("'weights' must contain positive values.")
 
     def _compute_all(self) -> np.ndarray:
         """
@@ -233,6 +277,8 @@ class OLEQ:
             of samples.
 
         """
+        _assert_iterables(self.acc, 'Gravitational acceleration vector')
+        _assert_iterables(self.mag, 'Geomagnetic field vector')
         if self.acc.shape != self.mag.shape:
             raise ValueError("acc and mag are not the same size")
         num_samples = np.atleast_2d(self.acc).shape[0]
