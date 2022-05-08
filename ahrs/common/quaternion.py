@@ -1370,6 +1370,9 @@ class Quaternion(np.ndarray):
             \\mathbf{pq} & = & \\big( (q_w p_w - \\mathbf{q}_v \\cdot \\mathbf{p}_v) \\; ,
             \\; \\mathbf{q}_v \\times \\mathbf{p}_v + q_w \\mathbf{p}_v + p_w \\mathbf{q}_v \\big) \\\\
             & = &
+            \\begin{bmatrix}q_w p_w - \\mathbf{q}_v \\cdot \\mathbf{p}_v \\\\
+            \\mathbf{q}_v \\times \\mathbf{p}_v + q_w \\mathbf{p}_v + p_w \\mathbf{q}_v \\end{bmatrix} \\\\
+            & = &
             \\begin{bmatrix}
             p_w & -\\mathbf{p}_v^T \\\\ \\mathbf{p}_v & p_w \\mathbf{I}_3 + \\lfloor \\mathbf{p}_v \\rfloor_\\times
             \\end{bmatrix}
@@ -1399,34 +1402,34 @@ class Quaternion(np.ndarray):
 
         Parameters
         ----------
-        r : numpy.ndarray, Quaternion
+        q : numpy.ndarray, Quaternion
             Quaternion to multiply with.
 
         Returns
         -------
-        qr : numpy.ndarray
+        pq : numpy.ndarray
             Product of quaternions.
 
         Examples
         --------
-        >>> q1 = Quaternion([0.55747131, 0.12956903, 0.5736954 , 0.58592763])
+        >>> p = Quaternion([0.55747131, 0.12956903, 0.5736954 , 0.58592763])
 
         Can multiply with a given quaternion in vector form...
 
-        >>> q1.product([0.49753507, 0.50806522, 0.52711628, 0.4652709])
+        >>> p.product([0.49753507, 0.50806522, 0.52711628, 0.4652709])
         array([-0.36348726,  0.38962514,  0.34188103,  0.77407146])
 
         or with a Quaternion object...
 
-        >>> q2 = Quaternion([0.49753507, 0.50806522, 0.52711628, 0.4652709 ])
-        >>> q1.product(q2)
+        >>> q = Quaternion([0.49753507, 0.50806522, 0.52711628, 0.4652709 ])
+        >>> p.product(q)
         array([-0.36348726,  0.38962514,  0.34188103,  0.77407146])
 
         It holds with the result after the cross and dot product definition
 
-        >>> qw = q1.w*q2.w - np.dot(q1.v, q2.v)
-        >>> qv = q1.w*q2.v + q2.w*q1.v + np.cross(q1.v, q2.v)
-        >>> qw, qv
+        >>> rw = p.w*q.w - np.dot(p.v, q.v)
+        >>> rv = p.w*q.v + q.w*p.v + np.cross(p.v, q.v)
+        >>> rw, rv
         (-0.36348726, array([0.38962514,  0.34188103,  0.77407146]))
 
         """
