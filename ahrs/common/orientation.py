@@ -61,6 +61,7 @@ def q_conj(q: np.ndarray) -> np.ndarray:
     .. [2] https://en.wikipedia.org/wiki/Quaternion#Conjugation,_the_norm,_and_reciprocal
 
     """
+    q = np.copy(q)
     if q.ndim > 2 or q.shape[-1] != 4:
         raise ValueError(f"Quaternion must be of shape (4,) or (N, 4), but has shape {q.shape}")
     return np.array([1., -1., -1., -1.])*np.array(q)
