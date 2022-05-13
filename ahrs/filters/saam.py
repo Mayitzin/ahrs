@@ -119,9 +119,7 @@ import numpy as np
 from ..common.quaternion import Quaternion
 from ..common.quaternion import QuaternionArray
 
-def _assert_iterables(item, item_name: str = 'iterable'):
-    if not isinstance(item, (list, tuple, np.ndarray)):
-        raise TypeError(f"{item_name} must be given as an array. Got {type(item)}")
+from ..utils.core import _assert_valid_array_type
 
 class SAAM:
     """
@@ -143,11 +141,11 @@ class SAAM:
     mag : numpy.ndarray
         N-by-3 array with N magnetometer samples.
     Q : numpy.ndarray, default: None
-        M-by-4 Array with all estimated orientations as quaternions, where M is
+        N-by-4 Array with all estimated orientations as quaternions, where N is
         the number of samples. Equal to None when no estimation is performed.
     A : numpy.ndarray, default: None
-        3-by-3 or M-by-3-by-3 Array with all estimated orientarions as rotation
-        matrices, where M is the number of rotations.
+        3-by-3 or N-by-3-by-3 Array with all estimated orientarions as rotation
+        matrices, where N is the number of rotations.
 
     Raises
     ------
@@ -193,7 +191,7 @@ class SAAM:
         if acc.shape != mag.shape:
             raise ValueError("acc and mag are not the same size")
         if acc.shape[-1] != 3:
-            raise ValueError(f"Sensor data must be of shape (3, ) or (M, 3). Got {acc.shape}")
+            raise ValueError(f"Sensor data must be of shape (3, ) or (N, 3). Got {acc.shape}")
 
     def _compute_all(self, acc: np.ndarray, mag: np.ndarray) -> np.ndarray:
         """
@@ -220,8 +218,8 @@ class SAAM:
             of samples.
 
         """
-        _assert_iterables(acc, 'Gravitational acceleration vector')
-        _assert_iterables(mag, 'Geomagnetic field vector')
+        _assert_valid_array_type(acc, 'Gravitational acceleration vector')
+        _assert_valid_array_type(mag, 'Geomagnetic field vector')
         acc, mag = np.copy(acc), np.copy(mag)
         self._assert_observations(acc, mag)
         if acc.ndim < 2:
