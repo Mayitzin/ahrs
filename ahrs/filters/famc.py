@@ -162,9 +162,7 @@ References
 
 import numpy as np
 
-def _assert_iterables(item, item_name: str = 'iterable') -> None:
-    if not isinstance(item, (list, tuple, np.ndarray)):
-        raise TypeError(f"{item_name} must be given as an array. Got {type(item)}")
+from ..utils.core import _assert_valid_array_type
 
 class FAMC:
     """
@@ -230,8 +228,8 @@ class FAMC:
             of samples.
 
         """
-        _assert_iterables(self.acc, 'acc')
-        _assert_iterables(self.mag, 'mag')
+        _assert_valid_array_type(self.acc, 'acc')
+        _assert_valid_array_type(self.mag, 'mag')
         self.acc = np.copy(self.acc)
         self.mag = np.copy(self.mag)
         if self.acc.shape != self.mag.shape:
