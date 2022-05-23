@@ -119,7 +119,7 @@ import numpy as np
 from ..common.quaternion import Quaternion
 from ..common.quaternion import QuaternionArray
 
-from ..utils.core import _assert_valid_array_type
+from ..utils.core import _assert_numerical_iterable
 
 class SAAM:
     """
@@ -218,8 +218,8 @@ class SAAM:
             of samples.
 
         """
-        _assert_valid_array_type(acc, 'Gravitational acceleration vector')
-        _assert_valid_array_type(mag, 'Geomagnetic field vector')
+        _assert_numerical_iterable(acc, 'Gravitational acceleration vector')
+        _assert_numerical_iterable(mag, 'Geomagnetic field vector')
         acc, mag = np.copy(acc), np.copy(mag)
         self._assert_observations(acc, mag)
         if acc.ndim < 2:
