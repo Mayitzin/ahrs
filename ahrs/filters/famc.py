@@ -162,7 +162,7 @@ References
 
 import numpy as np
 
-from ..utils.core import _assert_valid_array_type
+from ..utils.core import _assert_numerical_iterable
 
 class FAMC:
     """
@@ -228,8 +228,8 @@ class FAMC:
             of samples.
 
         """
-        _assert_valid_array_type(self.acc, 'acc')
-        _assert_valid_array_type(self.mag, 'mag')
+        _assert_numerical_iterable(self.acc, 'acc')
+        _assert_numerical_iterable(self.mag, 'mag')
         self.acc = np.copy(self.acc)
         self.mag = np.copy(self.mag)
         if self.acc.shape != self.mag.shape:
