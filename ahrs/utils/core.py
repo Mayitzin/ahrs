@@ -17,6 +17,6 @@ def _assert_valid_array_type(item, item_name: str = 'iterable'):
 
 def _assert_numerical_iterable(item, item_name: str = 'iterable'):
     _assert_valid_array_type(item, item_name)
-    for i in item:
-        if not isinstance(i, (int, float)):
-            raise TypeError(f"{item_name} must be given as an array of numeric values. Got {type(i)}")
+    item_copy = np.copy(item)
+    if not(item_copy.dtype == np.dtype(int) or item_copy.dtype == np.dtype(float)):
+        raise TypeError(f"{item_name} must have numerical values. Got {item_copy.dtype.name}")
