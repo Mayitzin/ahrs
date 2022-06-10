@@ -339,16 +339,13 @@ from ..common.mathfuncs import sind
 from ..common.constants import MUNICH_LATITUDE
 from ..common.constants import MUNICH_LONGITUDE
 from ..common.constants import MUNICH_HEIGHT
+from ..utils.core import _assert_numerical_iterable
 
 warnings.filterwarnings('error')
 
 # Reference Observations in Munich, Germany
 from ..utils.wmm import WMM
 MAG = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT).magnetic_elements
-
-def _assert_iterables(item, item_name: str = 'iterable'):
-    if not isinstance(item, (list, tuple, np.ndarray)):
-        raise TypeError(f"{item_name} must be given as an array. Got {type(item)}")
 
 def _assert_valid_method(method : str, valid_methods : list) -> None:
     if not isinstance(method, str):
@@ -432,8 +429,8 @@ class FLAE:
             of samples.
 
         """
-        _assert_iterables(self.acc, 'Gravitational acceleration vector')
-        _assert_iterables(self.mag, 'Geomagnetic field vector')
+        _assert_numerical_iterable(self.acc, 'Gravitational acceleration vector')
+        _assert_numerical_iterable(self.mag, 'Geomagnetic field vector')
         self.acc = np.copy(self.acc)
         self.mag = np.copy(self.mag)
         if self.acc.shape != self.mag.shape:
@@ -497,8 +494,8 @@ class FLAE:
 
         """
         _assert_valid_method(method, ['symbolic', 'eig', 'newton'])
-        _assert_iterables(acc, 'Gravitational acceleration vector')
-        _assert_iterables(mag, 'Geomagnetic field vector')
+        _assert_numerical_iterable(acc, 'Gravitational acceleration vector')
+        _assert_numerical_iterable(mag, 'Geomagnetic field vector')
         if acc.size != 3:
             raise ValueError(f"Accelerometer sample must be a (3,) array. Got array of shape {acc.shape}")
         if mag.size != 3:
