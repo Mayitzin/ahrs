@@ -942,8 +942,8 @@ class AQUA:
             m_norm = np.linalg.norm(mag)
             if m_norm == 0:
                 raise ValueError("Invalid geomagnetic field. Its must contain non-zero values.")
-            lx, ly, _ = q2R(q_acc).T @ (mag/np.linalg.norm(mag))    # (eq. 26)
-            Gamma = lx**2 + ly**2                                   # (eq. 28)
+            lx, ly, _ = q2R(q_acc).T @ (mag/m_norm)     # (eq. 26)
+            Gamma = lx**2 + ly**2                       # (eq. 28)
             # Quaternion from Magnetometer Readings (eq. 35)
             if lx >= 0:
                 q_mag = np.array([np.sqrt(Gamma+lx*np.sqrt(Gamma))/np.sqrt(2*Gamma), 0.0, 0.0, ly/(np.sqrt(2)*np.sqrt(Gamma+lx*np.sqrt(Gamma)))])
