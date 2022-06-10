@@ -236,6 +236,12 @@ class TestFLAE(unittest.TestCase):
         self.assertRaises(ValueError, ahrs.filters.FLAE, acc=[1.0, 2.0], mag=[2.0, 3.0, 4.0])
         self.assertRaises(ValueError, ahrs.filters.FLAE, acc=[1.0, 2.0, 3.0, 4.0], mag=[2.0, 3.0, 4.0, 5.0])
 
+    def test_wrong_input_vector_types(self):
+        self.assertRaises(TypeError, ahrs.filters.FLAE, acc=['1.0', 2.0, 3.0], mag=[2.0, 3.0, 4.0])
+        self.assertRaises(TypeError, ahrs.filters.FLAE, acc=[1.0, 2.0, 3.0], mag=['2.0', 3.0, 4.0])
+        self.assertRaises(TypeError, ahrs.filters.FLAE, acc=['1.0', '2.0', '3.0'], mag=[2.0, 3.0, 4.0])
+        self.assertRaises(TypeError, ahrs.filters.FLAE, acc=[1.0, 2.0, 3.0], mag=['2.0', '3.0', '4.0'])
+
     def test_wrong_method(self):
         self.assertRaises(TypeError, ahrs.filters.FLAE, self.Rg, self.Rm, method=1)
         self.assertRaises(TypeError, ahrs.filters.FLAE, self.Rg, self.Rm, method=3.14159)
