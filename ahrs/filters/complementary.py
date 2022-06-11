@@ -109,10 +109,7 @@ linearly interpolate quaternions with small differences between them.
 
 import numpy as np
 from ..common.orientation import ecompass
-
-def _assert_iterables(item, item_name: str = 'iterable'):
-    if not isinstance(item, (list, tuple, np.ndarray)):
-        raise TypeError(f"{item_name} must be given as an array. Got {type(item)}")
+from ..utils.core import _assert_numerical_iterable
 
 class Complementary:
     """
@@ -176,7 +173,7 @@ class Complementary:
         # Assert arrays
         for item in ['gyr', 'acc', 'mag', 'q0']:
             if self.__getattribute__(item) is not None:
-                _assert_iterables(self.__getattribute__(item), item)
+                _assert_numerical_iterable(self.__getattribute__(item), item)
                 self.__setattr__(item, np.copy(self.__getattribute__(item)))
                 if item == 'q0':
                     if self.q0.shape != (4,):
