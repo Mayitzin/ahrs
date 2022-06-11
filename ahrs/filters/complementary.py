@@ -202,7 +202,11 @@ class Complementary:
         """
         if self.acc.shape != self.gyr.shape:
             raise ValueError("acc and gyr are not the same size")
-        num_samples = len(self.acc)
+        if self.acc.ndim < 2:
+            if self.mag is None:
+                return self.update(self.q0, self.gyr, self.acc)
+            return self.update(self.q0, self.gyr, self.acc, self.mag)
+        num_samples, _ = self.acc.shape
         Q = np.zeros((num_samples, 4))
         if self.mag is None:
             self.mag = [None]*num_samples
