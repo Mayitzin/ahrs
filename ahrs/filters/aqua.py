@@ -575,10 +575,6 @@ from ..utils.core import _assert_numerical_iterable
 from ..utils.wgs84 import WGS
 GRAVITY = WGS().normal_gravity(MUNICH_LATITUDE, MUNICH_HEIGHT)
 
-# def _assert_iterables(item, item_name: str = 'iterable'):
-#     if not isinstance(item, (list, tuple, np.ndarray)):
-#         raise TypeError(f"{item_name} must be given as an array. Got {type(item)}")
-
 def _assert_same_shapes(item1, item2, item_names: list = None):
     for item in [item1, item2]:
         if not isinstance(item, (list, tuple, np.ndarray)):
