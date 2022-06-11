@@ -118,10 +118,7 @@ References
 import numpy as np
 from ..common.constants import RAD2DEG
 from ..common.orientation import q2R
-
-def _assert_iterables(item, item_name: str = 'iterable'):
-    if not isinstance(item, (list, tuple, np.ndarray)):
-        raise TypeError(f"{item_name} must be given as an array. Got {type(item)}")
+from ..utils.core import _assert_numerical_iterable
 
 def _assert_representation(representation: str):
     if not isinstance(representation, str):
@@ -257,7 +254,7 @@ class Tilt:
             to ``angles``, or M-by-3-by-3 array if set to ``rotmat``.
 
         """
-        _assert_iterables(self.acc)
+        _assert_numerical_iterable(self.acc, 'Gravitational acceleration vector')
         self.acc = np.copy(self.acc)
         if self.acc.ndim < 2:
             return self.estimate(self.acc, self.mag, self.representation)
@@ -268,7 +265,7 @@ class Tilt:
         angles[:, 0] = np.arctan2(a[:, 1], a[:, 2])
         angles[:, 1] = np.arctan2(-a[:, 0], np.sqrt(a[:, 1]**2 + a[:, 2]**2))
         if self.mag is not None:
-            _assert_iterables(self.mag)
+            _assert_numerical_iterable(self.mag, 'Geomagnetic field vector')
             # Estimate heading angle
             m = self.mag/np.linalg.norm(self.mag, axis=1)[:, None]
             my2 = m[:, 2]*np.sin(angles[:, 0]) - m[:, 1]*np.cos(angles[:, 0])
@@ -333,7 +330,7 @@ class Tilt:
 
         """
         _assert_representation(representation)
-        _assert_iterables(acc)
+        _assert_numerical_iterable(acc, 'Gravitational acceleration vector')
         acc = np.copy(acc)
         a_norm = np.linalg.norm(acc)
         if not a_norm > 0:
@@ -349,7 +346,7 @@ class Tilt:
         ey = np.arctan2(-ax, np.sqrt(ay**2 + az**2))    # Pitch
         ez = 0.0                                        # Yaw
         if mag is not None:
-            _assert_iterables(mag)
+            _assert_numerical_iterable(mag, 'Geomagnetic field vector')
             if not(np.linalg.norm(mag) > 0):
                 raise ValueError("Magnetic field must be non-zero")
             mx, my, mz = mag/np.linalg.norm(mag)
