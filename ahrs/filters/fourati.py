@@ -232,15 +232,12 @@ from ..common.constants import MUNICH_HEIGHT
 from ..common.mathfuncs import cosd
 from ..common.mathfuncs import sind
 from ..common.mathfuncs import skew
+from ..utils.core import _assert_numerical_iterable
 
 # Reference Observations in Munich, Germany
 from ..utils.wmm import WMM
 wmm = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT)
 REFERENCE_MAGNETIC_VECTOR = np.array([wmm.X, wmm.Y, wmm.Z])
-
-def _assert_iterables(item, item_name: str = 'iterable'):
-    if not isinstance(item, (list, tuple, np.ndarray)):
-        raise TypeError(f"{item_name} must be given as an array. Got {type(item)}")
 
 def _set_magnetic_field_vector(magnetic_dip: Union[int, float, list, tuple, np.ndarray]):
     """
@@ -351,9 +348,9 @@ class Fourati:
             of samples.
 
         """
-        _assert_iterables(self.gyr, 'Angular velocity vector')
-        _assert_iterables(self.acc, 'Gravitational acceleration vector')
-        _assert_iterables(self.mag, 'Geomagnetic field vector')
+        _assert_numerical_iterable(self.gyr, 'Angular velocity vector')
+        _assert_numerical_iterable(self.acc, 'Gravitational acceleration vector')
+        _assert_numerical_iterable(self.mag, 'Geomagnetic field vector')
         self.gyr = np.copy(self.gyr)
         self.acc = np.copy(self.acc)
         self.mag = np.copy(self.mag)
@@ -391,10 +388,10 @@ class Fourati:
             Estimated quaternion.
 
         """
-        _assert_iterables(q, 'Quaternion')
-        _assert_iterables(gyr, 'Tri-axial gyroscope sample')
-        _assert_iterables(acc, 'Tri-axial accelerometer sample')
-        _assert_iterables(mag, 'Tri-axial magnetometer sample')
+        _assert_numerical_iterable(q, 'Quaternion')
+        _assert_numerical_iterable(gyr, 'Tri-axial gyroscope sample')
+        _assert_numerical_iterable(acc, 'Tri-axial accelerometer sample')
+        _assert_numerical_iterable(mag, 'Tri-axial magnetometer sample')
         dt = self.Dt if dt is None else dt
         if gyr is None or not np.linalg.norm(gyr) > 0:
             return q
