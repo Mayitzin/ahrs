@@ -111,6 +111,7 @@ from ..common.constants import MUNICH_LATITUDE
 from ..common.constants import MUNICH_HEIGHT
 from ..common.mathfuncs import cosd
 from ..common.mathfuncs import sind
+from ..utils.core import _assert_numerical_iterable
 from ..utils.wmm import WMM
 from ..utils.wgs84 import WGS
 
@@ -118,10 +119,6 @@ from ..utils.wgs84 import WGS
 GRAVITY = WGS().normal_gravity(MUNICH_LATITUDE, MUNICH_HEIGHT)
 wmm = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT)
 REFERENCE_MAGNETIC_VECTOR = np.array([wmm.X, wmm.Y, wmm.Z])
-
-def _assert_iterables(item, item_name: str = 'iterable') -> None:
-    if not isinstance(item, (list, tuple, np.ndarray)):
-        raise TypeError(f"{item_name} must be given as an array. Got {type(item)}")
 
 class Davenport:
     """
@@ -164,7 +161,7 @@ class Davenport:
         # Reference measurements
         mdip: np.ndarray = kw.get('magnetic_dip')           # Magnetic dip, in degrees
         self.m_q: np.ndarray = REFERENCE_MAGNETIC_VECTOR if mdip is None else np.array([cosd(mdip), 0., sind(mdip)])
-        g: float = kw.get('gravity', GRAVITY)          # Earth's normal gravity, in m/s^2
+        g: float = kw.get('gravity', GRAVITY)               # Earth's normal gravity, in m/s^2
         self.g_q: np.ndarray = np.array([0.0, 0.0, g])      # Normal Gravity vector
         if self.acc is not None and self.mag is not None:
             self.Q: np.ndarray = self._compute_all()
@@ -182,8 +179,8 @@ class Davenport:
             of samples.
 
         """
-        _assert_iterables(self.acc, 'Gravitational acceleration vector')
-        _assert_iterables(self.mag, 'Geomagnetic field vector')
+        _assert_numerical_iterable(self.acc, 'Gravitational acceleration vector')
+        _assert_numerical_iterable(self.mag, 'Geomagnetic field vector')
         self.acc = np.copy(self.acc)
         self.mag = np.copy(self.mag)
         if self.acc.shape != self.mag.shape:
@@ -210,8 +207,8 @@ class Davenport:
             Estimated attitude as a quaternion.
 
         """
-        _assert_iterables(acc, 'Gravitational acceleration vector')
-        _assert_iterables(mag, 'Geomagnetic field vector')
+        _assert_numerical_iterable(acc, 'Gravitational acceleration vector')
+        _assert_numerical_iterable(mag, 'Geomagnetic field vector')
         B = self.w[0]*np.outer(acc, self.g_q) + self.w[1]*np.outer(mag, self.m_q)   # Attitude profile matrix
         sigma = B.trace()
         z = np.array([B[1, 2]-B[2, 1], B[2, 0]-B[0, 2], B[0, 1]-B[1, 0]])
