@@ -334,12 +334,7 @@ class Tilt:
         acc = np.copy(acc)
         a_norm = np.linalg.norm(acc)
         if not a_norm > 0:
-            if representation.lower() == 'angles':
-                return np.zeros(3)
-            elif representation.lower() == 'quaternion':
-                return np.array([1.0, 0.0, 0.0, 0.0])
-            else:
-                return np.identity(3)
+            raise ValueError("Gravitational acceleration must be non-zero")
         ax, ay, az = acc/a_norm
         ### Tilt from Accelerometer
         ex = np.arctan2( ay, az)                        # Roll
