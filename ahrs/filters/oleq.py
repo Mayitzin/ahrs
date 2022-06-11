@@ -151,10 +151,7 @@ References
 import numpy as np
 from ..common.mathfuncs import cosd
 from ..common.mathfuncs import sind
-
-def _assert_iterables(item, item_name: str = 'iterable'):
-    if not isinstance(item, (list, tuple, np.ndarray)):
-        raise TypeError(f"{item_name} must be given as an array. Got {type(item)}")
+from ..utils.core import _assert_numerical_iterable
 
 class OLEQ:
     """
@@ -247,7 +244,7 @@ class OLEQ:
             if self.__getattribute__(item) is not None:
                 if isinstance(self.__getattribute__(item), bool):
                     raise TypeError(f"Parameter '{item}' must be an array of numeric values.")
-                _assert_iterables(self.__getattribute__(item), item)
+                _assert_numerical_iterable(self.__getattribute__(item), item)
                 self.__setattr__(item, np.copy(self.__getattribute__(item)))
         if self.acc is not None and self.mag is None:
             raise ValueError("If 'acc' is given, 'mag' must also be given.")
@@ -277,8 +274,8 @@ class OLEQ:
             of samples.
 
         """
-        _assert_iterables(self.acc, 'Gravitational acceleration vector')
-        _assert_iterables(self.mag, 'Geomagnetic field vector')
+        _assert_numerical_iterable(self.acc, 'Gravitational acceleration vector')
+        _assert_numerical_iterable(self.mag, 'Geomagnetic field vector')
         if self.acc.shape != self.mag.shape:
             raise ValueError("acc and mag are not the same size")
         num_samples = np.atleast_2d(self.acc).shape[0]
