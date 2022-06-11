@@ -569,14 +569,15 @@ References
 import numpy as np
 from ..common.orientation import q_prod, q2R
 from ..common.constants import MUNICH_LATITUDE, MUNICH_HEIGHT
+from ..utils.core import _assert_numerical_iterable
 
 # Reference Observations in Munich, Germany
 from ..utils.wgs84 import WGS
 GRAVITY = WGS().normal_gravity(MUNICH_LATITUDE, MUNICH_HEIGHT)
 
-def _assert_iterables(item, item_name: str = 'iterable'):
-    if not isinstance(item, (list, tuple, np.ndarray)):
-        raise TypeError(f"{item_name} must be given as an array. Got {type(item)}")
+# def _assert_iterables(item, item_name: str = 'iterable'):
+#     if not isinstance(item, (list, tuple, np.ndarray)):
+#         raise TypeError(f"{item_name} must be given as an array. Got {type(item)}")
 
 def _assert_same_shapes(item1, item2, item_names: list = None):
     for item in [item1, item2]:
@@ -823,12 +824,12 @@ class AQUA:
 
     def _compute_all(self):
         """Estimate all quaternions with given sensor values."""
-        _assert_iterables(self.acc, 'Accelerometer data')
+        _assert_numerical_iterable(self.acc, 'Accelerometer data')
         # A single sample was given
-        if self.acc.ndim < 2:
+        if np.array(self.acc).ndim < 2:
             if self.mag is None:
                 return self.estimate(self.acc)
-            _assert_iterables(self.mag, 'Magnetometer data')
+            _assert_numerical_iterable(self.mag, 'Magnetometer data')
             _assert_same_shapes(self.acc, self.mag, ['acc', 'mag'])
             return self.estimate(self.acc, self.mag)
         # Multiple samples were given
@@ -837,7 +838,7 @@ class AQUA:
         if self.mag is None:
             Q[0] = self.estimate(self.acc[0]) if self.q0 is None else self.q0.copy()
             if self.gyr is not None:
-                _assert_iterables(self.gyr, 'Gyroscope data')
+                _assert_numerical_iterable(self.gyr, 'Gyroscope data')
                 _assert_same_shapes(self.acc, self.gyr, ['acc', 'gyr'])
                 for t in range(1, num_samples):
                     Q[t] = self.updateIMU(Q[t-1], self.gyr[t], self.acc[t])
@@ -847,8 +848,8 @@ class AQUA:
             return Q
         Q[0] = self.estimate(self.acc[0], self.mag[0]) if self.q0 is None else self.q0.copy()
         if self.gyr is not None:
-            _assert_iterables(self.mag, 'Magnetometer data')
-            _assert_iterables(self.gyr, 'Gyroscope data')
+            _assert_numerical_iterable(self.mag, 'Magnetometer data')
+            _assert_numerical_iterable(self.gyr, 'Gyroscope data')
             _assert_same_shapes(self.acc, self.mag, ['acc', 'mag'])
             _assert_same_shapes(self.acc, self.gyr, ['acc', 'gyr'])
             for t in range(1, num_samples):
