@@ -880,7 +880,7 @@ from ..common.mathfuncs import cosd
 from ..common.mathfuncs import sind
 from ..common.mathfuncs import skew
 
-from ..utils.core import _assert_valid_array_type
+from ..utils.core import _assert_numerical_iterable
 
 class EKF:
     """
@@ -1009,7 +1009,7 @@ class EKF:
 
     def _set_measurement_noise_covariance(self, **kw) -> np.ndarray:
         default_noises = kw.get('noises', [0.3**2, 0.5**2, 0.8**2])
-        _assert_valid_array_type(default_noises, 'Spectral noise variances')
+        _assert_numerical_iterable(default_noises, 'Spectral noise variances')
         default_noises = np.copy(default_noises)
         if default_noises.ndim != 1:
             raise ValueError(f"Spectral noise variances must be given in a 1-dimensional array. Got {default_noises.ndim} dimensions instead.")
@@ -1093,8 +1093,8 @@ class EKF:
             of samples.
 
         """
-        _assert_valid_array_type(self.gyr, 'Angular velocity vector')
-        _assert_valid_array_type(self.acc, 'Gravitational acceleration vector')
+        _assert_numerical_iterable(self.gyr, 'Angular velocity vector')
+        _assert_numerical_iterable(self.acc, 'Gravitational acceleration vector')
         self.gyr = np.copy(self.gyr)
         self.acc = np.copy(self.acc)
         if self.acc.shape != self.gyr.shape:
@@ -1104,7 +1104,7 @@ class EKF:
         Q[0] = self.q0
         if self.mag is not None:
             ###### Compute attitude with MARG architecture ######
-            _assert_valid_array_type(self.mag, 'Geomagnetic field vector')
+            _assert_numerical_iterable(self.mag, 'Geomagnetic field vector')
             self.mag = np.copy(self.mag)
             if self.mag.shape != self.gyr.shape:
                 raise ValueError("mag and gyr are not the same size")
@@ -1365,11 +1365,11 @@ class EKF:
             Estimated a-posteriori orientation as quaternion.
 
         """
-        _assert_valid_array_type(q, 'Quaternion')
-        _assert_valid_array_type(gyr, 'Tri-axial gyroscope sample')
-        _assert_valid_array_type(acc, 'Tri-axial accelerometer sample')
+        _assert_numerical_iterable(q, 'Quaternion')
+        _assert_numerical_iterable(gyr, 'Tri-axial gyroscope sample')
+        _assert_numerical_iterable(acc, 'Tri-axial accelerometer sample')
         if mag is not None:
-            _assert_valid_array_type(mag, 'Tri-axial magnetometer sample')
+            _assert_numerical_iterable(mag, 'Tri-axial magnetometer sample')
         dt = self.Dt if dt is None else dt
         if not np.isclose(np.linalg.norm(q), 1.0):
             raise ValueError("A-priori quaternion must have a norm equal to 1.")
@@ -1399,7 +1399,7 @@ class EKF:
         H   = self.dhdq(q_t)                    # Linearized Measurement Matrix
         S   = H@P_t@H.T + self.R                # Measurement Prediction Covariance
         K   = P_t@H.T@np.linalg.inv(S)          # Kalman Gain
-        self.P = (np.identity(4) - K@H)@P_t
-        self.q = q_t + K@v                      # Corrected state
+        self.P = (np.identity(4) - K@H)@P_t     # Updated Covariance Matrix
+        self.q = q_t + K@v                      # Corrected State
         self.q /= np.linalg.norm(self.q)
         return self.q
