@@ -271,10 +271,7 @@ from ..common.orientation import q_prod
 from ..common.orientation import acc2q
 from ..common.orientation import am2q
 from ..common.orientation import q2R
-
-def _assert_iterables(item, item_name: str = 'iterable'):
-    if not isinstance(item, (list, tuple, np.ndarray)):
-        raise TypeError(f"{item_name} must be given as an array. Got {type(item)}")
+from ..utils.core import _assert_numerical_iterable
 
 class Mahony:
     """
@@ -470,8 +467,8 @@ class Mahony:
             of samples.
 
         """
-        _assert_iterables(self.gyr, 'Angular velocity vector')
-        _assert_iterables(self.acc, 'Gravitational acceleration vector')
+        _assert_numerical_iterable(self.gyr, 'Angular velocity vector')
+        _assert_numerical_iterable(self.acc, 'Gravitational acceleration vector')
         self.gyr = np.copy(self.gyr)
         self.acc = np.copy(self.acc)
         if self.acc.shape != self.gyr.shape:
@@ -485,7 +482,7 @@ class Mahony:
                 Q[t] = self.updateIMU(Q[t-1], self.gyr[t], self.acc[t])
             return Q
         # Compute with MARG Architecture
-        _assert_iterables(self.mag, 'Geomagnetic field vector')
+        _assert_numerical_iterable(self.mag, 'Geomagnetic field vector')
         self.mag = np.copy(self.mag)
         if self.mag.shape != self.gyr.shape:
             raise ValueError("mag and gyr are not the same size")
