@@ -794,6 +794,8 @@ class TestEKF(unittest.TestCase):
         self.assertRaises(ValueError, ahrs.filters.EKF, gyr=self.gyr, acc=[1.0, 2.0, 3.0])
         self.assertRaises(ValueError, ahrs.filters.EKF, gyr=self.gyr, acc=[1.0, 2.0], mag=[2.0, 3.0, 4.0])
         self.assertRaises(ValueError, ahrs.filters.EKF, gyr=self.gyr, acc=[1.0, 2.0, 3.0, 4.0], mag=[2.0, 3.0, 4.0, 5.0])
+        self.assertRaises(ValueError, ahrs.filters.EKF, gyr=self.gyr, acc=np.zeros(3), mag=self.Rm)
+        self.assertRaises(ValueError, ahrs.filters.EKF, gyr=self.gyr, acc=self.Rg, mag=np.zeros(3))
 
     def test_wrong_input_vector_types(self):
         self.assertRaises(TypeError, ahrs.filters.EKF, gyr=['1.0', 2.0, 3.0], acc=self.Rg[0], mag=self.Rm[0])
@@ -897,6 +899,8 @@ class TestTilt(unittest.TestCase):
         self.assertRaises(TypeError, ahrs.filters.Tilt, acc=True, mag=[1.0, 2.0, 3.0])
         self.assertRaises(ValueError, ahrs.filters.Tilt, acc=[1.0, 2.0], mag=[2.0, 3.0, 4.0])
         self.assertRaises(ValueError, ahrs.filters.Tilt, acc=[1.0, 2.0, 3.0, 4.0], mag=[2.0, 3.0, 4.0, 5.0])
+        self.assertRaises(ValueError, ahrs.filters.Tilt, acc=np.zeros(3), mag=self.Rm[0])
+        self.assertRaises(ValueError, ahrs.filters.Tilt, acc=self.Rg[0], mag=np.zeros(3))
 
     def test_wrong_input_vector_types(self):
         self.assertRaises(TypeError, ahrs.filters.Tilt, acc=['1.0', 2.0, 3.0], mag=[2.0, 3.0, 4.0])
@@ -946,6 +950,8 @@ class TestComplementary(unittest.TestCase):
         self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr, acc=[1.0, 2.0, 3.0])
         self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr, acc=[1.0, 2.0], mag=[2.0, 3.0, 4.0])
         self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr, acc=[1.0, 2.0, 3.0, 4.0], mag=[2.0, 3.0, 4.0, 5.0])
+        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr[0], acc=np.zeros(3), mag=self.Rm[0])
+        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr[0], acc=self.Rg[0], mag=np.zeros(3))
 
     def test_wrong_input_vector_types(self):
         self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=['1.0', 2.0, 3.0], acc=self.Rg[0], mag=self.Rm[0])
@@ -1026,6 +1032,8 @@ class TestOLEQ(unittest.TestCase):
         self.assertRaises(ValueError, ahrs.filters.OLEQ, mag=[2.0, 3.0, 4.0])
         self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=[1.0, 2.0], mag=[2.0, 3.0, 4.0])
         self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=[1.0, 2.0, 3.0, 4.0], mag=[2.0, 3.0, 4.0, 5.0])
+        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=np.zeros(3), mag=self.Rm)
+        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.Rg, mag=np.zeros(3))
 
     def test_wrong_input_vector_types(self):
         self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=['1.0', 2.0, 3.0], mag=[2.0, 3.0, 4.0])
