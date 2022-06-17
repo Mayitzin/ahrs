@@ -1737,7 +1737,7 @@ class Quaternion(np.ndarray):
         elif method.lower() == 'sarabandi':
             q = sarabandi(dcm, eta=kw.get('threshold', 0.0))
         else:
-            raise KeyError(f"Given method '{method}' is not implemented.")
+            raise ValueError(f"Given method '{method}' is not implemented.")
         q /= np.linalg.norm(q)
         return q
 
