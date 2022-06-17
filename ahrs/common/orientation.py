@@ -797,7 +797,8 @@ def ecompass(a: np.ndarray, m: np.ndarray, frame: str = 'ENU', representation: s
     frame : str, default: ``'ENU'``
         Local tangent plane coordinate frame.
     representation : str, default: ``'rotmat'``
-        Orientation representation.
+        Orientation representation. Options are: ``'rotmat'``, ``'quaternion'``,
+        ``'rpy'``, ``'axisangle'``.
 
     Returns
     -------
