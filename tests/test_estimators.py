@@ -70,20 +70,22 @@ def random_angvel(num_samples: int = 500, max_rotations: int = 4, num_axes: int 
             angvels[idx[0]:idx[1], j] = angs[i]
     return __gaussian_filter(angvels, size=kwargs.pop('gauss_size', 50 if num_samples > 50 else num_samples//5), sigma=5)
 
+# Generate random attitudes
+NUM_SAMPLES = 500
+ANGULAR_VELOCITIES = random_angvel(num_samples=NUM_SAMPLES, span=(-np.pi, np.pi))
+REFERENCE_QUATERNIONS = ahrs.QuaternionArray(ahrs.filters.AngularRate(ANGULAR_VELOCITIES).Q)
+REFERENCE_ROTATIONS = REFERENCE_QUATERNIONS.to_DCM()
+
 class TestTRIAD(unittest.TestCase):
     def setUp(self) -> None:
-        # Generate random attitudes
-        num_samples = 500
-        angular_velocities = random_angvel(num_samples=num_samples, span=(-np.pi, np.pi))
-        self.R = ahrs.QuaternionArray(ahrs.filters.AngularRate(angular_velocities).Q).to_DCM()
         # Rotated reference vectors + noise
-        self.noise_sigma = 1e-5
-        self.Rg = np.array([R @ REFERENCE_GRAVITY_VECTOR for R in self.R]) + np.random.standard_normal((num_samples, 3)) * self.noise_sigma
-        self.Rm = np.array([R @ REFERENCE_MAGNETIC_VECTOR for R in self.R]) + np.random.standard_normal((num_samples, 3)) * self.noise_sigma
+        noise_sigma = 1e-5
+        self.Rg = np.array([R @ REFERENCE_GRAVITY_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * noise_sigma
+        self.Rm = np.array([R @ REFERENCE_MAGNETIC_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * noise_sigma
 
     def test_multiple_values(self):
         R2 = ahrs.filters.TRIAD(self.Rg, self.Rm, v1=REFERENCE_GRAVITY_VECTOR, v2=REFERENCE_MAGNETIC_VECTOR)
-        self.assertLess(np.nanmean(ahrs.utils.metrics.chordal(self.R, R2.A)), self.noise_sigma*10)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.chordal(REFERENCE_ROTATIONS, R2.A)), self.noise_sigma*10)
 
     def test_wrong_frame(self):
         self.assertRaises(TypeError, ahrs.filters.TRIAD, frame=1.0)
@@ -110,32 +112,27 @@ class TestTRIAD(unittest.TestCase):
 
 class TestSAAM(unittest.TestCase):
     def setUp(self) -> None:
-        self.decimal_precision = 7e-2
-        # Generate random attitudes
-        num_samples = 500
-        angular_velocities = random_angvel(num_samples=num_samples, span=(-np.pi, np.pi))
-        self.Qts = ahrs.QuaternionArray(ahrs.filters.AngularRate(angular_velocities).Q)
-        self.R = self.Qts.to_DCM()
-        # Rotated reference vectors + noise
+        # Add noise to reference vectors and rotate them by the random attitudes
         noise_sigma = 1e-5
-        self.Rg = np.array([R @ REFERENCE_GRAVITY_VECTOR for R in self.R]) + np.random.standard_normal((num_samples, 3)) * noise_sigma
-        self.Rm = np.array([R @ REFERENCE_MAGNETIC_VECTOR for R in self.R]) + np.random.standard_normal((num_samples, 3)) * noise_sigma
+        self.Rg = np.array([R @ REFERENCE_GRAVITY_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * noise_sigma
+        self.Rm = np.array([R @ REFERENCE_MAGNETIC_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * noise_sigma
+        self.decimal_precision = 7e-2
 
     def test_single_values(self):
         saam = ahrs.filters.SAAM(self.Rg[0], self.Rm[0])
-        self.assertLess(ahrs.utils.metrics.qad(self.Qts[0], saam.Q), self.decimal_precision)
+        self.assertLess(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS[0], saam.Q), self.decimal_precision)
 
     def test_single_values_as_rotation(self):
         saam = ahrs.filters.SAAM(self.Rg[0], self.Rm[0], representation='rotmat')
-        np.testing.assert_allclose(saam.A, self.R[0], atol=self.decimal_precision)
+        np.testing.assert_allclose(saam.A, REFERENCE_ROTATIONS[0], atol=self.decimal_precision)
 
     def test_multiple_values(self):
         saam = ahrs.filters.SAAM(self.Rg, self.Rm)
-        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(self.Qts, saam.Q)), self.decimal_precision)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS, saam.Q)), self.decimal_precision)
 
     def test_multiple_values_as_rotations(self):
         saam = ahrs.filters.SAAM(self.Rg, self.Rm, representation='rotmat')
-        np.testing.assert_allclose(saam.A, self.R, atol=self.decimal_precision*2.0)
+        np.testing.assert_allclose(saam.A, REFERENCE_ROTATIONS, atol=self.decimal_precision*2.0)
 
     def test_wrong_input_vectors(self):
         self.assertRaises(TypeError, ahrs.filters.SAAM, acc=1.0, mag=2.0)
@@ -164,24 +161,19 @@ class TestSAAM(unittest.TestCase):
 
 class TestFAMC(unittest.TestCase):
     def setUp(self) -> None:
-        # Create random attitudes
-        num_samples = 500
-        angular_velocities = random_angvel(num_samples=num_samples, span=(-np.pi, np.pi))
-        self.Qts = ahrs.QuaternionArray(ahrs.filters.AngularRate(angular_velocities).Q)
-        self.rotations = self.Qts.to_DCM()
         # Add noise to reference vectors and rotate them by the random attitudes
-        self.decimal_precision = 7e-2
         noise_sigma = 1e-5
-        self.Rg = np.array([R.T @ REFERENCE_GRAVITY_VECTOR for R in self.rotations]) + np.random.standard_normal((num_samples, 3)) * noise_sigma
-        self.Rm = np.array([R.T @ REFERENCE_MAGNETIC_VECTOR for R in self.rotations]) + np.random.standard_normal((num_samples, 3)) * noise_sigma
+        self.Rg = np.array([R.T @ REFERENCE_GRAVITY_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * noise_sigma
+        self.Rm = np.array([R.T @ REFERENCE_MAGNETIC_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * noise_sigma
+        self.decimal_precision = 7e-2
 
     def test_single_values(self):
         orientation = ahrs.filters.FAMC(self.Rg[0], self.Rm[0])
-        self.assertLess(ahrs.utils.metrics.qad(orientation.Q, self.Qts[0]), self.decimal_precision)
+        self.assertLess(ahrs.utils.metrics.qad(orientation.Q, REFERENCE_QUATERNIONS[0]), self.decimal_precision)
 
     def test_multiple_values(self):
         orientation = ahrs.filters.FAMC(self.Rg, self.Rm)
-        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(orientation.Q, self.Qts)), self.decimal_precision)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(orientation.Q, REFERENCE_QUATERNIONS)), self.decimal_precision)
 
     def test_wrong_input_vectors(self):
         self.assertRaises(TypeError, ahrs.filters.FAMC, acc=1.0, mag=2.0)
