@@ -36,13 +36,13 @@ representing the rotation axis. The conjugate quaternion is used to represent
 the orientation of frame :math:`B` relative to frame :math:`A`:
 
 .. math::
-    ^B_A\\mathbf{q}^* = \,^A_B\\mathbf{q} = \\begin{bmatrix}q_w\\\\-q_x\\\\-q_y\\\\-q_z\\end{bmatrix}
+    ^B_A\\mathbf{q}^* = \\,^A_B\\mathbf{q} = \\begin{bmatrix}q_w\\\\-q_x\\\\-q_y\\\\-q_z\\end{bmatrix}
 
 The orientation quaternion after a sequence of rotations can be easily found by
 quaternion multiplication:
 
 .. math::
-    ^C_A\\mathbf{q} = \,^C_B\\mathbf{q} \, ^B_A\\mathbf{q}
+    ^C_A\\mathbf{q} = \\,^C_B\\mathbf{q} \\, ^B_A\\mathbf{q}
 
 where the quaternion multiplication of quaternions :math:`\\mathbf{p}` and
 :math:`\\mathbf{q}` is computed as:
@@ -63,7 +63,7 @@ expressed with respect to frame :math:`A` can be represented with respect to
 frame :math:`B` as:
 
 .. math::
-    ^B\\mathbf{v}_q = \, ^B_A\\mathbf{q} \, ^A\\mathbf{v}_q \, ^B_A\\mathbf{q}^*
+    ^B\\mathbf{v}_q = \\, ^B_A\\mathbf{q} \\, ^A\\mathbf{v}_q \\, ^B_A\\mathbf{q}^*
 
 where the vector :math:`^A\\mathbf{v}` is rewritten as the pure quaternion
 :math:`^A\\mathbf{v}_q=\\begin{bmatrix}0 & v_x & v_y & v_z\\end{bmatrix}^T`, so
@@ -72,8 +72,8 @@ that it can multiply with the versor and its conjugate.
 The inverse rotation can be achieved by flipping the versors:
 
 .. math::
-    ^A\\mathbf{v}_q = \, ^B_A\\mathbf{q}^* \, ^B\\mathbf{v}_q \, ^B_A\\mathbf{q}
-    = \, ^A_B\\mathbf{q} \, ^B\\mathbf{v}_q \, ^A_B\\mathbf{q}^*
+    ^A\\mathbf{v}_q = \\, ^B_A\\mathbf{q}^* \\, ^B\\mathbf{v}_q \\, ^B_A\\mathbf{q}
+    = \\, ^A_B\\mathbf{q} \\, ^B\\mathbf{v}_q \\, ^A_B\\mathbf{q}^*
 
 These rotations can also be expressed within the three-dimensional euclidean
 space if we express the rotation as a Direction Cosine Matrix
@@ -91,7 +91,7 @@ And, because the Direction Cosine Matrix belongs to the Special Orthogonal
 Group :math:`SO(3)`, the inverse rotation is simply its transpose:
 
 .. math::
-    ^A\\mathbf{v} = \\mathbf{R}(^A_B\\mathbf{q})\,^B\\mathbf{v} = \\mathbf{R}^T(^B_A\\mathbf{q})\,^B\\mathbf{v}
+    ^A\\mathbf{v} = \\mathbf{R}(^A_B\\mathbf{q})\\,^B\\mathbf{v} = \\mathbf{R}^T(^B_A\\mathbf{q})\\,^B\\mathbf{v}
 
 .. note::
     For a more detailed explanation of quaternions and their use in spatial
@@ -171,8 +171,8 @@ and :math:`^G\\mathbf{h}`:
 
 .. math::
     \\begin{array}{rcl}
-    \\mathbf{R}^T(^L_G\\mathbf{q})\,^L\\mathbf{a} &=& \,^G\\mathbf{g} \\\\ && \\\\
-    \\mathbf{R}^T(^L_G\\mathbf{q})\,^L\\mathbf{m} &=& \,^G\\mathbf{h}
+    \\mathbf{R}^T(^L_G\\mathbf{q})\\,^L\\mathbf{a} &=& \\,^G\\mathbf{g} \\\\ && \\\\
+    \\mathbf{R}^T(^L_G\\mathbf{q})\\,^L\\mathbf{m} &=& \\,^G\\mathbf{h}
     \\end{array}
 
 In the case of a disagreement between the gravitational and magnetometer
@@ -196,8 +196,8 @@ with respect to the geomagnetic North.
 
 .. math::
     \\begin{array}{lc}
-    \\mathbf{R}^T(^L_G\\mathbf{q})\,^L\\mathbf{a} = \,^G\\mathbf{g} &\\\\ & \\\\
-    \\mathbf{R}^T(^L_G\\mathbf{q})\,^L\\mathbf{m} \\in \,^G\\Pi_{zx^+} &
+    \\mathbf{R}^T(^L_G\\mathbf{q})\\,^L\\mathbf{a} = \\,^G\\mathbf{g} &\\\\ & \\\\
+    \\mathbf{R}^T(^L_G\\mathbf{q})\\,^L\\mathbf{m} \\in \\,^G\\Pi_{zx^+} &
     \\end{array}
 
 This way we don't need a-priori knowledge of the direction of Earth's magnetic
@@ -228,7 +228,7 @@ transformation between the two representations.
 
 .. math::
     \\begin{array}{rcl}
-    \\mathbf{R}(^L_G\\mathbf{q})\,^G\\mathbf{g} &=& \, ^L\\mathbf{a} \\\\
+    \\mathbf{R}(^L_G\\mathbf{q})\\,^G\\mathbf{g} &=& \\, ^L\\mathbf{a} \\\\
     \\mathbf{R}(\\mathbf{q}_\\mathrm{acc})\\mathbf{R}(\\mathbf{q}_\\mathrm{mag})
     \\begin{bmatrix}0 \\\\ 0 \\\\ 1\\end{bmatrix} &=&
     \\begin{bmatrix}a_x \\\\ a_y \\\\ a_z\\end{bmatrix}
@@ -263,8 +263,8 @@ be defined as:
     \\mathbf{q}_\\mathrm{acc} =
     \\left\\{
     \\begin{array}{ll}
-        \\begin{bmatrix}\\sqrt{\\frac{a_z+1}{2}} & -\\frac{a_y}{\\sqrt{2(a_z+1)}} & \\frac{a_x}{\\sqrt{2(a_z+1)}} & 0\\end{bmatrix}^T & \\mathrm{if}\; a_z \\geq 0 \\\\
-        \\begin{bmatrix}-\\frac{a_y}{\\sqrt{2(1-a_z)}} & \\sqrt{\\frac{1-a_z}{2}} & 0 & \\frac{a_x}{\\sqrt{2(1-a_z)}}\\end{bmatrix}^T & \\mathrm{if}\; a_z < 0
+        \\begin{bmatrix}\\sqrt{\\frac{a_z+1}{2}} & -\\frac{a_y}{\\sqrt{2(a_z+1)}} & \\frac{a_x}{\\sqrt{2(a_z+1)}} & 0\\end{bmatrix}^T & \\mathrm{if}\\; a_z \\geq 0 \\\\
+        \\begin{bmatrix}-\\frac{a_y}{\\sqrt{2(1-a_z)}} & \\sqrt{\\frac{1-a_z}{2}} & 0 & \\frac{a_x}{\\sqrt{2(1-a_z)}}\\end{bmatrix}^T & \\mathrm{if}\\; a_z < 0
     \\end{array}
     \\right.
 
@@ -280,7 +280,7 @@ the same as the global coordinate frame with X- and Y-axes pointing to unknown
 directions due to the unknown yaw of :math:`\\mathbf{q}_\\mathrm{acc}`.
 
 .. math::
-    \\mathbf{R}^T(\\mathbf{q}_\\mathrm{acc})\,^L\\mathbf{m} = \\mathbf{l}
+    \\mathbf{R}^T(\\mathbf{q}_\\mathrm{acc})\\,^L\\mathbf{m} = \\mathbf{l}
 
 where :math:`\\mathbf{l}` is the rotated magnetic field vector. Then, we find
 the quaternion :math:\\mathbf{q}_\\mathrm{mag} that rotates the vector
@@ -310,8 +310,8 @@ condition of :math:`l_x`:
     \\mathbf{q}_\\mathrm{mag} =
     \\left\\{
     \\begin{array}{ll}
-        \\begin{bmatrix}\\frac{\\sqrt{\\Gamma + l_x\\sqrt{\\Gamma}}}{\\sqrt{2\\Gamma}} & 0 & 0 & \\frac{l_y}{\\sqrt{2}\\sqrt{\\Gamma+l_x\\sqrt{\\Gamma}}}\\end{bmatrix}^T & \\mathrm{if}\; l_x \\geq 0 \\\\
-        \\begin{bmatrix}\\frac{l_y}{\\sqrt{2}\\sqrt{\\Gamma-l_x\\sqrt{\\Gamma}}} & 0 & 0 & \\frac{\\sqrt{\\Gamma - l_x\\sqrt{\\Gamma}}}{\\sqrt{2\\Gamma}}\\end{bmatrix}^T & \\mathrm{if}\; l_x < 0
+        \\begin{bmatrix}\\frac{\\sqrt{\\Gamma + l_x\\sqrt{\\Gamma}}}{\\sqrt{2\\Gamma}} & 0 & 0 & \\frac{l_y}{\\sqrt{2}\\sqrt{\\Gamma+l_x\\sqrt{\\Gamma}}}\\end{bmatrix}^T & \\mathrm{if}\\; l_x \\geq 0 \\\\
+        \\begin{bmatrix}\\frac{l_y}{\\sqrt{2}\\sqrt{\\Gamma-l_x\\sqrt{\\Gamma}}} & 0 & 0 & \\frac{\\sqrt{\\Gamma - l_x\\sqrt{\\Gamma}}}{\\sqrt{2\\Gamma}}\\end{bmatrix}^T & \\mathrm{if}\\; l_x < 0
     \\end{array}
     \\right.
 
@@ -320,7 +320,7 @@ local frame as the mulitplication of two quaternions :math:`\\mathbf{q}_\\mathrm
 and :math:`\\mathbf{q}_\\mathrm{mag}`:
 
 .. math::
-    ^L_G\\mathbf{q} = \\mathbf{q}_\\mathrm{acc} \, \\mathbf{q}_\\mathrm{mag}
+    ^L_G\\mathbf{q} = \\mathbf{q}_\\mathrm{acc} \\, \\mathbf{q}_\\mathrm{mag}
 
 The quaternion :math:`^L_G\\mathbf{q}` does not suffer from the discontinuity
 problem of the yaw angle given by the switching formulation of
@@ -349,13 +349,13 @@ measurement is usually calculated for the one representing the orientation of
 the local frame with respect to the global frame.
 
 .. math::
-    ^G_L\\dot{\\mathbf{q}}_{\\omega, t_k}=\\frac{1}{2}\,^G_L\\mathbf{q}_{t_{k-1}}\,^L\\mathbf{\\omega}_{q, t_k}
+    ^G_L\\dot{\\mathbf{q}}_{\\omega, t_k}=\\frac{1}{2}\\,^G_L\\mathbf{q}_{t_{k-1}}\\,^L\\mathbf{\\omega}_{q, t_k}
 
 However, Valenti uses the inverse orientation, so the quaternion derivative is
 computed using the inverse unit quaternion, which is simply the conjugate:
 
 .. math::
-    ^L_G\\dot{\\mathbf{q}}_{\\omega, t_k}= \,^G_L\\dot{\\mathbf{q}}_{\\omega, t_k}^*=-\\frac{1}{2}\,^L\\mathbf{\\omega}_{q, t_k}\,^L_G\\mathbf{q}_{t_{k-1}}
+    ^L_G\\dot{\\mathbf{q}}_{\\omega, t_k}= \\,^G_L\\dot{\\mathbf{q}}_{\\omega, t_k}^*=-\\frac{1}{2}\\,^L\\mathbf{\\omega}_{q, t_k}\\,^L_G\\mathbf{q}_{t_{k-1}}
 
 where :math:`^L\\mathbf{\\omega}_{q, t_k}=\\begin{bmatrix}0 & \\omega_x & \\omega_y & \\omega_z\\end{bmatrix}^T`
 is the measured angular velocity, in radians per second, arranged as a pure
@@ -367,7 +367,7 @@ can be finally computed by numerically integrating the quaternion derivative
 using the sampling period :math:`\\Delta t = t_k - t_{k-1}`.
 
 .. math::
-    ^L_G\\mathbf{q}_{\\omega, t_k} = \, ^L_G\\mathbf{q}_{t_{k-1}} + \,^L_G\\dot{\\mathbf{q}}_{\\omega, t_k}\\Delta t
+    ^L_G\\mathbf{q}_{\\omega, t_k} = \\, ^L_G\\mathbf{q}_{t_{k-1}} + \\,^L_G\\dot{\\mathbf{q}}_{\\omega, t_k}\\Delta t
 
 The **Correction** step is based on a multiplicative approach, where the
 predicted quaternion :math:`^L_G\\mathbf{q}_\\omega` is corrected by means of
@@ -375,7 +375,7 @@ two *delta quaternions*:
 
 .. math::
     \\begin{equation}
-    ^L_G\\mathbf{q} = \, ^L_G\\mathbf{q}_\\omega \, \\Delta\\mathbf{q}_\\mathrm{acc} \, \\Delta\\mathbf{q}_\\mathrm{mag}
+    ^L_G\\mathbf{q} = \\, ^L_G\\mathbf{q}_\\omega \\, \\Delta\\mathbf{q}_\\mathrm{acc} \\, \\Delta\\mathbf{q}_\\mathrm{mag}
     \\end{equation}
 
 The delta quaternions are computed and filtered independently by the high-frequency
@@ -391,7 +391,7 @@ rotate the normalized body frame gravity vector :math:`^L\\mathbf{a}`,
 *measured* by the accelerometer, into the global frame:
 
 .. math::
-    \\mathbf{R}(^G_L\\mathbf{q}_\\omega)\,^L\\mathbf{a} = \,^G\\mathbf{g}_p
+    \\mathbf{R}(^G_L\\mathbf{q}_\\omega)\\,^L\\mathbf{a} = \\,^G\\mathbf{g}_p
 
 where :math:`^G\\mathbf{g}_p=\\begin{bmatrix}g_x & g_y & g_z\\end{bmatrix}^T`
 is the **predicted gravity**, which always has a small deviation from the real
@@ -400,7 +400,7 @@ We compute the delta quaternion :math:`\\Delta\\mathbf{q}_\\mathrm{acc}` to
 rotate :math:`^G\\mathbf{g}` into :math:`^G\\mathbf{g}_p`:
 
 .. math::
-    \\mathbf{R}(\\Delta\\mathbf{q}_\\mathrm{acc}) \, ^G\\mathbf{g} = \,^G\\mathbf{g}_p
+    \\mathbf{R}(\\Delta\\mathbf{q}_\\mathrm{acc}) \\, ^G\\mathbf{g} = \\,^G\\mathbf{g}_p
 
 Similar to the auxiliary quaternions, we find a closed-form solution:
 
@@ -427,7 +427,7 @@ The predicted quaternion from gyroscopes is multiplied with the delta
 quaternion to correct the roll and pitch components:
 
 .. math::
-    ^L_G\\mathbf{q}' = \, ^L_G\\mathbf{q}_\\omega \, \\widehat{\\Delta\\mathbf{q}}_\\mathrm{acc}
+    ^L_G\\mathbf{q}' = \\, ^L_G\\mathbf{q}_\\omega \\, \\widehat{\\Delta\\mathbf{q}}_\\mathrm{acc}
 
 The *heading angle* predicted by the gyroscope integration is *not corrected*
 in this step.
@@ -441,7 +441,7 @@ rotate the magnetic field vector :math:`^L\\mathbf{m}` from the body frame into
 the world frame.
 
 .. math::
-    \\mathbf{R}(^L_G\\mathbf{q}')\,^L\\mathbf{m} = \\mathbf{l}
+    \\mathbf{R}(^L_G\\mathbf{q}')\\,^L\\mathbf{m} = \\mathbf{l}
 
 The delta quaternion :math:`\\Delta\\mathbf{q}_\\mathrm{mag}` rotates the
 vector :math:`\\mathbf{l}` into the vector that lies on the XZ-semiplane:
@@ -471,7 +471,7 @@ Finally, the delta quaternion is multiplied with :math:`^L_G\\mathbf{q}'` to
 obtain the orientation of the global frame with respect to the local frame:
 
 .. math::
-    ^L_G\\mathbf{q} = \,^L_G\\mathbf{q}' \, \\widehat{\\Delta\\mathbf{q}}_\\mathrm{mag}
+    ^L_G\\mathbf{q} = \\,^L_G\\mathbf{q}' \\, \\widehat{\\Delta\\mathbf{q}}_\\mathrm{mag}
 
 Adaptive Gain
 -------------
@@ -490,10 +490,10 @@ bw used to tackle this problem.
 First a magnitude error :math:`e_m` is defined:
 
 .. math::
-    e_m = \\frac{|\\|\,^L\\tilde{a}\\|-g|}{g}
+    e_m = \\frac{|\\|\\,^L\\tilde{a}\\|-g|}{g}
 
-where :math:`\\|\,^L\\hat{a}\\|` is the norm of the measured local frame
-acceleration vector before normalization and :math:`g=9.81 \, \\frac{m}{s^2}`.
+where :math:`\\|\\,^L\\hat{a}\\|` is the norm of the measured local frame
+acceleration vector before normalization and :math:`g=9.81 \\, \\frac{m}{s^2}`.
 
 From the LERP and SLERP definitions, we make the filtering gain :math:`\\alpha`
 dependent on the magnitude error :math:`e_m` through the gain factor :math:`f`:
@@ -518,9 +518,9 @@ to the second threshold :math:`t_2` and over.
     f(e_m) =
     \\left\\{
     \\begin{array}{ll}
-        1 & \\mathrm{if}\; e_m \\leq t_1 \\\\
-        \\frac{t_2-e_m}{t_1} & \\mathrm{if}\; t_1 < e_m < t_2 \\\\
-        0 & \\mathrm{if}\; e_m \\geq t_2
+        1 & \\mathrm{if}\\; e_m \\leq t_1 \\\\
+        \\frac{t_2-e_m}{t_1} & \\mathrm{if}\\; t_1 < e_m < t_2 \\\\
+        0 & \\mathrm{if}\\; e_m \\geq t_2
     \\end{array}
     \\right.
 
@@ -659,7 +659,7 @@ def adaptive_gain(gain: float, a_local: np.ndarray, t1: float = 0.1, t2: float =
 
     where the magnitude error is defined by the measured acceleration
     :math:`\\mathbf{a}` before normalization and the reference gravity
-    :math:`g\\approx 9.809196 \, \\frac{m}{s^2}`:
+    :math:`g\\approx 9.809196 \\, \\frac{m}{s^2}`:
 
     .. math::
         e_m = \\frac{|\\|\\mathbf{a}\\|-g|}{g}
@@ -676,9 +676,9 @@ def adaptive_gain(gain: float, a_local: np.ndarray, t1: float = 0.1, t2: float =
         f(e_m) =
         \\left\\{
         \\begin{array}{ll}
-            1 & \\mathrm{if}\; e_m \\leq t_1 \\\\
-            \\frac{t_2-e_m}{t_1} & \\mathrm{if}\; t_1 < e_m < t_2 \\\\
-            0 & \\mathrm{if}\; e_m \\geq t_2
+            1 & \\mathrm{if}\\; e_m \\leq t_1 \\\\
+            \\frac{t_2-e_m}{t_1} & \\mathrm{if}\\; t_1 < e_m < t_2 \\\\
+            0 & \\mathrm{if}\\; e_m \\geq t_2
         \\end{array}
         \\right.
 
@@ -786,7 +786,7 @@ class AQUA:
         Initial orientation, as a versor (normalized quaternion).
 
     """
-    def __init__(self, gyr: np.ndarray = None, acc: np.ndarray = None, mag: np.ndarray = None, **kw):
+    def __init__(self, acc: np.ndarray = None, mag: np.ndarray = None, gyr: np.ndarray = None, **kw):
         self.gyr: np.ndarray = gyr
         self.acc: np.ndarray = acc
         self.mag: np.ndarray = mag
@@ -879,7 +879,7 @@ class AQUA:
 
         .. math::
 
-            ^L_G\\dot{\\mathbf{q}}_{\\omega, t_k} = \\frac{1}{2}\\boldsymbol\\Omega(\,^L\\mathbf{\\omega}_{q, t_k})\;^L_G\\mathbf{q}_{t_{k-1}}
+            ^L_G\\dot{\\mathbf{q}}_{\\omega, t_k} = \\frac{1}{2}\\boldsymbol\\Omega(\\,^L\\mathbf{\\omega}_{q, t_k})\\;^L_G\\mathbf{q}_{t_{k-1}}
 
         .. note::
             The original definition in the article (eq. 39) has an errata
