@@ -116,23 +116,23 @@ class TestSAAM(unittest.TestCase):
         # Add noise to reference vectors and rotate them by the random attitudes
         self.Rg = np.array([R @ REFERENCE_GRAVITY_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * ACC_NOISE_STD_DEVIATION
         self.Rm = np.array([R @ REFERENCE_MAGNETIC_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * MAG_NOISE_STD_DEVIATION
-        self.decimal_precision = 7.5e-2
+        self.threshold = 7.5e-2
 
     def test_single_values(self):
         saam = ahrs.filters.SAAM(self.Rg[0], self.Rm[0])
-        self.assertLess(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS[0], saam.Q), self.decimal_precision*10)
+        self.assertLess(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS[0], saam.Q), self.threshold*10)
 
     def test_single_values_as_rotation(self):
         saam = ahrs.filters.SAAM(self.Rg[0], self.Rm[0], representation='rotmat')
-        np.testing.assert_allclose(saam.A, REFERENCE_ROTATIONS[0], atol=self.decimal_precision*10)
+        self.assertLess(ahrs.utils.metrics.chordal(saam.A, REFERENCE_ROTATIONS[0]), self.threshold*10)
 
     def test_multiple_values(self):
         saam = ahrs.filters.SAAM(self.Rg, self.Rm)
-        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS, saam.Q)), self.decimal_precision)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS, saam.Q)), self.threshold)
 
     def test_multiple_values_as_rotations(self):
         saam = ahrs.filters.SAAM(self.Rg, self.Rm, representation='rotmat')
-        np.testing.assert_allclose(saam.A, REFERENCE_ROTATIONS, atol=self.decimal_precision*2.0)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.chordal(saam.A, REFERENCE_ROTATIONS)), self.threshold*10)
 
     def test_wrong_input_vectors(self):
         self.assertRaises(TypeError, ahrs.filters.SAAM, acc=1.0, mag=2.0)
@@ -164,15 +164,15 @@ class TestFAMC(unittest.TestCase):
         # Add noise to reference vectors and rotate them by the random attitudes
         self.Rg = np.array([R.T @ REFERENCE_GRAVITY_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * ACC_NOISE_STD_DEVIATION
         self.Rm = np.array([R.T @ REFERENCE_MAGNETIC_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * MAG_NOISE_STD_DEVIATION
-        self.decimal_precision = 7.5e-2
+        self.threshold = 7.5e-2
 
     def test_single_values(self):
         orientation = ahrs.filters.FAMC(self.Rg[0], self.Rm[0])
-        self.assertLess(ahrs.utils.metrics.qad(orientation.Q, REFERENCE_QUATERNIONS[0]), self.decimal_precision)
+        self.assertLess(ahrs.utils.metrics.qad(orientation.Q, REFERENCE_QUATERNIONS[0]), self.threshold*10)
 
     def test_multiple_values(self):
         orientation = ahrs.filters.FAMC(self.Rg, self.Rm)
-        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(orientation.Q, REFERENCE_QUATERNIONS)), self.decimal_precision)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(orientation.Q, REFERENCE_QUATERNIONS)), self.threshold)
 
     def test_wrong_input_vectors(self):
         self.assertRaises(TypeError, ahrs.filters.FAMC, acc=1.0, mag=2.0)
@@ -198,18 +198,19 @@ class TestFLAE(unittest.TestCase):
         # Add noise to reference vectors and rotate them by the random attitudes
         self.Rg = np.array([R.T @ REFERENCE_GRAVITY_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * ACC_NOISE_STD_DEVIATION
         self.Rm = np.array([R.T @ REFERENCE_MAGNETIC_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * MAG_NOISE_STD_DEVIATION
+        self.threshold = 3.5e-2
 
     def test_multiple_values(self):
         orientation = ahrs.filters.FLAE(self.Rg, self.Rm)
-        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(orientation.Q, REFERENCE_QUATERNIONS)), 0.075)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(orientation.Q, REFERENCE_QUATERNIONS)), self.threshold)
 
     def test_multiple_values_method_eig(self):
         orientation = ahrs.filters.FLAE(self.Rg, self.Rm, method='eig')
-        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(orientation.Q, REFERENCE_QUATERNIONS)), 0.075)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(orientation.Q, REFERENCE_QUATERNIONS)), self.threshold)
 
     def test_multiple_values_method_newton(self):
         orientation = ahrs.filters.FLAE(self.Rg, self.Rm, method='newton')
-        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(orientation.Q, REFERENCE_QUATERNIONS)), 0.075)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(orientation.Q, REFERENCE_QUATERNIONS)), self.threshold)
 
     def test_wrong_input_vectors(self):
         self.assertRaises(TypeError, ahrs.filters.FLAE, acc=1.0, mag=2.0)
@@ -241,11 +242,11 @@ class TestQUEST(unittest.TestCase):
         # Add noise to reference vectors and rotate them by the random attitudes
         self.Rg = np.array([R.T @ REFERENCE_GRAVITY_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * ACC_NOISE_STD_DEVIATION
         self.Rm = np.array([R.T @ REFERENCE_MAGNETIC_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * MAG_NOISE_STD_DEVIATION
-        self.decimal_precision = 7.5e-2
+        self.threshold = 3.5e-2
 
     def test_multiple_values(self):
         quest = ahrs.filters.QUEST(self.Rg, self.Rm)
-        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS, quest.Q)), self.decimal_precision)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS, quest.Q)), self.threshold)
 
     def test_wrong_input_vectors(self):
         self.assertRaises(TypeError, ahrs.filters.QUEST, acc=1.0, mag=2.0)
@@ -274,15 +275,15 @@ class TestDavenport(unittest.TestCase):
         # Add noise to reference vectors and rotate them by the random attitudes
         self.Rg = np.array([R.T @ REFERENCE_GRAVITY_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * ACC_NOISE_STD_DEVIATION
         self.Rm = np.array([R.T @ REFERENCE_MAGNETIC_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * MAG_NOISE_STD_DEVIATION
-        self.decimal_precision = 7.5e-2
+        self.threshold = 7.5e-2
 
     def test_single_values(self):
         orientation = ahrs.filters.Davenport(self.Rg[0], self.Rm[0])
-        self.assertLess(ahrs.utils.metrics.qad(orientation.Q, REFERENCE_QUATERNIONS[0]), self.decimal_precision)
+        self.assertLess(ahrs.utils.metrics.qad(orientation.Q, REFERENCE_QUATERNIONS[0]), self.threshold)
 
     def test_multiple_values(self):
         orientation = ahrs.filters.Davenport(self.Rg, self.Rm)
-        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(orientation.Q, REFERENCE_QUATERNIONS)), self.decimal_precision)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(orientation.Q, REFERENCE_QUATERNIONS)), self.threshold)
 
     def test_wrong_input_vectors(self):
         self.assertRaises(TypeError, ahrs.filters.Davenport, acc=1.0, mag=2.0)
