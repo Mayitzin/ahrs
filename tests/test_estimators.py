@@ -303,19 +303,14 @@ class TestDavenport(unittest.TestCase):
 
 class TestAQUA(unittest.TestCase):
     def setUp(self) -> None:
-        # Create random attitudes
-        num_samples = 1000
-        angular_velocities = random_angvel(num_samples=num_samples, span=(-np.pi, np.pi))
-        self.Qts = ahrs.QuaternionArray(ahrs.filters.AngularRate(angular_velocities).Q)
-        self.rotations = self.Qts.to_DCM()
         # Add noise to reference vectors and rotate them by the random attitudes
-        self.noise_sigma = 1e-2
-        self.Rg = np.array([R @ REFERENCE_GRAVITY_VECTOR for R in self.rotations]) + np.random.standard_normal((num_samples, 3)) * self.noise_sigma * np.ptp(REFERENCE_GRAVITY_VECTOR)
-        self.Rm = np.array([R @ REFERENCE_MAGNETIC_VECTOR for R in self.rotations]) + np.random.standard_normal((num_samples, 3)) * self.noise_sigma * np.ptp(REFERENCE_MAGNETIC_VECTOR)
+        self.Rg = np.array([R @ REFERENCE_GRAVITY_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * ACC_NOISE_STD_DEVIATION
+        self.Rm = np.array([R @ REFERENCE_MAGNETIC_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * MAG_NOISE_STD_DEVIATION
+        self.threshold = 7.5e-2
 
     def test_acc_mag(self):
         orientation = ahrs.filters.AQUA(acc=self.Rg, mag=self.Rm)
-        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(orientation.Q, self.Qts)), self.noise_sigma * 10)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(orientation.Q, REFERENCE_QUATERNIONS)), self.threshold)
 
     def test_wrong_input_vectors(self):
         self.assertRaises(TypeError, ahrs.filters.FLAE, acc=1.0, mag=2.0)
