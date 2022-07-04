@@ -896,7 +896,7 @@ class AQUA:
         Omega : numpy.ndarray
             Omega matrix.
         """
-        return np.array([
+        return 0.5 * np.array([
             [0.0,    x[0],  x[1],  x[2]],
             [-x[0],   0.0,  x[2], -x[1]],
             [-x[1], -x[2],   0.0,  x[0]],
@@ -986,7 +986,7 @@ class AQUA:
         if gyr is None or not np.linalg.norm(gyr) > 0:
             return q
         # PREDICTION
-        qDot = 0.5*self.Omega(gyr) @ q                      # Quaternion derivative (eq. 39)
+        qDot = self.Omega(gyr) @ q                          # Quaternion derivative (eq. 39)
         qInt = q + qDot*dt                                  # Quaternion integration (eq. 42)
         qInt /= np.linalg.norm(qInt)
         # CORRECTION
@@ -1041,7 +1041,7 @@ class AQUA:
         if gyr is None or not np.linalg.norm(gyr)>0:
             return q
         # PREDICTION
-        qDot = 0.5*self.Omega(gyr) @ q                      # Quaternion derivative (eq. 39)
+        qDot = self.Omega(gyr) @ q                          # Quaternion derivative (eq. 39)
         qInt = q + qDot*dt                                  # Quaternion integration (eq. 42)
         qInt /= np.linalg.norm(qInt)
         # CORRECTION
