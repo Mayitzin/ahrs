@@ -109,6 +109,7 @@ linearly interpolate quaternions with small differences between them.
 
 import numpy as np
 from ..common.orientation import ecompass
+from ..common.orientation import acc2q
 from ..utils.core import _assert_numerical_iterable
 
 class Complementary:
@@ -268,6 +269,8 @@ class Complementary:
         q_am : numpy.ndarray
             Estimated attitude.
         """
+        if mag is None:
+            return acc2q(acc)
         return ecompass(acc, mag, frame='NED', representation='quaternion')
 
     def update(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, mag: np.ndarray = None, dt: float = None) -> np.ndarray:
