@@ -2464,6 +2464,75 @@ class QuaternionArray(np.ndarray):
         """
         return self.conjugate()
 
+    def from_rpy(self, Angles: np.ndarray) -> np.ndarray:
+        """
+        Quaternion Array from given RPY angles.
+
+        The quaternion can be constructed from the Aerospace cardanian angle
+        sequence that follows the order :math:`\\phi\\to\\theta\\to\\psi`,
+        where :math:`\\phi` is the **roll** (or *bank*) angle, :math:`\\theta`
+        is the **pitch** (or *elevation*) angle, and :math:`\\psi` is the
+        **yaw** (or *heading*) angle.
+
+        The composing quaternions are:
+
+        .. math::
+            \\begin{array}{rcl}
+            \\mathbf{q}_X &=& \\begin{pmatrix}\\cos\\frac{\\phi}{2} & \\sin\\frac{\\phi}{2} & 0 & 0\\end{pmatrix} \\\\ && \\\\
+            \\mathbf{q}_Y &=& \\begin{pmatrix}\\cos\\frac{\\theta}{2} & 0 & \\sin\\frac{\\theta}{2} & 0\\end{pmatrix} \\\\ && \\\\
+            \\mathbf{q}_Z &=& \\begin{pmatrix}\\cos\\frac{\\psi}{2} & 0 & 0 & \\sin\\frac{\\psi}{2}\\end{pmatrix}
+            \\end{array}
+
+        The elements of the final quaternion
+        :math:`\\mathbf{q}=\\mathbf{q}_Z\\mathbf{q}_Y\\mathbf{q}_X = q_w+q_xi+q_yj+q_zk`
+        are obtained as:
+
+        .. math::
+            \\begin{array}{rcl}
+            q_w &=& \\cos\\frac{\\psi}{2}\\cos\\frac{\\theta}{2}\\cos\\frac{\\phi}{2} + \\sin\\frac{\\psi}{2}\\sin\\frac{\\theta}{2}\\sin\\frac{\\phi}{2} \\\\ && \\\\
+            q_x &=& \\cos\\frac{\\psi}{2}\\cos\\frac{\\theta}{2}\\sin\\frac{\\phi}{2} - \\sin\\frac{\\psi}{2}\\sin\\frac{\\theta}{2}\\cos\\frac{\\phi}{2} \\\\ && \\\\
+            q_y &=& \\cos\\frac{\\psi}{2}\\sin\\frac{\\theta}{2}\\cos\\frac{\\phi}{2} + \\sin\\frac{\\psi}{2}\\cos\\frac{\\theta}{2}\\sin\\frac{\\phi}{2} \\\\ && \\\\
+            q_z &=& \\sin\\frac{\\psi}{2}\\cos\\frac{\\theta}{2}\\cos\\frac{\\phi}{2} - \\cos\\frac{\\psi}{2}\\sin\\frac{\\theta}{2}\\sin\\frac{\\phi}{2}
+            \\end{array}
+
+        .. warning::
+            The Aerospace sequence :math:`\\phi\\to\\theta\\to\\psi` is only
+            one of the `twelve possible rotation sequences
+            <https://en.wikipedia.org/wiki/Euler_angles#Tait.E2.80.93Bryan_angles>`_
+            around the main axes. Other sequences might be more suitable for
+            other applications, but this one is the most common in practice.
+
+        Parameters
+        ----------
+        Angles : numpy.ndarray
+            N-by-3 cardanian angles, in radians, following the order: roll -> pitch -> yaw.
+
+        Returns
+        -------
+        Q : numpy.ndarray
+            Quaternion Array from roll-pitch-yaw angles.
+
+        """
+        _assert_iterables(Angles, 'Roll-Pitch-Yaw angles')
+        Angles = np.copy(Angles)
+        if Angles.ndim != 2 or Angles.shape[-1] != 3:
+            raise ValueError(f"Expected `angles` must have shape (N, 3), got {Angles.shape}.")
+        if not all(-2.0 * np.pi <= angle <= 2.0 * np.pi for angle in Angles.flatten()):
+            raise ValueError(f"Expected `angles` must be in [-2*pi, 2*pi]")
+        # RPY to Quaternion
+        cy = np.cos(0.5*Angles[:, 2])
+        sy = np.sin(0.5*Angles[:, 2])
+        cp = np.cos(0.5*Angles[:, 1])
+        sp = np.sin(0.5*Angles[:, 1])
+        cr = np.cos(0.5*Angles[:, 0])
+        sr = np.sin(0.5*Angles[:, 0])
+        Q = np.zeros((Angles.shape[0], 4))
+        Q[:, 0] = cy*cp*cr + sy*sp*sr
+        Q[:, 1] = cy*cp*sr - sy*sp*cr
+        Q[:, 2] = sy*cp*sr + cy*sp*cr
+        Q[:, 3] = sy*cp*cr - cy*sp*sr
+        return Q/np.linalg.norm(Q, axis=1)[:, None]
+
     def to_angles(self) -> np.ndarray:
         """
         Return corresponding roll-pitch-yaw angles of quaternion.
