@@ -38,11 +38,11 @@ Secondly, the *tilt* is computed from the accelerometer measurements as:
 
 .. math::
     \\begin{array}{rcl}
-    \\theta &=& \\mathrm{arctan2}(a_y, a_z) \\\\
-    \\phi &=& \\mathrm{arctan2}\\big(-a_x, \\sqrt{a_y^2+a_z^2}\\big)
+    \\phi &=& \\mathrm{arctan2}(a_y, a_z) \\\\
+    \\theta &=& \\mathrm{arctan2}\\big(-a_x, \\sqrt{a_y^2+a_z^2}\\big)
     \\end{array}
 
-Only the pitch, :math:`\\phi`, and roll, :math:`\\theta`, angles are computed,
+Only the pitch, :math:`\\theta`, and roll, :math:`\\phi`, angles are computed,
 leaving the yaw angle, :math:`\\psi` equal to zero.
 
 If a magnetometer sample is available, the yaw angle can be computed. First
