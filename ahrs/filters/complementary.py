@@ -108,8 +108,7 @@ linearly interpolate quaternions with small differences between them.
 """
 
 import numpy as np
-from ..common.orientation import ecompass
-from ..common.orientation import acc2q
+from ..common.quaternion import QuaternionArray
 from ..utils.core import _assert_numerical_iterable
 
 class Complementary:
@@ -131,8 +130,13 @@ class Complementary:
         if ``frequency`` value is given.
     gain : float, default: 0.1
         Filter gain.
+    w0 : numpy.ndarray, default: None
+        Initial angular position, as roll-pitch-yaw angles, in radians.
     q0 : numpy.ndarray, default: None
         Initial orientation, as a versor (normalized quaternion).
+    representation : str, default: ``'angles'``
+        Attitude representation. Options are ``'angles'``, ``'quaternion'`` or
+        ``'rotmat'``.
 
     Raises
     ------
@@ -145,7 +149,7 @@ class Complementary:
         acc: np.ndarray = None,
         mag: np.ndarray = None,
         frequency: float = 100.0,
-        gain: float = 0.9,
+        gain: float = 0.1,
         **kwargs):
         self.gyr: np.ndarray = gyr
         self.acc: np.ndarray = acc
@@ -154,10 +158,11 @@ class Complementary:
         self.Dt: float = kwargs.get('Dt', (1.0/self.frequency) if self.frequency else 0.01)
         self.gain: float = gain
         self.q0: np.ndarray = kwargs.get('q0')
+        self.w0: np.ndarray = kwargs.get('w0')
         self._assert_validity_of_inputs()
         # Process of given data
         if self.gyr is not None and self.acc is not None:
-            self.Q = self._compute_all()
+            self.W = self._compute_all()
 
     def _assert_validity_of_inputs(self):
         """Asserts the validity of the inputs."""
@@ -167,12 +172,12 @@ class Complementary:
                 raise TypeError(f"Parameter '{item}' must be numeric.")
             if not isinstance(self.__getattribute__(item), (int, float)):
                 raise TypeError(f"Parameter '{item}' is not a non-zero number.")
-            if self.__getattribute__(item) <= 0.0:
+            if item in ['frequency', 'Dt'] and self.__getattribute__(item) <= 0.0:
                 raise ValueError(f"Parameter '{item}' must be a non-zero number.")
-        if self.gain > 1.0:
+        if not (0.0 <= self.gain <= 1.0):
             raise ValueError(f"Filter gain must be in the range [0, 1]. Got {self.gain}")
         # Assert arrays
-        for item in ['gyr', 'acc', 'mag', 'q0']:
+        for item in ['gyr', 'acc', 'mag', 'q0', 'w0']:
             if self.__getattribute__(item) is not None:
                 _assert_numerical_iterable(self.__getattribute__(item), item)
                 self.__setattr__(item, np.copy(self.__getattribute__(item)))
@@ -196,62 +201,34 @@ class Complementary:
 
         Returns
         -------
-        Q : numpy.ndarray
-            M-by-4 Array with all estimated quaternions, where M is the number
-            of samples.
+        W : numpy.ndarray
+            M-by-3 Array with all estimated angles, where M is the number of
+            samples.
 
         """
         if self.acc.shape != self.gyr.shape:
-            raise ValueError("acc and gyr are not the same size")
-        if self.acc.ndim < 2:
-            if self.mag is None:
-                return self.update(self.q0, self.gyr, self.acc)
-            return self.update(self.q0, self.gyr, self.acc, self.mag)
-        num_samples, _ = self.acc.shape
-        Q = np.zeros((num_samples, 4))
+            raise ValueError(f"Could not operate on acc array of shape {self.acc.shape} and gyr array of shape {self.gyr.shape}.")
+        W = np.zeros_like(self.acc)
+        W1 = self.angle_integration(W[0], self.gyr[1:], self.Dt)
         if self.mag is None:
-            self.mag = [None]*num_samples
+            # Estimation with IMU only (Gyroscopes and Accelerometers)
+            W[0] = self.am_estimation(self.acc[0]) if self.w0 is None else self.w0
+            W2 = self.am_estimation(self.acc)
+            W2[:, 2] = W1[:, 2].copy()      # Use yaw angle from integrated angular velocity
         else:
+            # Estimation with MARG (IMU and Magnetometer)
             if self.mag.shape != self.gyr.shape:
-                raise ValueError("mag and gyr are not the same size")
-        Q[0] = self.am_estimation(self.acc[0], self.mag[0]) if self.q0 is None else self.q0.copy()
-        for t in range(1, num_samples):
-            Q[t] = self.update(Q[t-1], self.gyr[t], self.acc[t], self.mag[t])
-        return Q
+                raise ValueError(f"Could not operate on mag array of shape {self.mag.shape} and gyr array of shape {self.gyr.shape}.")
+            W[0] = self.am_estimation(self.acc[0], self.mag[0]) if self.w0 is None else self.w0
+            W2 = self.am_estimation(self.acc, self.mag)
+        # Complemetary filter
+        W = W1*self.gain + W2*(1.0-self.gain)
+        return np.unwrap(W, axis=0)         # Remove discontinuity of angles
 
-    def attitude_propagation(self, q: np.ndarray, omega: np.ndarray, dt: float) -> np.ndarray:
-        """
-        Attitude propagation of the orientation.
-
-        Estimate the current orientation at time :math:`t`, from a given
-        orientation at time :math:`t-1` and a given angular velocity,
-        :math:`\\omega`, in rad/s.
-
-        It is computed by numerically integrating the angular velocity and
-        adding it to the previous orientation.
-
-        Parameters
-        ----------
-        q : numpy.ndarray
-            A-priori quaternion.
-        omega : numpy.ndarray
-            Tri-axial angular velocity, in rad/s.
-        dt : float
-            Time step, in seconds, between consecutive Quaternions.
-
-        Returns
-        -------
-        q_omega : numpy.ndarray
-            Estimated orientation, as quaternion.
-        """
-        w = -0.5*dt*omega
-        A = np.array([
-            [1.0,  -w[0], -w[1], -w[2]],
-            [w[0],   1.0,  w[2], -w[1]],
-            [w[1], -w[2],   1.0,  w[0]],
-            [w[2],  w[1], -w[0],   1.0]])
-        q_omega = A @ q
-        return q_omega / np.linalg.norm(q_omega)
+    def angle_integration(self, w: np.ndarray, omega: np.ndarray, dt: float) -> np.ndarray:
+        if omega.ndim < 2:
+            return w + omega * dt
+        return np.cumsum(np.vstack((w, omega))*dt, axis=0)
 
     def am_estimation(self, acc: np.ndarray, mag: np.ndarray = None) -> np.ndarray:
         """
@@ -260,60 +237,58 @@ class Complementary:
         Parameters
         ----------
         acc : numpy.ndarray
-            Tri-axial sample of the accelerometer.
+            N-by-3 array with measurements of gravitational acceleration.
         mag : numpy.ndarray, default: None
-            Tri-axial sample of the magnetometer.
+            N-by-3 array with measurements of local geomagnetic field.
 
         Returns
         -------
         q_am : numpy.ndarray
             Estimated attitude.
         """
-        if mag is None:
-            return acc2q(acc)
-        return ecompass(acc, mag, frame='NED', representation='quaternion')
+        acc = np.copy(acc)
+        if acc.ndim < 2:
+            a_norm = np.linalg.norm(acc)
+            if not a_norm > 0:
+                raise ValueError("Gravitational acceleration must be non-zero")
+            ax, ay, az = acc/a_norm
+            ### Tilt from Accelerometer
+            ex = np.arctan2( ay, az)                        # Roll
+            ey = np.arctan2(-ax, np.sqrt(ay**2 + az**2))    # Pitch
+            ez = 0.0                                        # Yaw
+            if mag is not None:
+                if not(np.linalg.norm(mag) > 0):
+                    raise ValueError("Magnetic field must be non-zero")
+                mx, my, mz = mag/np.linalg.norm(mag)
+                # Get tilted reference frame
+                by = my*np.cos(ex) - mz*np.sin(ex)
+                bx = mx*np.cos(ey) + np.sin(ey)*(my*np.sin(ex) + mz*np.cos(ex))
+                ez = np.arctan2(-by, bx)
+            return np.array([ex, ey, ez])
+        # Estimation for 2-dimensional arrays
+        angles = np.zeros_like(acc)   # Allocation of angles array
+        # Estimate tilt angles
+        a = acc/np.linalg.norm(acc, axis=1)[:, None]
+        angles[:, 0] = np.arctan2(a[:, 1], a[:, 2])
+        angles[:, 1] = np.arctan2(-a[:, 0], np.sqrt(a[:, 1]**2 + a[:, 2]**2))
+        if mag is not None:
+            # Estimate heading angle
+            m = mag/np.linalg.norm(mag, axis=1)[:, None]
+            by = m[:, 1]*np.cos(angles[:, 0]) - m[:, 2]*np.sin(angles[:, 0])
+            bx = m[:, 0]*np.cos(angles[:, 1]) + np.sin(angles[:, 1])*(m[:, 1]*np.sin(angles[:, 0]) + m[:, 2]*np.cos(angles[:, 0]))
+            angles[:, 2] = np.arctan2(-by, bx)
+        return angles
 
-    def update(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, mag: np.ndarray = None, dt: float = None) -> np.ndarray:
+    @property
+    def Q(self) -> np.ndarray:
         """
-        Attitude Estimation from given measurements and previous orientation.
-
-        The new orientation is first estimated with the angular velocity, then
-        another orientation is computed using the accelerometers and
-        magnetometers. The magnetometer is optional.
-
-        Each orientation is estimated independently and fused with a
-        complementary filter.
-
-        .. math::
-            \\mathbf{q} = (1 - \\alpha) \\mathbf{q}_\\omega + \\alpha\\mathbf{q}_{am}
-
-        Parameters
-        ----------
-        q : numpy.ndarray
-            A-priori quaternion.
-        gyr : numpy.ndarray
-            Sample of tri-axial Gyroscope in rad/s.
-        acc : numpy.ndarray
-            Sample of tri-axial Accelerometer in m/s^2.
-        mag : numpy.ndarray, default: None
-            Sample of tri-axial Magnetometer in uT.
-        dt : float, default: None
-            Time step, in seconds, between consecutive Quaternions.
-
         Returns
         -------
-        q : numpy.ndarray
-            Estimated quaternion.
+        Q : numpy.ndarray
+            M-by-4 Array with all estimated quaternions, where M is the number of
+            samples.
 
         """
-        dt = self.Dt if dt is None else dt
-        if gyr is None or not np.linalg.norm(gyr) > 0:
-            return q
-        q_omega = self.attitude_propagation(q, gyr, dt)
-        q_am = self.am_estimation(acc, mag)
-        # Complementary Estimation
-        if np.linalg.norm(q_omega + q_am) < np.sqrt(2):
-            q = (1.0 - self.gain)*q_omega - self.gain*q_am
-        else:
-            q = (1.0 - self.gain)*q_omega + self.gain*q_am
-        return q/np.linalg.norm(q)
+        if not hasattr(self, 'W'):
+            raise ValueError("No data to perform estimation. Attitude is not computed.")
+        return QuaternionArray().from_rpy(self.W)
