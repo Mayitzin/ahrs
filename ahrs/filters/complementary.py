@@ -206,6 +206,8 @@ class Complementary:
             samples.
 
         """
+        if self.gyr.ndim < 2:
+            raise ValueError(f"All inputs must have at least two observations.")
         if self.acc.shape != self.gyr.shape:
             raise ValueError(f"Could not operate on acc array of shape {self.acc.shape} and gyr array of shape {self.gyr.shape}.")
         W = np.zeros_like(self.acc)
@@ -273,7 +275,10 @@ class Complementary:
         angles[:, 1] = np.arctan2(-a[:, 0], np.sqrt(a[:, 1]**2 + a[:, 2]**2))
         if mag is not None:
             # Estimate heading angle
-            m = mag/np.linalg.norm(mag, axis=1)[:, None]
+            m_norm = np.linalg.norm(mag, axis=1)[:, None]
+            if np.where(m_norm == 0)[0].size > 0:
+                raise ValueError("All Magnetic field measurements must be non-zero.")
+            m = mag/m_norm
             by = m[:, 1]*np.cos(angles[:, 0]) - m[:, 2]*np.sin(angles[:, 0])
             bx = m[:, 0]*np.cos(angles[:, 1]) + np.sin(angles[:, 1])*(m[:, 1]*np.sin(angles[:, 0]) + m[:, 2]*np.cos(angles[:, 0]))
             angles[:, 2] = np.arctan2(-by, bx)
@@ -282,6 +287,8 @@ class Complementary:
     @property
     def Q(self) -> np.ndarray:
         """
+        Attitudes as quaternions.
+
         Returns
         -------
         Q : numpy.ndarray
