@@ -3,6 +3,10 @@
 Madgwick Orientation Filter
 ===========================
 
+.. contents:: Table of Contents
+    :local:
+    :depth: 2
+
 This is an orientation filter applicable to IMUs consisting of tri-axial
 gyroscopes and accelerometers, and MARG arrays, which also include tri-axial
 magnetometers, proposed by Sebastian Madgwick [Madgwick]_.
