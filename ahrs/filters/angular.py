@@ -267,6 +267,9 @@ References
 """
 
 import numpy as np
+from ..utils.core import _assert_numerical_iterable
+from ..common.quaternion import QuaternionArray
+from ..common.dcm import DCM
 
 class AngularRate:
     """
@@ -284,9 +287,14 @@ class AngularRate:
         Sampling step in seconds. Inverse of sampling frequency. Not required
         if ``frequency`` value is given.
     method : str, default: ``'closed'``
-        Estimation method to use. Options are: ``'series'`` or ``'closed'``.
+        Estimation method to use. Options are: ``'series'``, ``'closed'``, or
+        ``'integration'``. The option ``'integration'`` is a simple numerical
+        integration of the angular velocity as roll-pitch-yaw angles.
     order : int
         Truncation order, if method ``'series'`` is used.
+    representation : str, default: ``'quaternion'``
+        Attitude representation. Options are ``'quaternion'``, ``'angles'`` or
+        ``'rotmat'``.
 
     Attributes
     ----------
@@ -358,18 +366,63 @@ class AngularRate:
         self.frequency: float = frequency
         self.order: int = order
         self.method: str = kw.get('method', 'closed')
+        self.representation: str = kw.get('representation', 'quaternion')
         self.Dt: float = kw.get('Dt', 1.0/self.frequency)
         if self.gyr is not None:
+            if self.method.lower() == 'integration':
+                self.W = self.integrate_angular_positions(self.gyr, dt=self.Dt)
             self.Q = self._compute_all()
 
     def _compute_all(self):
         """Estimate all quaternions with given sensor values."""
+        if self.method.lower() == 'integration':
+            return self.integrate_angular_positions(self.gyr, dt=self.Dt)
         num_samples = len(self.gyr)
         Q = np.zeros((num_samples, 4))
         Q[0] = self.q0
         for t in range(1, num_samples):
             Q[t] = self.update(Q[t-1], self.gyr[t], method=self.method, order=self.order)
         return Q
+
+    def integrate_angular_positions(self, gyr: np.ndarray, dt: float = None) -> np.ndarray:
+        """
+        Integrate angular positions from angular rates.
+
+        Integrate angular positions :math:`\\mathbf{\\theta}` from angular
+        rates :math:`\\mathbf{\\omega}` with a given time step :math:`\\Delta t`:
+
+        .. math::
+            \\mathbf{\\theta}_{t+1} = \\mathbf{\\theta}_t + \\mathbf{\\omega}_t \\Delta t
+
+        Parameters
+        ----------
+        gyr : array_like
+            Angular rates, in rad/s.
+        dt : float, optional
+            Time step, in seconds. If not given, the time step is set to
+            :math:`1/f_s`, where :math:`f_s` is the sampling frequency, which
+            is set to 100 Hz by default.
+
+        Returns
+        -------
+        theta : numpy.ndarray
+            Tri-axial angular positions, in rad.
+        """
+        _assert_numerical_iterable(gyr, 'gyr')
+        if self.representation.lower() not in ['quaternion', 'angles', 'rotmat']:
+            raise ValueError(f"Representation must be 'quaternion', 'angles' or 'rotmat'. Got '{self.representation}' instead.")
+        if dt is None:
+            dt = self.Dt
+        if not isinstance(dt, (int, float)):
+            raise TypeError(f"dt must be a float or an integer. Got {type(dt)} instead.")
+        # Angular velocity integration --> Angular position
+        angular_positions = np.cumsum(gyr * dt, axis=0)
+        # Return angular positions in the desired representation
+        if self.representation.lower() == 'quaternion':
+            return QuaternionArray().from_rpy(angular_positions)
+        if self.representation.lower() == 'rotmat':
+            return DCM().from_quaternion(QuaternionArray().from_rpy(angular_positions))
+        return np.unwrap(angular_positions, axis=0)
 
     def update(self, q: np.ndarray, gyr: np.ndarray, method: str = 'closed', order: int = 1, dt: float = None) -> np.ndarray:
         """
