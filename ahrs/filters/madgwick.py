@@ -450,8 +450,8 @@ class Madgwick:
     >>> type(madgwick.Q), madgwick.Q.shape
     (<class 'numpy.ndarray'>, (1000, 4))
 
-    If we desire to estimate each sample independently, we call its *update*
-    method.
+    If we desire to estimate each sample independently, we call the
+    corresponding ``update`` method.
 
     >>> madgwick = Madgwick()
     >>> Q = np.tile([1., 0., 0., 0.], (num_samples, 1)) # Allocate for quaternions
@@ -459,8 +459,8 @@ class Madgwick:
     ...     Q[t] = madgwick.updateIMU(Q[t-1], gyr=gyro_data[t], acc=acc_data[t])
 
 
-    This algorithm requires a valid initial attitude. This can be set with the
-    parameter ``q0``:
+    This algorithm requires a valid initial attitude, as a versor. This can be
+    set with the parameter ``q0``:
 
     >>> madgwick = Madgwick(gyr=gyro_data, acc=acc_data, q0=[0.7071, 0.0, 0.7071, 0.0])
 
@@ -470,8 +470,8 @@ class Madgwick:
         equal to ``1.0``.
 
     If no initial orientation is given, an attitude is estimated using the
-    first samples. This attitude is computed assuming the sensors are straped
-    to a body in a quasi-static state.
+    first sample of each sensor. This initial attitude is computed assuming the
+    sensors are straped to a body in a quasi-static state.
 
     Further on, we can also use magnetometer data.
 
