@@ -12,13 +12,14 @@ This module is private. All functions and objects are available in the main
 import numpy as np
 
 def _assert_valid_array_type(item, item_name: str = 'iterable'):
-    """Assert it is an iterable"""
+    """Assert it is a list, tuple, or numpy array"""
     # NOTE: This could be changed to a more pythonic solution looking for the
     # dunder method __iter__(), but that yields strings too.
     if not isinstance(item, (list, tuple, np.ndarray)):
         raise TypeError(f"{item_name} must be given as an array. Got {type(item)}")
 
 def _assert_numerical_iterable(item, item_name: str = 'iterable'):
+    """Assert it is a list, tuple, or numpy array, and that it has numerical values"""
     _assert_valid_array_type(item, item_name)
     item_copy = np.copy(item)
     if not(item_copy.dtype == np.dtype(int) or item_copy.dtype == np.dtype(float)):
