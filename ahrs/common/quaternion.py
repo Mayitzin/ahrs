@@ -2517,8 +2517,6 @@ class QuaternionArray(np.ndarray):
         Angles = np.copy(Angles)
         if Angles.ndim != 2 or Angles.shape[-1] != 3:
             raise ValueError(f"Expected `angles` must have shape (N, 3), got {Angles.shape}.")
-        if not all(-2.0 * np.pi <= angle <= 2.0 * np.pi for angle in Angles.flatten()):
-            raise ValueError(f"Expected `angles` must be in [-2*pi, 2*pi]")
         # RPY to Quaternion
         cy = np.cos(0.5*Angles[:, 2])
         sy = np.sin(0.5*Angles[:, 2])
