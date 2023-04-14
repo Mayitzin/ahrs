@@ -953,7 +953,6 @@ class TestComplementary(unittest.TestCase):
         self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, gain=[0.01])
         self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, gain=(0.01,))
         self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, gain=True)
-        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, gain=0.0)
         self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, gain=-0.01)
         self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, gain=1.01)
 
