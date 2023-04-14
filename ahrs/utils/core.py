@@ -2,6 +2,9 @@
 Contains the core utilities for the proper use of AHRS: assertions, data
 handling, etc.
 
+These functions have no other goal in this package than to be used by other
+modules. They are not meant to be used by the user.
+
 This module is private. All functions and objects are available in the main
 ``ahrs`` namespace, or its corresponding submodule - use that instead.
 """
