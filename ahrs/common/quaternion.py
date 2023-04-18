@@ -333,6 +333,7 @@ References
 .. [WikiConversions] https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
 .. [WikiQuaternion] https://en.wikipedia.org/wiki/Quaternion
 .. [Wiki_SLERP] https://en.wikipedia.org/wiki/Slerp
+.. [MarioGC1] https://mariogc.com/post/angular-velocity-quaternions/
 
 """
 
@@ -2846,7 +2847,23 @@ class QuaternionArray(np.ndarray):
         Compute the angular velocity between N Quaternions.
 
         It assumes a constant sampling rate of ``dt`` seconds, and returns the
-        angular velocity around the X-, Y- and Z-axis, in radians per second.
+        angular velocity around the X-, Y- and Z-axis (roll-pitch-yaw angles),
+        in radians per second.
+
+        The angular velocities :math:`\\omega_x`, :math:`\\omega_y`, and
+        :math:`\\omega_z` are computed from quaternions :math:`\\mathbf{q}_t=\\Big(q_w(t), q_x(t), q_y(t), q_z(t)\\Big)`
+        and :math:`\\mathbf{q}_{t+\\Delta t}=\\Big(q_w(t+\\Delta t), q_x(t+\\Delta t), q_y(t+\\Delta t), q_z(t+\\Delta t)\\Big)`
+        as:
+
+        .. math::
+            \\begin{array}{rcl}
+            \\omega_x &=& \\frac{2}{\\Delta t}\\Big(q_w(t) q_x(t+\\Delta t) - q_x(t) q_w(t+\\Delta t) - q_y(t) q_z(t+\\Delta t) + q_z(t) q_y(t+\\Delta t)\\Big) \\\\ \\\\
+            \\omega_y &=& \\frac{2}{\\Delta t}\\Big(q_w(t) q_y(t+\\Delta t) + q_x(t) q_z(t+\\Delta t) - q_y(t) q_w(t+\\Delta t) - q_z(t) q_x(t+\\Delta t)\\Big) \\\\ \\\\
+            \\omega_z &=& \\frac{2}{\\Delta t}\\Big(q_w(t) q_z(t+\\Delta t) - q_x(t) q_y(t+\\Delta t) + q_y(t) q_x(t+\\Delta t) - q_z(t) q_w(t+\\Delta t)\\Big)
+            \\end{array}
+
+        where :math:`\\Delta t` is the time step between consecutive
+        quaternions [MarioGC1]_.
 
         Parameters
         ----------

@@ -3,16 +3,16 @@
 Complementary Filter
 ====================
 
-Attitude quaternion obtained with gyroscope and accelerometer-magnetometer
-measurements, via complementary filter.
+Attitude obtained with gyroscope and accelerometer-magnetometer measurements,
+via complementary filter.
 
 First, the current orientation is estimated at time :math:`t`, from a previous
 orientation at time :math:`t-1`, and a given angular velocity,
 :math:`\\omega`, in rad/s.
 
 This orientation is computed by numerically integrating the angular velocity
-and adding it to the previous orientation, which is known as an **attitude
-propagation**.
+and adding it to the previous orientation, with a process known as an
+**attitude propagation**.
 
 .. math::
     \\begin{array}{rcl}
@@ -141,7 +141,8 @@ class Complementary:
     Raises
     ------
     ValueError
-        When dimension of input arrays ``acc``, ``gyr``, or ``mag`` are not equal.
+        When dimension of input arrays ``acc``, ``gyr``, or ``mag`` are not
+        equal.
 
     """
     def __init__(self,
@@ -249,12 +250,15 @@ class Complementary:
             Estimated attitude.
         """
         acc = np.copy(acc)
+        if acc.ndim < 1:
+            raise ValueError("Input 'acc' must be a one- or two-dimensional array. Got shape {acc.shape}.")
         if acc.ndim < 2:
+            # Estimation with one sample of a tri-axial accelerometer
             a_norm = np.linalg.norm(acc)
             if not a_norm > 0:
                 raise ValueError("Gravitational acceleration must be non-zero")
             ax, ay, az = acc/a_norm
-            ### Tilt from Accelerometer
+            # Tilt from Accelerometer
             ex = np.arctan2( ay, az)                        # Roll
             ey = np.arctan2(-ax, np.sqrt(ay**2 + az**2))    # Pitch
             ez = 0.0                                        # Yaw
