@@ -868,7 +868,7 @@ class Quaternion(np.ndarray):
             &=& \\begin{bmatrix}\\cos\\theta \\\\ \\mathbf{u}\\sin\\theta \\end{bmatrix}
             \\end{array}
 
-        Letting :math:`\\mathbf{q}_v = \\mathbf{u}\\theta` with :math:`\\theta=\\|\mathbf{v}\\|`
+        Letting :math:`\\mathbf{q}_v = \\mathbf{u}\\theta` with :math:`\\theta=\\|\\mathbf{v}\\|`
         and :math:`\\|\\mathbf{u}\\|=1`.
 
         Since :math:`\\|e^{\\mathbf{q}_v}\\|^2=\\cos^2\\theta+\\sin^2\\theta=1`,
