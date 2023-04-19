@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.abspath('../../ahrs' if sys.platform.startswith('win'
 project = 'AHRS'
 author = 'Mario Garcia'
 copyright = '2019-{}, {}'.format(datetime.now().year, author)
-release = '0.3.0-rc1'
+release = '0.3.1'
 
 # -- General configuration ---------------------------------------------------
 extensions = [
