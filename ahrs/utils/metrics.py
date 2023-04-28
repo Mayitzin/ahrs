@@ -374,6 +374,19 @@ def rmse(x: np.ndarray, y: np.ndarray):
     """
     Root Mean Squared Error
 
+    It is computed as:
+
+    .. math::
+
+        d(\\mathbf{x}, \\mathbf{y}) = \\sqrt{\\frac{1}{N}\\sum_{i=1}^N (x_i-y_i)^2}
+
+    where :math:`N` is the number of elements in :math:`\\mathbf{x}` and
+    :math:`\\mathbf{y}`.
+
+    If :math:`\\mathbf{x}` and :math:`\\mathbf{y}` are :math:`M \\times N`
+    matrices, then the RMSE is computed for each row, yielding a vector of
+    length :math:`M`.
+
     Parameters
     ----------
     x : numpy.ndarray
@@ -386,4 +399,7 @@ def rmse(x: np.ndarray, y: np.ndarray):
     d : float
         Root mean squared error between given values.
     """
+    x, y = np.copy(x), np.copy(y)
+    if x.ndim > 1:
+        return np.sqrt(np.nanmean((x-y)**2, axis=1))
     return np.sqrt(np.nanmean((x-y)**2))
