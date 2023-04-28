@@ -369,3 +369,21 @@ def qad(q1: np.ndarray, q2: np.ndarray) -> float:
     q1 /= np.linalg.norm(q1, axis=1)[:, None]
     q2 /= np.linalg.norm(q2, axis=1)[:, None]
     return np.arccos(np.clip(2.0*np.nansum(q1*q2, axis=1)**2-1.0, -1.0, 1.0))
+
+def rmse(x: np.ndarray, y: np.ndarray):
+    """
+    Root Mean Squared Error
+
+    Parameters
+    ----------
+    x : numpy.ndarray
+        First set of values to compare.
+    y : numpy.ndarray
+        Second set of values to compare.
+
+    Returns
+    -------
+    d : float
+        Root mean squared error between given values.
+    """
+    return np.sqrt(np.nanmean((x-y)**2))
