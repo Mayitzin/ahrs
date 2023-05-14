@@ -278,21 +278,20 @@ class FQA:
         Reference geomagnetic field. If None is given, defaults to the
         geomagnetic field of Munich, Germany.
 
-    Attributes
-    ----------
-    acc : numpy.ndarray
-        N-by-3 array with N accelerometer samples.
-    mag : numpy.ndarray
-        N-by-3 array with N magnetometer samples.
-    m_ref : numpy.ndarray
-        Normalized reference geomagnetic field.
-    Q : numpy.ndarray
-        Estimated attitude as quaternion.
-
     Raises
     ------
     ValueError
         When dimension of input arrays ``acc`` and ``mag`` are not equal.
+
+    Examples
+    --------
+
+    >>> from ahrs.filters import FQA
+    >>> g = [0, 0, -9.81]
+    >>> m = [21_000.0, 1_486.0, 43_882.0]
+    >>> fqa = FQA(acc=g, mag=m)
+    >>> fqa.Q
+    array([ 1.00000000e+00,  0.00000000e+00,  0.00000000e+00, -2.32409382e-05])
 
     """
     def __init__(self, acc: np.ndarray = None, mag: np.ndarray = None, mag_ref: np.ndarray = None):
