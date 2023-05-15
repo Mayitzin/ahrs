@@ -116,6 +116,7 @@ CAN     Controller Area Network
 CAS     Collision Avoidance System
 CD      Centered Dipole
 CDI     Course Deviation Indicator
+CG      Center of Gravity
 CGM     Corrected Geomagnetic Coordinates
 CIRAS   Coriolis Inertial Rate and Acceleration Sensor
 CIRS    Conventional Inertial Reference System
@@ -183,6 +184,7 @@ IERS    International Earth Rotation and Reference Systems Service
 IFR     Instrument Flight Rules
 IGRF    International Geomagnetic Reference Field
 ILS     Instrument landing system
+IMC     Intermodule Communication
 IMU     Inertial Measurement Unit
 INS     Inertial Navigation System
 INU     Inertial Navigation Unit
@@ -200,6 +202,7 @@ lon     Longitude
 LORAN   Long-range radio navigation
 LPF     Low-Pass Filter
 LPV     Localizer Performance with Vertical Guidance
+LQR     Linear Quadratic Regulator
 MagCal  Magnetic Calibration
 MANET   Mobile ad hoc Network
 MARG    Magnetism, Angular Rate, and Gravity
@@ -234,11 +237,13 @@ RMS     Root Mean Square
 RNAV    Area Navigation
 RTU     Remote Terminal Unit
 SBAS    Satellite-Based Augmentation System
+SBC     Single Board Computer
 SCADA   System Control and Data Acquisition
 SCI     Serial Communications Interface
 SI      Système International d'unités
 SLERP   Spherical Linear Interpolation
 SOA     Silicon Oscillating Accelerometer
+SPI     Serial Peripheral Interface
 SVD     Singular Value Decomposition
 TACAN   Tactical Air Navigation System
 TAWS    Terrain Awareness and Warning System
@@ -256,6 +261,7 @@ VNAV    Vertical Navigation
 VOR     Very High Frequency Omnidirectional Radio Range
 WAAS    Wide Area Augmentation System
 WGS     World Geodetic System
+WLAN    Wireless Local Area Network
 WMM     World Magnetic Model
 ZUPT    Zero Velocity Update
 ======  =========
