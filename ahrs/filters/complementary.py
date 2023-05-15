@@ -128,8 +128,11 @@ class Complementary:
     Dt : float, default: 0.01
         Sampling step in seconds. Inverse of sampling frequency. Not required
         if ``frequency`` value is given.
-    gain : float, default: 0.1
-        Filter gain.
+    gain : float, default: 0.9
+        Filter gain. Gain equal to 1 uses Angular velocities (gyroscopes) only.
+        Gain equal to 0 uses Accelerometer, and Magnetometer if available,
+        only. Values greater than zero and less than one blend the two
+        estimations proportionally.
     w0 : numpy.ndarray, default: None
         Initial angular position, as roll-pitch-yaw angles, in radians.
     q0 : numpy.ndarray, default: None
@@ -150,7 +153,7 @@ class Complementary:
         acc: np.ndarray = None,
         mag: np.ndarray = None,
         frequency: float = 100.0,
-        gain: float = 0.1,
+        gain: float = 0.9,
         **kwargs):
         self.gyr: np.ndarray = gyr
         self.acc: np.ndarray = acc
@@ -210,12 +213,10 @@ class Complementary:
         if self.acc.shape != self.gyr.shape:
             raise ValueError(f"Could not operate on acc array of shape {self.acc.shape} and gyr array of shape {self.gyr.shape}.")
         W = np.zeros_like(self.acc)
-        W1 = self.angle_integration(W[0], self.gyr[1:], self.Dt)
         if self.mag is None:
             # Estimation with IMU only (Gyroscopes and Accelerometers)
             W[0] = self.am_estimation(self.acc[0]) if self.w0 is None else self.w0
             W2 = self.am_estimation(self.acc)
-            W2[:, 2] = W1[:, 2].copy()      # Use yaw angle from integrated angular velocity
         else:
             # Estimation with MARG (IMU and Magnetometer)
             if self.mag.shape != self.gyr.shape:
@@ -223,13 +224,16 @@ class Complementary:
             W[0] = self.am_estimation(self.acc[0], self.mag[0]) if self.w0 is None else self.w0
             W2 = self.am_estimation(self.acc, self.mag)
         # Complemetary filter
-        W = W1*self.gain + W2*(1.0-self.gain)
-        return np.unwrap(W, axis=0)         # Remove discontinuity of angles
-
-    def angle_integration(self, w: np.ndarray, omega: np.ndarray, dt: float) -> np.ndarray:
-        if omega.ndim < 2:
-            return w + omega * dt
-        return np.cumsum(np.vstack((w, omega))*dt, axis=0)
+        W = np.zeros_like(self.acc)
+        if self.mag is None:
+            # Estimation with IMU only (Gyroscopes and Accelerometers)
+            for i in range(1, len(W)):
+                W[i, :2] = (W[i-1, :2] + self.gyr[i, :2]*self.Dt)*self.gain + W2[i, :2]*(1.0-self.gain)
+            return W
+        # Estimation with MARG (IMU and Magnetometer)
+        for i in range(1, len(W)):
+            W[i] = (W[i-1] + self.gyr[i]*self.Dt)*self.gain + W2[i]*(1.0-self.gain)
+        return W
 
     def am_estimation(self, acc: np.ndarray, mag: np.ndarray = None) -> np.ndarray:
         """
@@ -249,7 +253,7 @@ class Complementary:
         """
         acc = np.copy(acc)
         if acc.ndim < 1:
-            raise ValueError("Input 'acc' must be a one- or two-dimensional array. Got shape {acc.shape}.")
+            raise ValueError(f"Input 'acc' must be a one- or two-dimensional array. Got shape {acc.shape}.")
         if acc.ndim < 2:
             # Estimation with one sample of a tri-axial accelerometer
             a_norm = np.linalg.norm(acc)
@@ -261,6 +265,7 @@ class Complementary:
             ey = np.arctan2(-ax, np.sqrt(ay**2 + az**2))    # Pitch
             ez = 0.0                                        # Yaw
             if mag is not None:
+                _assert_numerical_iterable(mag, 'Geomagnetic field vector')
                 if not(np.linalg.norm(mag) > 0):
                     raise ValueError("Magnetic field must be non-zero")
                 mx, my, mz = mag/np.linalg.norm(mag)
