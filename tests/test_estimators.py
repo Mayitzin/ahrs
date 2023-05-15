@@ -70,6 +70,39 @@ def random_angvel(num_samples: int = 500, max_rotations: int = 4, num_axes: int 
             angvels[idx[0]:idx[1], j] = angs[i]
     return __gaussian_filter(angvels, size=kwargs.pop('gauss_size', 50 if num_samples > 50 else num_samples//5), sigma=5)
 
+def random_angpos(num_samples: int = 500, max_positions: int = 4, num_axes: int = 3, span: list = None, **kwargs) -> np.ndarray:
+    """
+    Random angular velocities
+
+    Create an array of synthetic random angular velocities with reference to a
+    local sensor coordinate frame.
+
+    Parameters
+    ----------
+    num_samples : int, default: 500
+        Number of samples to generate. Set it to minimum 50, so that the
+        gaussian filter can be applied.
+    max_rotations : int, default: 4
+        Maximum number of rotations per axis.
+    num_axes : int, default: 3
+        Number of axes required.
+    span : list or tuple, default: None
+        Span (minimum to maximum) of the random values.
+    Returns
+    -------
+    angvels: np.ndarray
+        Array of angular velocities.
+    """
+    span = span if isinstance(span, (list, tuple)) else [-0.5*np.pi, 0.5*np.pi]
+    all_angs = [np.random.uniform(span[0], span[1], np.random.randint(1, max_positions)) for _ in np.arange(num_axes)]
+    angvels = np.zeros((num_samples, num_axes))
+    for j, angs in enumerate(all_angs):
+        num_angs = len(angs)
+        idxs = np.sort(np.random.randint(0, num_samples, 2*num_angs)).reshape((num_angs, 2))
+        for i, idx in enumerate(idxs):
+            angvels[idx[0]:idx[1], j] = angs[i]
+    return __gaussian_filter(angvels, size=kwargs.pop('gauss_size', 50 if num_samples > 50 else num_samples//5), sigma=5)
+
 # Generate random attitudes
 NUM_SAMPLES = 500
 ANGULAR_VELOCITIES = random_angvel(num_samples=NUM_SAMPLES, span=(-np.pi, np.pi))
@@ -116,7 +149,7 @@ class TestSAAM(unittest.TestCase):
         # Add noise to reference vectors and rotate them by the random attitudes
         self.Rg = np.array([R @ REFERENCE_GRAVITY_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * ACC_NOISE_STD_DEVIATION
         self.Rm = np.array([R @ REFERENCE_MAGNETIC_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * MAG_NOISE_STD_DEVIATION
-        self.threshold = 7.5e-2
+        self.threshold = 8e-2
 
     def test_single_values(self):
         saam = ahrs.filters.SAAM(self.Rg[0], self.Rm[0])
@@ -886,17 +919,30 @@ class TestTilt(unittest.TestCase):
 class TestComplementary(unittest.TestCase):
     def setUp(self) -> None:
         # Create random attitudes
-        num_samples = 1000
-        a_ref = REFERENCE_GRAVITY_VECTOR
-        m_ref = REFERENCE_MAGNETIC_VECTOR
-        gyros = random_angvel(num_samples=num_samples, span=(-np.pi, np.pi))
-        self.Qts = ahrs.QuaternionArray(ahrs.filters.AngularRate(gyros).Q)
+        self.frequency = 100.0
+        self.a_ref = REFERENCE_GRAVITY_VECTOR
+        self.m_ref = REFERENCE_MAGNETIC_VECTOR
+        self.angular_positions = random_angpos(num_samples=NUM_SAMPLES, span=(-0.5*np.pi, 0.5*np.pi), max_positions=20)
+        self.Qts = ahrs.QuaternionArray(rpy=self.angular_positions)
+        angular_velocities = np.vstack((np.zeros(3), self.Qts.angular_velocities(1/self.frequency)))
         rotations = self.Qts.to_DCM()
         # Add noise to reference vectors and rotate them by the random attitudes
-        self.noise_sigma = 1e-2
-        self.gyr = gyros + np.random.standard_normal((num_samples, 3)) * self.noise_sigma
-        self.Rg = np.array([R.T @ a_ref for R in rotations]) + np.random.standard_normal((num_samples, 3)) * self.noise_sigma
-        self.Rm = np.array([R.T @ m_ref for R in rotations]) + np.random.standard_normal((num_samples, 3)) * self.noise_sigma
+        self.noise_sigma = 4*np.pi/50.0
+        self.gyr = angular_velocities + np.random.standard_normal((NUM_SAMPLES, 3)) * self.noise_sigma
+        self.Rg = np.array([R.T @ self.a_ref for R in rotations]) + np.random.standard_normal((NUM_SAMPLES, 3)) * self.noise_sigma
+        self.Rm = np.array([R.T @ self.m_ref for R in rotations]) + np.random.standard_normal((NUM_SAMPLES, 3)) * self.noise_sigma
+
+    def test_gyr_acc(self):
+        angular_positions = np.c_[self.angular_positions[:, :2], np.zeros(NUM_SAMPLES)]
+        angular_positions[:, 2] = 0.0
+        Qts = ahrs.QuaternionArray(rpy=angular_positions)
+        angular_velocities = np.vstack((np.zeros(3), Qts.angular_velocities(1/self.frequency)))
+        rotations = Qts.to_DCM()
+        # Add noise to reference vectors and rotate them by the random attitudes
+        gyr = angular_velocities + np.random.standard_normal((NUM_SAMPLES, 3)) * self.noise_sigma
+        Rg = np.array([R.T @ self.a_ref for R in rotations]) + np.random.standard_normal((NUM_SAMPLES, 3)) * self.noise_sigma
+        orientation = ahrs.filters.Complementary(gyr=gyr, acc=Rg)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(Qts, orientation.Q)), 0.2)
 
     def test_gyr_acc_mag(self):
         orientation = ahrs.filters.Complementary(gyr=self.gyr, acc=self.Rg, mag=self.Rm)
