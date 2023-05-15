@@ -2037,9 +2037,11 @@ class QuaternionArray(np.ndarray):
                      [ 0.17094453, -0.3723117 ,  0.54109885, -0.73442086],
                      [ 0.1862619 , -0.38421818,  0.5260265 , -0.73551276]])
     """
-    def __new__(subtype, q: np.ndarray = None, versors: bool = True, order: str = 'H'):
+    def __new__(subtype, q: np.ndarray = None, versors: bool = True, order: str = 'H', **kwargs):
         if q is None:
             q = np.array([[1.0, 0.0, 0.0, 0.0]])
+            if 'rpy' in kwargs:
+                q = QuaternionArray.from_rpy(QuaternionArray, kwargs.pop("rpy"))
         if isinstance(q, int):
             q = np.atleast_2d(random_attitudes(q))
         _assert_iterables(q, 'Quaternion Array')
