@@ -6,104 +6,94 @@ Complementary Filter
 Attitude obtained with gyroscope and accelerometer-magnetometer measurements,
 via complementary filter.
 
-First, the current orientation is estimated at time :math:`t`, from a previous
-orientation at time :math:`t-1`, and a given angular velocity,
-:math:`\\omega`, in rad/s.
+The complementary filter is one of the simplest ways to fuse sensor data from
+multiple sensors. It is based on the idea that the errors from one sensor will
+be compensated by the other sensor, and vice versa.
 
-This orientation is computed by numerically integrating the angular velocity
-and adding it to the previous orientation, with a process known as an
-**attitude propagation**.
+The gyroscopes tend to have a low-frequency drift, while the accelerometers
+and magnetometers tend to have a high-frequency noise. The complementary filter
+simple "combines" these two signals, yielding the benefit of eliminating the
+drift from the gyroscope and noise from the accelerometer.
 
-.. math::
-    \\begin{array}{rcl}
-    \\mathbf{q}_\\omega &=& \\Big(\\mathbf{I}_4 + \\frac{\\Delta t}{2}\\boldsymbol\\Omega_t\\Big)\\mathbf{q}_{t-1} \\\\
-    &=&
-    \\begin{bmatrix}
-    1 & -\\frac{\\Delta t}{2}\\omega_x & -\\frac{\\Delta t}{2}\\omega_y & -\\frac{\\Delta t}{2}\\omega_z \\\\
-    \\frac{\\Delta t}{2}\\omega_x & 1 & \\frac{\\Delta t}{2}\\omega_z & -\\frac{\\Delta t}{2}\\omega_y \\\\
-    \\frac{\\Delta t}{2}\\omega_y & -\\frac{\\Delta t}{2}\\omega_z & 1 & \\frac{\\Delta t}{2}\\omega_x \\\\
-    \\frac{\\Delta t}{2}\\omega_z & \\frac{\\Delta t}{2}\\omega_y & -\\frac{\\Delta t}{2}\\omega_x & 1
-    \\end{bmatrix}
-    \\begin{bmatrix}q_w \\\\ q_x \\\\ q_y \\\\ q_z \\end{bmatrix} \\\\
-    &=&
-    \\begin{bmatrix}
-        q_w - \\frac{\\Delta t}{2} \\omega_x q_x - \\frac{\\Delta t}{2} \\omega_y q_y - \\frac{\\Delta t}{2} \\omega_z q_z\\\\
-        q_x + \\frac{\\Delta t}{2} \\omega_x q_w - \\frac{\\Delta t}{2} \\omega_y q_z + \\frac{\\Delta t}{2} \\omega_z q_y\\\\
-        q_y + \\frac{\\Delta t}{2} \\omega_x q_z + \\frac{\\Delta t}{2} \\omega_y q_w - \\frac{\\Delta t}{2} \\omega_z q_x\\\\
-        q_z - \\frac{\\Delta t}{2} \\omega_x q_y + \\frac{\\Delta t}{2} \\omega_y q_x + \\frac{\\Delta t}{2} \\omega_z q_w
-    \\end{bmatrix}
-    \\end{array}
-
-Secondly, the *tilt* is computed from the accelerometer measurements as:
+First, the **tilt** angles computed from the accelerometer measurements as:
 
 .. math::
-    \\begin{array}{rcl}
-    \\phi &=& \\mathrm{arctan2}(a_y, a_z) \\\\
-    \\theta &=& \\mathrm{arctan2}\\big(-a_x, \\sqrt{a_y^2+a_z^2}\\big)
-    \\end{array}
+    \\boldsymbol{\\theta}_{am} =
+    \\begin{bmatrix}
+        \\theta_x \\\\ \\theta_y \\\\ \\theta_z
+    \\end{bmatrix} =
+    \\begin{bmatrix}
+    \\mathrm{arctan2}(a_y, a_z) \\\\
+    \\mathrm{arctan2}\\big(-a_x, \\sqrt{a_y^2+a_z^2}\\big) \\\\ 0
+    \\end{bmatrix}
 
-Only the pitch, :math:`\\theta`, and roll, :math:`\\phi`, angles are computed,
-leaving the yaw angle, :math:`\\psi` equal to zero.
+Only the roll, :math:`\\theta_x`, and pitch, :math:`\\theta_y`, angles are computed,
+leaving the yaw angle, :math:`\\theta_z`, equal to zero.
 
-If a magnetometer sample is available, the yaw angle can be computed. First
-compensate the measurement using the *tilt*:
+If a magnetometer sample is available, the **yaw angle**, :math:`\\theta_z` can be
+computed. First compensate the measured magnetic field using the tilt:
 
 .. math::
     \\begin{array}{rcl}
     \\mathbf{b} &=&
     \\begin{bmatrix}
-        \\cos\\theta & \\sin\\theta\\sin\\phi & \\sin\\theta\\cos\\phi \\\\
-        0 & \\cos\\phi & -\\sin\\phi \\\\
-        -\\sin\\theta & \\cos\\theta\\sin\\phi & \\cos\\theta\\cos\\phi
+        \\cos\\theta_x & \\sin\\theta_x\\sin\\theta_y & \\sin\\theta_x\\cos\\theta_y \\\\
+        0 & \\cos\\theta_y & -\\sin\\theta_y \\\\
+        -\\sin\\theta_x & \\cos\\theta_x\\sin\\theta_y & \\cos\\theta_x\\cos\\theta_y
     \\end{bmatrix}
     \\begin{bmatrix}m_x \\\\ m_y \\\\ m_z\\end{bmatrix} \\\\
     \\begin{bmatrix}b_x \\\\ b_y \\\\ b_z\\end{bmatrix} &=&
     \\begin{bmatrix}
-        m_x\\cos\\theta + m_y\\sin\\theta\\sin\\phi + m_z\\sin\\theta\\cos\\phi \\\\
-        m_y\\cos\\phi - m_z\\sin\\phi \\\\
-        -m_x\\sin\\theta + m_y\\cos\\theta\\sin\\phi + m_z\\cos\\theta\\cos\\phi
+        m_x\\cos\\theta_x + m_y\\sin\\theta_x\\sin\\theta_y + m_z\\sin\\theta_x\\cos\\theta_y \\\\
+        m_y\\cos\\theta_y - m_z\\sin\\theta_y \\\\
+        -m_x\\sin\\theta_x + m_y\\cos\\theta_x\\sin\\theta_y + m_z\\cos\\theta_x\\cos\\theta_y
     \\end{bmatrix}
     \\end{array}
 
-Then, the yaw angle, :math:`\\psi`, is obtained as:
+Then :math:`\\theta_z` is obtained as:
 
 .. math::
     \\begin{array}{rcl}
-    \\psi &=& \\mathrm{arctan2}(-b_y, b_x) \\\\
-    &=& \\mathrm{arctan2}\\big(m_z\\sin\\phi - m_y\\cos\\phi, \\; m_x\\cos\\theta + \\sin\\theta(m_y\\sin\\phi + m_z\\cos\\phi)\\big)
+    \\theta_z &=& \\mathrm{arctan2}(-b_y, b_x) \\\\
+    &=& \\mathrm{arctan2}\\big(m_z\\sin\\theta_y - m_y\\cos\\theta_y, \\; m_x\\cos\\theta_x + \\sin\\theta_x(m_y\\sin\\theta_y + m_z\\cos\\theta_y)\\big)
     \\end{array}
 
-We transform the roll-pitch-yaw angles to a quaternion representation:
+Likewise, the orientation is again estimated at :math:`t`, but this time from a
+previous orientation at :math:`t-1`, and a given angular velocity,
+:math:`\\boldsymbol{\\omega}=\\begin{bmatrix}\\omega_x & \\omega_y & \\omega_z\\end{bmatrix}^T`,
+in rad/s, using the simplest numerical integration:
 
 .. math::
-    \\mathbf{q}_{am} =
-    \\begin{pmatrix}q_w\\\\q_x\\\\q_y\\\\q_z\\end{pmatrix} =
-    \\begin{pmatrix}
-        \\cos\\Big(\\frac{\\phi}{2}\\Big)\\cos\\Big(\\frac{\\theta}{2}\\Big)\\cos\\Big(\\frac{\\psi}{2}\\Big) + \\sin\\Big(\\frac{\\phi}{2}\\Big)\\sin\\Big(\\frac{\\theta}{2}\\Big)\\sin\\Big(\\frac{\\psi}{2}\\Big) \\\\
-        \\sin\\Big(\\frac{\\phi}{2}\\Big)\\cos\\Big(\\frac{\\theta}{2}\\Big)\\cos\\Big(\\frac{\\psi}{2}\\Big) - \\cos\\Big(\\frac{\\phi}{2}\\Big)\\sin\\Big(\\frac{\\theta}{2}\\Big)\\sin\\Big(\\frac{\\psi}{2}\\Big) \\\\
-        \\cos\\Big(\\frac{\\phi}{2}\\Big)\\sin\\Big(\\frac{\\theta}{2}\\Big)\\cos\\Big(\\frac{\\psi}{2}\\Big) + \\sin\\Big(\\frac{\\phi}{2}\\Big)\\cos\\Big(\\frac{\\theta}{2}\\Big)\\sin\\Big(\\frac{\\psi}{2}\\Big) \\\\
-        \\cos\\Big(\\frac{\\phi}{2}\\Big)\\cos\\Big(\\frac{\\theta}{2}\\Big)\\sin\\Big(\\frac{\\psi}{2}\\Big) - \\sin\\Big(\\frac{\\phi}{2}\\Big)\\sin\\Big(\\frac{\\theta}{2}\\Big)\\cos\\Big(\\frac{\\psi}{2}\\Big)
-    \\end{pmatrix}
+    \\boldsymbol{\\theta}_\\omega =
+    \\begin{bmatrix}
+    \\theta_{x_t} \\\\ \\theta_{y_t} \\\\ \\theta_{z_t}
+    \\end{bmatrix} = 
+    \\begin{bmatrix}
+    \\theta_{x_{t-1}} + \\omega_x\\Delta_t \\\\
+    \\theta_{y_{t-1}} + \\omega_y\\Delta_t \\\\
+    \\theta_{z_{t-1}} + \\omega_z\\Delta_t
+    \\end{bmatrix}
 
-Finally, after each orientation is estimated independently, they are fused with
-the complementary filter.
+where :math:`\\Delta_t` is the time interval between the current and previous
+measurements, a.k.a. the sampling period or time step. This is merely the
+opposite of the sampling frequency: :math:`\\Delta_t=^1/f_s`.
+
+Finally, the estimations are merged using a complementary filter with a
+controlling parameter, :math:`\\alpha`, in the range :math:`[0, 1]`:
 
 .. math::
-    \\mathbf{q} = (1 - \\alpha) \\mathbf{q}_\\omega + \\alpha\\mathbf{q}_{am}
+    \\boldsymbol{\\theta} = \\alpha\\boldsymbol{\\theta}_\\omega + (1 - \\alpha)\\boldsymbol{\\theta}_{am}
 
-where :math:`\\mathbf{q}_\\omega` is the attitude estimated from the gyroscope,
-:math:`\\mathbf{q}_{am}` is the attitude estimated from the accelerometer and
-the magnetometer, and :math:`\\alpha` is the gain of the filter.
+where :math:`\\boldsymbol{\\theta}_\\omega` is the attitude estimated from the
+gyroscope, :math:`\\boldsymbol{\\theta}_{am}` is the attitude estimated from
+the accelerometer and the magnetometer, and :math:`\\alpha` is the gain of the
+filter.
 
 The filter gain must be a floating value within the range :math:`[0.0, 1.0]`.
-It can be seen that when :math:`\\alpha=1`, the attitude is estimated entirely
-with the accelerometer and the magnetometer. When :math:`\\alpha=0`, it is
+It can be seen that when :math:`\\alpha=0`, the attitude is estimated entirely
+with the accelerometer and the magnetometer. When :math:`\\alpha=1`, it is
 estimated solely with the gyroscope. The values within the range decide how
 much of each estimation is "blended" into the quaternion.
-
-This is actually a simple implementation of `LERP
-<https://en.wikipedia.org/wiki/Linear_interpolation>`_ commonly used to
-linearly interpolate quaternions with small differences between them.
 
 """
 
@@ -217,14 +207,14 @@ class Complementary:
         W = np.zeros_like(self.acc)
         if self.mag is None:
             # Estimation with IMU only (Gyroscopes and Accelerometers)
-            W[0] = self.am_estimation(self.acc[0]) if self.w0 is None else self.w0
             W2 = self.am_estimation(self.acc)
+            W[0] = W2[0] if self.w0 is None else self.w0
         else:
             # Estimation with MARG (IMU and Magnetometer)
             if self.mag.shape != self.gyr.shape:
                 raise ValueError(f"Could not operate on mag array of shape {self.mag.shape} and gyr array of shape {self.gyr.shape}.")
-            W[0] = self.am_estimation(self.acc[0], self.mag[0]) if self.w0 is None else self.w0
             W2 = self.am_estimation(self.acc, self.mag)
+            W[0] = W2[0] if self.w0 is None else self.w0
         # Complemetary filter
         W = np.zeros_like(self.acc)
         if self.mag is None:
