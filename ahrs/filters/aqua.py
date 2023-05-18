@@ -5,7 +5,7 @@ Algebraic Quaternion Algorithm
 
 Roberto Valenti's Algebraic Quaterion Algorithm (AQUA) [Valenti2015]_ estimates
 a quaternion with the algebraic solution of a system from inertial/magnetic
-observations, solving `Wahba's Problem <https://en.wikipedia.org/wiki/Wahba%27s_problem>`.
+observations, solving `Wahba's Problem <https://en.wikipedia.org/wiki/Wahba%27s_problem>`_.
 
 AQUA computes the "tilt" quaternion and the "heading" quaternion separately in
 two sub-parts. This avoids the impact of the magnetic disturbances on the roll
@@ -31,21 +31,22 @@ defined as:
     \\cos\\frac{\\alpha}{2}\\\\e_x\\sin\\frac{\\alpha}{2}\\\\e_y\\sin\\frac{\\alpha}{2}\\\\e_z\\sin\\frac{\\alpha}{2}
     \\end{bmatrix}
 
-where :math:`\\alpha` is the rotation angle and :math:`e` is the unit vector
-representing the rotation axis. The conjugate quaternion is used to represent
-the orientation of frame :math:`B` relative to frame :math:`A`:
+where :math:`\\alpha` is the rotation angle and
+:math:`\\mathbf{e}=\\begin{bmatrix}e_x&e_y&e_z\\end{bmatrix}^T` is the unit
+vector representing the rotation axis. The conjugate quaternion is used to
+represent the orientation of frame :math:`B` relative to frame :math:`A`:
 
 .. math::
     ^B_A\\mathbf{q}^* = \\,^A_B\\mathbf{q} = \\begin{bmatrix}q_w\\\\-q_x\\\\-q_y\\\\-q_z\\end{bmatrix}
 
-The orientation quaternion after a sequence of rotations can be easily found by
-quaternion multiplication:
+The final orientation quaternion can be easily found through quaternion
+multiplication:
 
 .. math::
     ^C_A\\mathbf{q} = \\,^C_B\\mathbf{q} \\, ^B_A\\mathbf{q}
 
-where the quaternion multiplication of quaternions :math:`\\mathbf{p}` and
-:math:`\\mathbf{q}` is computed as:
+where the quaternion multiplication of any given quaternions :math:`\\mathbf{p}`
+and :math:`\\mathbf{q}` is computed as:
 
 .. math::
     \\mathbf{pq} =
@@ -58,7 +59,7 @@ where the quaternion multiplication of quaternions :math:`\\mathbf{p}` and
 
 Unit quaternions in Hamiltonian spaces are often used to operate rotations of
 vectors in a 3D euclidean space. A vector
-:math:`^A\\mathbf{v}_q=\\begin{bmatrix}v_x & v_y & v_z\\end{bmatrix}^T`
+:math:`^A\\mathbf{v}=\\begin{bmatrix}v_x & v_y & v_z\\end{bmatrix}^T`
 expressed with respect to frame :math:`A` can be represented with respect to
 frame :math:`B` as:
 
@@ -74,6 +75,8 @@ The inverse rotation can be achieved by flipping the versors:
 .. math::
     ^A\\mathbf{v}_q = \\, ^B_A\\mathbf{q}^* \\, ^B\\mathbf{v}_q \\, ^B_A\\mathbf{q}
     = \\, ^A_B\\mathbf{q} \\, ^B\\mathbf{v}_q \\, ^A_B\\mathbf{q}^*
+
+**Quaternion as Rotation Matrix in SO(3)**
 
 These rotations can also be expressed within the three-dimensional euclidean
 space if we express the rotation as a Direction Cosine Matrix
@@ -110,6 +113,8 @@ is equal to the :math:`q_w` component:
 
 .. math::
     \\mathbf{q}\\cdot\\mathbf{q}_I = q_w
+
+**Interpolations**
 
 The simple **Linear intERPolation** (LERP) between two quaternions :math:`\\mathbf{p}`
 and :math:`\\mathbf{q}` is obtained as:
