@@ -1391,7 +1391,7 @@ class EKF:
         q_t = self.f(q, g, dt)                  # Predicted State
         F   = self.dfdq(g, dt)                  # Linearized Fundamental Matrix
         W   = 0.5*dt * np.r_[[-q[1:]], q[0]*np.identity(3) + skew(q[1:])]  # Jacobian W = df/dω
-        Q_t = 0.5*dt * self.g_noise * W@W.T     # Process Noise Covariance
+        Q_t = self.g_noise * W@W.T              # Process Noise Covariance
         P_t = F@self.P@F.T + Q_t                # Predicted Covariance Matrix
         # ----- Correction -----
         y   = self.h(q_t)                       # Expected Measurement function
