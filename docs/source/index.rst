@@ -1,15 +1,15 @@
 AHRS: Attitude and Heading Reference Systems
 ============================================
 
-Welcome to AHRS! ``ahrs`` is an open source Python toolbox for attitude
-estimation using the most known algorithms, methods and resources.
+Welcome! ``ahrs`` is an open source Python toolbox for attitude estimation
+using the most known algorithms, methods and resources.
 
-It is designed flexible and very simple to use, making it a great option for
-fast prototyping and integration with your own Python projects.
+It is designed to be flexible and simple to use, making it a great option for
+fast prototyping, testing and integration with your own Python projects.
 
-This package is a collection of functions and utilities to help you understand
-and use the most common techniques for attitude estimation, and in no way it is
-recommende to be used commercially.
+This package collects functions and utilities to help you understand and use
+the most common techniques for attitude estimation, and in no way it is
+recommended to be used commercially.
 
 All algorithms and implementations have their proper documentation and
 references, in case you need further clarification of their usage.
