@@ -587,7 +587,7 @@ class WGS:
         return self.a*(1-e**2)/np.cbrt(1-e**2*np.sin(lat)**2)
 
     @property
-    def first_eccentricity_squared(self):
+    def first_eccentricity_squared(self) -> float:
         """
         First Eccentricity Squared :math:`e^2` of the ellipsoid, computed as:
 
@@ -603,7 +603,7 @@ class WGS:
         return 2*self.f - self.f**2
 
     @property
-    def second_eccentricity_squared(self):
+    def second_eccentricity_squared(self) -> float:
         """
         Second Eccentricity Squared :math:`e'^2`, computed as:
 
@@ -619,7 +619,7 @@ class WGS:
         return (self.a**2-self.b**2)/self.b**2
 
     @property
-    def linear_eccentricity(self):
+    def linear_eccentricity(self) -> float:
         """
         Linear Eccentricity :math:`E`, computed as:
 
@@ -635,7 +635,7 @@ class WGS:
         return np.sqrt(self.a**2-self.b**2)
 
     @property
-    def aspect_ratio(self):
+    def aspect_ratio(self) -> float:
         """
         Aspect Ratio :math:`AR`, computed as:
 
@@ -651,7 +651,7 @@ class WGS:
         return self.b/self.a
 
     @property
-    def curvature_polar_radius(self):
+    def curvature_polar_radius(self) -> float:
         """
         Polar Radius of Curvature :math:`R_P`, computed as:
 
@@ -670,7 +670,7 @@ class WGS:
         return self.a/(1-self.f)
 
     @property
-    def arithmetic_mean_radius(self):
+    def arithmetic_mean_radius(self) -> float:
         """
         Mean Radius :math:`R_1` of the Three Semi-Axes, computed as:
 
@@ -686,7 +686,7 @@ class WGS:
         return self.a*(1-self.f/3)
 
     @property
-    def authalic_sphere_radius(self):
+    def authalic_sphere_radius(self) -> float:
         """
         Radius :math:`R_2` of a Sphere of Equal Area, computed as:
 
@@ -704,7 +704,7 @@ class WGS:
         return r*(1 - 2*es**2/3 + 26*es**4/45 - 100*es**6/189 + 7034*es**8/14175 - 220652*es**10/467775)
 
     @property
-    def equivolumetric_sphere_radius(self):
+    def equivolumetric_sphere_radius(self) -> float:
         """
         Radius :math:`R_3` of a Sphere of Equal Volume, computed as:
 
@@ -723,7 +723,7 @@ class WGS:
         return self.a*np.cbrt(1-self.f)
 
     @property
-    def normal_gravity_constant(self):
+    def normal_gravity_constant(self) -> float:
         """
         Normal Gravity Formula Constant :math:`m`, computed as:
 
@@ -739,7 +739,7 @@ class WGS:
         return self.w**2*self.a**2*self.b/self.gm
 
     @property
-    def dynamical_form_factor(self):
+    def dynamical_form_factor(self) -> float:
         """
         WGS 84 Dynamical Form Factor :math:`J_2`, computed as:
 
@@ -764,7 +764,7 @@ class WGS:
         return e2*(1-2*m*es/(15*q0))/3
 
     @property
-    def second_degree_zonal_harmonic(self):
+    def second_degree_zonal_harmonic(self) -> float:
         """
         WGS 84 Second Degree Zonal Harmonic :math:`C_{2,0}`, computed as:
 
@@ -780,7 +780,7 @@ class WGS:
         return -self.dynamical_form_factor/np.sqrt(5.0)
 
     @property
-    def normal_gravity_potential(self):
+    def normal_gravity_potential(self) -> float:
         """
         Normal Gravity Potential :math:`U_0` of the WGS 84 Ellipsoid, computed
         as:
@@ -798,7 +798,7 @@ class WGS:
         return self.gm*np.arctan(es)/self.linear_eccentricity + self.w**2*self.a**2/3
 
     @property
-    def equatorial_normal_gravity(self):
+    def equatorial_normal_gravity(self) -> float:
         """
         Normal Gravity :math:`g_e` at the Equator, in
         :math:`\\frac{\\mathrm{m}}{\\mathrm{s}^2}`, computed as:
@@ -827,7 +827,7 @@ class WGS:
         return self.gm * (1 - m - m*es*q0s/(6*q0))/(self.a*self.b)
 
     @property
-    def polar_normal_gravity(self):
+    def polar_normal_gravity(self) -> float:
         """
         Normal Gravity :math:`g_p` at the Pole, in
         :math:`\\frac{\\mathrm{m}}{\\mathrm{s}^2}`, computed as:
@@ -856,7 +856,7 @@ class WGS:
         return self.gm * (1 + m*es*q0s/(3*q0))/self.a**2
 
     @property
-    def mean_normal_gravity(self):
+    def mean_normal_gravity(self) -> float:
         """
         Mean Value :math:`\\bar{g}` of Normal Gravity, in
         :math:`\\frac{\\mathrm{m}}{\\mathrm{s}^2}`, computed as:
@@ -883,7 +883,7 @@ class WGS:
         return g
 
     @property
-    def mass(self):
+    def mass(self) -> float:
         """
         The Mass :math:`M` of the Earth, in kg, computed as:
 
@@ -902,7 +902,7 @@ class WGS:
         return self.gm/UNIVERSAL_GRAVITATION_WGS84
 
     @property
-    def geometric_inertial_moment_about_Z(self):
+    def geometric_inertial_moment_about_Z(self) -> float:
         """
         Geometric Moment of Inertia (:math:`C`), with respect to the Z-Axis of
         Rotation, computed as:
@@ -919,7 +919,7 @@ class WGS:
         return 2*self.mass*self.a**2*(1-0.4*np.sqrt(2.5*self.normal_gravity_constant/self.f - 1))/3
 
     @property
-    def geometric_inertial_moment(self):
+    def geometric_inertial_moment(self) -> float:
         """
         Geometric Moment of Inertia (:math:`A`), with respect to Any Axis in
         the Equatorial Plane, computed as:
@@ -941,7 +941,7 @@ class WGS:
         return self.geometric_inertial_moment_about_Z + np.sqrt(5)*self.mass*self.a**2*EARTH_C20_GEO
 
     @property
-    def geometric_dynamic_ellipticity(self):
+    def geometric_dynamic_ellipticity(self) -> float:
         """
         Geometric Solution for Dynamic Ellipticity :math:`H`, computed as:
 
@@ -958,7 +958,7 @@ class WGS:
 
     # Geodetic Properties
     @property
-    def atmosphere_gravitational_constant(self):
+    def atmosphere_gravitational_constant(self) -> float:
         """
         Gravitational Constant of the Atmosphere :math:`GM_A`, computed as:
 
@@ -979,7 +979,7 @@ class WGS:
         return UNIVERSAL_GRAVITATION_WGS84*EARTH_ATMOSPHERE_MASS
 
     @property
-    def gravitational_constant_without_atmosphere(self):
+    def gravitational_constant_without_atmosphere(self) -> float:
         """
         Geocentric Gravitational Constant with Earth's Atmosphere Excluded
         :math:`GM'`, computed as:
@@ -998,7 +998,7 @@ class WGS:
         return self.gm - self.atmosphere_gravitational_constant
 
     @property
-    def dynamic_inertial_moment_about_Z(self):
+    def dynamic_inertial_moment_about_Z(self) -> float:
         """
         Dynamic Moment of Inertia (:math:`C`), with respect to the Z-Axis of
         Rotation, computed as:
@@ -1019,7 +1019,7 @@ class WGS:
         return -np.sqrt(5)*self.mass*self.a**2*EARTH_C20_DYN/DYNAMIC_ELLIPTICITY
 
     @property
-    def dynamic_inertial_moment_about_X(self):
+    def dynamic_inertial_moment_about_X(self) -> float:
         """
         Dynamic Moment of Inertia (:math:`A`), with respect to the X-Axis of
         Rotation, computed as:
@@ -1040,7 +1040,7 @@ class WGS:
         return np.sqrt(5)*self.mass*self.a**2*((1-1/DYNAMIC_ELLIPTICITY)*EARTH_C20_DYN - EARTH_C22_DYN/np.sqrt(3))
 
     @property
-    def dynamic_inertial_moment_about_Y(self):
+    def dynamic_inertial_moment_about_Y(self) -> float:
         """
         Dynamic Moment of Inertia (:math:`B`), with respect to the X-Axis of
         Rotation, computed as:
