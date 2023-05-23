@@ -61,8 +61,10 @@ rotational ellipsoid, while the other two parameters (:math:`GM`, :math:`\\omega
 permit the unique determination of its associated normal gravity field.
 
 Having these 4 elements defined, it is possible to estimate most of the WGS84
-parameters directly. The class ``WGS`` already sets these values by default
-(and estimates the semi-minor axis ``b``), but with slightly different notation:
+parameters directly.
+
+The class :class:`WGS` already sets these values by default (and estimates the
+semi-minor axis ``b``), but with slightly different notation:
 
 .. code:: python
 
@@ -84,9 +86,9 @@ Moments of Inertia:
 +--------------------------+-------------------------------------------+---------------------------+
 | Symbol                   | Definition                                | Value                     |
 +==========================+===========================================+===========================+
-| C\ :sub:`2,0 dyn[2008]`  | Dynamic Second Degree Zonal Harmonics     | -4.84165143790815 x 10^-4 |
+| C :sub:`2,0 dyn[2008]`   | Dynamic Second Degree Zonal Harmonics     | -4.84165143790815 x 10^-4 |
 +--------------------------+-------------------------------------------+---------------------------+
-| C\ :sub:`2,2 dyn[2008]`  | Dynamic Second Degree Sectorial Harmonics | 2.43938357328313 x 10^-6  |
+| C :sub:`2,2 dyn[2008]`   | Dynamic Second Degree Sectorial Harmonics | 2.43938357328313 x 10^-6  |
 +--------------------------+-------------------------------------------+---------------------------+
 | H                        | Dynamic Ellipticity                       | 3.2737949 x 10^-3         |
 +--------------------------+-------------------------------------------+---------------------------+
@@ -150,14 +152,14 @@ potential :math:`U` :
 
 .. math::
     \\vec{\\mathbf{g}} = \\nabla U =
-    \\begin{bmatrix}g_u \\\\ g_\\beta \\\\ g_\\lambda \\end{bmatrix} =
+    \\begin{bmatrix}\\mathrm{g}_u \\\\ \\mathrm{g}_\\beta \\\\ \\mathrm{g}_\\lambda \\end{bmatrix} =
     \\begin{bmatrix}
     \\frac{1}{w}\\frac{\\partial U}{\\partial u} \\\\
     \\frac{1}{w\\sqrt{u^2+E^2}}\\frac{\\partial U}{\\partial \\beta} \\\\ 0
     \\end{bmatrix}
 
-We see that :math:`g_\\lambda=0`, because the effects of the potential along
-the longitudinal direction are neglected.
+We see that :math:`\\mathrm{g}_\\lambda=0`, because the effects of the
+potential along the longitudinal direction are neglected.
 
 Normal Gravity on the Surface
 -----------------------------
@@ -166,13 +168,13 @@ The **magnitude of the normal gravity vector**, simply called **normal
 gravity**, is:
 
 .. math::
-    g = \\|\\vec{\\mathbf{g}}\\| = \\sqrt{g_u^2+g_\\beta^2}
+    \\mathrm{g} = \\|\\vec{\\mathbf{g}}\\| = \\sqrt{\\mathrm{g}_u^2+\\mathrm{g}_\\beta^2}
 
-At the surface of the ellipsoid :math:`u=b` making :math:`g_{\\beta,0}=0`. So,
-the total gravity on the surface of the ellipsoid  :math:`g_0` is just:
+where :math:`u=b` at the surface of the ellipsoid making :math:`\\mathrm{g}_{\\beta,0}=0`.
+So, the total gravity on its surface, :math:`\\mathrm{g}_0`, is just:
 
 .. math::
-    g_0 = \\|\\vec{\\mathbf{g}_0}\\| =
+    \\mathrm{g}_0 = \\|\\vec{\\mathbf{g}_0}\\| =
     \\frac{GM}{a\\sqrt{a^2\\sin^2\\beta+b^2\\cos^2\\beta}}
     \\Big[\\Big(1+\\frac{me'q_0'}{3q_0}\\Big)\\sin^2\\beta + \\Big(1-m-\\frac{me'q_0'}{6q_0}\\Big)\\cos^2\\beta\\Big]
 
@@ -181,7 +183,7 @@ where:
 .. math::
     m = \\frac{\\omega^2a^2b}{GM}
 
-and :math:`e'=\\frac{E}{b}` is the **second eccentrictiy**.
+and :math:`e'=\\frac{E}{b}` is the **second eccentricity**.
 
 From here we can find two basic variables that will help us to linearly
 estimate the normal gravity at any point on the ellipsoid.
@@ -189,30 +191,30 @@ estimate the normal gravity at any point on the ellipsoid.
 Keeping it on the surface, we can estimate the **normal gravity at the equator**:
 
 .. math::
-    g_e = g_0(\\beta=0°) = \\frac{GM}{ab}\\Big(1-m-\\frac{me'q_0'}{6q_0}\\Big)
+    \\mathrm{g}_e = \\mathrm{g}_0(\\beta=0°) = \\frac{GM}{ab}\\Big(1-m-\\frac{me'q_0'}{6q_0}\\Big)
 
 Similarly, we estimate the **normal gravity at the poles**:
 
 .. math::
-    g_p = g_0(\\beta=90°) = \\frac{GM}{a^2}\\Big(1+\\frac{me'q_0'}{3q_0}\\Big)
+    \\mathrm{g}_p = \\mathrm{g}_0(\\beta=90°) = \\frac{GM}{a^2}\\Big(1+\\frac{me'q_0'}{3q_0}\\Big)
 
 With these two basic values, we can linearly approximate the normal at any
 latitude on the surface of the ellipsoid, but we need to do it in geographical
 coordinates.
 
 Using the property :math:`\\tan\\beta=\\frac{b}{a}\\tan\\phi`, we define a
-closed form formula to find the normal gravity :math:`g` at any given latitude
+closed form formula to find the normal gravity :math:`\\mathrm{g}` at any given latitude
 :math:`\\phi` [Somigliana1929]_:
 
 .. math::
-    g(\\phi) = \\frac{ag_e \\cos^2\\phi + bg_p\\sin^2\\phi}{\\sqrt{a^2\\cos^2\\phi + b^2\\sin^2\\phi}}
+    \\mathrm{g}(\\phi) = \\frac{ag_e \\cos^2\\phi + bg_p\\sin^2\\phi}{\\sqrt{a^2\\cos^2\\phi + b^2\\sin^2\\phi}}
 
 For numerical computation, a more convenient form is:
 
 .. math::
-    g(\\phi) = g_e\\frac{1+k\\sin^2\\phi}{\\sqrt{1-e^2\\sin^2\\phi}}
+    \\mathrm{g}(\\phi) = \\mathrm{g}_e\\frac{1+k\\sin^2\\phi}{\\sqrt{1-e^2\\sin^2\\phi}}
 
-using the helper variable :math:`k = \\frac{bg_p}{ag_e} - 1`.
+using the helper variable :math:`k = \\frac{b\\mathrm{g}_p}{a\\mathrm{g}_e} - 1`.
 
 The estimation of the normal gravity is already simplified with the class ``WGS``
 requiring the latitude only.
@@ -232,7 +234,7 @@ a truncated Taylor Series with a positive direction downward along the geodetic
 normal to the ellipsoid:
 
 .. math::
-    g(\\phi, h) = g(\\phi) \\Big(1 - \\frac{2}{a}\\big(1+f+m-2f\\sin^2\\phi\\big)h + \\frac{3}{a^2}h^2\\Big)
+    \\mathrm{g}(\\phi, h) = \\mathrm{g}(\\phi) \\Big(1 - \\frac{2}{a}\\big(1+f+m-2f\\sin^2\\phi\\big)h + \\frac{3}{a^2}h^2\\Big)
 
 where :math:`h` is the height, in meters, above the ellipsoid's surface.
 
@@ -247,22 +249,22 @@ Other Gravitational Methods
 The well known **International Gravity Formula** [Lambert]_ as described by
 Helmut Moritz in [Tscherning]_ for the `Geodetic Reference System 1980
 <https://en.wikipedia.org/wiki/Geodetic_Reference_System_1980>`_
-is also implemented here:
+is implemented in ``ahrs``:
 
 .. math::
-    g(\\phi) = 9.780327 (1 + 0.0053024 \\sin^2\\phi - 0.0000058 \\sin^2(2\\phi))
+    \\mathrm{g}(\\phi) = 9.780327 (1 + 0.0053024 \\sin^2\\phi - 0.0000058 \\sin^2(2\\phi))
 
 .. code:: python
 
     >>> ahrs.utils.international_gravity(10.0)
     9.781884110728155
 
-As a bonus, the **normal gravity estimation** of the European Cooperation on
+Additionally, the **normal gravity estimation** of the European Cooperation on
 Legal Metrology (`WELMEC <https://en.wikipedia.org/wiki/WELMEC>`_) is also
-implemented here:
+included here:
 
 .. math::
-    g(\\phi, h) = 9.780318(1 + 0.0053024\\sin^2(\\phi) - 0.0000058\\sin^2(2\\phi)) - 0.000003085h
+    \\mathrm{g}(\\phi, h) = 9.780318(1 + 0.0053024\\sin^2(\\phi) - 0.0000058\\sin^2(2\\phi)) - 0.000003085h
 
 .. code:: python
 
@@ -318,7 +320,7 @@ def international_gravity(lat: float, epoch: str = '1980') -> float:
     """
     International Gravity Formula
 
-    Estimate the normal gravity, :math:`g`, using the International Gravity
+    Estimate the normal gravity, :math:`\\mathrm{g}`, using the International Gravity
     Formula [Lambert]_, adapted from Stokes' formula, and adopted by the
     `International Association of Geodesy <https://www.iag-aig.org/>`_ at its
     Stockholm Assembly in 1930.
@@ -328,7 +330,7 @@ def international_gravity(lat: float, epoch: str = '1980') -> float:
     :math:`\\phi`, can be written in the form of a series:
 
     .. math::
-        g = g_e\\big(1 + \\beta\\sin^2(\\phi) - \\beta_1\\sin^2(2\\phi)
+        \\mathrm{g} = \\mathrm{g}_e\\big(1 + \\beta\\sin^2(\\phi) - \\beta_1\\sin^2(2\\phi)
         - \\beta_2\\sin^2(\\phi)\\sin^2(2\\phi)
         - \\beta_3\\sin^4(\\phi)\\sin^2(2\\phi) - \\dots\\big)
 
@@ -345,34 +347,34 @@ def international_gravity(lat: float, epoch: str = '1980') -> float:
         & \\mathrm{etc.}
         \\end{array}
 
-    and :math:`g_e` is the measured normal gravitaty on the Equator. For the
-    case of the International Ellipsoid, the third-order terms are negligible.
-    So, in practice, the term :math:`\\beta_2` and all following terms are
-    dropped to yield the form:
+    and :math:`\\mathrm{g}_e` is the measured normal gravity on the Equator.
+    For the case of the International Ellipsoid, the third-order terms are
+    negligible. So, in practice, the term :math:`\\beta_2` and all following
+    terms are dropped to yield the form:
 
     .. math::
-        g = g_e \\big(1 + \\beta \\sin^2\\phi - \\beta_1 \\sin^2(2\\phi)\\big)
+        \\mathrm{g} = \\mathrm{g}_e \\big(1 + \\beta \\sin^2\\phi - \\beta_1 \\sin^2(2\\phi)\\big)
 
     In the original definition the values of :math:`\\beta` and :math:`\\beta_1`
     are rounded off to seven decimal places to simply get the working formula:
 
     .. math::
-        g = 9.78049 \\big(1 + 0.0052884 \\sin^2\\phi - 0.0000059 \\sin^2(2\\phi)\\big)
+        \\mathrm{g} = 9.78049 \\big(1 + 0.0052884 \\sin^2\\phi - 0.0000059 \\sin^2(2\\phi)\\big)
 
     Originally, the definitions of the elementary properties (:math:`a`,
-    :math:`g_e`, etc.) weren't as accurate as now. At different moments in
-    history, the values were updated to improve the accuracy of the formula.
-    Those different moments are named **epochs** and are labeled according to
-    the year they were updated:
+    :math:`\\mathrm{g}_e`, etc.) weren't as accurate as now. At different
+    moments in history, the values were updated to improve the accuracy of the
+    formula. Those different moments are named **epochs** and are labeled
+    according to the year they were updated:
 
-    =====  ===========  ===============  ===========
-    epoch  :math:`g_e`  :math:`\\beta`    :math:`\\beta_1`
-    =====  ===========  ===============  ===========
-    1930   9.78049      5.2884 x 10^-3   5.9 x 10^-6
-    1948   9.780373     5.2891 x 10^-3   5.9 x 10^-6
-    1967   9.780318     5.3024 x 10^-3   5.9 x 10^-6
-    1980   9.780327     5.3024 x 10^-3   5.8 x 10^-6
-    =====  ===========  ===============  ===========
+    =====  ====================  ===============  ===========
+    epoch  :math:`\\mathrm{g}_e`  :math:`\\beta`    :math:`\\beta_1`
+    =====  ====================  ===============  ===========
+    1930   9.78049               5.2884 x 10^-3   5.9 x 10^-6
+    1948   9.780373              5.2891 x 10^-3   5.9 x 10^-6
+    1967   9.780318              5.3024 x 10^-3   5.9 x 10^-6
+    1980   9.780327              5.3024 x 10^-3   5.8 x 10^-6
+    =====  ====================  ===============  ===========
 
     The latest epoch, 1980, is used here by default.
 
@@ -423,7 +425,7 @@ def welmec_gravity(lat: float, h: float = 0.0) -> float:
     formula:
 
     .. math::
-        g = 9.780318(1 + 0.0053024\\sin^2(\\phi) - 0.0000058\\sin^2(2\\phi)) - 0.000003085h
+        \\mathrm{g} = 9.780318(1 + 0.0053024\\sin^2(\\phi) - 0.0000058\\sin^2(2\\phi)) - 0.000003085h
 
     where :math:`\\phi` is the geographical latitude and :math:`h` is the
     height above sea level in meters.
@@ -467,21 +469,6 @@ class WGS:
     w : float, default: 0.00007292115
         Ellipsoid's rotation rate in rad/s
 
-    Attributes
-    ----------
-    a : float
-        Ellipsoid's semi-major axis (Equatorial Radius), in meters.
-    f : float
-        Ellipsoid's flattening factor.
-    gm : float
-        Ellipsoid's Standard Gravitational Constant in m^3/s^2.
-    w : float
-        Ellipsoid's rotation rate in rad/s.
-    b : float
-        Ellipsoid's semi-minor axis (Polar Radius), in meters.
-    is_geodetic : bool
-        Whether the Ellipsoid describes Earth.
-
     """
     def __init__(self, a: float = EARTH_EQUATOR_RADIUS, f: float = EARTH_FLATTENING, GM: float = EARTH_GM, w: float = EARTH_ROTATION):
         self.a = a
@@ -489,10 +476,6 @@ class WGS:
         self.b = self.a*(1-self.f)
         self.gm = GM
         self.w = w
-        self.is_geodetic = np.isclose(self.a, EARTH_EQUATOR_RADIUS)
-        self.is_geodetic &= np.isclose(self.f, EARTH_FLATTENING)
-        self.is_geodetic &= np.isclose(self.gm, EARTH_GM)
-        self.is_geodetic &= np.isclose(self.w, EARTH_ROTATION)
 
     def normal_gravity(self, lat: float, h: float = 0.0) -> float:
         """
@@ -502,20 +485,21 @@ class WGS:
         body using Somigliana's formula (on surface) and a series expansion
         (above surface).
 
-        Somigliana's closed formula as desribed by H. Moritz in [Tscherning]_ is:
+        Somigliana's closed formula as desribed by H. Moritz in [Tscherning]_
+        is:
 
         .. math::
-            g = \\frac{ag_e \\cos^2\\phi + bg_p\\sin^2\\phi}{\\sqrt{a^2cos^2\\phi + b^2\\sin^2\\phi}}
+            \\mathrm{g} = \\frac{a\\mathrm{g}_e \\cos^2\\phi + b\\mathrm{g}_p\\sin^2\\phi}{\\sqrt{a^2cos^2\\phi + b^2\\sin^2\\phi}}
 
         For numerical computations, a more convenient form is:
 
         .. math::
-            g = g_e\\frac{1+k\\sin^2\\phi}{\\sqrt{1-e^2\\sin^2\\phi}}
+            \\mathrm{g} = \\mathrm{g}_e\\frac{1+k\\sin^2\\phi}{\\sqrt{1-e^2\\sin^2\\phi}}
 
         with the helper constant :math:`k`:
 
         .. math::
-            k = \\frac{bg_p}{ag_e}-1
+            k = \\frac{b\\mathrm{g}_p}{a\\mathrm{g}_e}-1
 
         Parameters
         ----------
@@ -800,11 +784,11 @@ class WGS:
     @property
     def equatorial_normal_gravity(self) -> float:
         """
-        Normal Gravity :math:`g_e` at the Equator, in
+        Normal Gravity :math:`\\mathrm{g}_e` at the Equator, in
         :math:`\\frac{\\mathrm{m}}{\\mathrm{s}^2}`, computed as:
 
         .. math::
-            g_e = \\frac{GM}{ab}\\Big(1-m-\\frac{me'q_0'}{6q_0}\\Big)
+            \\mathrm{g}_e = \\frac{GM}{ab}\\Big(1-m-\\frac{me'q_0'}{6q_0}\\Big)
 
         where:
 
@@ -829,11 +813,11 @@ class WGS:
     @property
     def polar_normal_gravity(self) -> float:
         """
-        Normal Gravity :math:`g_p` at the Pole, in
+        Normal Gravity :math:`\\mathrm{g}_p` at the Pole, in
         :math:`\\frac{\\mathrm{m}}{\\mathrm{s}^2}`, computed as:
 
         .. math::
-            g_p = \\frac{GM}{a^2}\\Big(1+\\frac{me'q_0'}{3q_0}\\Big)
+            \\mathrm{g}_p = \\frac{GM}{a^2}\\Big(1+\\frac{me'q_0'}{3q_0}\\Big)
 
         where:
 
@@ -858,16 +842,16 @@ class WGS:
     @property
     def mean_normal_gravity(self) -> float:
         """
-        Mean Value :math:`\\bar{g}` of Normal Gravity, in
+        Mean Value :math:`\\bar{\\mathrm{g}}` of Normal Gravity, in
         :math:`\\frac{\\mathrm{m}}{\\mathrm{s}^2}`, computed as:
 
         .. math::
-            \\bar{g} = g_e\\Big(1 + \\frac{1}{6}e^2 + \\frac{1}{3}k + \\frac{59}{360}e^4 + \\frac{5}{18}e^2k + \\frac{2371}{15120}e^6 + \\frac{259}{1080}e^4k + \\frac{270229}{1814400}e^8 + \\frac{9623}{45360}e^6k \\Big)
+            \\bar{\\mathrm{g}} = \\mathrm{g}_e\\Big(1 + \\frac{1}{6}e^2 + \\frac{1}{3}k + \\frac{59}{360}e^4 + \\frac{5}{18}e^2k + \\frac{2371}{15120}e^6 + \\frac{259}{1080}e^4k + \\frac{270229}{1814400}e^8 + \\frac{9623}{45360}e^6k \\Big)
 
         where:
 
         .. math::
-            k = \\frac{bg_p - ag_e}{ag_e} = \\frac{bg_p}{ag_e}-1
+            k = \\frac{b\\mathrm{g}_p - a\\mathrm{g}_e}{a\\mathrm{g}_e} = \\frac{b\\mathrm{g}_p}{a\\mathrm{g}_e}-1
 
         Example
         -------
@@ -891,7 +875,7 @@ class WGS:
             M = \\frac{GM}{G}
 
         where :math:`G` is the universal constant of gravitation equal to
-        :math:`6.67428\\times 10^{-11} \\frac{\\mathrm{m}^3}{\\mathrm{kg}\ \\mathrm{s}^2}`
+        :math:`6.67428\\times 10^{-11} \\frac{\\mathrm{m}^3}{\\mathrm{kg} \\mathrm{s}^2}`
 
         Example
         -------
@@ -1059,6 +1043,42 @@ class WGS:
         if not self.is_geodetic:
             raise NotImplementedError("The model must be Geodetic.")
         return np.sqrt(5)*self.mass*self.a**2*((1-1/DYNAMIC_ELLIPTICITY)*EARTH_C20_DYN + EARTH_C22_DYN/np.sqrt(3))
+
+    @property
+    def is_geodetic(self) -> bool:
+        """
+        Check whether the ellipsoid model is geodetic (describes planet Earth.)
+
+        Example
+        -------
+        >>> wgs = ahrs.utils.WGS()
+        >>> wgs.is_geodetic
+        True
+        >>> wgs = ahrs.utils.WGS(a=6_500_000)
+        >>> wgs.is_geodetic
+        False
+        """
+        is_geodetic = np.isclose(self.a, EARTH_EQUATOR_RADIUS)
+        is_geodetic &= np.isclose(self.f, EARTH_FLATTENING)
+        is_geodetic &= np.isclose(self.gm, EARTH_GM)
+        is_geodetic &= np.isclose(self.w, EARTH_ROTATION)
+        return is_geodetic
+
+    @property
+    def sidereal_day(self) -> float:
+        """
+        Sidereal Day, :math:`T_{sid}`, in seconds, computed as:
+
+        .. math::
+            T_{sid} = \\frac{2\\pi}{\\omega}
+
+        Example
+        -------
+        >>> wgs = ahrs.utils.WGS()
+        >>> wgs.sidereal_day
+        86164.090530833
+        """
+        return 2*np.pi/self.w
 
 if __name__ == '__main__':
     unittest.main()
