@@ -28,6 +28,7 @@ class TestWGS84(unittest.TestCase):
         self.assertAlmostEqual(self.wgs.gm, 3.986004418e14, 7)
         self.assertAlmostEqual(self.wgs.w, 7.292115e-5, 7)
         self.assertAlmostEqual(self.wgs.b, 6_356_752.3142, 4)
+        self.assertAlmostEqual(self.wgs.is_geodetic, True)
         self.assertAlmostEqual(self.wgs.first_eccentricity_squared, 8.1819190842622e-2**2, 7)
         self.assertAlmostEqual(self.wgs.second_eccentricity_squared, 8.2094437949696e-2**2, 7)
         self.assertAlmostEqual(self.wgs.linear_eccentricity, 5.2185400842339e5, 7)
