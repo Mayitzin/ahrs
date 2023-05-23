@@ -277,10 +277,8 @@ def geodetic2spherical(lat: float, lon: float, h: float, a: float = EARTH_EQUATO
 
 class WMM:
     """
-    World Magnetic Model
-
-    It is mainly used to compute all elements of the World Magnetic Model (WMM)
-    at any given point on Earth.
+    This class computes all elements of the World Magnetic Model (WMM) at any
+    given point on Earth.
 
     The main magnetic field :math:`B` is a potential field defined, in
     geocentric spherical coordinates (longitude :math:`\\lambda`, latitude
