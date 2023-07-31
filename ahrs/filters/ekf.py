@@ -1015,7 +1015,7 @@ class EKF:
             raise ValueError(f"Spectral noise variances must be given in a 1-dimensional array. Got {default_noises.ndim} dimensions instead.")
         if default_noises.size != 3:
             raise ValueError(f"Spectral noise variances must be given in a 1-dimensional array with 3 elements. Got {default_noises.size} elements instead.")
-        self.noises = [kw.get(label, value) for label, value in zip(['var_acc', 'var_gyr', 'var_mag'], default_noises)]
+        self.noises = [kw.get(label, value) for label, value in zip(['var_gyr', 'var_acc', 'var_mag'], default_noises)]
         self.g_noise, self.a_noise, self.m_noise = self.noises
         return np.diag(np.repeat(self.noises[1:], 3))
 
@@ -1332,13 +1332,13 @@ class EKF:
                 H = np.vstack((H, H_2))
             return 2.0*H
         v = np.r_[self.a_ref, self.m_ref]
-        H = np.array([[-qy*v[2] + qz*v[1],                qy*v[1] + qz*v[2], -qw*v[2] + qx*v[1] - 2.0*qy*v[0],  qw*v[1] + qx*v[2] - 2.0*qz*v[0]],
-                      [ qx*v[2] - qz*v[0],  qw*v[2] - 2.0*qx*v[1] + qy*v[0],                qx*v[0] + qz*v[2], -qw*v[0] + qy*v[2] - 2.0*qz*v[1]],
-                      [-qx*v[1] + qy*v[0], -qw*v[1] - 2.0*qx*v[2] + qz*v[0],  qw*v[0] - 2.0*qy*v[2] + qz*v[1],  qx*v[0] + qy*v[1]]])
+        H = np.array([[ v[0]*qw + v[1]*qz - v[2]*qy, v[0]*qx + v[1]*qy + v[2]*qz, -v[0]*qy + v[1]*qx - v[2]*qw, -v[0]*qz + v[1]*qw + v[2]*qx],
+                      [-v[0]*qz + v[1]*qw + v[2]*qx, v[0]*qy - v[1]*qx + v[2]*qw,  v[0]*qx + v[1]*qy + v[2]*qz, -v[0]*qw - v[1]*qz + v[2]*qy],
+                      [ v[0]*qy - v[1]*qx + v[2]*qw, v[0]*qz - v[1]*qw - v[2]*qx,  v[0]*qw + v[1]*qz - v[2]*qy,  v[0]*qx + v[1]*qy + v[2]*qz]])
         if len(self.z) == 6:
-            H_2 = np.array([[-qy*v[5] + qz*v[4],                qy*v[4] + qz*v[5], -qw*v[5] + qx*v[4] - 2.0*qy*v[3],  qw*v[4] + qx*v[5] - 2.0*qz*v[3]],
-                            [ qx*v[5] - qz*v[3],  qw*v[5] - 2.0*qx*v[4] + qy*v[3],                qx*v[3] + qz*v[5], -qw*v[3] + qy*v[5] - 2.0*qz*v[4]],
-                            [-qx*v[4] + qy*v[3], -qw*v[4] - 2.0*qx*v[5] + qz*v[3],  qw*v[3] - 2.0*qy*v[5] + qz*v[4],  qx*v[3] + qy*v[4]]])
+            H_2 = np.array([[ v[3]*qw + v[4]*qz - v[5]*qy, v[3]*qx + v[4]*qy + v[5]*qz, -v[3]*qy + v[4]*qx - v[5]*qw, -v[3]*qz + v[4]*qw + v[5]*qx],
+                            [-v[3]*qz + v[4]*qw + v[5]*qx, v[3]*qy - v[4]*qx + v[5]*qw,  v[3]*qx + v[4]*qy + v[5]*qz, -v[3]*qw - v[4]*qz + v[5]*qy],
+                            [ v[3]*qy - v[4]*qx + v[5]*qw, v[3]*qz - v[4]*qw - v[5]*qx,  v[3]*qw + v[4]*qz - v[5]*qy,  v[3]*qx + v[4]*qy + v[5]*qz]])
             H = np.vstack((H, H_2))
         return 2.0*H
 
