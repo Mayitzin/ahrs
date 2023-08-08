@@ -559,12 +559,20 @@ For the estimated quaternion :math:`\\hat{\\mathbf{q}}_t` this becomes:
     \\begin{array}{rcl}
     \\mathbf{x}' &=& \\mathbf{C}(\\hat{\\mathbf{q}})\\mathbf{x} \\\\ &=&
     \\begin{bmatrix}
-    1-2(\\hat{q}_y^2+\\hat{q}_z^2) & 2(\\hat{q}_x\\hat{q}_y-\\hat{q}_w\\hat{q}_z) & 2(\\hat{q}_x\\hat{q}_z+\\hat{q}_w\\hat{q}_y) \\\\
-    2(\\hat{q}_x\\hat{q}_y+\\hat{q}_w\\hat{q}_z) & 1-2(\\hat{q}_x^2+\\hat{q}_z^2) & 2(\\hat{q}_y\\hat{q}_z-\\hat{q}_w\\hat{q}_x) \\\\
-    2(\\hat{q}_x\\hat{q}_z-\\hat{q}_w\\hat{q}_y) & 2(\\hat{q}_w\\hat{q}_x+\\hat{q}_y\\hat{q}_z) & 1-2(\\hat{q}_x^2+\\hat{q}_y^2)
+    \\hat{q}_w^2 + \\hat{q}_x^2 - \\hat{q}_y^2 - \\hat{q}_z^2 & 2(\\hat{q}_x\\hat{q}_y-\\hat{q}_w\\hat{q}_z) & 2(\\hat{q}_x\\hat{q}_z+\\hat{q}_w\\hat{q}_y) \\\\
+    2(\\hat{q}_x\\hat{q}_y+\\hat{q}_w\\hat{q}_z) & \\hat{q}_w^2 - \\hat{q}_x^2 + \\hat{q}_y^2 - \\hat{q}_z^2 & 2(\\hat{q}_y\\hat{q}_z-\\hat{q}_w\\hat{q}_x) \\\\
+    2(\\hat{q}_x\\hat{q}_z-\\hat{q}_w\\hat{q}_y) & 2(\\hat{q}_w\\hat{q}_x+\\hat{q}_y\\hat{q}_z) & \\hat{q}_w^2 - \\hat{q}_x^2 - \\hat{q}_y^2 + \\hat{q}_z^2
     \\end{bmatrix}
     \\begin{bmatrix}x_1 \\\\ x_2 \\\\ x_3 \\end{bmatrix}
     \\end{array}
+
+.. note::
+
+    The rotation matrix :math:`\\mathbf{C}(\\hat{\\mathbf{q}})` in this
+    estimator is computed with the function :func:`ahrs.common.orientation.q2R`,
+    using the version 2. By default (version 1), the function returns a
+    rotation matrix with a different definition of diagonal values. Please see
+    the documentation of the function for more details.
 
 **Global References**
 
@@ -677,12 +685,12 @@ their Jacobian matrix as:
     &=&
     2
     \\begin{bmatrix}
-    g_yq_z - g_zq_y & g_yq_y + g_zq_z & - 2g_xq_y + g_yq_x - g_zq_w & - 2g_xq_z + g_yq_w + g_zq_x \\\\
-    -g_xq_z + g_zq_x & g_xq_y - 2g_yq_x + g_zq_w & g_xq_x + g_zq_z & -g_xq_w - 2g_yq_z + g_zq_y \\\\
-    g_xq_y - g_yq_x & g_xq_z - g_yq_w - 2g_zq_x & g_xq_w + g_yq_z - 2g_zq_y & g_xq_x + g_yq_y \\\\
-    r_yq_z - r_zq_y & r_yq_y + r_zq_z & - 2r_xq_y + r_yq_x - r_zq_w & - 2r_xq_z + r_yq_w + r_zq_x \\\\
-    - r_xq_z + r_zq_x & r_xq_y - 2r_yq_x + r_zq_w & r_xq_x + r_zq_z & - r_xq_w - 2r_yq_z + r_zq_y \\\\
-    r_xq_y - r_yq_x & r_xq_z - r_yq_w - 2r_zq_x & r_xq_w + r_yq_z - 2r_zq_y & r_xq_x + r_yq_y
+    g_xq_w + g_yq_z - g_zq_y & g_xq_x + g_yq_y + g_zq_z & -g_xq_y + g_yq_x - g_zq_w & -g_xq_z + g_yq_w + g_zq_x \\\\
+    -g_xq_z + g_yq_w + g_zq_x & g_xq_y - g_yq_x + g_zq_w &  g_xq_x + g_yq_y + g_zq_z & -g_xq_w - g_yq_z + g_zq_y \\\\
+    g_xq_y - g_yq_x + g_zq_w & g_xq_z - g_yq_w - g_zq_x &  g_xq_w + g_yq_z - g_zq_y &  g_xq_x + g_yq_y + g_zq_z \\\\
+    r_xq_w + r_yq_z - r_zq_y & r_xq_x + r_yq_y + r_zq_z & -r_xq_y + r_yq_x - r_zq_w & -r_xq_z + r_yq_w + r_zq_x \\\\
+    -r_xq_z + r_yq_w + r_zq_x & r_xq_y - r_yq_x + r_zq_w &  r_xq_x + r_yq_y + r_zq_z & -r_xq_w - r_yq_z + r_zq_y \\\\
+    r_xq_y - r_yq_x + r_zq_w & r_xq_z - r_yq_w - r_zq_x &  r_xq_w + r_yq_z - r_zq_y &  r_xq_x + r_yq_y + r_zq_z
     \\end{bmatrix}
     \\end{array}
 
@@ -1229,9 +1237,9 @@ class EKF:
         .. math::
             \\mathbf{h}(\\hat{\\mathbf{q}}_t) =
             2 \\begin{bmatrix}
-            g_x (\\frac{1}{2} - q_y^2 - q_z^2) + g_y (q_wq_z + q_xq_y) + g_z (q_xq_z - q_wq_y) \\\\
-            g_x (q_xq_y - q_wq_z) + g_y (\\frac{1}{2} - q_x^2 - q_z^2) + g_z (q_wq_x + q_yq_z) \\\\
-            g_x (q_wq_y + q_xq_z) + g_y (q_yq_z - q_wq_x) + g_z (\\frac{1}{2} - q_x^2 - q_y^2)
+            g_x (q_w^2 + q_x^2 - q_y^2 - q_z^2) + g_y (q_wq_z + q_xq_y) + g_z (q_xq_z - q_wq_y) \\\\
+            g_x (q_xq_y - q_wq_z) + g_y (q_w^2 - q_x^2 + q_y^2 - q_z^2) + g_z (q_wq_x + q_yq_z) \\\\
+            g_x (q_wq_y + q_xq_z) + g_y (q_yq_z - q_wq_x) + g_z (q_w^2 - q_x^2 - q_y^2 + q_z^2)
             \\end{bmatrix}
 
         If the gravitational acceleration and the geomagnetic field are used,
@@ -1240,12 +1248,12 @@ class EKF:
         .. math::
             \\mathbf{h}(\\hat{\\mathbf{q}}_t) =
             2 \\begin{bmatrix}
-            g_x (\\frac{1}{2} - q_y^2 - q_z^2) + g_y (q_wq_z + q_xq_y) + g_z (q_xq_z - q_wq_y) \\\\
-            g_x (q_xq_y - q_wq_z) + g_y (\\frac{1}{2} - q_x^2 - q_z^2) + g_z (q_wq_x + q_yq_z) \\\\
-            g_x (q_wq_y + q_xq_z) + g_y (q_yq_z - q_wq_x) + g_z (\\frac{1}{2} - q_x^2 - q_y^2) \\\\
-            r_x (\\frac{1}{2} - q_y^2 - q_z^2) + r_y (q_wq_z + q_xq_y) + r_z (q_xq_z - q_wq_y) \\\\
-            r_x (q_xq_y - q_wq_z) + r_y (\\frac{1}{2} - q_x^2 - q_z^2) + r_z (q_wq_x + q_yq_z) \\\\
-            r_x (q_wq_y + q_xq_z) + r_y (q_yq_z - q_wq_x) + r_z (\\frac{1}{2} - q_x^2 - q_y^2)
+            g_x (q_w^2 + q_x^2 - q_y^2 - q_z^2) + g_y (q_wq_z + q_xq_y) + g_z (q_xq_z - q_wq_y) \\\\
+            g_x (q_xq_y - q_wq_z) + g_y (q_w^2 - q_x^2 + q_y^2 - q_z^2) + g_z (q_wq_x + q_yq_z) \\\\
+            g_x (q_wq_y + q_xq_z) + g_y (q_yq_z - q_wq_x) + g_z (q_w^2 - q_x^2 - q_y^2 + q_z^2) \\\\
+            r_x (q_w^2 + q_x^2 - q_y^2 - q_z^2) + r_y (q_wq_z + q_xq_y) + r_z (q_xq_z - q_wq_y) \\\\
+            r_x (q_xq_y - q_wq_z) + r_y (q_w^2 - q_x^2 + q_y^2 - q_z^2) + r_z (q_wq_x + q_yq_z) \\\\
+            r_x (q_wq_y + q_xq_z) + r_y (q_yq_z - q_wq_x) + r_z (q_w^2 - q_x^2 - q_y^2 + q_z^2)
             \\end{bmatrix}
 
         Parameters
@@ -1258,7 +1266,7 @@ class EKF:
         numpy.ndarray
             Expected Measurements.
         """
-        C = q2R(q).T
+        C = q2R(q, version=2).T
         if len(self.z) < 4:
             return C @ self.a_ref
         return np.r_[C @ self.a_ref, C @ self.m_ref]
@@ -1273,9 +1281,9 @@ class EKF:
         .. math::
             \\mathbf{H}(\\hat{\\mathbf{q}}_t) =
             2 \\begin{bmatrix}
-            g_yq_z - g_zq_y & g_yq_y + g_zq_z & - 2g_xq_y + g_yq_x - g_zq_w & - 2g_xq_z + g_yq_w + g_zq_x \\\\
-            -g_xq_z + g_zq_x & g_xq_y - 2g_yq_x + g_zq_w & g_xq_x + g_zq_z & -g_xq_w - 2g_yq_z + g_zq_y \\\\
-            g_xq_y - g_yq_x & g_xq_z - g_yq_w - 2g_zq_x & g_xq_w + g_yq_z - 2g_zq_y & g_xq_x + g_yq_y
+            g_xq_w + g_yq_z - g_zq_y & g_xq_x + g_yq_y + g_zq_z & -g_xq_y + g_yq_x - g_zq_w & -g_xq_z + g_yq_w + g_zq_x \\\\
+            -g_xq_z + g_yq_w + g_zq_x & g_xq_y - g_yq_x + g_zq_w &  g_xq_x + g_yq_y + g_zq_z & -g_xq_w - g_yq_z + g_zq_y \\\\
+            g_xq_y - g_yq_x + g_zq_w & g_xq_z - g_yq_w - g_zq_x &  g_xq_w + g_yq_z - g_zq_y &  g_xq_x + g_yq_y + g_zq_z
             \\end{bmatrix}
 
         If the gravitational acceleration and the geomagnetic field are used,
@@ -1284,12 +1292,12 @@ class EKF:
         .. math::
             \\mathbf{H}(\\hat{\\mathbf{q}}_t) =
             2 \\begin{bmatrix}
-            g_yq_z - g_zq_y & g_yq_y + g_zq_z & - 2g_xq_y + g_yq_x - g_zq_w & - 2g_xq_z + g_yq_w + g_zq_x \\\\
-            -g_xq_z + g_zq_x & g_xq_y - 2g_yq_x + g_zq_w & g_xq_x + g_zq_z & -g_xq_w - 2g_yq_z + g_zq_y \\\\
-            g_xq_y - g_yq_x & g_xq_z - g_yq_w - 2g_zq_x & g_xq_w + g_yq_z - 2g_zq_y & g_xq_x + g_yq_y \\\\
-            r_yq_z - r_zq_y & r_yq_y + r_zq_z & - 2r_xq_y + r_yq_x - r_zq_w & - 2r_xq_z + r_yq_w + r_zq_x \\\\
-            - r_xq_z + r_zq_x & r_xq_y - 2r_yq_x + r_zq_w & r_xq_x + r_zq_z & - r_xq_w - 2r_yq_z + r_zq_y \\\\
-            r_xq_y - r_yq_x & r_xq_z - r_yq_w - 2r_zq_x & r_xq_w + r_yq_z - 2r_zq_y & r_xq_x + r_yq_y
+            g_xq_w + g_yq_z - g_zq_y & g_xq_x + g_yq_y + g_zq_z & -g_xq_y + g_yq_x - g_zq_w & -g_xq_z + g_yq_w + g_zq_x \\\\
+            -g_xq_z + g_yq_w + g_zq_x & g_xq_y - g_yq_x + g_zq_w &  g_xq_x + g_yq_y + g_zq_z & -g_xq_w - g_yq_z + g_zq_y \\\\
+            g_xq_y - g_yq_x + g_zq_w & g_xq_z - g_yq_w - g_zq_x &  g_xq_w + g_yq_z - g_zq_y &  g_xq_x + g_yq_y + g_zq_z \\\\
+            m_xq_w + m_yq_z - m_zq_y & m_xq_x + m_yq_y + m_zq_z & -m_xq_y + m_yq_x - m_zq_w & -m_xq_z + m_yq_w + m_zq_x \\\\
+            -m_xq_z + m_yq_w + m_zq_x & m_xq_y - m_yq_x + m_zq_w &  m_xq_x + m_yq_y + m_zq_z & -m_xq_w - m_yq_z + m_zq_y \\\\
+            m_xq_y - m_yq_x + m_zq_w & m_xq_z - m_yq_w - m_zq_x &  m_xq_w + m_yq_z - m_zq_y &  m_xq_x + m_yq_y + m_zq_z
             \\end{bmatrix}
 
         If ``mode`` is equal to ``'refactored'``, the computation is carried
