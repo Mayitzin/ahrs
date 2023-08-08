@@ -407,7 +407,7 @@ def q_correct(q: np.ndarray) -> np.ndarray:
         new_q[j[0]:j[1]] *= -1.0
     return new_q
 
-def q2R(q: np.ndarray) -> np.ndarray:
+def q2R(q: np.ndarray, version: int = 1) -> np.ndarray:
     """
     Direction Cosine Matrix from given quaternion.
 
@@ -415,7 +415,9 @@ def q2R(q: np.ndarray) -> np.ndarray:
     :math:`\\mathbf{q} = (q_w, q_x, q_y, q_z)`, where :math:`\\mathbf{q}_v = (q_x, q_y, q_z)`
     is the vector part, and :math:`q_w` is the scalar part.
 
-    The resulting DCM (a.k.a. rotation matrix) :math:`\\mathbf{R}` has the form:
+    Two versions of the DCM can be obtained by setting the ``'version'``
+    parameter. The default value is 1, which yields the DCM (a.k.a. rotation
+    matrix) :math:`\\mathbf{R}` of the form:
 
     .. math::
 
@@ -426,13 +428,33 @@ def q2R(q: np.ndarray) -> np.ndarray:
         2(q_xq_z - q_wq_y) & 2(q_wq_x + q_yq_z) & 1 - 2(q_x^2 + q_y^2)
         \\end{bmatrix}
 
-    The default value is the unit Quaternion :math:`\\mathbf{q} = (1, 0, 0, 0)`,
+    Version 2 yields the DCM of the form:
+
+    .. math::
+
+        \\mathbf{R}(\\mathbf{q}) =
+        \\begin{bmatrix}
+        q_w^2 + q_x^2 - q_y^2 - q_z^2 & 2(q_xq_y - q_wq_z) & 2(q_xq_z + q_wq_y) \\\\
+        2(q_xq_y + q_wq_z) & q_w^2 - q_x^2 + q_y^2 - q_z^2 & 2(q_yq_z - q_wq_x) \\\\
+        2(q_xq_z - q_wq_y) & 2(q_wq_x + q_yq_z) & q_w^2 - q_x^2 - q_y^2 + q_z^2
+        \\end{bmatrix}
+
+    The default input is the unit Quaternion :math:`\\mathbf{q} = (1, 0, 0, 0)`,
     which produces a :math:`3 \\times 3` Identity matrix :math:`\\mathbf{I}_3`.
+
+    .. warning::
+
+        The input quaternion must be a unit quaternion, i.e.
+        :math:`\\|\\mathbf{q}\\| = 1`, otherwise the resulting DCM will not be
+        a rotation matrix. Thus, the given quaternion is normalized before the
+        DCM is computed.
 
     Parameters
     ----------
     q : numpy.ndarray
         Unit quaternion
+    version : int
+        Version of the DCM. Default is 1.
 
     Returns
     -------
@@ -449,24 +471,38 @@ def q2R(q: np.ndarray) -> np.ndarray:
         return np.identity(3)
     if q.shape[-1] != 4:
         raise ValueError("Quaternion Array must be of the form (4,) or (N, 4)")
+    if version not in [1, 2]:
+        raise ValueError("Version must be an int equal to 1 or 2.")
     if q.ndim > 1:
+        # Convert multiple quaternions
         q /= np.linalg.norm(q, axis=1)[:, None]     # Normalize all quaternions
         R = np.zeros((q.shape[0], 3, 3))
-        R[:, 0, 0] = 1.0 - 2.0*(q[:, 2]**2 + q[:, 3]**2)
+        if version == 1:
+            R[:, 0, 0] = 1.0 - 2.0*(q[:, 2]**2 + q[:, 3]**2)
+            R[:, 1, 1] = 1.0 - 2.0*(q[:, 1]**2 + q[:, 3]**2)
+            R[:, 2, 2] = 1.0 - 2.0*(q[:, 1]**2 + q[:, 2]**2)
+        else:
+            R[:, 0, 0] = q[:, 0]**2 + q[:, 1]**2 - q[:, 2]**2 - q[:, 3]**2
+            R[:, 1, 1] = q[:, 0]**2 - q[:, 1]**2 + q[:, 2]**2 - q[:, 3]**2
+            R[:, 2, 2] = q[:, 0]**2 - q[:, 1]**2 - q[:, 2]**2 + q[:, 3]**2
         R[:, 1, 0] = 2.0*(q[:, 1]*q[:, 2]+q[:, 0]*q[:, 3])
         R[:, 2, 0] = 2.0*(q[:, 1]*q[:, 3]-q[:, 0]*q[:, 2])
         R[:, 0, 1] = 2.0*(q[:, 1]*q[:, 2]-q[:, 0]*q[:, 3])
-        R[:, 1, 1] = 1.0 - 2.0*(q[:, 1]**2 + q[:, 3]**2)
         R[:, 2, 1] = 2.0*(q[:, 0]*q[:, 1]+q[:, 2]*q[:, 3])
         R[:, 0, 2] = 2.0*(q[:, 1]*q[:, 3]+q[:, 0]*q[:, 2])
         R[:, 1, 2] = 2.0*(q[:, 2]*q[:, 3]-q[:, 0]*q[:, 1])
-        R[:, 2, 2] = 1.0 - 2.0*(q[:, 1]**2 + q[:, 2]**2)
         return R
+    # Convert single quaternion
     q /= np.linalg.norm(q)
+    if version == 1:
+        return np.array([
+            [1.0-2.0*(q[2]**2+q[3]**2), 2.0*(q[1]*q[2]-q[0]*q[3]), 2.0*(q[1]*q[3]+q[0]*q[2])],
+            [2.0*(q[1]*q[2]+q[0]*q[3]), 1.0-2.0*(q[1]**2+q[3]**2), 2.0*(q[2]*q[3]-q[0]*q[1])],
+            [2.0*(q[1]*q[3]-q[0]*q[2]), 2.0*(q[0]*q[1]+q[2]*q[3]), 1.0-2.0*(q[1]**2+q[2]**2)]])
     return np.array([
-        [1.0-2.0*(q[2]**2+q[3]**2), 2.0*(q[1]*q[2]-q[0]*q[3]), 2.0*(q[1]*q[3]+q[0]*q[2])],
-        [2.0*(q[1]*q[2]+q[0]*q[3]), 1.0-2.0*(q[1]**2+q[3]**2), 2.0*(q[2]*q[3]-q[0]*q[1])],
-        [2.0*(q[1]*q[3]-q[0]*q[2]), 2.0*(q[0]*q[1]+q[2]*q[3]), 1.0-2.0*(q[1]**2+q[2]**2)]])
+        [q[0]**2+q[1]**2-q[2]**2-q[3]**2, 2.0*(q[1]*q[2]-q[0]*q[3]), 2.0*(q[1]*q[3]+q[0]*q[2])],
+        [2.0*(q[1]*q[2]+q[0]*q[3]), q[0]**2-q[1]**2+q[2]**2-q[3]**2, 2.0*(q[2]*q[3]-q[0]*q[1])],
+        [2.0*(q[1]*q[3]-q[0]*q[2]), 2.0*(q[0]*q[1]+q[2]*q[3]), q[0]**2-q[1]**2-q[2]**2+q[3]**2]])
 
 def q2euler(q: np.ndarray) -> np.ndarray:
     """
