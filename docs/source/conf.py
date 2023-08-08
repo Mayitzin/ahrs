@@ -5,12 +5,13 @@ import os
 import sys
 from datetime import datetime
 sys.path.insert(0, os.path.abspath('../../ahrs' if sys.platform.startswith('win') else '../..'))
+from tools.versioning import get_version
 
 # -- Project information -----------------------------------------------------
 project = 'AHRS'
 author = 'Mario Garcia'
-copyright = '2019-{}, {}'.format(datetime.now().year, author)
-release = '0.3.1'
+copyright = f"2019-{datetime.now().year}, {author}"
+release = get_version()
 
 # -- General configuration ---------------------------------------------------
 extensions = [
@@ -35,8 +36,8 @@ master_doc = 'index'
 # directories to ignore when looking for source files.
 exclude_patterns = ['build']
 
-pygments_style = 'sphinx'
-
 # -- Options for HTML output -------------------------------------------------
-html_theme = 'sphinx_rtd_theme'
+html_theme = "pydata_sphinx_theme"
 html_static_path = ['_static']
+html_logo = "ahrs_logo.png"
+html_favicon = "ahrs_icon.ico"
