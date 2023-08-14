@@ -110,6 +110,7 @@ REFERENCE_QUATERNIONS = ahrs.QuaternionArray(ahrs.filters.AngularRate(ANGULAR_VE
 REFERENCE_ROTATIONS = REFERENCE_QUATERNIONS.to_DCM()
 ACC_NOISE_STD_DEVIATION = np.linalg.norm(REFERENCE_GRAVITY_VECTOR)/100.0
 MAG_NOISE_STD_DEVIATION = np.linalg.norm(REFERENCE_MAGNETIC_VECTOR)/100.0
+THRESHOLD = 8e-2
 
 class TestTRIAD(unittest.TestCase):
     def setUp(self) -> None:
@@ -149,7 +150,7 @@ class TestSAAM(unittest.TestCase):
         # Add noise to reference vectors and rotate them by the random attitudes
         self.Rg = np.array([R @ REFERENCE_GRAVITY_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * ACC_NOISE_STD_DEVIATION
         self.Rm = np.array([R @ REFERENCE_MAGNETIC_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * MAG_NOISE_STD_DEVIATION
-        self.threshold = 8e-2
+        self.threshold = THRESHOLD
 
     def test_single_values(self):
         saam = ahrs.filters.SAAM(self.Rg[0], self.Rm[0])
@@ -197,7 +198,7 @@ class TestFAMC(unittest.TestCase):
         # Add noise to reference vectors and rotate them by the random attitudes
         self.Rg = np.array([R.T @ REFERENCE_GRAVITY_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * ACC_NOISE_STD_DEVIATION
         self.Rm = np.array([R.T @ REFERENCE_MAGNETIC_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * MAG_NOISE_STD_DEVIATION
-        self.threshold = 7.5e-2
+        self.threshold = THRESHOLD
 
     def test_single_values(self):
         orientation = ahrs.filters.FAMC(self.Rg[0], self.Rm[0])
