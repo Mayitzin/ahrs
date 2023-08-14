@@ -216,7 +216,6 @@ class Complementary:
             W2 = self.am_estimation(self.acc, self.mag)
             W[0] = W2[0] if self.w0 is None else self.w0
         # Complemetary filter
-        W = np.zeros_like(self.acc)
         if self.mag is None:
             # Estimation with IMU only (Gyroscopes and Accelerometers)
             for i in range(1, len(W)):
