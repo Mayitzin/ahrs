@@ -23,14 +23,15 @@ version in the git repository and install it manually:
     cd ahrs/
     python setup.py install
 
-This will get you the newest version of the package, so you can get a more
-robust version.
+This will get you the latest changes of the package, so you can get an updated
+version.
 
 Building the Documentation
 --------------------------
 
-To build this documentation you first need to have Sphinx and the readthedocs
-theme.
+To build this documentation you first need to have `Sphinx
+<https://www.sphinx-doc.org/en/master/>`_ and the `Pydata Sphinx Theme
+<https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html>`_.
 
 .. code-block:: console
 
