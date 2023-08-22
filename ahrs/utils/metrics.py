@@ -260,7 +260,20 @@ def qdist(q1: np.ndarray, q2: np.ndarray) -> float:
     Returns
     -------
     d : float
-        Euclidean distance between given unit quaternions
+        Euclidean distance between given unit quaternions.
+
+    Examples
+    --------
+    >>> q1 = ahrs.Quaternion(random=True)
+    >>> q1.view()
+    Quaternion([ 0.94185064,  0.04451339, -0.00622856,  0.33301221])
+    >>> q2 = ahrs.Quaternion(random=True)
+    >>> q2.view()
+    Quaternion([-0.51041283, -0.38336653,  0.76929238, -0.0264211 ])
+    >>> ahrs.utils.qdist(q1, q2)
+    0.9885466801358284
+    >>> ahrs.utils.qdist(q1, -q1)
+    0.0
     """
     _quaternions_guard_clauses(q1, q2)
     q1, q2 = np.copy(q1), np.copy(q2)
@@ -294,6 +307,19 @@ def qeip(q1: np.ndarray, q2: np.ndarray) -> float:
     -------
     d : float
         Euclidean distance of inner products between given unit quaternions.
+
+    Examples
+    --------
+    >>> q1 = ahrs.Quaternion(random=True)
+    >>> q1.view()
+    Quaternion([ 0.94185064,  0.04451339, -0.00622856,  0.33301221])
+    >>> q2 = ahrs.Quaternion(random=True)
+    >>> q2.view()
+    Quaternion([-0.51041283, -0.38336653,  0.76929238, -0.0264211 ])
+    >>> ahrs.utils.qeip(q1, q2)
+    0.48861226940378377
+    >>> ahrs.utils.qeip(q1, -q1)
+    0.0
     """
     _quaternions_guard_clauses(q1, q2)
     q1, q2 = np.copy(q1), np.copy(q2)
@@ -327,6 +353,19 @@ def qcip(q1: np.ndarray, q2: np.ndarray) -> float:
     -------
     d : float
         Cosine of inner products of quaternions.
+
+    Examples
+    --------
+    >>> q1 = ahrs.Quaternion(random=True)
+    >>> q1.view()
+    Quaternion([ 0.94185064,  0.04451339, -0.00622856,  0.33301221])
+    >>> q2 = ahrs.Quaternion(random=True)
+    >>> q2.view()
+    Quaternion([-0.51041283, -0.38336653,  0.76929238, -0.0264211 ])
+    >>> ahrs.utils.qcip(q1, q2)
+    1.0339974504196667
+    >>> ahrs.utils.qcip(q1, -q1)
+    0.0
     """
     _quaternions_guard_clauses(q1, q2)
     q1, q2 = np.copy(q1), np.copy(q2)
@@ -342,7 +381,13 @@ def qcip(q1: np.ndarray, q2: np.ndarray) -> float:
 
 def qad(q1: np.ndarray, q2: np.ndarray) -> float:
     """
-    Quaternion Angle Difference
+    Quaternion Angle Difference as defined in [Thibaud]_:
+
+    .. math::
+
+        d(\\mathbf{q}_1, \\mathbf{q}_2) = \\arccos(2\\langle\\mathbf{q}_1,\\mathbf{q}_2\\rangle^2-1)
+
+    The error lies within: [0, :math:`\\pi`]
 
     Parameters
     ----------
@@ -351,12 +396,30 @@ def qad(q1: np.ndarray, q2: np.ndarray) -> float:
     q2 : numpy.ndarray
         Second quaternion, or set of quaternions, to compare.
 
-    The error lies within: [0, :math:`\\frac{\\pi}{2}`]
-
     Returns
     -------
     d : float
         Angle difference between given unit quaternions.
+
+    Examples
+    --------
+    >>> q1 = ahrs.Quaternion(random=True)
+    >>> q1.view()
+    Quaternion([ 0.94185064,  0.04451339, -0.00622856,  0.33301221])
+    >>> q2 = ahrs.Quaternion(random=True)
+    >>> q2.view()
+    Quaternion([-0.51041283, -0.38336653,  0.76929238, -0.0264211 ])
+    >>> ahrs.utils.qad(q1, q2)
+    2.0679949008393335
+    >>> ahrs.utils.qad(q1, -q1)
+    0.0
+
+    References
+    ----------
+    .. [Thibaud] Thibaud Michel, Pierre Genevès, Hassen Fourati, Nabil Layaïda.
+      On Attitude Estimation with Smartphones. IEEE International Conference on
+      Pervasive Computing and Communications, Mar 2017, Kona, United States.
+      ⟨hal-01376745v2⟩
     """
     _quaternions_guard_clauses(q1, q2)
     q1, q2 = np.copy(q1), np.copy(q2)
