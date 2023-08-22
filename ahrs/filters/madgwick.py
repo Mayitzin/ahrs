@@ -79,9 +79,9 @@ is:
     \\begin{array}{rcl}
     f( \\mathbf{q}, \\,^E\\mathbf{d}, \\,^S\\mathbf{s}) &=&  \\mathbf{q}^*\\,^E\\mathbf{d} \\,\\mathbf{q}-\\,^S\\mathbf{s} \\\\
     &=&\\begin{bmatrix}
-    2d_x(\\frac{1}{2}-q_y^2q_z^2) + 2d_y(q_wq_z+q_xq_y) + 2d_z(q_xq_z-q_wq_y) - s_x \\\\
-    2d_x(q_xq_y-q_wq_z) + 2d_y(\\frac{1}{2}-q_x^2q_z^2) + 2d_z(q_wq_x+q_yq_z) - s_y \\\\
-    2d_x(q_wq_y+q_xq_z) + 2d_y(q_yq_z-q_wq_x) + 2d_z(\\frac{1}{2}-q_x^2q_y^2) - s_z
+    2d_x(\\frac{1}{2}-q_y^2-q_z^2) + 2d_y(q_wq_z+q_xq_y) + 2d_z(q_xq_z-q_wq_y) - s_x \\\\
+    2d_x(q_xq_y-q_wq_z) + 2d_y(\\frac{1}{2}-q_x^2-q_z^2) + 2d_z(q_wq_x+q_yq_z) - s_y \\\\
+    2d_x(q_wq_y+q_xq_z) + 2d_y(q_yq_z-q_wq_x) + 2d_z(\\frac{1}{2}-q_x^2-q_y^2) - s_z
     \\end{bmatrix}
     \\end{array}
 
@@ -279,12 +279,14 @@ The mix of Magnetic, Angular Rate and Gravity (MARG) is the most prevalent
 solution in the majority of attitude estimation systems.
 
 The reference magnetic field :math:`^E\\mathbf{b}=\\begin{bmatrix}0 & b_x & b_y & b_z\\end{bmatrix}`
-in Earth's frame, has components along the three axes, which can be obtained
-using the `World Magnetic Model <https://www.ngdc.noaa.gov/geomag/WMM/>`_.
+in Earth's frame, has components along the three axes of `NED coordinates
+<https://en.wikipedia.org/wiki/Local_tangent_plane_coordinates#Local_north,_east,_down_(NED)_coordinates>`_
+(North-East-Down), which can be obtained using the `World Magnetic Model
+<https://www.ngdc.noaa.gov/geomag/WMM/>`_.
 
 Madgwick's estimator, nonetheless, assumes the East component of the magnetic
 field (along Y-axis) is negligible, further reducing the reference magnetic
-vector:
+vector to:
 
 .. math::
     \\mathbf{b}=\\begin{bmatrix}0 & b_x & 0 & b_z\\end{bmatrix}
