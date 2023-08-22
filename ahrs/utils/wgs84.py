@@ -1,7 +1,4 @@
 """
-World Geodetic System (1984)
-============================
-
 The World Geodetic System 1984 (WGS 84) [WGS84]_ describes the best geodetic
 reference system for the Earth available for the practical applications of
 mapping, charting, geopositioning, and navigation, using data, techniques and
@@ -312,7 +309,6 @@ References
     (https://office.iag-aig.org/doc/5d7f91ee333a3.pdf)
 """
 
-import unittest
 import numpy as np
 from ..common.constants import *
 
@@ -1079,6 +1075,3 @@ class WGS:
         86164.090530833
         """
         return 2*np.pi/self.w
-
-if __name__ == '__main__':
-    unittest.main()

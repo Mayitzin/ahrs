@@ -1,7 +1,4 @@
 """
-World Magnetic Model
-====================
-
 The main utility of the World Magnetic Model (WMM) [WMM]_ is to provide
 magnetic declination for any desired location on the globe.
 
@@ -202,7 +199,7 @@ References
     Local Geodetic Systems. National Geospatial-Intelligence Agency (NGA)
     Standarization Document. 2014.
     ftp://ftp.nga.mil/pub2/gandg/website/wgs84/NGA.STND.0036_1.0.0_WGS84.pdf
-.. [WMM] The World Magnetic Model (https://www.ngdc.noaa.gov/geomag/WMM/DoDWMM.shtml)
+.. [WMM] The World Magnetic Model (https://www.ncei.noaa.gov/products/world-magnetic-model)
 .. [WMM2020] WMM2020 Model values: NCEI Geomagnetic Modeling Team and British
     Geological Survey. 2019. World Magnetic Model 2020. NOAA National Centers
     for Environmental Information. doi: 10.25921/11v3-da71, 2020.
