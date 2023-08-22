@@ -79,28 +79,14 @@ Loading and visualizing the data is left to the preference of the user.
 
 .. toctree::
    :maxdepth: 1
+   :hidden:
 
    installation
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Attitude Estimators
-
-   filters
-
-.. toctree::
-   :maxdepth: 1
-   :caption: World Models
-
-   world_models
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Tools
-
    attitude_representations
-   constants
+   filters
+   world_models
    metrics
+   constants
    nomenclature
 
 Indices

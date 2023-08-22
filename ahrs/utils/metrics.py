@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Metrics
-=======
-
 Common metrics used in 3D Orientation representations.
 
 References
