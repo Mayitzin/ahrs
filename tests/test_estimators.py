@@ -309,7 +309,7 @@ class TestDavenport(unittest.TestCase):
         # Add noise to reference vectors and rotate them by the random attitudes
         self.Rg = np.array([R.T @ REFERENCE_GRAVITY_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * ACC_NOISE_STD_DEVIATION
         self.Rm = np.array([R.T @ REFERENCE_MAGNETIC_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * MAG_NOISE_STD_DEVIATION
-        self.threshold = 7.5e-2
+        self.threshold = THRESHOLD
 
     def test_single_values(self):
         orientation = ahrs.filters.Davenport(self.Rg[0], self.Rm[0])
@@ -340,7 +340,7 @@ class TestAQUA(unittest.TestCase):
         # Add noise to reference vectors and rotate them by the random attitudes
         self.Rg = np.array([R @ REFERENCE_GRAVITY_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * ACC_NOISE_STD_DEVIATION
         self.Rm = np.array([R @ REFERENCE_MAGNETIC_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * MAG_NOISE_STD_DEVIATION
-        self.threshold = 8e-2
+        self.threshold = THRESHOLD
 
     def test_acc_mag(self):
         orientation = ahrs.filters.AQUA(acc=self.Rg, mag=self.Rm)
