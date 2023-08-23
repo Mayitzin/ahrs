@@ -2802,7 +2802,7 @@ class QuaternionArray(np.ndarray):
         for j in jump_pairs:
             self.array[j[0]:j[1]] *= -1.0
 
-    def rotate_by(self, q: np.ndarray, order: str = 'H') -> np.ndarray:
+    def rotate_by(self, q: np.ndarray, inplace: bool = False, order: str = 'H') -> np.ndarray:
         """
         Rotate all Quaternions in the array around quaternion :math:`\\mathbf{q}`.
 
@@ -2810,6 +2810,12 @@ class QuaternionArray(np.ndarray):
         ----------
         q : numpy.ndarray
             4 element array to rotate around.
+        inplace : bool, default: False
+            If False, return a copy. Otherwise, do operation inplace and return
+            None.
+        order : str, default: 'H'
+            Order of the elements in the quaternion. Can be ``'H'`` (Hamilton) or
+            ``'S'`` (Scipy).
 
         Returns
         -------
@@ -2842,6 +2848,9 @@ class QuaternionArray(np.ndarray):
         qQ[:, 2] = q[0]*self.y - q[1]*self.z + q[2]*self.w + q[3]*self.x
         qQ[:, 3] = q[0]*self.z + q[1]*self.y - q[2]*self.x + q[3]*self.w
         qQ /= np.linalg.norm(qQ, axis=1)[:, None]
+        if inplace:
+            self.array = qQ
+            return None
         return qQ
 
     def angular_velocities(self, dt: float) -> np.ndarray:
