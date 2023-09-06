@@ -1247,7 +1247,7 @@ def hughes(C: np.ndarray) -> np.ndarray:
     <https://en.wikipedia.org/wiki/Skew-symmetric_matrix>`_ of
     :math:`\\boldsymbol{\\epsilon}`.
 
-    Given :math:`\\mathbf{C}`, the quaternion components are botained as:
+    Given :math:`\\mathbf{C}`, the quaternion components are obtained as:
 
     .. math::
         \\begin{array}{rcl}
@@ -1276,7 +1276,7 @@ def hughes(C: np.ndarray) -> np.ndarray:
     if C.shape[-2:] != (3, 3):
         raise ValueError(f"C must be an array of shape 3-by-3 or N-by-3-by-3. Got {C.shape}")
     if C.ndim < 3:
-        tr = C.trace()
+        tr = np.clip(C.trace(), -1.0, 3.0)      # Clip trace to [-1, 3]
         if np.isclose(tr, 3.0):
             return np.array([1., 0., 0., 0.])   # No rotation. DCM is identity.
         n = 0.5*np.sqrt(1.0 + tr)               # (eq. 15)
@@ -1285,13 +1285,15 @@ def hughes(C: np.ndarray) -> np.ndarray:
         else:
             e = 0.25*np.array([C[1, 2]-C[2, 1], C[2, 0]-C[0, 2], C[0, 1]-C[1, 0]])/n    # (eq. 16)
         return np.array([n, *e])
-    tr = np.trace(C, axis1=1, axis2=2)
+    # Handle three-dimensional array
+    tr = np.clip(np.trace(C, axis1=1, axis2=2), -1.0, 3.0)
     Q = np.zeros((C.shape[0], 4))
     Q[:, 0] = 0.5*np.sqrt(1.0 + tr)             # (eq. 15)
+    Q_w = np.where(np.isclose(Q[:, 0], 0.0), 1.0, Q[:, 0])  # Vector parts divided by one, when pure quaternion
     Q[:, 1] = np.array(C[:, 1, 2]-C[:, 2, 1])   # (eq. 16)
     Q[:, 2] = np.array(C[:, 2, 0]-C[:, 0, 2])
     Q[:, 3] = np.array(C[:, 0, 1]-C[:, 1, 0])
-    Q[:, 1:] /= 4.0*Q[:, 0][:, None]
+    Q[:, 1:] /= 4.0*Q_w[:, None]
     return Q
 
 def sarabandi(dcm: np.ndarray, eta: float = 0.0) -> np.ndarray:
@@ -1367,6 +1369,13 @@ def itzhack(dcm: np.ndarray, version: int = 3) -> np.ndarray:
     q : numpy.ndarray
         Quaternion.
     """
+    dcm = np.copy(dcm)
+    if dcm.ndim != 2 or dcm.shape != (3, 3):
+        raise ValueError('dcm must be a 3-by-3 array.')
+    if version not in [1, 2, 3]:
+        raise ValueError('version must be 1, 2 or 3.')
+    if np.isnan(dcm).any():
+        return np.array([np.nan]*4)
     is_orthogonal = np.isclose(np.linalg.det(dcm), 1.0) and np.allclose(dcm@dcm.T, np.eye(3))
     if is_orthogonal:
         if version == 1:
