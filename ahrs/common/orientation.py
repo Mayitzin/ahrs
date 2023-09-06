@@ -1257,7 +1257,7 @@ def hughes(C: np.ndarray) -> np.ndarray:
         \\end{bmatrix}
         \\end{array}
 
-    Provided :math:`\\eta\\neq 0`. If :math:`\\eta =0`, then :math:`\\eta` is
+    Provided :math:`\\eta\\neq 0`. If :math:`\\eta =0`, then :math:`\\boldsymbol{\\epsilon}` is
     simply :math:`\\mathbf{a}`.
 
     Parameters
