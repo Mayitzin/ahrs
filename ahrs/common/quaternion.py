@@ -2943,7 +2943,7 @@ class QuaternionArray(np.ndarray):
         qQ[:, 3] = q[0]*self.z + q[1]*self.y - q[2]*self.x + q[3]*self.w
         qQ /= np.linalg.norm(qQ, axis=1)[:, None]
         if inplace:
-            self.array = qQ
+            self.array[:] = qQ
             return None
         return qQ
 
