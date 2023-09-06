@@ -24,3 +24,47 @@ def _assert_numerical_iterable(item, item_name: str = 'iterable'):
     item_copy = np.copy(item)
     if not(item_copy.dtype == np.dtype(int) or item_copy.dtype == np.dtype(float)):
         raise TypeError(f"{item_name} must have numerical values. Got {item_copy.dtype.name}")
+
+def get_nan_intervals(data: np.ndarray) -> list:
+    """
+    Get indices of NaN samples in data array.
+
+    Based on an answer by `JonSG
+    <https://codereview.stackexchange.com/users/105468/jonsg>`_ in
+    `StackExchange <https://codereview.stackexchange.com/a/262803>`_.
+
+    Parameters
+    ----------
+    data : array
+        Data array.
+
+    Returns
+    -------
+    intervals : list
+        List of intervals of data samples with NaN.
+
+    Examples
+    --------
+    >>> A = np.random.random((10, 3))
+    >>> A[[1, 3, 4, 5, 8, 9]] = np.nan
+    >>> A
+    array([[0.74178186, 0.28444646, 0.35219214],
+           [       nan,        nan,        nan],
+           [0.05090735, 0.04161279, 0.10590561],
+           [       nan,        nan,        nan],
+           [       nan,        nan,        nan],
+           [       nan,        nan,        nan],
+           [0.31920402, 0.1523402 , 0.18907205],
+           [0.32899368, 0.20042986, 0.73725579],
+           [       nan,        nan,        nan],
+           [       nan,        nan,        nan]])
+    >>> get_nan_intervals(A)
+    [(1, 1), (3, 5), (8, 9)]
+    """
+    data = np.copy(data)
+    if data.ndim not in [1, 2]:
+        raise ValueError(f"data array must be 1- or 2-dimensional. It has {data.ndim} dimensions.")
+    isnan_list = np.any(np.isnan(data), axis=1) if data.ndim > 1 else np.isnan(data)
+    nan_indices = np.where(isnan_list == True)[0]
+    intervals = np.split(nan_indices, np.where(np.diff(nan_indices) > 1)[0] + 1)
+    return [(interval[0], interval[-1]) for interval in intervals]
