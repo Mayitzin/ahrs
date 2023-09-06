@@ -47,10 +47,12 @@ quaternion [#]_:
     \\begin{bmatrix}q_w \\\\ \\mathbf{q}_v\\end{bmatrix} =
     \\begin{bmatrix}q_w \\\\ q_x \\\\ q_y \\\\ q_z\\end{bmatrix}
 
-Sadly, many authors use different notations for the same type of quaternions.
-Some even invert their order, with the vector part first followed by the scalar
-part, increasing the confusion among readers. Here, the definition above will
-be used throughout the package.
+.. note::
+
+    Unfortunately, many authors use different notations for the same type of
+    quaternions. Some even invert their order, with the vector part first
+    followed by the scalar part, increasing the confusion among readers. Here,
+    the definition above will be used throughout the package.
 
 Let's say, for example, we want to use the quaternion :math:`\\mathbf{q}=\\begin{pmatrix}0.7071 & 0 & 0.7071 & 0\\end{pmatrix}`
 with this class:
@@ -2039,9 +2041,14 @@ class QuaternionArray(np.ndarray):
     """
     def __new__(subtype, q: np.ndarray = None, versors: bool = True, order: str = 'H', **kwargs):
         if q is None:
-            q = np.array([[1.0, 0.0, 0.0, 0.0]])
             if 'rpy' in kwargs:
                 q = QuaternionArray.from_rpy(QuaternionArray, kwargs.pop("rpy"))
+            elif 'angles' in kwargs:
+                q = QuaternionArray.from_angles(QuaternionArray, kwargs.pop("angles"))
+            elif 'DCM' in kwargs:
+                q = QuaternionArray.from_DCM(QuaternionArray, kwargs.pop("DCM"), inplace=False, **kwargs)
+            else:
+                q = np.array([[1.0, 0.0, 0.0, 0.0]])
         if isinstance(q, int):
             q = np.atleast_2d(random_attitudes(q))
         _assert_iterables(q, 'Quaternion Array')
@@ -2533,6 +2540,83 @@ class QuaternionArray(np.ndarray):
         Q[:, 2] = sy*cp*sr + cy*sp*cr
         Q[:, 3] = sy*cp*cr - cy*sp*sr
         return Q/np.linalg.norm(Q, axis=1)[:, None]
+
+    def from_DCM(self, DCM: np.ndarray, method: str='chiaverini', inplace: bool = True, **kw) -> np.ndarray:
+        """
+        Quaternion from Direction Cosine Matrix.
+
+        There are five methods available to obtain a quaternion from a
+        Direction Cosine Matrix:
+
+        * ``'chiaverini'`` as described in [Chiaverini]_.
+        * ``'hughes'`` as described in [Hughes]_.
+        * ``'itzhack'`` as described in [Bar-Itzhack]_ using version ``3`` by
+          default. Possible options are integers ``1``, ``2`` or ``3``.
+        * ``'sarabandi'`` as described in [Sarabandi]_ with a threshold equal
+          to ``0.0`` by default. Possible threshold values are floats between
+          ``-3.0`` and ``3.0``.
+        * ``'shepperd'`` as described in [Shepperd]_.
+
+        Parameters
+        ----------
+        DCM : numpy.ndarray
+            N-by-3-by-3 array with Direction Cosine Matrices.
+        method : str, default: ``'chiaverini'``
+            Method to use. Options are: ``'chiaverini'``, ``'hughes'``,
+            ``'itzhack'``, ``'sarabandi'``, and ``'shepperd'``.
+        inplace : bool, default: ``True``
+            If ``True``, the quaternion array is modified in-place, and the
+            method returns ``None``. Otherwise, a new quaternion array is
+            returned.
+
+        Examples
+        --------
+        >>> R = DCM(rpy=[10.0, -20.0, 30.0])
+        >>> R.view()
+        DCM([[ 0.92541658, -0.31879578, -0.20487413],
+             [ 0.16317591,  0.82317294, -0.54383814],
+             [ 0.34202014,  0.46984631,  0.81379768]])
+        >>> R.to_quaternion()   # Uses method 'chiaverini' by default
+        array([ 0.94371436,  0.26853582, -0.14487813,  0.12767944])
+        >>> R.to_quaternion('shepperd')
+        array([ 0.94371436, -0.26853582,  0.14487813, -0.12767944])
+        >>> R.to_quaternion('hughes')
+        array([ 0.94371436, -0.26853582,  0.14487813, -0.12767944])
+        >>> R.to_quaternion('itzhack', version=2)
+        array([ 0.94371436, -0.26853582,  0.14487813, -0.12767944])
+        >>> R.to_quaternion('sarabandi', threshold=0.5)
+        array([0.94371436, 0.26853582, 0.14487813, 0.12767944])
+
+        """
+        quaternion_array = np.zeros((DCM.shape[0], 4))
+        try:
+            if method.lower() == 'hughes':
+                for i, R in enumerate(DCM):
+                    quaternion_array[i] = hughes(R)
+            if method.lower() == 'chiaverini':
+                for i, R in enumerate(DCM):
+                    quaternion_array[i] = chiaverini(R)
+            if method.lower() == 'shepperd':
+                for i, R in enumerate(DCM):
+                    quaternion_array[i] = shepperd(R)
+            if method.lower() == 'itzhack':
+                version = kw.get('version', 3)
+                for i, R in enumerate(DCM):
+                    quaternion_array[i] = itzhack(R, version=version)
+                q = itzhack(self.A, version=kw.get('version', 3))
+            if method.lower() == 'sarabandi':
+                threshold = kw.get('threshold', 0.0)
+                for i, R in enumerate(DCM):
+                    quaternion_array[i] = sarabandi(R, eta=threshold)
+        except RuntimeWarning:
+            failed_DCM = DCM[i]
+            msg = f"Method '{method}' failed at DCM:\n{failed_DCM}\n"
+            raise RuntimeError(msg)
+        quaternion_array /= np.linalg.norm(quaternion_array, axis=1)[:, None]
+        if inplace:
+            self.array = quaternion_array
+            return None
+        return quaternion_array
 
     def to_angles(self) -> np.ndarray:
         """
