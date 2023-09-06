@@ -364,7 +364,10 @@ def slerp(q0: np.ndarray, q1: np.ndarray, t_array: np.ndarray, threshold: float 
     arc of a great circle passing through any two existing quaternion endpoints
     lying on the unit radius hypersphere.
 
-    Based on the method detailed in [Wiki_SLERP]_
+    It returns as many rotations between ``q0`` and ``q1`` as elements in
+    ``t_array``.
+
+    Based on the method detailed in [Wiki_SLERP]_.
 
     Parameters
     ----------
@@ -373,14 +376,16 @@ def slerp(q0: np.ndarray, q1: np.ndarray, t_array: np.ndarray, threshold: float 
     q1 : numpy.ndarray
         Second endpoint quaternion.
     t_array : numpy.ndarray
-        Array of times to interpolate to.
+        Array of weights to interpolate to. Values closer to 0.0 are closer to
+        first quaternion, and values closer to 1.0 are closer to second
+        quaternion.
     threshold : float, default: 0.9995
         Threshold to closeness of interpolation.
 
     Returns
     -------
     q : numpy.ndarray
-        New quaternion representing the interpolated rotation.
+        New array of quaternions representing the interpolated rotations.
 
     """
     qdot = np.dot(q0, q1)
@@ -2998,7 +3003,7 @@ class QuaternionArray(np.ndarray):
 
         Returns
         -------
-        interpolated_quaternions : np.ndarray or None
+        interpolated_quaternions : numpy.ndarray or None
             Full array with interpolated values if ``inplace`` is set to
             ``False``. Otherwise the QuaternionArray is modified in-place and
             ``None`` is returned.
