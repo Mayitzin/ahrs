@@ -349,6 +349,9 @@ from .orientation import chiaverini
 from .orientation import itzhack
 from .orientation import sarabandi
 
+# Other useful functions
+from ..utils.core import get_nan_intervals
+
 def _assert_iterables(item, item_name: str = 'iterable'):
     if not isinstance(item, (list, tuple, np.ndarray)):
         raise TypeError(f"{item_name} must be given as an array, got {type(item)}")
@@ -2982,3 +2985,34 @@ class QuaternionArray(np.ndarray):
             self.w[:-1]*self.y[1:] + self.x[:-1]*self.z[1:] - self.y[:-1]*self.w[1:] - self.z[:-1]*self.x[1:],
             self.w[:-1]*self.z[1:] - self.x[:-1]*self.y[1:] + self.y[:-1]*self.x[1:] - self.z[:-1]*self.w[1:]]
         return 2.0 * w / dt
+
+    def slerp_nan(self, inplace: bool = True) -> np.ndarray:
+        """
+        SLERP over NaN values in Quaternion array.
+
+        Parameters
+        ----------
+        inplace : bool, default: ``True``
+            If ``True``, the quaternion array is modified in-place, and the
+            method returns ``None``. Otherwise, a NumPy array is returned.
+
+        Returns
+        -------
+        interpolated_quaternions : np.ndarray or None
+            Full array with interpolated values if ``inplace`` is set to
+            ``False``. Otherwise the QuaternionArray is modified in-place and
+            ``None`` is returned.
+        """
+        self.remove_jumps()
+        interpolated_quaternions = np.copy(self.array)
+        nan_intervals = get_nan_intervals(self.array)
+        for interval in nan_intervals:
+            interpolated_quaternions[interval[0]:interval[1]+1] = slerp(
+                self.array[interval[0]-1],
+                self.array[interval[1]+1],
+                t_array=np.linspace(0, 1, interval[1]-interval[0]+3)[1:-1]
+                )
+        if inplace:
+            self.array[:] = interpolated_quaternions
+            return None
+        return interpolated_quaternions
