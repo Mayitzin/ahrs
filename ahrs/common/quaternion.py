@@ -3011,6 +3011,10 @@ class QuaternionArray(np.ndarray):
         self.remove_jumps()
         interpolated_quaternions = np.copy(self.array)
         nan_intervals = get_nan_intervals(self.array)
+        if len(nan_intervals) == 0:
+            if inplace:
+                return None
+            return interpolated_quaternions
         for interval in nan_intervals:
             interpolated_quaternions[interval[0]:interval[1]+1] = slerp(
                 self.array[interval[0]-1],
