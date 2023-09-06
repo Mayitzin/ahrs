@@ -1153,10 +1153,10 @@ def chiaverini(dcm: np.ndarray) -> np.ndarray:
     We know the rotation matrix of a given unit quaternion is:
 
     .. math::
-        \\mathbf{R}(q_w, \\mathbf{q}_v) = (q_w^2 - \\mathbf{q}_v^T\\mathbf{q}_v)\\mathbf{I}_3 + 2\\mathbf{q}_v\\mathbf{q}_v^T + 2 q_w\\lfloor\\mathbf{q}_v\\rfloor
+        \\mathbf{R}(\\mathbf{q}) = (q_w^2 - \\mathbf{q}_v^T\\mathbf{q}_v)\\mathbf{I}_3 + 2\\mathbf{q}_v\\mathbf{q}_v^T + 2 q_w\\lfloor\\mathbf{q}_v\\rfloor_\\times
 
     where :math:`\\mathbf{I}_3` is the :math:`3\\times 3` identity matrix, and
-    :math:`\\lfloor\\mathbf{q}_v\\rfloor` is the `skew-symmetric matrix
+    :math:`\\lfloor\\mathbf{q}_v\\rfloor_\\times` is the `skew-symmetric matrix
     <https://en.wikipedia.org/wiki/Skew-symmetric_matrix>`_ of the vector part.
     Solving the equation above for the scalar and vector parts we get the
     unitary quaternion:
