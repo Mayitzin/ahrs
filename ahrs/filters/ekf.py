@@ -268,7 +268,7 @@ where :math:`\\mathbf{I}_4` is a :math:`4\\times 4` Identity matrix, and:
 .. math::
     \\boldsymbol\\Omega_t =
     \\begin{bmatrix}
-    0 & -\\boldsymbol\\omega^T\\\\ \\boldsymbol\\omega & \\lfloor\\boldsymbol\\omega\\rfloor_\\times
+    0 & -\\boldsymbol\\omega^T\\\\ \\boldsymbol\\omega & -\\lfloor\\boldsymbol\\omega\\rfloor_\\times
     \\end{bmatrix} =
     \\begin{bmatrix}
     0 & -\\omega_x & -\\omega_y & -\\omega_z \\\\
@@ -350,8 +350,9 @@ Notice the series has the known form of the matrix exponential:
 
 The error of the approximation vanishes rapidly at higher orders, or when the
 time step :math:`\\Delta t \\to 0`. The more terms we have, the better our
-approximation becomes, with the downside of a big computational demand. For
-simple architectures (like embedded systems) we can reduce this burden by
+approximation becomes, with the downside of a big computational demand.
+
+For simple architectures (like embedded systems) we can reduce this burden by
 truncating the series to its second term making it a **First Order EKF** [#]_,
 and achieving fairly good results. Thus, our **process model** shortens to:
 
@@ -1142,13 +1143,14 @@ class EKF:
         .. math::
             \\boldsymbol\\Omega(\\mathbf{x}) =
             \\begin{bmatrix}
-            0 & -\\mathbf{x}^T \\\\ \\mathbf{x} & \\lfloor\\mathbf{x}\\rfloor_\\times
+                0 & -\\mathbf{x}^T \\\\
+                \\mathbf{x} & -\\lfloor\\mathbf{x}\\rfloor_\\times
             \\end{bmatrix} =
             \\begin{bmatrix}
-            0 & -x_1 & -x_2 & -x_3 \\\\
-            x_1 & 0 & x_3 & -x_2 \\\\
-            x_2 & -x_3 & 0 & x_1 \\\\
-            x_3 & x_2 & -x_1 & 0
+                0   & -x_1 & -x_2 & -x_3 \\\\
+                x_1 &    0 &  x_3 & -x_2 \\\\
+                x_2 & -x_3 &    0 &  x_1 \\\\
+                x_3 &  x_2 & -x_1 & 0
             \\end{bmatrix}
 
         This operator is constantly used at different steps of the EKF.
@@ -1174,7 +1176,7 @@ class EKF:
         Linearized function of Process Model (Prediction.)
 
         .. math::
-            \\mathbf{f}(\\mathbf{q}_{t-1}) = \\Big(\\mathbf{I}_4 + \\frac{\\Delta t}{2}\\boldsymbol\\Omega_t\\Big)\\mathbf{q}_{t-1} =
+            \\mathbf{f}(\\mathbf{q}_{t-1}, \\Delta t) = \\Big(\\mathbf{I}_4 + \\frac{\\Delta t}{2}\\boldsymbol\\Omega_t\\Big)\\mathbf{q}_{t-1} =
             \\begin{bmatrix}
             q_w - \\frac{\\Delta t}{2} \\omega_x q_x - \\frac{\\Delta t}{2} \\omega_y q_y - \\frac{\\Delta t}{2} \\omega_z q_z\\\\
             q_x + \\frac{\\Delta t}{2} \\omega_x q_w - \\frac{\\Delta t}{2} \\omega_y q_z + \\frac{\\Delta t}{2} \\omega_z q_y\\\\
