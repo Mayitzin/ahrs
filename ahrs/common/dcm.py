@@ -3,16 +3,11 @@
 Direction Cosine Matrix
 =======================
 
-The difference, in three dimensions, between any given orthogonal frame and a
-base coordinate frame is the **orientation** or **attitude**.
+Rotations are linear operations preserving vector length. These rotation
+operators are represented with matrices.
 
-Rotations are linear operations preserving vector lenght and relative vector
-orientation, and a rotation operator acting on a vector :math:`\\mathbf{v}\\in\\mathbb{R}^3`
-can be defined in the Special Orthogonal group :math:`SO(3)`, also known as the
-`rotation group <https://en.wikipedia.org/wiki/3D_rotation_group>`_.
-
-The rotation operator is a linear transformation represented by a
-:math:`3\\times 3` matrix:
+Let us assume there is a linear operator represented by a :math:`3\\times 3`
+matrix:
 
 .. math::
     \\mathbf{R} =
@@ -24,18 +19,25 @@ where
 
 .. math::
     \\begin{array}{lcr}
-    \\mathbf{r}_1 = \\begin{bmatrix}r_{11}\\\\ r_{12} \\\\ r_{13} \\end{bmatrix} \\; , &
-    \\mathbf{r}_2 = \\begin{bmatrix}r_{21}\\\\ r_{22} \\\\ r_{32} \\end{bmatrix} \\; , &
-    \\mathbf{r}_3 = \\begin{bmatrix}r_{31}\\\\ r_{23} \\\\ r_{33} \\end{bmatrix}
+    \\mathbf{r}_1 = \\begin{bmatrix}r_{11}\\\\ r_{21} \\\\ r_{31} \\end{bmatrix} \\; , &
+    \\mathbf{r}_2 = \\begin{bmatrix}r_{12}\\\\ r_{22} \\\\ r_{32} \\end{bmatrix} \\; , &
+    \\mathbf{r}_3 = \\begin{bmatrix}r_{13}\\\\ r_{23} \\\\ r_{33} \\end{bmatrix}
     \\end{array}
 
-are unit vectors orthogonal to each other. All matrices satisfying this
-orthogonality are called **orthogonal matrices**.
+are unit vectors `orthogonal <https://en.wikipedia.org/wiki/Orthogonality_(mathematics)>`_
+to each other. All matrices satisfying this orthogonality are called
+`orthogonal matrices <https://en.wikipedia.org/wiki/Orthogonal_matrix>`_.
 
-The transformation matrix :math:`\\mathbf{R}` rotates any vector
-:math:`\\mathbf{v}\\in\\mathbb{R}^3` through the matrix product,
+The difference, in three dimensions, between any given orthogonal frame and a
+base coordinate frame is the **orientation** or **attitude**.
+
+A vector :math:`\\mathbf{v}\\in\\mathbb{R}^3` is used to represent a point in a
+three-dimensional `euclidean space <https://en.wikipedia.org/wiki/Euclidean_space>`_.
+When :math:`\\mathbf{v}` is multiplied with the matrix :math:`\\mathbf{R}`,
+the result is a new vector :math:`\\mathbf{v}'\\in\\mathbb{R}^3`:
 
 .. math::
+
     \\mathbf{v}' = \\mathbf{Rv}
 
 We observe that :math:`\\mathbf{RR}^{-1}=\\mathbf{RR}^T=\\mathbf{R}^T\\mathbf{R}=\\mathbf{I}`,
@@ -44,21 +46,37 @@ indicating that the inverse of :math:`\\mathbf{R}` is its transpose. So,
 .. math::
     \\mathbf{v} = \\mathbf{R}^T\\mathbf{v}'
 
-The determinant of a rotation matrix is always equal to :math:`+1`. This means,
-its product with any vector will leave the vector's lenght unchanged.
+The determinant of this matrix is always equal to :math:`+1`. This means,
+its product with any vector will leave the vector's length unchanged.
 
-Matrices conforming to both properties belong to the special orthogonal group
-:math:`SO(3)`. Even better, the product of two or more rotation matrices yields
-another rotation matrix in :math:`SO(3)`.
+:math:`3\\times 3` matrices conforming to these properties (orthogonality,
+:math:`\\mathbf{R}^T=\\mathbf{R}^{-1}`, and :math:`\\mathrm{det}(\\mathbf{R})=
++1`) belong to the special orthogonal group :math:`SO(3)`, also known as the
+`rotation group <https://en.wikipedia.org/wiki/3D_rotation_group>`_.
 
-Direction cosines are cosines of angles between a vector and a base coordinate
-frame [WikipediaDCM]_. In this case, the difference between orthogonal vectors
-:math:`\\mathbf{r}_i` and the base frame are describing the Direction Cosines.
-This orientation matrix is commonly named the **Direction Cosine Matrix**.
+Even better, the product of two or more rotation matrices yields another
+rotation matrix in :math:`SO(3)`.
+
+`Direction cosines <https://en.wikipedia.org/wiki/Direction_cosine>`_ are
+cosines of angles between a vector and a base coordinate frame [WikipediaDCM]_.
+In this case, the direction cosines describe the differences between orthogonal
+vectors :math:`\\mathbf{r}_i` and the base frame. The matrix containing these
+differences is commonly named the **Direction Cosine Matrix**.
+
+These matrices are used for two main purposes:
+
+- To describe any frame's orientation relative to a base frame.
+- To transform vectors (representing points in three dimensions) from one frame
+  to another. This is a rotation operation.
+
+Because of the latter, the DCM is also known as the **rotation matrix**.
 
 DCMs are, therefore, the most common representation of rotations
 [WikipediaRotMat]_, especially in real applications of spacecraft tracking and
 location.
+
+Throughout this package they will be used to represent the attitudes with
+respect to the global frame.
 
 References
 ----------
