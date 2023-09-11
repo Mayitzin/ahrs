@@ -23,7 +23,7 @@ From which, the following classes are available
    :titlesonly:
    :maxdepth: 1
 
-   classDCM
+   dcm/classDCM
    quaternion/classQuaternion
    quaternion/classQuaternionArray
 
