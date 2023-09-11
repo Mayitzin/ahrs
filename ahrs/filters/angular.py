@@ -3,60 +3,46 @@
 Attitude from angular rate
 ==========================
 
-A quaternion is updated via integration of angular rate measurements of a
-gyroscope. The easiest way to update the quaternions is by integrating the
-differential equation for a local rotation rate [Sola]_.
+Unitary quaternions [#]_ are used when representing an attitude. They can be
+updated via integration of angular rate measurements of a gyroscope.
+
+The easiest way to do so is by integrating the differential
+equation for a local rotation rate [Sola]_.
 
 In a kinematic system, the angular velocity :math:`\\boldsymbol\\omega` of a
 rigid body at any instantaneous time is described with respect to a fixed frame
 coinciding instantaneously with its body frame. Thus, this angular
 velocity is *in terms of* the body frame [Jia]_.
 
-First, let's remember the definition of a vector or `matrix exponential
-<https://en.wikipedia.org/wiki/Matrix_exponential>`_ as a power series:
-
-.. math::
-    e^\\mathbf{X} = \\sum_{k=0}^\\infty \\frac{1}{k!} \\mathbf{X}^k
-
-Letting :math:`\\mathbf{v}=\\mathbf{u}\\theta` be the **rotation vector**,
-representing a rotation of :math:`\\theta` radians around the unitary [#]_ axis
-:math:`\\mathbf{u}=\\begin{bmatrix}u_x & u_y & u_z\\end{bmatrix}^T`, we can
-get its exponential series as:
-
-.. math::
-    e^\\mathbf{v} = e^{\\mathbf{u}\\theta} = \\Big(1 - \\frac{\\theta^2}{2!} + \\frac{\\theta^4}{4!} + \\cdots\\Big)
-    + \\Big(\\mathbf{u}\\theta - \\frac{\\mathbf{u}\\theta^3}{3!} + \\frac{\\mathbf{u}\\theta^5}{5!} + \\cdots\\Big)
-
-We recognize the power-series expansion of `Euler's formula
-<https://en.wikipedia.org/wiki/Euler%27s_formula#Using_power_series>`_, which
-helps to map the quaternion :math:`\\mathbf{q}` from a rotation vector
-:math:`\\mathbf{v}`. This **exponential map** [Sola]_ is formerly defined as:
-
-.. math::
-    \\mathbf{q} = e^\\mathbf{v} =
-    \\begin{bmatrix}\\cos\\frac{\\theta}{2} \\\\
-    \\mathbf{u}\\sin\\frac{\\theta}{2}\\end{bmatrix}
-
 Accumulating rotation over time in quaternion form is done by integrating the
-differential equation of :math:`\\mathbf{q}` to the rotation rate definition.
+differential equation of :math:`\\mathbf{q}` with a defined rotation rate.
 This constant augmentation is sometimes termed the **Attitude Propagation**.
 
-Because exact closed-form solutions of the integration are not available, an
-approximation method is required. Numerical solutions, however, don't give a
-continuous solution for :math:`\\mathbf{q}`, but a discrete set of values
+.. math::
+    \\hat{\\mathbf{q}}_t = \\mathbf{q}_{t-1} + \\int_{t-1}^t\\boldsymbol\\omega\\, dt
+
+Exact closed-form solutions of the integration are not available. Thus, an
+approximation method is required. Besides, numerical methods don't give a
+continuous solution for :math:`\\mathbf{q}`, but a discrete set of values can:
 :math:`\\mathbf{q}_t`, :math:`n=1,2,\\dots`
 
-In our case, the angular rates are measured by `gyroscopes
-<https://en.wikipedia.org/wiki/Gyroscope>`_, providing local measurements,
-:math:`\\boldsymbol\\omega(t_n)=\\begin{bmatrix}\\omega_x&\\omega_y&\\omega_z\\end{bmatrix}^T`,
+In the simplest practical case, the angular rates are measured by `gyroscopes
+<https://en.wikipedia.org/wiki/Gyroscope>`_, reading instantaneous angular
+velocities, :math:`\\boldsymbol\\omega(t_n)=\\begin{bmatrix}\\omega_x&\\omega_y&\\omega_z\\end{bmatrix}^T`,
 in *rad/s*, at discrete times :math:`t_n = n\\Delta t` in the local sensor
-frame. The parameter :math:`\\Delta t` is called *time step* or *step size* of
-the numerical integration.
+frame.
+
+The parameter :math:`\\Delta t` is called *time step* or *step size* of the
+numerical integration.
 
 Quaternion Derivative
 ---------------------
 
-An orientation is described by :math:`\\mathbf{q} (t+\\Delta t)` at a time
+We start by expressing our angular velocity in quaternion form, so that we can
+use the quaternion derivative to integrate it and estimate the new attitude.
+
+An orientation (attitude) is described with a quaternion :math:`\\mathbf{q} (t)`
+at a time :math:`t`, and with :math:`\\mathbf{q} (t+\\Delta t)` at a time
 :math:`t+\\Delta t`. This is after a rotation change :math:`\\Delta\\mathbf{q}`
 during :math:`\\Delta t` seconds is performed on the local frame [Jia]_.
 
@@ -91,7 +77,7 @@ of the quaternions [#]_ follows the formal definition:
     &=& \\underset{\\Delta t\\to 0}{\\mathrm{lim}} \\frac{\\mathbf{q}(t+\\Delta t)-\\mathbf{q}(t)}{\\Delta t} \\\\
     &=& \\underset{\\Delta t\\to 0}{\\mathrm{lim}} \\frac{1}{\\Delta t}\\Big(-2\\sin^2\\frac{\\|\\boldsymbol\\omega\\|\\Delta t}{4} + \\frac{\\boldsymbol\\omega}{\\|\\boldsymbol\\omega\\|}\\sin\\frac{\\|\\boldsymbol\\omega\\|\\Delta t}{2}\\Big)\\mathbf{q} \\\\
     &=& \\frac{\\boldsymbol\\omega}{\\|\\boldsymbol\\omega\\|} \\underset{\\Delta t\\to 0}{\\mathrm{lim}} \\frac{1}{\\Delta t}\\sin\\big(\\frac{\\|\\boldsymbol\\omega\\|\\Delta t}{2}\\big) \\mathbf{q} \\\\
-    &=& \\frac{\\boldsymbol\\omega}{\\|\\boldsymbol\\omega\\|} \\frac{d}{dt} \\sin\\big(\\frac{\\|\\boldsymbol\\omega\\|}{2}t\\big) \\Big |_{t=0} \\mathbf{q} \\\\
+    &=& \\frac{\\boldsymbol\\omega}{\\|\\boldsymbol\\omega\\|} \\frac{d}{dt} \\sin\\big(\\frac{\\|\\boldsymbol\\omega\\|}{2}t\\big) \\Big || _{t=0} \\; \\mathbf{q} \\\\
     &=& \\frac{1}{2}\\boldsymbol\\omega \\mathbf{q} \\\\
     &=& \\frac{1}{2}
     \\begin{bmatrix}
@@ -114,7 +100,7 @@ Defining the omega operator as
 
 .. math::
     \\boldsymbol\\Omega(\\boldsymbol\\omega) =
-    \\begin{bmatrix}0 & -\\boldsymbol\\omega^T \\\\ \\boldsymbol\\omega & \\lfloor\\boldsymbol\\omega\\rfloor_\\times\\end{bmatrix} =
+    \\begin{bmatrix}0 & -\\boldsymbol\\omega^T \\\\ \\boldsymbol\\omega & -\\lfloor\\boldsymbol\\omega\\rfloor_\\times\\end{bmatrix} =
     \\begin{bmatrix}
     0 & -\\omega_x & -\\omega_y & -\\omega_z \\\\
     \\omega_x & 0 & \\omega_z & -\\omega_y \\\\
@@ -129,7 +115,7 @@ Defining the omega operator as
 
     .. math::
         \\lfloor\\mathbf{x}\\rfloor_\\times =
-        \\begin{bmatrix} 0 & x_2 & -x_1 \\\\ -x_2 & 0 & x_0 \\\\ x_1 & -x_0 & 0\\end{bmatrix}
+        \\begin{bmatrix} 0 & -x_2 & x_1 \\\\ x_2 & 0 & -x_0 \\\\ -x_1 & x_0 & 0\\end{bmatrix}
 
 we get an equivalent matrix expression for the derivative:
 
@@ -137,11 +123,69 @@ we get an equivalent matrix expression for the derivative:
     \\dot{\\mathbf{q}} = \\frac{1}{2}\\boldsymbol\\Omega(\\boldsymbol\\omega)\\mathbf{q}
 
 This definition does **not** require a Hamilton product and the Omega operator
-can be used to simply multiply with the quaternion as any other matrix
-operation.
+can be used as a common matrix to multiply with the quaternion as any other
+linear operation.
 
 Quaternion Integration
 ----------------------
+
+First, let's remember the definition of a vector or `matrix exponential
+<https://en.wikipedia.org/wiki/Matrix_exponential>`_ as a power series:
+
+.. math::
+    e^\\mathbf{X} = \\sum_{k=0}^\\infty \\frac{1}{k!} \\mathbf{X}^k
+
+Letting :math:`\\mathbf{v}=\\mathbf{u}\\theta` be the **rotation vector**,
+representing a rotation of :math:`\\theta` radians around the unitary axis
+:math:`\\mathbf{u}=\\begin{bmatrix}u_x & u_y & u_z\\end{bmatrix}^T`, we can
+get its exponential series as:
+
+.. math::
+    e^\\mathbf{v} = e^{\\mathbf{u}\\theta} = \\Big(1 - \\frac{\\theta^2}{2!} + \\frac{\\theta^4}{4!} + \\cdots\\Big)
+    + \\Big(\\mathbf{u}\\theta - \\frac{\\mathbf{u}\\theta^3}{3!} + \\frac{\\mathbf{u}\\theta^5}{5!} + \\cdots\\Big)
+
+We recognize the power-series expansion of `Euler's formula
+<https://en.wikipedia.org/wiki/Euler%27s_formula#Using_power_series>`_, which
+helps to map the quaternion :math:`\\mathbf{q}` from a rotation vector
+:math:`\\mathbf{v}`. This **exponential map** [Sola]_ is formerly defined as:
+
+.. math::
+    \\mathbf{q} = e^\\mathbf{v} =
+    \\begin{bmatrix}\\cos\\frac{\\theta}{2} \\\\
+    \\mathbf{u}\\sin\\frac{\\theta}{2}\\end{bmatrix}
+
+Assuming the gyroscope data is sampled at a fixed rate and that the angular
+velocity vector, :math:`\\boldsymbol\\omega`, in local body coordinates is
+constant over the sampling interval :math:`\\Delta t`, we can alternatively
+integrate :math:`\\dot{\\mathbf{q}}` to obtain:
+
+.. math::
+    \\mathbf{q}_{t+1} = e^{\\frac{1}{2}\\boldsymbol\\Omega(\\boldsymbol\\omega)\\Delta t}\\mathbf{q}_t
+
+Using the `Euler-Rodrigues rotation formula
+<https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation#Using_quaternion_as_rotations>`_
+and the exponential map from above we find a **closed-form solution** [Wertz]_:
+
+.. math::
+    \\mathbf{q}_{t+1} =
+    \\Bigg[
+    \\cos\\Big(\\frac{\\|\\boldsymbol\\omega\\|\\Delta t}{2}\\Big)\\mathbf{I}_4 +
+    \\frac{1}{\\|\\boldsymbol\\omega\\|}\\sin\\Big(\\frac{\\|\\boldsymbol\\omega\\|\\Delta t}{2}\\Big)\\boldsymbol\\Omega(\\boldsymbol\\omega)
+    \\Bigg]\\mathbf{q}_t
+
+where :math:`\\mathbf{I}_4` is a :math:`4\\times 4` Identity matrix. The large
+term inside the brackets, multiplying :math:`\\mathbf{q}_t`, is an orthogonal
+rotation retaining the normalization of the propagated attitude quaternions.
+Thus, it is not necessary to normalize :math:`\\mathbf{q}_{t+1}`, but it is
+highly recommended to do so in order to avoid any `round-off errors
+<https://en.wikipedia.org/wiki/Round-off_error>`_ inherent to all computers.
+
+We can stop here and use this closed-form solution to update the quaternion,
+but it cannot be used in a linear system. For that, we need to linearize the
+quaternion update equation.
+
+Quaternion Linearization
+------------------------
 
 Now we develop an :math:`n^{th}`-order polynomial linearization method built
 from `Taylor series <https://en.wikipedia.org/wiki/Taylor_series>`_ of
@@ -181,7 +225,8 @@ time step :math:`\\Delta t \\to 0`. The more terms we have, the better our
 approximation should be, assuming the sensor signals are unbiased and noiseless,
 with the downside of a big computational demand.
 
-Notice the series has the known form of the matrix exponential:
+Notice the series for :math:`\\mathbf{q}_{t+1}` also follows the form of the
+matrix exponential:
 
 .. math::
     e^{\\frac{\\Delta t}{2}\\boldsymbol\\Omega(\\boldsymbol\\omega)} =
@@ -206,32 +251,6 @@ represent a valid orientation.
 .. math::
     \\mathbf{q}_{t+1} \\gets \\frac{\\mathbf{q}_{t+1}}{\\|\\mathbf{q}_{t+1}\\|}
 
-Assuming the gyroscope data is sampled at a fixed rate and that the angular
-velocity vector, :math:`\\boldsymbol\\omega`, in local body coordinates is
-constant over the sampling interval :math:`\\Delta t`, we can alternatively
-integrate :math:`\\dot{\\mathbf{q}}` to obtain:
-
-.. math::
-    \\mathbf{q}_{t+1} = e^{\\frac{1}{2}\\boldsymbol\\Omega(\\boldsymbol\\omega)\\Delta t}\\mathbf{q}_t
-
-Using the `Euler-Rodrigues rotation formula
-<https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation#Using_quaternion_as_rotations>`_
-and the exponential map from above we find a *closed-form solution* [Wertz]_:
-
-.. math::
-    \\mathbf{q}_{t+1} =
-    \\Bigg[
-    \\cos\\Big(\\frac{\\|\\boldsymbol\\omega\\|\\Delta t}{2}\\Big)\\mathbf{I}_4 +
-    \\frac{1}{\\|\\boldsymbol\\omega\\|}\\sin\\Big(\\frac{\\|\\boldsymbol\\omega\\|\\Delta t}{2}\\Big)\\boldsymbol\\Omega(\\boldsymbol\\omega)
-    \\Bigg]\\mathbf{q}_t
-
-where :math:`\\mathbf{I}_4` is a :math:`4\\times 4` Identity matrix. The large
-term inside the brackets, multiplying :math:`\\mathbf{q}_t`, is an orthogonal
-rotation retaining the normalization of the propagated attitude quaternions.
-Thus, it is not necessary to normalize :math:`\\mathbf{q}_{t+1}`, but it is
-highly recommended to do so in order to avoid any `round-off errors
-<https://en.wikipedia.org/wiki/Round-off_error>`_ inherent to all computers.
-
 Numerical Integration based on Runge-Kutta methods can be employed to increase
 the accuracy, and are shown to be more effective. See [Sola]_ and [Zhao]_ for a
 comparison of the different methods, their accuracy, and their computational
@@ -239,6 +258,7 @@ load.
 
 Footnotes
 ---------
+
 .. [#] A vector :math:`\\mathbf{x}` is unitary if its norm is equal to one:
     :math:`\\|\\mathbf{x}\\|=1`.
 .. [#] The successive derivatives of :math:`\\mathbf{q}_n` are obtained by
@@ -255,6 +275,7 @@ Footnotes
 
 References
 ----------
+
 .. [Jia] Yan-Bin Jia. Quaternions. 2018.
     (http://web.cs.iastate.edu/~cs577/handouts/quaternion.pdf)
 .. [Sola] Solà, Joan. Quaternion kinematics for the error-state Kalman Filter.
@@ -273,7 +294,12 @@ from ..common.dcm import DCM
 
 class AngularRate:
     """
-    Quaternion update by integrating angular velocity
+    Quaternion update by integrating measured angular velocities.
+
+    All estimated quaternions are stored in the attribute ``Q`` as a
+    :class:`numpy.ndarray` of shape *(N, 4)*, where *N* is the number of
+    estimated attitudes. The first row is the initial attitude, and the last
+    row is the final attitude.
 
     Parameters
     ----------
@@ -295,17 +321,6 @@ class AngularRate:
     representation : str, default: ``'quaternion'``
         Attitude representation. Options are ``'quaternion'``, ``'angles'`` or
         ``'rotmat'``.
-
-    Attributes
-    ----------
-    gyr : numpy.ndarray
-        N-by-3 array with N gyroscope samples.
-    Q : numpy.ndarray
-        Estimated quaternions.
-    method : str
-        Used estimation method.
-    order : int
-        Truncation order.
 
     Examples
     --------
@@ -329,7 +344,9 @@ class AngularRate:
     ``[1.0, 0.0, 0.0, 0.0]`` by default, because we cannot obtain the first
     orientation with gyroscopes only.
 
-    We can use the class :class:`Tilt` to estimate the initial attitude with a
+    **Initial Values**
+
+    We can use the class :class:`.Tilt` to estimate the initial attitude with a
     simple measurement of a tri-axial accelerometer:
 
     >>> from ahrs.filter import Tilt
@@ -345,7 +362,7 @@ class AngularRate:
            [-0.92547793, -0.23388968,  0.19889139, -0.22187479],
            [-0.92504595, -0.23174096,  0.20086376, -0.22414251]])
 
-    The :class:`Tilt` can also use a magnetometer to improve the estimation
+    :class:`.Tilt` can also use a magnetometer to improve the estimation
     with the heading orientation.
 
     >>> q_initial = tilt.estimate(acc=acc_sample, mag=mag_sample)
@@ -386,13 +403,22 @@ class AngularRate:
 
     def integrate_angular_positions(self, gyr: np.ndarray, dt: float = None) -> np.ndarray:
         """
-        Integrate angular positions from angular rates.
-
-        Integrate angular positions :math:`\\mathbf{\\theta}` from angular
-        rates :math:`\\mathbf{\\omega}` with a given time step :math:`\\Delta t`:
+        Integrate angular positions :math:`\\mathbf{\\theta}` from
+        instantaneous angular rates :math:`\\mathbf{\\omega}` at a time
+        :math:`t` with a given time step :math:`\\Delta t`:
 
         .. math::
             \\mathbf{\\theta}_{t+1} = \\mathbf{\\theta}_t + \\mathbf{\\omega}_t \\Delta t
+
+        Given the three main roll-pitch-yaw angles, it simply integrates them
+        with a cumulative sum, and returns the tri-axial angular positions.
+
+        This method does not play a central role in this estimator, but can be
+        used to obtain another reference to compare the results to.
+
+        Calling this method is equivalent to calling::
+
+            >>> angular_positions = numpy.cumsum(gyr * dt, axis=0)
 
         Parameters
         ----------
@@ -401,7 +427,7 @@ class AngularRate:
         dt : float, optional
             Time step, in seconds. If not given, the time step is set to
             :math:`1/f_s`, where :math:`f_s` is the sampling frequency, which
-            is set to 100 Hz by default.
+            is defined as ``100`` Hz by default.
 
         Returns
         -------
@@ -429,8 +455,8 @@ class AngularRate:
         Update the quaternion estimation
 
         Estimate quaternion :math:`\\mathbf{q}_{t+1}` from given a-priori
-        quaternion :math:`\\mathbf{q}_t` with a given angular rate measurement
-        :math:`\\mathbf{\\omega}`.
+        quaternion :math:`\\mathbf{q}_t` with a measured instantaneous angular
+        rate :math:`\\mathbf{\\omega}`.
 
         If ``method='closed'``, the new orienation is computed with the
         closed-form solution:
@@ -442,8 +468,7 @@ class AngularRate:
             \\frac{1}{\\|\\boldsymbol\\omega\\|}\\sin\\Big(\\frac{\\|\\boldsymbol\\omega\\|\\Delta t}{2}\\Big)\\boldsymbol\\Omega(\\boldsymbol\\omega)
             \\Bigg]\\mathbf{q}_t
 
-        Otherwise, if ``method='series'``, it is computed with a series of the
-        form:
+        If ``method='series'``, it is computed with a series of the form:
 
         .. math::
             \\mathbf{q}_{t+1} =
