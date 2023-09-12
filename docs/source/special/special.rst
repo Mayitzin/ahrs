@@ -19,6 +19,9 @@ re-define, or otherwise modify the attitude representations.
 
    Hughes
    Chiaverini
+   Sarabandi
+   Itzhack
+   Shepperd
 
 .. toctree::
    :caption: Other
