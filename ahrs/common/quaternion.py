@@ -414,10 +414,38 @@ def random_attitudes(n: int = 1, representation: str = 'quaternion') -> np.ndarr
     then transformed as explained originally by [Shoemake]_ and summarized in
     [Kuffner]_.
 
+    First, three uniform random values are sampled from the interval [0, 1]:
+
+    .. math::
+
+        u_1, u_2, u_3 \\sim U(0, 1)
+
+    Then, two random angles are generated from these values:
+
+    .. math::
+
+        \\begin{array}{rl}
+        s_1 &= \\sqrt{1-u_1} \\\\
+        s_2 &= \\sqrt{u_1} \\\\
+        t_1 &= 2\\pi u_2 \\\\
+        t_2 &= 2\\pi u_3
+        \\end{array}
+
+    Finally, the quaternion is built as:
+
+    .. math::
+
+        \\mathbf{q} = \\begin{bmatrix}
+        s_2\\cos t_2 \\\\
+        s_1\\sin t_1 \\\\
+        s_1\\cos t_1 \\\\
+        s_2\\sin t_2
+        \\end{bmatrix}
+
     Parameters
     ----------
     n : int, default: 1
-        Number of random atitudes to generate. Default is 1.
+        Number of random attitudes to generate. Default is 1.
     representation : str, default: ``'quaternion'``
         Attitude representation. Options are ``'quaternion'`` or ``'rotmat'``.
 
@@ -493,14 +521,16 @@ class Quaternion(np.ndarray):
     Examples
     --------
     >>> from ahrs import Quaternion
+    >>> Quaternion()
+    Quaternion([1., 0., 0., 0.])
+    >>> Quaternion(random=True)
+    Quaternion([ 0.27216553, -0.40824829,  0.54433105, -0.68041382])
     >>> q = Quaternion([1., 2., 3., 4.])
-    >>> q
+    >>> q.view()
     Quaternion([0.18257419, 0.36514837, 0.54772256, 0.73029674])
     >>> x = [1., 2., 3.]
-    >>> q.rot(x)
-    [1.8 2.  2.6]
-    >>> R = q.to_DCM()
-    >>> R@x
+    >>> R = q.to_DCM()      # Get rotation matrix from quaternion
+    >>> R @ x
     [1.8 2.  2.6]
 
     A call to method :meth:`product` will return an array of a multiplied
@@ -514,19 +544,19 @@ class Quaternion(np.ndarray):
     Multiplication operators are overriden to perform the expected hamilton
     product.
 
-    >>> q1*q2
+    >>> q1 * q2
     array([-0.49690399,  0.1987616 ,  0.74535599,  0.3975232 ])
-    >>> q1@q2
+    >>> q1 @ q2
     array([-0.49690399,  0.1987616 ,  0.74535599,  0.3975232 ])
 
     Basic operators are also overriden.
 
-    >>> q1+q2
+    >>> q1 + q2
     Quaternion([0.46189977, 0.48678352, 0.51166727, 0.53655102])
-    >>> q1-q2
+    >>> q1 - q2
     Quaternion([-0.69760203, -0.25108126,  0.19543951,  0.64196028])
 
-    Pure quaternions are built from arrays with three elements.
+    **Pure quaternions** are built from arrays with three elements.
 
     >>> q = Quaternion([1., 2., 3.])
     >>> q
@@ -1901,12 +1931,28 @@ class Quaternion(np.ndarray):
         Generate a random quaternion
 
         A mapping in SO(3) is first created and then transformed as explained
-        originally by [Shoemake]_.
+        originally by [Shoemake]_. It calls the function :func:`random_attitudes`
+        with ``n=1``.
 
         Returns
         -------
         q : numpy.ndarray
             Random array corresponding to a valid quaternion
+
+        Examples
+        --------
+        >>> q = Quaternion()
+        >>> q.random()
+        array([ 0.18257419, -0.36514837,  0.54772256, -0.73029674])
+
+        It can be called when the Quaternion object is created:
+
+        >>> Quaternion(random=True)
+        Quaternion([-0.51862103, -0.23740681,  0.32023593,  0.75638561])
+
+        See Also
+        --------
+        random_attitudes : Generate random attitudes
         """
         return random_attitudes(1)
 
