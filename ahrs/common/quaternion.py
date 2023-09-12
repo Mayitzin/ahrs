@@ -484,16 +484,6 @@ class Quaternion(np.ndarray):
     ----------
     A : numpy.ndarray
         Array with the 4 elements of quaternion of the form [w, x, y, z]
-    w : float
-        Scalar part of the quaternion.
-    x : float
-        First element of the vector part of the quaternion.
-    y : float
-        Second element of the vector part of the quaternion.
-    z : float
-        Third element of the vector part of the quaternion.
-    v : numpy.ndarray
-        Vector part of the quaternion.
 
     Raises
     ------
@@ -557,8 +547,8 @@ class Quaternion(np.ndarray):
     >>> str(q)
     '(0.0000 +0.2673i +0.5345j +0.8018k)'
 
-    If the parameter ``order`` is set to 'S' the vector part will precede the
-    scalar part.
+    If the parameter ``order`` is set to ``'S'`` the vector part will precede
+    the scalar part.
 
     >>> q = Quaternion([2., -3., 4., -5.], order='S')
     >>> q.w
@@ -1910,8 +1900,8 @@ class Quaternion(np.ndarray):
         """
         Generate a random quaternion
 
-        To generate a random quaternion a mapping in SO(3) is first created and
-        then transformed as explained originally by [Shoemake]_.
+        A mapping in SO(3) is first created and then transformed as explained
+        originally by [Shoemake]_.
 
         Returns
         -------
@@ -1942,9 +1932,9 @@ class QuaternionArray(np.ndarray):
     versors : bool, default: True
         Treat quaternions as versors. It will normalize them immediately.
     order : str, default: 'H'
-        Specify the layout of the Quaternions, where the default is 'H' for a
-        Hamiltonian notation with the scalar parts preceding the vector parts.
-        If order is 'S' the vector parts precede the scalar parts.
+        Specify the layout of the Quaternions, where the default is ``'H'`` for
+        a Hamiltonian notation with the scalar parts preceding the vector parts.
+        If order is ``'S'`` the vector parts precede the scalar parts.
 
     Attributes
     ----------
@@ -1969,6 +1959,8 @@ class QuaternionArray(np.ndarray):
     Examples
     --------
     >>> from ahrs import QuaternionArray
+    >>> QuaternionArray()
+    QuaternionArray([[1., 0., 0., 0.]])
     >>> Q = QuaternionArray(np.random.random((3, 4))-0.5)
     >>> Q.view()
     QuaternionArray([[ 0.39338362, -0.29206111, -0.07445273,  0.86856573],
@@ -2024,7 +2016,7 @@ class QuaternionArray(np.ndarray):
 
     If, for any reason, the signs of certain quaternions are flipped (they
     still represent the same rotation in 3D Euclidean space), we can use the
-    method rempve jumps to flip them back.
+    method :meth:`remove_jumps` to flip them back.
 
     >>> Q.view()
     QuaternionArray([[ 0.17614144, -0.39173347,  0.56303067, -0.70605634],
