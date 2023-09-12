@@ -27,12 +27,11 @@ From which, the following classes are available
    quaternion/classQuaternion
    quaternion/classQuaternionArray
 
-Specialized functions include:
+Several specialized functions are available to transform, and re-define
+rotations and attitudes. See:
 
 .. toctree::
    :titlesonly:
    :maxdepth: 1
 
-   funSLERP
-   Hughes
-   Chiaverini
+   special/special
