@@ -462,7 +462,7 @@ def random_attitudes(n: int = 1, representation: str = 'quaternion') -> np.ndarr
         raise TypeError(f"representation must be a string. Got {type(representation)}")
     if representation.lower() not in ['rotmat', 'quaternion']:
         raise ValueError(f"Given representation '{representation}' is NOT valid. Try 'rotmat', or 'quaternion'")
-    u = np.random.random((3, n))
+    u = np.random.default_rng().uniform(0.0, 1.0, (3, n) if n > 1 else 3)
     s1 = np.sqrt(1.0 - u[0])
     s2 = np.sqrt(u[0])
     t1 = 2.0 * np.pi * u[1]
