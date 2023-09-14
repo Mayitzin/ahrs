@@ -881,3 +881,19 @@ class WMM:
         'D': -9.73078560629778, 'GV': -9.73078560629778}
         """
         return {k: self.__dict__[k] for k in ['X', 'Y', 'Z', 'H', 'F', 'I', 'D', 'GV']}
+
+    @property
+    def geodetic_vector(self) -> np.ndarray:
+        """
+        Magnetic field vector in geodetic coordinates
+
+        The magnetic field vector is returned as a 3D vector in geodetic
+        coordinates.
+
+        Example
+        -------
+        >>> wmm = WMM(datetime.date(2017, 5, 12), latitude=10.0, longitude=-20.0, height=10.5)
+        >>> wmm.geodetic_vector
+        array([ 30499.64046961,  -5230.26715847,  -1716.63331136])
+        """
+        return np.array([self.X, self.Y, self.Z])
