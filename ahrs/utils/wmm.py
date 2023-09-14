@@ -299,8 +299,8 @@ class WMM:
     .. math::
         P_n^m(\\mu) = \\left\\{
         \\begin{array}{ll}
-            \\sqrt{2\\frac{(n-m)!}{(n+m)!}}P_{n, m}(\\mu) & \\mathrm{if} \; m > 0 \\\\
-            P_{n, m}(\\mu) & \\mathrm{if} \; m = 0
+            \\sqrt{2\\frac{(n-m)!}{(n+m)!}}P_{n, m}(\\mu) & \\mathrm{if} \\; m > 0 \\\\
+            P_{n, m}(\\mu) & \\mathrm{if} \\; m = 0
         \\end{array}
         \\right.
 
