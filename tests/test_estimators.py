@@ -72,36 +72,46 @@ def random_angvel(num_samples: int = 500, max_rotations: int = 4, num_axes: int 
 
 def random_angpos(num_samples: int = 500, max_positions: int = 4, num_axes: int = 3, span: list = None, **kwargs) -> np.ndarray:
     """
-    Random angular velocities
+    Random angular positions
 
-    Create an array of synthetic random angular velocities with reference to a
+    Create an array of synthetic random angular positions with reference to a
     local sensor coordinate frame.
+
+    These angular positions are "simulated" by creating a random number of
+    positions per axis, extend them for several samples, and then smoothing
+    them with a gaussian filter.
+
+    This creates smooth transitions between the different angular positions.
 
     Parameters
     ----------
     num_samples : int, default: 500
         Number of samples to generate. Set it to minimum 50, so that the
         gaussian filter can be applied.
-    max_rotations : int, default: 4
+    max_positions : int, default: 4
         Maximum number of rotations per axis.
     num_axes : int, default: 3
         Number of axes required.
-    span : list or tuple, default: None
+    span : list or tuple, default: [-pi/2, pi/2]
         Span (minimum to maximum) of the random values.
+
     Returns
     -------
-    angvels: np.ndarray
-        Array of angular velocities.
+    angular_positions: np.ndarray
+        M-by-3 Array of angular positions.
     """
     span = span if isinstance(span, (list, tuple)) else [-0.5*np.pi, 0.5*np.pi]
     all_angs = [np.random.uniform(span[0], span[1], np.random.randint(1, max_positions)) for _ in np.arange(num_axes)]
-    angvels = np.zeros((num_samples, num_axes))
+    angular_positions = np.zeros((num_samples, num_axes))
     for j, angs in enumerate(all_angs):
+        # Create angular positions per axis
         num_angs = len(angs)
         idxs = np.sort(np.random.randint(0, num_samples, 2*num_angs)).reshape((num_angs, 2))
         for i, idx in enumerate(idxs):
-            angvels[idx[0]:idx[1], j] = angs[i]
-    return __gaussian_filter(angvels, size=kwargs.pop('gauss_size', 50 if num_samples > 50 else num_samples//5), sigma=5)
+            # Extend each angular position for several samples
+            angular_positions[idx[0]:idx[1], j] = angs[i]
+    smoothed_angular_positions = __gaussian_filter(angular_positions, size=kwargs.pop('gauss_size', 50 if num_samples > 50 else num_samples//5), sigma=5)
+    return smoothed_angular_positions
 
 # Generate random attitudes
 NUM_SAMPLES = 500
