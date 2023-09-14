@@ -4,6 +4,22 @@ Class DCM
 
 .. autoclass:: ahrs.common.dcm.DCM
 
+**Attributes**
+
+.. toctree::
+    :maxdepth: 2
+    :titlesonly:
+
+    classDCM.I
+    classDCM.inv
+    classDCM.det
+    classDCM.determinant
+    classDCM.fro
+    classDCM.frobenius
+    classDCM.log
+    classDCM.adj
+    classDCM.adjugate
+
 **Methods**
 
 .. toctree::
