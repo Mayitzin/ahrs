@@ -3,10 +3,15 @@ import unittest
 import numpy as np
 import ahrs
 
+# Geomagnetic values
 wmm = ahrs.utils.WMM(latitude=ahrs.MUNICH_LATITUDE, longitude=ahrs.MUNICH_LONGITUDE, height=ahrs.MUNICH_HEIGHT)
 REFERENCE_MAGNETIC_VECTOR = wmm.geodetic_vector
+MAG_NOISE_STD_DEVIATION = np.linalg.norm(REFERENCE_MAGNETIC_VECTOR)/100.0
+
+# Gravitational values
 NORMAL_GRAVITY = ahrs.utils.WGS().normal_gravity(ahrs.MUNICH_LATITUDE, ahrs.MUNICH_HEIGHT*1000)
 REFERENCE_GRAVITY_VECTOR = np.array([0.0, 0.0, NORMAL_GRAVITY])
+ACC_NOISE_STD_DEVIATION = np.linalg.norm(REFERENCE_GRAVITY_VECTOR)/100.0
 
 def __gaussian_filter(in_array: np.ndarray, size: int = 10, sigma: float = 1.0) -> np.ndarray:
     """
@@ -139,11 +144,9 @@ def __centrifugal_force(angular_velocities: np.ndarray) -> np.ndarray:
 
 # Generate random attitudes
 NUM_SAMPLES = 500
-ANGULAR_VELOCITIES = random_angvel(num_samples=NUM_SAMPLES, span=(-np.pi, np.pi))
-REFERENCE_QUATERNIONS = ahrs.QuaternionArray(ahrs.filters.AngularRate(ANGULAR_VELOCITIES).Q)
+ANGULAR_POSITIONS = random_angpos(num_samples=NUM_SAMPLES, span=(-np.pi, np.pi), max_positions=20)
+REFERENCE_QUATERNIONS = ahrs.QuaternionArray(rpy=ANGULAR_POSITIONS)
 REFERENCE_ROTATIONS = REFERENCE_QUATERNIONS.to_DCM()
-ACC_NOISE_STD_DEVIATION = np.linalg.norm(REFERENCE_GRAVITY_VECTOR)/100.0
-MAG_NOISE_STD_DEVIATION = np.linalg.norm(REFERENCE_MAGNETIC_VECTOR)/100.0
 THRESHOLD = 8e-2
 
 class TestTRIAD(unittest.TestCase):
