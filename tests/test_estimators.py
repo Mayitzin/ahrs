@@ -113,6 +113,30 @@ def random_angpos(num_samples: int = 500, max_positions: int = 4, num_axes: int 
     smoothed_angular_positions = __gaussian_filter(angular_positions, size=kwargs.pop('gauss_size', 50 if num_samples > 50 else num_samples//5), sigma=5)
     return smoothed_angular_positions
 
+def __centrifugal_force(angular_velocities: np.ndarray) -> np.ndarray:
+    """
+    Centrifugal force (EXPERIMENTAL)
+
+    Compute the centrifugal force based on the angular velocities.
+
+    Parameters
+    ----------
+    angular_velocities : np.ndarray
+        Array of angular velocities.
+
+    Returns
+    -------
+    centrifugal_force : np.ndarray
+        Array of centrifugal forces.
+    """
+    Aa = np.zeros_like(angular_velocities)
+    Ab = np.zeros_like(angular_velocities)
+    Ac = np.zeros_like(angular_velocities)
+    Aa[:, 0] = angular_velocities[:, 0]
+    Ab[:, 1] = angular_velocities[:, 1]
+    Ac[:, 2] = angular_velocities[:, 2]
+    return np.c_[np.cross(Ab, Ac)[:, 0], np.cross(Aa, Ac)[:, 1], np.cross(Aa, Ab)[:, 2]]
+
 # Generate random attitudes
 NUM_SAMPLES = 500
 ANGULAR_VELOCITIES = random_angvel(num_samples=NUM_SAMPLES, span=(-np.pi, np.pi))
