@@ -144,10 +144,127 @@ def __centrifugal_force(angular_velocities: np.ndarray) -> np.ndarray:
 
 # Generate random attitudes
 NUM_SAMPLES = 500
+SAMPLING_FREQUENCY = 100.0
+NOISE_SIGMA = abs(np.random.standard_normal(3) * 0.1) * ahrs.RAD2DEG
 ANGULAR_POSITIONS = random_angpos(num_samples=NUM_SAMPLES, span=(-np.pi, np.pi), max_positions=20)
 REFERENCE_QUATERNIONS = ahrs.QuaternionArray(rpy=ANGULAR_POSITIONS)
 REFERENCE_ROTATIONS = REFERENCE_QUATERNIONS.to_DCM()
+
+# Other parameters
 THRESHOLD = 8e-2
+
+class Sensors:
+    """
+    Generate synthetic sensor data of a hypothetical strapdown inertial
+    navigation system.
+
+    It generates data of a 9-DOF IMU (3-axes gyroscope, 3-axes accelerometer,
+    and 3-axes magnetometer) from a given array of orientations as quaternions.
+
+    The accelerometer data is given as m/s^2, the gyroscope data as deg/s, and
+    the magnetometer data as nT.
+
+    If no quaternions are provided, it generates random angular positions and
+    computes the corresponding quaternions.
+
+    The sensor data can be accessed as attributes of the object. For example,
+    the gyroscope data can be accessed as ``sensors.gyroscopes``.
+
+    Parameters
+    ----------
+    quaternions : ahrs.QuaternionArray, default: None
+        Array of orientations as quaternions.
+    num_samples : int, default: 500
+        Number of samples to generate.
+    freq : float, default: 100.0
+        Sampling frequency, in Hz, of the data.
+    reference_gravitational_vector : np.ndarray, default: None
+        Reference gravitational vector. If None, it uses the default reference
+        gravitational vector of ``ahrs.utils.WGS()``.
+    reference_magnetic_vector : np.ndarray, default: None
+        Reference magnetic vector. If None, it uses the default reference
+        magnetic vector of ``ahrs.utils.WMM()``.
+    gyr_noise : float
+        Standard deviation of the gyroscope noise. If None given, it is
+        generated from a normal distribution with zero mean. It is then scaled
+        to be in the same units as the gyroscope data.
+    acc_noise : float
+        Standard deviation of the accelerometer noise. If None given, it is
+        generated from a normal distribution with zero mean. It is then scaled
+        to be in the same units as the accelerometer data.
+    mag_noise : float
+        Standard deviation of the magnetometer noise. If None given, it is
+        generated from a normal distribution with zero mean. It is then scaled
+        to be in the same units as the magnetometer data.
+
+    Examples
+    --------
+    >>> sensors = Sensors(num_samples=1000)
+    >>> sensors.gyroscopes.shape
+    (1000, 3)
+    >>> sensors.accelerometers.shape
+    (1000, 3)
+    >>> sensors.magnetometers.shape
+    (1000, 3)
+    >>> sensors.quaternions.shape
+    (1000, 4)
+
+
+    """
+    def __init__(self, quaternions: ahrs.QuaternionArray = None, num_samples: int = 500, freq: float = SAMPLING_FREQUENCY, **kwargs):
+        self.frequency = freq
+        # Orientations as quaternions
+        if quaternions is None:
+            self.num_samples = num_samples
+            # Generate orientations (angular positions)
+            self.ang_pos = random_angpos(num_samples=self.num_samples, span=(-np.pi, np.pi), max_positions=20)
+            self.quaternions = ahrs.QuaternionArray(rpy=self.ang_pos)
+            # Estimate angular velocities
+            self.ang_vel = self.angular_velocities(self.ang_pos, self.frequency)
+        else:
+            # Define angular positions and velocities
+            self.quaternions = ahrs.QuaternionArray(quaternions)
+            self.num_samples = self.quaternions.shape[0]
+            self.ang_pos = self.quaternions.to_angles()
+            self.ang_vel = np.r_[np.zeros((1, 3)), self.quaternions.angular_velocities(1/self.frequency)]
+        # Rotation Matrices
+        self.rotations = self.quaternions.to_DCM()
+        # Reference earth frames
+        self.reference_gravitational_vector = kwargs.get('reference_gravitational_vector', REFERENCE_GRAVITY_VECTOR)
+        self.reference_magnetic_vector = kwargs.get('reference_magnetic_vector', REFERENCE_MAGNETIC_VECTOR)
+        # Spectral noise density
+        self.gyr_noise = kwargs.get('gyr_noise', NOISE_SIGMA)
+        self.acc_noise = kwargs.get('acc_noise', ACC_NOISE_STD_DEVIATION)
+        self.mag_noise = kwargs.get('mag_noise', MAG_NOISE_STD_DEVIATION)
+        # Set empty arrays
+        self.gyroscopes = None
+        self.accelerometers = np.zeros((self.num_samples, 3))
+        self.magnetometers = np.zeros((self.num_samples, 3))
+        # Generate sensor data
+        self.generate(self.rotations)
+
+    def angular_velocities(self, angular_positions: np.ndarray, frequency: float) -> np.ndarray:
+        """Compute angular velocities"""
+        Qts = angular_positions if isinstance(angular_positions, ahrs.QuaternionArray) else ahrs.QuaternionArray(rpy=angular_positions)
+        angvels = Qts.angular_velocities(1/frequency)
+        return np.vstack((angvels[0], angvels))
+
+    def generate(self, rotations: np.ndarray) -> None:
+        """Compute synthetic data"""
+        # Angular velocities are measured, mostly in deg/s, in the local frame
+        self.gyroscopes = np.copy(self.ang_vel) * ahrs.RAD2DEG
+        # Accelerometers and magnetometers are measured w.r.t. global frame (inverse of the local frame)
+        for i in np.arange(self.num_samples):
+            self.accelerometers[i] = rotations[i].T @ self.reference_gravitational_vector
+            self.magnetometers[i] = rotations[i].T @ self.reference_magnetic_vector
+
+        # # Add centrifugal force based on cross product of angular velocities
+        # self.accelerometers -= __centrifugal_force(self.ang_vel)
+
+        # Add noise
+        self.gyroscopes += np.random.standard_normal((self.num_samples, 3)) * self.gyr_noise
+        self.accelerometers += np.random.standard_normal((self.num_samples, 3)) * self.acc_noise
+        self.magnetometers += np.random.standard_normal((self.num_samples, 3)) * self.mag_noise
 
 class TestTRIAD(unittest.TestCase):
     def setUp(self) -> None:
