@@ -13,6 +13,11 @@ NORMAL_GRAVITY = ahrs.utils.WGS().normal_gravity(ahrs.MUNICH_LATITUDE, ahrs.MUNI
 REFERENCE_GRAVITY_VECTOR = np.array([0.0, 0.0, NORMAL_GRAVITY])
 ACC_NOISE_STD_DEVIATION = np.linalg.norm(REFERENCE_GRAVITY_VECTOR)/100.0
 
+# Basic parameters
+NUM_SAMPLES = 1000
+SAMPLING_FREQUENCY = 100.0
+THRESHOLD = 8e-2
+
 def __gaussian_filter(in_array: np.ndarray, size: int = 10, sigma: float = 1.0) -> np.ndarray:
     """
     Gaussian filter over an array
@@ -142,17 +147,6 @@ def __centrifugal_force(angular_velocities: np.ndarray) -> np.ndarray:
     Ac[:, 2] = angular_velocities[:, 2]
     return np.c_[np.cross(Ab, Ac)[:, 0], np.cross(Aa, Ac)[:, 1], np.cross(Aa, Ab)[:, 2]]
 
-# Generate random attitudes
-NUM_SAMPLES = 500
-SAMPLING_FREQUENCY = 100.0
-NOISE_SIGMA = abs(np.random.standard_normal(3) * 0.1) * ahrs.RAD2DEG
-ANGULAR_POSITIONS = random_angpos(num_samples=NUM_SAMPLES, span=(-np.pi, np.pi), max_positions=20)
-REFERENCE_QUATERNIONS = ahrs.QuaternionArray(rpy=ANGULAR_POSITIONS)
-REFERENCE_ROTATIONS = REFERENCE_QUATERNIONS.to_DCM()
-
-# Other parameters
-THRESHOLD = 8e-2
-
 class Sensors:
     """
     Generate synthetic sensor data of a hypothetical strapdown inertial
@@ -265,6 +259,13 @@ class Sensors:
         self.gyroscopes += np.random.standard_normal((self.num_samples, 3)) * self.gyr_noise
         self.accelerometers += np.random.standard_normal((self.num_samples, 3)) * self.acc_noise
         self.magnetometers += np.random.standard_normal((self.num_samples, 3)) * self.mag_noise
+
+# Generate random attitudes
+NOISE_SIGMA = abs(np.random.standard_normal(3) * 0.1) * ahrs.RAD2DEG
+ANGULAR_POSITIONS = random_angpos(num_samples=NUM_SAMPLES, span=(-np.pi, np.pi), max_positions=20)
+REFERENCE_QUATERNIONS = ahrs.QuaternionArray(rpy=ANGULAR_POSITIONS)
+REFERENCE_ROTATIONS = REFERENCE_QUATERNIONS.to_DCM()
+SENSOR_DATA = Sensors(quaternions=REFERENCE_QUATERNIONS, freq=SAMPLING_FREQUENCY, gyr_noise=NOISE_SIGMA)
 
 class TestTRIAD(unittest.TestCase):
     def setUp(self) -> None:
@@ -612,17 +613,11 @@ class TestFQA(unittest.TestCase):
 class TestMadgwick(unittest.TestCase):
     def setUp(self) -> None:
         # Create random attitudes
-        num_samples = 1000
-        a_ref = REFERENCE_GRAVITY_VECTOR
-        m_ref = ahrs.common.frames.ned2enu(REFERENCE_MAGNETIC_VECTOR)
-        gyros = random_angvel(num_samples=num_samples, span=(-np.pi, np.pi))
-        self.Qts = ahrs.QuaternionArray(ahrs.filters.AngularRate(gyros).Q)
-        rotations = self.Qts.to_DCM()
-        # Add noise to reference vectors and rotate them by the random attitudes
-        self.noise_sigma = 1e-2
-        self.gyr = gyros + np.random.standard_normal((num_samples, 3)) * self.noise_sigma
-        self.Rg = np.array([R @ a_ref for R in rotations]) + np.random.standard_normal((num_samples, 3)) * self.noise_sigma
-        self.Rm = np.array([R @ m_ref for R in rotations]) + np.random.standard_normal((num_samples, 3)) * self.noise_sigma
+        self.Qts = REFERENCE_QUATERNIONS
+        self.gyr = SENSOR_DATA.gyroscopes
+        self.Rg = SENSOR_DATA.accelerometers
+        self.Rm = SENSOR_DATA.magnetometers
+        self.noise_sigma = np.nanmean(NOISE_SIGMA)
         self.gain = np.sqrt(3/4) * self.noise_sigma
 
     def test_imu(self):
