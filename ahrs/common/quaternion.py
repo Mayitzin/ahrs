@@ -849,7 +849,7 @@ class Quaternion(np.ndarray):
         """
         if self.is_versor():
             return self.conjugate
-        return self.conjugate / np.linalg.norm(self.q)
+        return self.conjugate / np.linalg.norm(self.A)
 
     @property
     def inv(self) -> np.ndarray:
