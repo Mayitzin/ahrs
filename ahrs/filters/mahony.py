@@ -529,8 +529,8 @@ class Mahony:
             v_a = R.T@np.array([0.0, 0.0, 1.0])     # Expected Earth's gravity
             # ECF
             omega_mes = np.cross(acc/a_norm, v_a)   # Cost function (eqs. 32c and 48a)
-            bDot = -self.k_I*omega_mes                   # Estimated change in Gyro bias
-            self.b += bDot * dt                          # Estimated Gyro bias (eq. 48c)
+            bDot = -self.k_I*omega_mes                   # Estimated change in Gyro bias (eqs.32b and 48c)
+            self.b += bDot * dt                          # Estimated Gyro bias
             Omega = Omega - self.b + self.k_P*omega_mes  # Gyro correction
         p = np.array([0.0, *Omega])
         qDot = 0.5*q_prod(q, p)                     # Rate of change of quaternion (eqs. 45 and 48b)
@@ -587,9 +587,9 @@ class Mahony:
             v_m /= np.linalg.norm(v_m)
             # ECF
             omega_mes = np.cross(a, v_a) + np.cross(m, v_m) # Cost function (eqs. 32c and 48a)
-            bDot = -self.k_I*omega_mes                   # Estimated change in Gyro bias
-            self.b += bDot * dt                          # Estimated Gyro bias (eq. 48c)
-            Omega = Omega - self.b + self.k_P*omega_mes  # Gyro correction
+            bDot = -self.k_I*omega_mes                   # Estimated change in Gyro bias (eqs.32b and 48c)
+            self.b += bDot * dt                          # Estimated Gyro bias
+            Omega = Omega - self.b + self.k_P*omega_mes  # Gyro correction (eq. 48b)
         p = np.array([0.0, *Omega])
         qDot = 0.5*q_prod(q, p)                     # Rate of change of quaternion (eqs. 45 and 48b)
         q += qDot*dt                                # Update orientation
