@@ -293,19 +293,19 @@ class Sensors:
 # Generate random attitudes
 NOISE_SIGMA = abs(np.random.standard_normal(3) * 0.1) * ahrs.RAD2DEG
 ANGULAR_POSITIONS = random_angpos(num_samples=NUM_SAMPLES, span=(-np.pi, np.pi), max_positions=20)
-REFERENCE_QUATERNIONS = ahrs.QuaternionArray(rpy=ANGULAR_POSITIONS)
-REFERENCE_ROTATIONS = REFERENCE_QUATERNIONS.to_DCM()
-SENSOR_DATA = Sensors(quaternions=REFERENCE_QUATERNIONS, freq=SAMPLING_FREQUENCY, gyr_noise=NOISE_SIGMA)
+SENSOR_DATA = Sensors(num_samples=1000, in_degrees=False)
+REFERENCE_QUATERNIONS = SENSOR_DATA.quaternions
+REFERENCE_ROTATIONS = SENSOR_DATA.rotations
 
 class TestTRIAD(unittest.TestCase):
     def setUp(self) -> None:
-        # Rotated reference vectors + noise
-        self.Rg = np.array([R @ REFERENCE_GRAVITY_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * ACC_NOISE_STD_DEVIATION
-        self.Rm = np.array([R @ REFERENCE_MAGNETIC_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * MAG_NOISE_STD_DEVIATION
+        self.accelerometers = np.copy(SENSOR_DATA.accelerometers)
+        self.magnetometers = np.copy(SENSOR_DATA.magnetometers)
 
     def test_multiple_values(self):
-        R2 = ahrs.filters.TRIAD(self.Rg, self.Rm, v1=REFERENCE_GRAVITY_VECTOR, v2=REFERENCE_MAGNETIC_VECTOR)
-        self.assertLess(np.nanmean(ahrs.utils.metrics.chordal(REFERENCE_ROTATIONS, R2.A)), 0.045)
+        triad = ahrs.filters.TRIAD(self.accelerometers, self.magnetometers, v1=REFERENCE_GRAVITY_VECTOR, v2=REFERENCE_MAGNETIC_VECTOR)
+        triad_rotations = np.transpose(triad.A, (0, 2, 1))
+        self.assertLess(np.nanmean(ahrs.utils.metrics.chordal(REFERENCE_ROTATIONS, triad_rotations)), THRESHOLD)
 
     def test_wrong_frame(self):
         self.assertRaises(TypeError, ahrs.filters.TRIAD, frame=1.0)
