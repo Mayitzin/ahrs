@@ -995,12 +995,12 @@ class EKF:
 
     """
     def __init__(self,
-        gyr: np.ndarray = None,
-        acc: np.ndarray = None,
-        mag: np.ndarray = None,
-        frequency: float = 100.0,
-        frame: str = 'NED',
-        **kwargs):
+            gyr: np.ndarray = None,
+            acc: np.ndarray = None,
+            mag: np.ndarray = None,
+            frequency: float = 100.0,
+            frame: str = 'NED',
+            **kwargs):
         self.gyr: np.ndarray = gyr
         self.acc: np.ndarray = acc
         self.mag: np.ndarray = mag
