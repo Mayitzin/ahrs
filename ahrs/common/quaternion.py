@@ -2103,7 +2103,7 @@ class QuaternionArray(np.ndarray):
             q = np.atleast_2d(random_attitudes(q))
 
         # Assert valid input
-        _assert_numerical_iterable(q, 'Quaternion Array')
+        _assert_iterables(q, 'Quaternion Array')
         q = np.array(q, dtype=float)
         if q.ndim != 2 or q.shape[-1] not in [3, 4]:
             raise ValueError(f"Expected array to have shape (N, 4) or (N, 3), got {q.shape}.")
