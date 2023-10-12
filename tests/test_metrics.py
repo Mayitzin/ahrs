@@ -16,8 +16,8 @@ class TestEuclidean(unittest.TestCase):
 
 class TestChordal(unittest.TestCase):
     def setUp(self):
-        self.R1 = ahrs.DCM(rpy=[10.0, -20.0, 30.0])
-        self.R2 = ahrs.DCM(rpy=[-10.0, 20.0, -30.0])
+        self.R1 = ahrs.DCM(rpy=np.array([10.0, -20.0, 30.0])*ahrs.DEG2RAD)
+        self.R2 = ahrs.DCM(rpy=np.array([-10.0, 20.0, -30.0])*ahrs.DEG2RAD)
 
     def test_correct_values(self):
         self.assertEqual(ahrs.utils.chordal(np.identity(3), np.identity(3)), 0.0)
@@ -36,8 +36,8 @@ class TestChordal(unittest.TestCase):
 
 class TestIdentityDeviation(unittest.TestCase):
     def setUp(self):
-        self.R1 = ahrs.DCM(rpy=[10.0, -20.0, 30.0])
-        self.R2 = ahrs.DCM(rpy=[-10.0, 20.0, -30.0])
+        self.R1 = ahrs.DCM(rpy=np.array([10.0, -20.0, 30.0])*ahrs.DEG2RAD)
+        self.R2 = ahrs.DCM(rpy=np.array([-10.0, 20.0, -30.0])*ahrs.DEG2RAD)
 
     def test_correct_values(self):
         self.assertEqual(ahrs.utils.identity_deviation(np.identity(3), np.identity(3)), 0.0)
@@ -56,8 +56,8 @@ class TestIdentityDeviation(unittest.TestCase):
 
 class TestAngularDistance(unittest.TestCase):
     def setUp(self):
-        self.R1 = ahrs.DCM(rpy=[10.0, -20.0, 30.0])
-        self.R2 = ahrs.DCM(rpy=[-10.0, 20.0, -30.0])
+        self.R1 = ahrs.DCM(rpy=np.array([10.0, -20.0, 30.0])*ahrs.DEG2RAD)
+        self.R2 = ahrs.DCM(rpy=np.array([-10.0, 20.0, -30.0])*ahrs.DEG2RAD)
 
     def test_correct_values(self):
         self.assertEqual(ahrs.utils.angular_distance(np.identity(3), np.identity(3)), 0.0)
