@@ -647,7 +647,7 @@ class DCM(np.ndarray):
         _assert_iterables(axis)
         if not isinstance(angle, (int, float)):
             raise ValueError(f"`angle` must be a float value. Got {type(angle)}")
-        axis /= np.linalg.norm(axis)
+        axis = axis / np.linalg.norm(axis)
         K = skew(axis)
         return np.identity(3) + np.sin(angle)*K + (1-np.cos(angle))*K@K
 
