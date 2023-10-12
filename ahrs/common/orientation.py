@@ -537,7 +537,7 @@ def q2euler(q: np.ndarray) -> np.ndarray:
     psi = np.arctan2( R_10, R_00)
     return np.array([phi, theta, psi])
 
-def rotation(ax: Union[str, int] = None, ang: float = 0.0) -> np.ndarray:
+def rotation(ax: Union[str, int] = None, ang: float = 0.0, degrees: bool = False) -> np.ndarray:
     """
     Return a Direction Cosine Matrix
 
@@ -575,8 +575,11 @@ def rotation(ax: Union[str, int] = None, ang: float = 0.0) -> np.ndarray:
     ax : string or int
         Axis to rotate around. Possible are `X`, `Y` or `Z` (upper- or
         lowercase) or the corresponding axis index 0, 1 or 2. Defaults to 'z'.
-    angle : float
-        Angle, in degrees, to rotate around. Default is 0.
+    angle : float, default: 0.0
+        Angle, in degrees, to rotate around.
+    degrees : bool, default: False
+        If True, the angle is given in degrees. Otherwise, it is given in
+        radians.
 
     Returns
     -------
@@ -635,8 +638,12 @@ def rotation(ax: Union[str, int] = None, ang: float = 0.0) -> np.ndarray:
     # Return 3-by-3 Identity matrix if invalid input
     if ax not in valid_axes:
         return I_3
+    # Set sin and cos values
+    ca, sa = np.cos(ang), np.sin(ang)
+    if degrees:
+        ca *= RAD2DEG
+        sa *= RAD2DEG
     # Compute rotation
-    ca, sa = cosd(ang), sind(ang)
     if ax.lower() == "x":
         return np.array([[1.0, 0.0, 0.0], [0.0, ca, -sa], [0.0, sa, ca]])
     if ax.lower() == "y":
@@ -644,7 +651,7 @@ def rotation(ax: Union[str, int] = None, ang: float = 0.0) -> np.ndarray:
     if ax.lower() == "z":
         return np.array([[ca, -sa, 0.0], [sa, ca, 0.0], [0.0, 0.0, 1.0]])
 
-def rot_seq(axes: Union[list, str] = None, angles: Union[list, float] = None) -> np.ndarray:
+def rot_seq(axes: Union[list, str] = None, angles: Union[list, float] = None, degrees: bool = False) -> np.ndarray:
     """
     Direction Cosine Matrix from set of axes and angles.
 
@@ -657,6 +664,8 @@ def rot_seq(axes: Union[list, str] = None, angles: Union[list, float] = None) ->
         List of rotation axes.
     angles : list of floats
         List of rotation angles.
+    degrees : bool, default: False
+        Angles are given in degrees. Otherwise, they are given in radians.
 
     Returns
     -------
@@ -705,7 +714,7 @@ def rot_seq(axes: Union[list, str] = None, angles: Union[list, float] = None) ->
     if set(axes).issubset(set(accepted_axes)):
         # Perform the matrix multiplications
         for i in range(num_rotations-1, -1, -1):
-            R = rotation(axes[i], angles[i])@R
+            R = rotation(axes[i], angles[i], degrees=degrees) @ R
     return R
 
 def dcm2quat(R: np.ndarray) -> np.ndarray:
