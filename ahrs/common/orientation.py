@@ -639,10 +639,9 @@ def rotation(ax: Union[str, int] = None, ang: float = 0.0, degrees: bool = False
     if ax not in valid_axes:
         return I_3
     # Set sin and cos values
-    ca, sa = np.cos(ang), np.sin(ang)
     if degrees:
-        ca *= RAD2DEG
-        sa *= RAD2DEG
+        ang = ang*DEG2RAD
+    ca, sa = np.cos(ang), np.sin(ang)
     # Compute rotation
     if ax.lower() == "x":
         return np.array([[1.0, 0.0, 0.0], [0.0, ca, -sa], [0.0, sa, ca]])
