@@ -351,6 +351,7 @@ from .orientation import sarabandi
 
 # Other useful functions
 from ..utils.core import get_nan_intervals
+from ..utils.core import _assert_numerical_iterable
 
 def _assert_iterables(item, item_name: str = 'iterable'):
     if not isinstance(item, (list, tuple, np.ndarray)):
@@ -2086,6 +2087,7 @@ class QuaternionArray(np.ndarray):
                      [ 0.1862619 , -0.38421818,  0.5260265 , -0.73551276]])
     """
     def __new__(subtype, q: np.ndarray = None, versors: bool = True, order: str = 'H', **kwargs):
+        # Create a quaternion from a parameter, if q is not given as first argument
         if q is None:
             if 'rpy' in kwargs:
                 q = QuaternionArray.from_rpy(QuaternionArray, kwargs.pop("rpy"))
@@ -2095,16 +2097,25 @@ class QuaternionArray(np.ndarray):
                 q = QuaternionArray.from_DCM(QuaternionArray, kwargs.pop("DCM"), inplace=False, **kwargs)
             else:
                 q = np.array([[1.0, 0.0, 0.0, 0.0]])
+
+        # Create N random quaternions, if an integer was given as first argument
         if isinstance(q, int):
             q = np.atleast_2d(random_attitudes(q))
+
+        # Assert valid input
         _assert_iterables(q, 'Quaternion Array')
         q = np.array(q, dtype=float)
         if q.ndim != 2 or q.shape[-1] not in [3, 4]:
             raise ValueError(f"Expected array to have shape (N, 4) or (N, 3), got {q.shape}.")
+
+        # Build pure quaternions if given as N-by-3 array
         if q.shape[-1] == 3:
             q = np.c_[np.zeros(q.shape[0]), q]
+
+        # Normalize quaternions if versors is True
         if versors:
             q /= np.linalg.norm(q, axis=1)[:, None]
+
         # Create the ndarray instance of type QuaternionArray. This will call
         # the standard ndarray constructor, but return an object of type
         # QuaternionArray.

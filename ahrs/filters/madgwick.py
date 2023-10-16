@@ -654,9 +654,9 @@ class Madgwick:
                 gradient = J.T@f                                    # (eq. 34)
                 gradient /= np.linalg.norm(gradient)
                 qDot -= self.gain*gradient                          # (eq. 33)
-        q += qDot*dt                                           # (eq. 13)
-        q /= np.linalg.norm(q)
-        return q
+        q_new = q + qDot*dt                                         # (eq. 13)
+        q_new /= np.linalg.norm(q_new)
+        return q_new
 
     def updateMARG(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, mag: np.ndarray, dt: float = None) -> np.ndarray:
         """
@@ -740,6 +740,6 @@ class Madgwick:
             gradient = J.T@f                                        # (eq. 34)
             gradient /= np.linalg.norm(gradient)
             qDot -= self.gain*gradient                              # (eq. 33)
-        q += qDot*dt                                                # (eq. 13)
-        q /= np.linalg.norm(q)
-        return q
+        q_new = q + qDot*dt                                         # (eq. 13)
+        q_new /= np.linalg.norm(q_new)
+        return q_new

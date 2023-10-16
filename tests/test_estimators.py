@@ -3,20 +3,20 @@ import unittest
 import numpy as np
 import ahrs
 
-# Geomagnetic values
-wmm = ahrs.utils.WMM(latitude=ahrs.MUNICH_LATITUDE, longitude=ahrs.MUNICH_LONGITUDE, height=ahrs.MUNICH_HEIGHT)
-REFERENCE_MAGNETIC_VECTOR = wmm.geodetic_vector
-MAG_NOISE_STD_DEVIATION = np.linalg.norm(REFERENCE_MAGNETIC_VECTOR)/100.0
-
-# Gravitational values
-NORMAL_GRAVITY = ahrs.utils.WGS().normal_gravity(ahrs.MUNICH_LATITUDE, ahrs.MUNICH_HEIGHT*1000)
-REFERENCE_GRAVITY_VECTOR = np.array([0.0, 0.0, NORMAL_GRAVITY])
-ACC_NOISE_STD_DEVIATION = np.linalg.norm(REFERENCE_GRAVITY_VECTOR)/100.0
-
 # Basic parameters
 NUM_SAMPLES = 1000
 SAMPLING_FREQUENCY = 100.0
 THRESHOLD = 8e-2
+
+# Geomagnetic values
+wmm = ahrs.utils.WMM(latitude=ahrs.MUNICH_LATITUDE, longitude=ahrs.MUNICH_LONGITUDE, height=ahrs.MUNICH_HEIGHT)
+REFERENCE_MAGNETIC_VECTOR = wmm.geodetic_vector
+MAG_NOISE_STD_DEVIATION = np.linalg.norm(REFERENCE_MAGNETIC_VECTOR) * 0.005
+
+# Gravitational values
+NORMAL_GRAVITY = ahrs.utils.WGS().normal_gravity(ahrs.MUNICH_LATITUDE, ahrs.MUNICH_HEIGHT*1000)
+REFERENCE_GRAVITY_VECTOR = np.array([0.0, 0.0, NORMAL_GRAVITY])
+ACC_NOISE_STD_DEVIATION = np.linalg.norm(REFERENCE_GRAVITY_VECTOR) * 0.01
 
 def __gaussian_filter(in_array: np.ndarray, size: int = 10, sigma: float = 1.0) -> np.ndarray:
     """
@@ -172,6 +172,11 @@ class Sensors:
         Number of samples to generate.
     freq : float, default: 100.0
         Sampling frequency, in Hz, of the data.
+    in_degrees : bool, default: True
+        If True, the gyroscope data is generated in degrees per second.
+        Otherwise in radians per second.
+    normalized_mag : bool, default: False
+        If True, the magnetometer data is normalized to unit norm.
     reference_gravitational_vector : np.ndarray, default: None
         Reference gravitational vector. If None, it uses the default reference
         gravitational vector of ``ahrs.utils.WGS()``.
@@ -203,10 +208,21 @@ class Sensors:
     >>> sensors.quaternions.shape
     (1000, 4)
 
-
     """
     def __init__(self, quaternions: ahrs.QuaternionArray = None, num_samples: int = 500, freq: float = SAMPLING_FREQUENCY, **kwargs):
         self.frequency = freq
+        self.in_degrees = kwargs.get('in_degrees', True)
+        self.normalized_mag = kwargs.get('normalized_mag', False)
+
+        # Reference earth frames
+        self.reference_gravitational_vector = kwargs.get('reference_gravitational_vector', REFERENCE_GRAVITY_VECTOR)
+        self.reference_magnetic_vector = kwargs.get('reference_magnetic_vector', REFERENCE_MAGNETIC_VECTOR)
+
+        # Spectral noise density
+        self.gyr_noise = kwargs.get('gyr_noise', NOISE_SIGMA)
+        self.acc_noise = kwargs.get('acc_noise', ACC_NOISE_STD_DEVIATION)
+        self.mag_noise = kwargs.get('mag_noise', MAG_NOISE_STD_DEVIATION)
+
         # Orientations as quaternions
         if quaternions is None:
             self.num_samples = num_samples
@@ -223,18 +239,16 @@ class Sensors:
             self.ang_vel = np.r_[np.zeros((1, 3)), self.quaternions.angular_velocities(1/self.frequency)]
         # Rotation Matrices
         self.rotations = self.quaternions.to_DCM()
-        # Reference earth frames
-        self.reference_gravitational_vector = kwargs.get('reference_gravitational_vector', REFERENCE_GRAVITY_VECTOR)
-        self.reference_magnetic_vector = kwargs.get('reference_magnetic_vector', REFERENCE_MAGNETIC_VECTOR)
-        # Spectral noise density
-        self.gyr_noise = kwargs.get('gyr_noise', NOISE_SIGMA)
-        self.acc_noise = kwargs.get('acc_noise', ACC_NOISE_STD_DEVIATION)
-        self.mag_noise = kwargs.get('mag_noise', MAG_NOISE_STD_DEVIATION)
+
         # Set empty arrays
         self.gyroscopes = None
         self.accelerometers = np.zeros((self.num_samples, 3))
         self.magnetometers = np.zeros((self.num_samples, 3))
-        # Generate sensor data
+        self.magnetometers_enu = np.zeros((self.num_samples, 3))
+        # Estimate Madgwick gain
+        self.noise_sigma = NOISE_SIGMA
+        self.gain = np.sqrt(3/4) * np.nanmean(self.noise_sigma)
+        # Generate MARG data
         self.generate(self.rotations)
 
     def angular_velocities(self, angular_positions: np.ndarray, frequency: float) -> np.ndarray:
@@ -245,37 +259,53 @@ class Sensors:
 
     def generate(self, rotations: np.ndarray) -> None:
         """Compute synthetic data"""
-        # Angular velocities are measured, mostly in deg/s, in the local frame
+        # Angular velocities measured in the local frame
         self.gyroscopes = np.copy(self.ang_vel) * ahrs.RAD2DEG
+        # Add gyro biases: uniform random constant biases within 1/200th of the full range of the gyroscopes
+        self.biases_gyroscopes = (np.random.default_rng().random(3)-0.5) * np.ptp(self.gyroscopes)/200
+        self.gyroscopes += self.biases_gyroscopes
+
         # Accelerometers and magnetometers are measured w.r.t. global frame (inverse of the local frame)
+        self.reference_magnetic_vector_enu = ahrs.common.frames.ned2enu(self.reference_magnetic_vector)
         for i in np.arange(self.num_samples):
             self.accelerometers[i] = rotations[i].T @ self.reference_gravitational_vector
             self.magnetometers[i] = rotations[i].T @ self.reference_magnetic_vector
+            self.magnetometers_enu[i] = rotations[i].T @ self.reference_magnetic_vector_enu
 
         # # Add centrifugal force based on cross product of angular velocities
         # self.accelerometers -= __centrifugal_force(self.ang_vel)
 
         # Add noise
+        if self.mag_noise < np.ptp(self.magnetometers):
+            self.mag_noise = np.linalg.norm(REFERENCE_MAGNETIC_VECTOR) * 0.005
         self.gyroscopes += np.random.standard_normal((self.num_samples, 3)) * self.gyr_noise
         self.accelerometers += np.random.standard_normal((self.num_samples, 3)) * self.acc_noise
         self.magnetometers += np.random.standard_normal((self.num_samples, 3)) * self.mag_noise
+        self.magnetometers_enu += np.random.standard_normal((self.num_samples, 3)) * self.mag_noise
+
+        if not self.in_degrees:
+            self.gyroscopes *= ahrs.DEG2RAD
+            self.biases_gyroscopes *= ahrs.DEG2RAD
+        if self.normalized_mag:
+            self.magnetometers /= np.linalg.norm(self.magnetometers, axis=1, keepdims=True)
+            self.magnetometers_enu /= np.linalg.norm(self.magnetometers_enu, axis=1, keepdims=True)
 
 # Generate random attitudes
 NOISE_SIGMA = abs(np.random.standard_normal(3) * 0.1) * ahrs.RAD2DEG
 ANGULAR_POSITIONS = random_angpos(num_samples=NUM_SAMPLES, span=(-np.pi, np.pi), max_positions=20)
-REFERENCE_QUATERNIONS = ahrs.QuaternionArray(rpy=ANGULAR_POSITIONS)
-REFERENCE_ROTATIONS = REFERENCE_QUATERNIONS.to_DCM()
-SENSOR_DATA = Sensors(quaternions=REFERENCE_QUATERNIONS, freq=SAMPLING_FREQUENCY, gyr_noise=NOISE_SIGMA)
+SENSOR_DATA = Sensors(num_samples=1000, in_degrees=False)
+REFERENCE_QUATERNIONS = SENSOR_DATA.quaternions
+REFERENCE_ROTATIONS = SENSOR_DATA.rotations
 
 class TestTRIAD(unittest.TestCase):
     def setUp(self) -> None:
-        # Rotated reference vectors + noise
-        self.Rg = np.array([R @ REFERENCE_GRAVITY_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * ACC_NOISE_STD_DEVIATION
-        self.Rm = np.array([R @ REFERENCE_MAGNETIC_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * MAG_NOISE_STD_DEVIATION
+        self.accelerometers = np.copy(SENSOR_DATA.accelerometers)
+        self.magnetometers = np.copy(SENSOR_DATA.magnetometers)
 
     def test_multiple_values(self):
-        R2 = ahrs.filters.TRIAD(self.Rg, self.Rm, v1=REFERENCE_GRAVITY_VECTOR, v2=REFERENCE_MAGNETIC_VECTOR)
-        self.assertLess(np.nanmean(ahrs.utils.metrics.chordal(REFERENCE_ROTATIONS, R2.A)), 0.045)
+        triad = ahrs.filters.TRIAD(self.accelerometers, self.magnetometers, v1=REFERENCE_GRAVITY_VECTOR, v2=REFERENCE_MAGNETIC_VECTOR)
+        triad_rotations = np.transpose(triad.A, (0, 2, 1))
+        self.assertLess(np.nanmean(ahrs.utils.metrics.chordal(REFERENCE_ROTATIONS, triad_rotations)), THRESHOLD)
 
     def test_wrong_frame(self):
         self.assertRaises(TypeError, ahrs.filters.TRIAD, frame=1.0)

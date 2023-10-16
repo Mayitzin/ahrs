@@ -81,7 +81,7 @@ References
 """
 
 import numpy as np
-from ..common.orientation import ecompass
+from . import OLEQ
 from ..common.mathfuncs import cosd
 from ..common.mathfuncs import sind
 from ..utils.core import _assert_numerical_iterable
@@ -247,7 +247,8 @@ class ROLEQ:
         if num_samples < 2:
             raise ValueError("ROLEQ needs at least 2 samples of each sensor")
         Q = np.zeros((num_samples, 4))
-        Q[0] = ecompass(-self.acc[0], self.mag[0], frame=self.frame, representation='quaternion') if self.q0 is None else self.q0
+        oleq = OLEQ(magnetic_ref=self.m_ref, frame=self.frame)
+        Q[0] = oleq.estimate(self.acc[0], self.mag[0]) if self.q0 is None else self.q0
         for t in range(1, num_samples):
             Q[t] = self.update(Q[t-1], self.gyr[t], self.acc[t], self.mag[t])
         return Q
