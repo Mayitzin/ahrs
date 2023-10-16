@@ -383,24 +383,22 @@ class TestSAAM(unittest.TestCase):
 
 class TestFAMC(unittest.TestCase):
     def setUp(self) -> None:
-        # Add noise to reference vectors and rotate them by the random attitudes
-        self.Rg = np.array([R.T @ REFERENCE_GRAVITY_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * ACC_NOISE_STD_DEVIATION
-        self.Rm = np.array([R.T @ REFERENCE_MAGNETIC_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * MAG_NOISE_STD_DEVIATION
-        self.threshold = THRESHOLD
+        self.accelerometers = np.copy(SENSOR_DATA.accelerometers)
+        self.magnetometers = np.copy(SENSOR_DATA.magnetometers)
 
     def test_single_values(self):
-        orientation = ahrs.filters.FAMC(self.Rg[0], self.Rm[0])
-        self.assertLess(ahrs.utils.metrics.qad(orientation.Q, REFERENCE_QUATERNIONS[0]), self.threshold*10)
+        quaternion_famc = ahrs.Quaternion(ahrs.filters.FAMC(self.accelerometers[0], self.magnetometers[0]).Q)
+        self.assertLess(ahrs.utils.metrics.qad(quaternion_famc, REFERENCE_QUATERNIONS[0]), THRESHOLD)
 
     def test_multiple_values(self):
-        orientation = ahrs.filters.FAMC(self.Rg, self.Rm)
-        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(orientation.Q, REFERENCE_QUATERNIONS)), self.threshold)
+        quaternions_famc = ahrs.QuaternionArray(ahrs.filters.FAMC(self.accelerometers, self.magnetometers).Q)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(quaternions_famc, REFERENCE_QUATERNIONS)), THRESHOLD)
 
     def test_wrong_input_vectors(self):
         self.assertRaises(TypeError, ahrs.filters.FAMC, acc=1.0, mag=2.0)
-        self.assertRaises(TypeError, ahrs.filters.FAMC, acc=self.Rg, mag=2.0)
-        self.assertRaises(TypeError, ahrs.filters.FAMC, acc=1.0, mag=self.Rm)
-        self.assertRaises(TypeError, ahrs.filters.FAMC, acc="self.Rg", mag="self.Rm")
+        self.assertRaises(TypeError, ahrs.filters.FAMC, acc=self.accelerometers, mag=2.0)
+        self.assertRaises(TypeError, ahrs.filters.FAMC, acc=1.0, mag=self.magnetometers)
+        self.assertRaises(TypeError, ahrs.filters.FAMC, acc="self.accelerometers", mag="self.magnetometers")
         self.assertRaises(TypeError, ahrs.filters.FAMC, acc=[1.0, 2.0, 3.0], mag=True)
         self.assertRaises(TypeError, ahrs.filters.FAMC, acc=True, mag=[1.0, 2.0, 3.0])
         self.assertRaises(ValueError, ahrs.filters.FAMC, acc=[1.0, 2.0], mag=[2.0, 3.0, 4.0])
@@ -413,7 +411,7 @@ class TestFAMC(unittest.TestCase):
         self.assertRaises(TypeError, ahrs.filters.FAMC, acc=[1.0, 2.0, 3.0], mag=['2.0', '3.0', '4.0'])
 
     def test_wrong_attribute_access(self):
-        self.assertRaises(AttributeError, getattr, ahrs.filters.FAMC(self.Rg[0], self.Rm[0]), 'A')
+        self.assertRaises(AttributeError, getattr, ahrs.filters.FAMC(self.accelerometers[0], self.magnetometers[0]), 'A')
 
 class TestFLAE(unittest.TestCase):
     def setUp(self) -> None:
