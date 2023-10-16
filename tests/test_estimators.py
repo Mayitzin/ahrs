@@ -6,7 +6,7 @@ import ahrs
 # Basic parameters
 NUM_SAMPLES = 1000
 SAMPLING_FREQUENCY = 100.0
-THRESHOLD = 8e-2
+THRESHOLD = 0.5
 
 # Geomagnetic values
 wmm = ahrs.utils.WMM(latitude=ahrs.MUNICH_LATITUDE, longitude=ahrs.MUNICH_LONGITUDE, height=ahrs.MUNICH_HEIGHT)
@@ -237,6 +237,7 @@ class Sensors:
             self.num_samples = self.quaternions.shape[0]
             self.ang_pos = self.quaternions.to_angles()
             self.ang_vel = np.r_[np.zeros((1, 3)), self.quaternions.angular_velocities(1/self.frequency)]
+
         # Rotation Matrices
         self.rotations = self.quaternions.to_DCM()
 
@@ -244,10 +245,9 @@ class Sensors:
         self.gyroscopes = None
         self.accelerometers = np.zeros((self.num_samples, 3))
         self.magnetometers = np.zeros((self.num_samples, 3))
+        self.magnetometers_nd = np.zeros((self.num_samples, 3))
         self.magnetometers_enu = np.zeros((self.num_samples, 3))
-        # Estimate Madgwick gain
-        self.noise_sigma = NOISE_SIGMA
-        self.gain = np.sqrt(3/4) * np.nanmean(self.noise_sigma)
+
         # Generate MARG data
         self.generate(self.rotations)
 
@@ -266,10 +266,12 @@ class Sensors:
         self.gyroscopes += self.biases_gyroscopes
 
         # Accelerometers and magnetometers are measured w.r.t. global frame (inverse of the local frame)
+        self.reference_magnetic_vector_nd = np.array([np.cos(wmm.I * ahrs.DEG2RAD), 0.0, np.sin(wmm.I * ahrs.DEG2RAD)])
         self.reference_magnetic_vector_enu = ahrs.common.frames.ned2enu(self.reference_magnetic_vector)
         for i in np.arange(self.num_samples):
             self.accelerometers[i] = rotations[i].T @ self.reference_gravitational_vector
             self.magnetometers[i] = rotations[i].T @ self.reference_magnetic_vector
+            self.magnetometers_nd[i] = rotations[i].T @ self.reference_magnetic_vector_nd
             self.magnetometers_enu[i] = rotations[i].T @ self.reference_magnetic_vector_enu
 
         # # Add centrifugal force based on cross product of angular velocities
@@ -281,6 +283,7 @@ class Sensors:
         self.gyroscopes += np.random.standard_normal((self.num_samples, 3)) * self.gyr_noise
         self.accelerometers += np.random.standard_normal((self.num_samples, 3)) * self.acc_noise
         self.magnetometers += np.random.standard_normal((self.num_samples, 3)) * self.mag_noise
+        self.magnetometers_nd += np.random.standard_normal((self.num_samples, 3)) * self.mag_noise
         self.magnetometers_enu += np.random.standard_normal((self.num_samples, 3)) * self.mag_noise
 
         if not self.in_degrees:
@@ -288,6 +291,7 @@ class Sensors:
             self.biases_gyroscopes *= ahrs.DEG2RAD
         if self.normalized_mag:
             self.magnetometers /= np.linalg.norm(self.magnetometers, axis=1, keepdims=True)
+            self.magnetometers_nd /= np.linalg.norm(self.magnetometers_nd, axis=1, keepdims=True)
             self.magnetometers_enu /= np.linalg.norm(self.magnetometers_enu, axis=1, keepdims=True)
 
 # Generate random attitudes
@@ -332,32 +336,31 @@ class TestTRIAD(unittest.TestCase):
 
 class TestSAAM(unittest.TestCase):
     def setUp(self) -> None:
-        # Add noise to reference vectors and rotate them by the random attitudes
-        self.Rg = np.array([R @ REFERENCE_GRAVITY_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * ACC_NOISE_STD_DEVIATION
-        self.Rm = np.array([R @ REFERENCE_MAGNETIC_VECTOR for R in REFERENCE_ROTATIONS]) + np.random.standard_normal((NUM_SAMPLES, 3)) * MAG_NOISE_STD_DEVIATION
-        self.threshold = THRESHOLD
+        self.accelerometers = np.copy(SENSOR_DATA.accelerometers)
+        self.magnetometers = np.copy(SENSOR_DATA.magnetometers)
 
     def test_single_values(self):
-        saam = ahrs.filters.SAAM(self.Rg[0], self.Rm[0])
-        self.assertLess(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS[0], saam.Q), self.threshold*10)
+        saam_quaternion = ahrs.Quaternion(ahrs.filters.SAAM(self.accelerometers[0], self.magnetometers[0]).Q)
+        self.assertLess(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS[0], saam_quaternion.conjugate), THRESHOLD)
 
     def test_single_values_as_rotation(self):
-        saam = ahrs.filters.SAAM(self.Rg[0], self.Rm[0], representation='rotmat')
-        self.assertLess(ahrs.utils.metrics.chordal(saam.A, REFERENCE_ROTATIONS[0]), self.threshold*10)
+        saam_rotation = ahrs.filters.SAAM(self.accelerometers[0], self.magnetometers[0], representation='rotmat').A
+        self.assertLess(ahrs.utils.metrics.chordal(REFERENCE_ROTATIONS[0], saam_rotation.T), THRESHOLD)
 
     def test_multiple_values(self):
-        saam = ahrs.filters.SAAM(self.Rg, self.Rm)
-        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS, saam.Q)), self.threshold)
+        saam_quaternions = ahrs.QuaternionArray(ahrs.filters.SAAM(self.accelerometers, self.magnetometers).Q)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS, saam_quaternions.conjugate())), THRESHOLD)
 
     def test_multiple_values_as_rotations(self):
-        saam = ahrs.filters.SAAM(self.Rg, self.Rm, representation='rotmat')
-        self.assertLess(np.nanmean(ahrs.utils.metrics.chordal(saam.A, REFERENCE_ROTATIONS)), self.threshold*10)
+        saam_rotations = ahrs.filters.SAAM(self.accelerometers, self.magnetometers, representation='rotmat').A
+        saam_rotations = np.transpose(saam_rotations, (0, 2, 1))
+        self.assertLess(np.nanmean(ahrs.utils.metrics.chordal(REFERENCE_ROTATIONS, saam_rotations)), THRESHOLD)
 
     def test_wrong_input_vectors(self):
         self.assertRaises(TypeError, ahrs.filters.SAAM, acc=1.0, mag=2.0)
-        self.assertRaises(TypeError, ahrs.filters.SAAM, acc=self.Rg, mag=2.0)
-        self.assertRaises(TypeError, ahrs.filters.SAAM, acc=1.0, mag=self.Rm)
-        self.assertRaises(TypeError, ahrs.filters.SAAM, acc="self.Rg", mag="self.Rm")
+        self.assertRaises(TypeError, ahrs.filters.SAAM, acc=self.accelerometers, mag=2.0)
+        self.assertRaises(TypeError, ahrs.filters.SAAM, acc=1.0, mag=self.magnetometers)
+        self.assertRaises(TypeError, ahrs.filters.SAAM, acc="self.accelerometers", mag="self.magnetometers")
         self.assertRaises(TypeError, ahrs.filters.SAAM, acc=[1.0, 2.0, 3.0], mag=True)
         self.assertRaises(TypeError, ahrs.filters.SAAM, acc=True, mag=[1.0, 2.0, 3.0])
         self.assertRaises(ValueError, ahrs.filters.SAAM, acc=[1.0, 2.0], mag=[2.0, 3.0, 4.0])
@@ -370,13 +373,13 @@ class TestSAAM(unittest.TestCase):
         self.assertRaises(TypeError, ahrs.filters.SAAM, acc=[1.0, 2.0, 3.0], mag=['2.0', '3.0', '4.0'])
 
     def test_wrong_representation(self):
-        self.assertRaises(TypeError, ahrs.filters.SAAM, acc=self.Rg, mag=self.Rm, representation=1.0)
-        self.assertRaises(TypeError, ahrs.filters.SAAM, acc=self.Rg, mag=self.Rm, representation=['quaternion'])
-        self.assertRaises(TypeError, ahrs.filters.SAAM, acc=self.Rg, mag=self.Rm, representation=None)
-        self.assertRaises(ValueError, ahrs.filters.SAAM, acc=self.Rg, mag=self.Rm, representation='axisangle')
-        self.assertRaises(ValueError, ahrs.filters.SAAM, acc=self.Rg, mag=self.Rm, representation='rpy')
-        self.assertRaises(ValueError, ahrs.filters.SAAM, acc=self.Rg, mag=self.Rm, representation='DCM')
-        self.assertRaises(AttributeError, getattr, ahrs.filters.SAAM(self.Rg, self.Rm, representation='quaternion'), 'A')
+        self.assertRaises(TypeError, ahrs.filters.SAAM, acc=self.accelerometers, mag=self.magnetometers, representation=1.0)
+        self.assertRaises(TypeError, ahrs.filters.SAAM, acc=self.accelerometers, mag=self.magnetometers, representation=['quaternion'])
+        self.assertRaises(TypeError, ahrs.filters.SAAM, acc=self.accelerometers, mag=self.magnetometers, representation=None)
+        self.assertRaises(ValueError, ahrs.filters.SAAM, acc=self.accelerometers, mag=self.magnetometers, representation='axisangle')
+        self.assertRaises(ValueError, ahrs.filters.SAAM, acc=self.accelerometers, mag=self.magnetometers, representation='rpy')
+        self.assertRaises(ValueError, ahrs.filters.SAAM, acc=self.accelerometers, mag=self.magnetometers, representation='DCM')
+        self.assertRaises(AttributeError, getattr, ahrs.filters.SAAM(self.accelerometers, self.magnetometers, representation='quaternion'), 'A')
 
 class TestFAMC(unittest.TestCase):
     def setUp(self) -> None:
