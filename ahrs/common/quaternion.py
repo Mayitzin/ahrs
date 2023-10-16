@@ -1444,39 +1444,48 @@ class Quaternion(np.ndarray):
 
         Examples
         --------
-        >>> p = Quaternion([0.55747131, 0.12956903, 0.5736954 , 0.58592763])
-
-        Can multiply with a given quaternion in vector form...
-
-        >>> p.product([0.49753507, 0.50806522, 0.52711628, 0.4652709])
-        array([-0.36348726,  0.38962514,  0.34188103,  0.77407146])
-
-        or with a Quaternion object...
-
-        >>> q = Quaternion([0.49753507, 0.50806522, 0.52711628, 0.4652709 ])
+        >>> p = Quaternion(random=True)
+        >>> p.view()
+        Quaternion([ 0.22091606,  0.94554179, -0.23723731,  0.02941561])
+        >>> q = Quaternion(random=True)
+        Quaternion([-0.12430979,  0.83988925, -0.39229689,  0.35388736])
         >>> p.product(q)
-        array([-0.36348726,  0.38962514,  0.34188103,  0.77407146])
+        array([-0.92508969, -0.0044107 , -0.3670832 , -0.09715728])
 
         It holds with the result after the cross and dot product definition
 
         >>> rw = p.w*q.w - np.dot(p.v, q.v)
         >>> rv = p.w*q.v + q.w*p.v + np.cross(p.v, q.v)
         >>> rw, rv
-        (-0.36348726, array([0.38962514,  0.34188103,  0.77407146]))
+        (-0.9250896906548645, array([-0.0044107 , -0.3670832 , -0.09715728]))
+
+        Can multiply with a normalized quaternion in an array ...
+
+        >>> p.product([-0.12430979, 0.83988925, -0.39229689, 0.35388736])
+        array([-0.92508969, -0.0044107 , -0.3670832 , -0.09715728])
+
+        but it ALSO MULTIPLIES with non-unitary quaternions (assumed to be
+        simple vectors with 4 elements in them.)
+
+        >>> r = np.random.random(4) * 10
+        >>> r.view()
+        array([8.48031045, 2.49690044, 5.78466679, 6.30034199])
+        >>> p.product(r)
+        array([ 0.69952346,  6.90525759, -6.61770901,  7.70330242])
+
+        The result of this latter operation does NOT yield a unitary
+        quaternion. Thus, the user must normalize the array, if a unitary
+        quaternion is desired.
 
         """
-        if isinstance(q, Quaternion):
-            qw, qx, qy, qz = q
-        elif isinstance(q, (np.ndarray, list, tuple)):
-            qw, qx, qy, qz = Quaternion(q)
-        else:
-            raise TypeError(f"q must be a Quaternion or an array, not {type(q)}")
+        _assert_numerical_iterable(q, 'q')
+        qw, qx, qy, qz = q
         pq = np.array([
             self.w*qw - self.x*qx - self.y*qy - self.z*qz,
             self.w*qx + self.x*qw + self.y*qz - self.z*qy,
             self.w*qy - self.x*qz + self.y*qw + self.z*qx,
             self.w*qz + self.x*qy - self.y*qx + self.z*qw])
-        return pq / np.linalg.norm(pq)
+        return pq
 
     def mult_L(self) -> np.ndarray:
         """
