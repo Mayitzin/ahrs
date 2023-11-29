@@ -512,9 +512,10 @@ class FLAE:
         t2 = -8*np.linalg.det(H.T)
         t3 = np.linalg.det(W)
         if method.lower() == 'newton':
-            lam = lam_old = 1.0
+            lam = 1.0
+            lam_old = 0.0
             i = 0
-            while abs(lam_old-lam) > 1e-8 or i <= 30:
+            while abs(lam_old-lam) > 1e-8 and i < 6:
                 lam_old = lam
                 f = lam**4 + t1*lam**2 + t2*lam + t3        # (eq. 48)
                 fp = 4*lam**3 + 2*t1*lam + t2               # (eq. 50)
