@@ -31,7 +31,7 @@ where :math:`\\mathrm{tr}` is the `trace <https://en.wikipedia.org/wiki/Trace_(l
 of a matrix, and :math:`\\mathbf{B}` is the **attitude profile matrix**:
 
 .. math::
-    \\mathbf{B} = \\sum_{i=1}^na_i\\hat{\\mathbf{W}}_i^T\\hat{\\mathbf{V}}_i
+    \\mathbf{B} = \\sum_{i=1}^na_i\\hat{\\mathbf{W}}_i\\hat{\\mathbf{V}}_i^T
 
 The quaternion :math:`\\bar{\\mathbf{q}}` representing a rotation is defined by
 Shuster as:
