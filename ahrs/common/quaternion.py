@@ -2116,6 +2116,9 @@ class QuaternionArray(np.ndarray):
         q = np.array(q, dtype=float)
         if q.ndim != 2 or q.shape[-1] not in [3, 4]:
             raise ValueError(f"Expected array to have shape (N, 4) or (N, 3), got {q.shape}.")
+        q_norm = np.linalg.norm(q, axis=1)
+        if sum(~(q_norm > 0)):
+            raise ValueError("Quaternion values must be non-zero.")
 
         # Build pure quaternions if given as N-by-3 array
         if q.shape[-1] == 3:
@@ -2123,7 +2126,7 @@ class QuaternionArray(np.ndarray):
 
         # Normalize quaternions if versors is True
         if versors:
-            q /= np.linalg.norm(q, axis=1)[:, None]
+            q = q / q_norm[:, None]
 
         # Create the ndarray instance of type QuaternionArray. This will call
         # the standard ndarray constructor, but return an object of type
