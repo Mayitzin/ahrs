@@ -380,7 +380,7 @@ import numpy as np
 from ..common.orientation import q_prod
 from ..common.orientation import q_conj
 from ..common.orientation import acc2q
-from ..common.orientation import am2q
+from ..common.orientation import ecompass
 from ..utils.core import _assert_numerical_iterable
 
 class Madgwick:
@@ -582,7 +582,7 @@ class Madgwick:
         self.mag = np.copy(self.mag)
         if self.mag.shape != self.gyr.shape:
             raise ValueError("mag and gyr are not the same size")
-        Q[0] = am2q(self.acc[0], self.mag[0]) if self.q0 is None else self.q0/np.linalg.norm(self.q0)
+        Q[0] = ecompass(self.acc[0], self.mag[0], frame='NED', representation='quaternion')
         for t in range(1, num_samples):
             Q[t] = self.updateMARG(Q[t-1], self.gyr[t], self.acc[t], self.mag[t])
         return Q
