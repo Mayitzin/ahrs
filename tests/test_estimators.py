@@ -626,7 +626,7 @@ class TestFQA(unittest.TestCase):
 
 class TestMadgwick(unittest.TestCase):
     def setUp(self) -> None:
-        # Create random attitudes
+        # Synthetic sensor data
         self.gyroscopes = np.copy(SENSOR_DATA.gyroscopes)
         self.accelerometers = np.copy(SENSOR_DATA.accelerometers)
         self.magnetometers = np.copy(SENSOR_DATA.magnetometers)
@@ -735,101 +735,94 @@ class TestMadgwick(unittest.TestCase):
 
 class TestMahony(unittest.TestCase):
     def setUp(self) -> None:
-        # Create random attitudes
-        num_samples = 1000
-        a_ref = REFERENCE_GRAVITY_VECTOR
-        m_ref = ahrs.common.frames.ned2enu(REFERENCE_MAGNETIC_VECTOR)
-        gyros = random_angvel(num_samples=num_samples, span=(-np.pi, np.pi))
-        self.Qts = ahrs.QuaternionArray(ahrs.filters.AngularRate(gyros).Q)
-        rotations = self.Qts.to_DCM()
-        # Add noise to reference vectors and rotate them by the random attitudes
-        self.noise_sigma = 1e-2
-        self.gyr = gyros + np.random.standard_normal((num_samples, 3)) * self.noise_sigma
-        self.Rg = np.array([R.T @ a_ref for R in rotations]) + np.random.standard_normal((num_samples, 3)) * self.noise_sigma
-        self.Rm = np.array([R.T @ m_ref for R in rotations]) + np.random.standard_normal((num_samples, 3)) * self.noise_sigma
+        # Synthetic sensor data
+        self.gyroscopes = np.copy(SENSOR_DATA.gyroscopes)
+        self.accelerometers = np.copy(SENSOR_DATA.accelerometers)
+        self.magnetometers = np.copy(SENSOR_DATA.magnetometers)
 
     def test_imu(self):
-        orientation = ahrs.filters.Mahony(gyr=self.gyr, acc=self.Rg)
-        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(self.Qts, orientation.Q)), THRESHOLD)
+        orientation = ahrs.QuaternionArray(ahrs.filters.Mahony(gyr=self.gyroscopes, acc=self.accelerometers).Q)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS, orientation)), THRESHOLD)
 
     def test_marg(self):
-        orientation = ahrs.filters.Mahony(gyr=self.gyr, acc=self.Rg, mag=self.Rm)
-        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(self.Qts, orientation.Q)), THRESHOLD)
+        orientation = ahrs.QuaternionArray(ahrs.filters.Mahony(gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers).Q)
+        orientation.rotate_by(orientation[0]*np.array([1.0, -1.0, -1.0, -1.0]), inplace=True)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS, orientation)), THRESHOLD)
 
     def test_wrong_input_vectors(self):
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=1.0, acc=self.Rg)
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr="self.gyr", acc=self.Rg)
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=True, acc=self.Rg)
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=1.0)
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc="self.Rg")
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=True)
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=1.0, mag=2.0)
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=2.0)
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=1.0, mag=self.Rm)
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc="self.Rg", mag="self.Rm")
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr[0], acc=self.Rg[0], mag=True)
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=True, mag=[1.0, 2.0, 3.0])
-        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyr[:2], acc=self.Rg, mag=self.Rm)
-        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyr, acc=[1.0, 2.0, 3.0])
-        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyr, acc=[1.0, 2.0], mag=[2.0, 3.0, 4.0])
-        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyr, acc=[1.0, 2.0, 3.0, 4.0], mag=[2.0, 3.0, 4.0, 5.0])
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=1.0, acc=self.accelerometers)
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr="self.gyroscopes", acc=self.accelerometers)
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=True, acc=self.accelerometers)
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=1.0)
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc="self.accelerometers")
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=True)
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=1.0, mag=2.0)
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=2.0)
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=1.0, mag=self.magnetometers)
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc="self.accelerometers", mag="self.magnetometers")
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes[0], acc=self.accelerometers[0], mag=True)
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=True, mag=[1.0, 2.0, 3.0])
+        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyroscopes[:2], acc=self.accelerometers, mag=self.magnetometers)
+        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=[1.0, 2.0, 3.0])
+        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=[1.0, 2.0], mag=[2.0, 3.0, 4.0])
+        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=[1.0, 2.0, 3.0, 4.0], mag=[2.0, 3.0, 4.0, 5.0])
 
     def test_wrong_input_vector_types(self):
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=['1.0', 2.0, 3.0], acc=self.Rg[0], mag=self.Rm[0])
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=['1.0', '2.0', '3.0'], acc=self.Rg[0], mag=self.Rm[0])
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr[0], acc=['1.0', 2.0, 3.0], mag=[2.0, 3.0, 4.0])
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr[0], acc=[1.0, 2.0, 3.0], mag=['2.0', 3.0, 4.0])
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr[0], acc=['1.0', '2.0', '3.0'], mag=[2.0, 3.0, 4.0])
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr[0], acc=[1.0, 2.0, 3.0], mag=['2.0', '3.0', '4.0'])
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=['1.0', 2.0, 3.0], acc=self.accelerometers[0], mag=self.magnetometers[0])
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=['1.0', '2.0', '3.0'], acc=self.accelerometers[0], mag=self.magnetometers[0])
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes[0], acc=['1.0', 2.0, 3.0], mag=[2.0, 3.0, 4.0])
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes[0], acc=[1.0, 2.0, 3.0], mag=['2.0', 3.0, 4.0])
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes[0], acc=['1.0', '2.0', '3.0'], mag=[2.0, 3.0, 4.0])
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes[0], acc=[1.0, 2.0, 3.0], mag=['2.0', '3.0', '4.0'])
 
     def test_wrong_input_frequency(self):
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, frequency="100.0")
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, frequency=[100.0])
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, frequency=(100.0,))
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, frequency=True)
-        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, frequency=0.0)
-        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, frequency=-100.0)
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, frequency="100.0")
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, frequency=[100.0])
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, frequency=(100.0,))
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, frequency=True)
+        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, frequency=0.0)
+        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, frequency=-100.0)
 
     def test_wrong_input_Dt(self):
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, Dt="0.01")
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, Dt=[0.01])
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, Dt=(0.01,))
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, Dt=True)
-        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, Dt=0.0)
-        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, Dt=-0.01)
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, Dt="0.01")
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, Dt=[0.01])
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, Dt=(0.01,))
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, Dt=True)
+        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, Dt=0.0)
+        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, Dt=-0.01)
 
     def test_wrong_input_kP(self):
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, k_P="0.01")
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, k_P=[0.01])
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, k_P=(0.01,))
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, k_P=True)
-        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, k_P=0.0)
-        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, k_P=-0.01)
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, k_P="0.01")
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, k_P=[0.01])
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, k_P=(0.01,))
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, k_P=True)
+        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, k_P=0.0)
+        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, k_P=-0.01)
 
     def test_wrong_input_kI(self):
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, k_I="0.01")
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, k_I=[0.01])
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, k_I=(0.01,))
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, k_I=True)
-        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, k_I=0.0)
-        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, k_I=-0.01)
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, k_I="0.01")
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, k_I=[0.01])
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, k_I=(0.01,))
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, k_I=True)
+        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, k_I=0.0)
+        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, k_I=-0.01)
 
     def test_wrong_initial_quaternion(self):
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, q0=1)
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, q0=1.0)
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, q0=True)
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, q0="[1.0, 0.0, 0.0, 0.0]")
-        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, q0=[1.0])
-        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, q0=[1.0, 0.0, 0.0])
-        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, q0=np.zeros(4))
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, q0=1)
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, q0=1.0)
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, q0=True)
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, q0="[1.0, 0.0, 0.0, 0.0]")
+        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, q0=[1.0])
+        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, q0=[1.0, 0.0, 0.0])
+        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, q0=np.zeros(4))
 
     def test_wrong_initial_bias(self):
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, b0=1)
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, b0=1.0)
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, b0=True)
-        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, b0="[0.0, 0.0, 0.0]")
-        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, b0=[0.0])
-        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyr, acc=self.Rg, mag=self.Rm, b0=np.zeros(4))
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, b0=1)
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, b0=1.0)
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, b0=True)
+        self.assertRaises(TypeError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, b0="[0.0, 0.0, 0.0]")
+        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, b0=[0.0])
+        self.assertRaises(ValueError, ahrs.filters.Mahony, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, b0=np.zeros(4))
 
 class TestFourati(unittest.TestCase):
     def setUp(self) -> None:
