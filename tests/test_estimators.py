@@ -1156,38 +1156,31 @@ class TestComplementary(unittest.TestCase):
 
 class TestOLEQ(unittest.TestCase):
     def setUp(self) -> None:
-        # Create random attitudes
-        num_samples = 1000
-        a_ref = -REFERENCE_GRAVITY_VECTOR
-        m_ref = np.array([ahrs.common.mathfuncs.sind(wmm.I), 0.0, ahrs.common.mathfuncs.cosd(wmm.I)])
-        gyros = random_angvel(num_samples=num_samples, span=(-np.pi, np.pi))
-        self.Qts = ahrs.QuaternionArray(ahrs.filters.AngularRate(gyros).Q)
-        rotations = self.Qts.to_DCM()
-        # Add noise to reference vectors and rotate them by the random attitudes
-        self.noise_sigma = 1e-2
-        self.Rg = np.array([R.T @ a_ref for R in rotations]) + np.random.standard_normal((num_samples, 3)) * self.noise_sigma
-        self.Rm = np.array([R.T @ m_ref for R in rotations]) + np.random.standard_normal((num_samples, 3)) * self.noise_sigma
+        # Synthetic sensor data
+        self.accelerometers = np.copy(SENSOR_DATA.accelerometers)
+        self.magnetometers = np.copy(SENSOR_DATA.magnetometers)
 
     def test_estimation(self):
-        orientation = ahrs.filters.OLEQ(acc=self.Rg, mag=self.Rm)
-        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(self.Qts, orientation.Q)), self.noise_sigma*10.0)
+        orientation = ahrs.QuaternionArray(ahrs.filters.OLEQ(acc=self.accelerometers, mag=self.magnetometers).Q)
+        orientation.rotate_by(orientation[0]*np.array([1.0, -1.0, -1.0, -1.0]), inplace=True)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS, orientation)), THRESHOLD)
 
     def test_wrong_input_vectors(self):
         self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=1.0)
-        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc="self.Rg")
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc="self.accelerometers")
         self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=True)
         self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=1.0, mag=2.0)
-        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.Rg, mag=2.0)
-        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=1.0, mag=self.Rm)
-        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc="self.Rg", mag="self.Rm")
-        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.Rg[0], mag=True)
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.accelerometers, mag=2.0)
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=1.0, mag=self.magnetometers)
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc="self.accelerometers", mag="self.magnetometers")
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.accelerometers[0], mag=True)
         self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=True, mag=[1.0, 2.0, 3.0])
         self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=[1.0, 2.0, 3.0])
         self.assertRaises(ValueError, ahrs.filters.OLEQ, mag=[2.0, 3.0, 4.0])
         self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=[1.0, 2.0], mag=[2.0, 3.0, 4.0])
         self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=[1.0, 2.0, 3.0, 4.0], mag=[2.0, 3.0, 4.0, 5.0])
-        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=np.zeros(3), mag=self.Rm)
-        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.Rg, mag=np.zeros(3))
+        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=np.zeros(3), mag=self.magnetometers)
+        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.accelerometers, mag=np.zeros(3))
 
     def test_wrong_input_vector_types(self):
         self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=['1.0', 2.0, 3.0], mag=[2.0, 3.0, 4.0])
@@ -1196,139 +1189,144 @@ class TestOLEQ(unittest.TestCase):
         self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=[1.0, 2.0, 3.0], mag=['2.0', '3.0', '4.0'])
 
     def test_wrong_magnetic_reference(self):
-        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, magnetic_ref='34.5')
-        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, magnetic_ref=False)
-        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, magnetic_ref=['34.5'])
-        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, magnetic_ref=('34.5',))
-        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, magnetic_ref=[1.0, 2.0])
-        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, magnetic_ref=[0.0, 0.0, 0.0])
-        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, magnetic_ref=[[1.0], [2.0], [3.0]])
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.accelerometers, mag=self.magnetometers, magnetic_ref='34.5')
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.accelerometers, mag=self.magnetometers, magnetic_ref=False)
+        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.accelerometers, mag=self.magnetometers, magnetic_ref=['34.5'])
+        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.accelerometers, mag=self.magnetometers, magnetic_ref=('34.5',))
+        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.accelerometers, mag=self.magnetometers, magnetic_ref=[1.0, 2.0])
+        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.accelerometers, mag=self.magnetometers, magnetic_ref=[0.0, 0.0, 0.0])
+        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.accelerometers, mag=self.magnetometers, magnetic_ref=[[1.0], [2.0], [3.0]])
 
     def test_wrong_input_frame(self):
-        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, frame=1)
-        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, frame=1.0)
-        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, frame=True)
-        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, frame=['NED'])
-        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, frame=('NED',))
-        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, frame='NWU')
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.accelerometers, mag=self.magnetometers, frame=1)
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.accelerometers, mag=self.magnetometers, frame=1.0)
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.accelerometers, mag=self.magnetometers, frame=True)
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.accelerometers, mag=self.magnetometers, frame=['NED'])
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.accelerometers, mag=self.magnetometers, frame=('NED',))
+        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.accelerometers, mag=self.magnetometers, frame='NWU')
 
     def test_wrong_weights(self):
-        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, weights=1)
-        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, weights=1.0)
-        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, weights=True)
-        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, weights="[1.0, 1.0]")
-        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, weights=['1.0', '1.0'])
-        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, weights=['1.0', 1.0])
-        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, weights=[1.0, '1.0'])
-        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, weights=[[1.0], [1.0]])
-        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, weights=[[1.0, 1.0]])
-        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, weights=[1.0])
-        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, weights=[0.5, -0.5])
-        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, weights=[0.0, 0.0])
-        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.Rg, mag=self.Rm, weights=np.zeros(4))
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.accelerometers, mag=self.magnetometers, weights=1)
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.accelerometers, mag=self.magnetometers, weights=1.0)
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.accelerometers, mag=self.magnetometers, weights=True)
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.accelerometers, mag=self.magnetometers, weights="[1.0, 1.0]")
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.accelerometers, mag=self.magnetometers, weights=['1.0', '1.0'])
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.accelerometers, mag=self.magnetometers, weights=['1.0', 1.0])
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.accelerometers, mag=self.magnetometers, weights=[1.0, '1.0'])
+        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.accelerometers, mag=self.magnetometers, weights=[[1.0], [1.0]])
+        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.accelerometers, mag=self.magnetometers, weights=[[1.0, 1.0]])
+        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.accelerometers, mag=self.magnetometers, weights=[1.0])
+        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.accelerometers, mag=self.magnetometers, weights=[0.5, -0.5])
+        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.accelerometers, mag=self.magnetometers, weights=[0.0, 0.0])
+        self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.accelerometers, mag=self.magnetometers, weights=np.zeros(4))
 
 class TestROLEQ(unittest.TestCase):
     def setUp(self) -> None:
-        # Create random attitudes
-        num_samples = 1000
-        a_ref = -REFERENCE_GRAVITY_VECTOR
-        m_ref = np.array([ahrs.common.mathfuncs.sind(wmm.I), 0.0, ahrs.common.mathfuncs.cosd(wmm.I)])
-        gyros = random_angvel(num_samples=num_samples, span=(-np.pi, np.pi))
-        self.Qts = ahrs.QuaternionArray(ahrs.filters.AngularRate(gyros).Q)
-        rotations = self.Qts.to_DCM()
-        # Add noise to reference vectors and rotate them by the random attitudes
-        self.noise_sigma = 1e-2
-        self.gyros = gyros + np.random.standard_normal((num_samples, 3)) * self.noise_sigma
-        self.Rg = np.array([R.T @ a_ref for R in rotations]) + np.random.standard_normal((num_samples, 3)) * self.noise_sigma
-        self.Rm = np.array([R.T @ m_ref for R in rotations]) + np.random.standard_normal((num_samples, 3)) * self.noise_sigma
+        # # Create random attitudes
+        # num_samples = 1000
+        # a_ref = -REFERENCE_GRAVITY_VECTOR
+        # m_ref = np.array([ahrs.common.mathfuncs.sind(wmm.I), 0.0, ahrs.common.mathfuncs.cosd(wmm.I)])
+        # gyros = random_angvel(num_samples=num_samples, span=(-np.pi, np.pi))
+        # self.Qts = ahrs.QuaternionArray(ahrs.filters.AngularRate(gyros).Q)
+        # rotations = self.Qts.to_DCM()
+        # # Add noise to reference vectors and rotate them by the random attitudes
+        # self.noise_sigma = 1e-2
+        # self.gyros = gyros + np.random.standard_normal((num_samples, 3)) * self.noise_sigma
+        # self.Rg = np.array([R.T @ a_ref for R in rotations]) + np.random.standard_normal((num_samples, 3)) * self.noise_sigma
+        # self.Rm = np.array([R.T @ m_ref for R in rotations]) + np.random.standard_normal((num_samples, 3)) * self.noise_sigma
+        # Synthetic sensor data
+        self.gyroscopes = np.copy(SENSOR_DATA.gyroscopes)
+        self.accelerometers = np.copy(SENSOR_DATA.accelerometers)
+        self.magnetometers = np.copy(SENSOR_DATA.magnetometers)
 
     def test_estimation(self):
-        orientation = ahrs.filters.ROLEQ(gyr=self.gyros, acc=self.Rg, mag=self.Rm)
-        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(self.Qts, orientation.Q)), self.noise_sigma*10.0)
+        orientation = ahrs.QuaternionArray(ahrs.filters.ROLEQ(gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers).Q)
+        orientation.rotate_by(orientation[0]*np.array([1.0, -1.0, -1.0, -1.0]), inplace=True)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS, orientation)), THRESHOLD)
 
     def test_wrong_input_vectors(self):
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=1.0)
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc="self.Rg")
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=True)
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=1.0, mag=2.0)
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=2.0)
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=1.0, mag=self.Rm)
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc="self.Rg", mag="self.Rm")
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg[0], mag=True)
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=True, mag=[1.0, 2.0, 3.0])
-        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=[1.0, 2.0, 3.0])
-        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyros, mag=[2.0, 3.0, 4.0])
-        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=[1.0, 2.0], mag=[2.0, 3.0, 4.0])
-        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=[1.0, 2.0, 3.0, 4.0], mag=[2.0, 3.0, 4.0, 5.0])
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=1.0)
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc="self.accelerometers")
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=True)
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=1.0, mag=2.0)
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=2.0)
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=1.0, mag=self.magnetometers)
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc="self.accelerometers", mag="self.magnetometers")
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers[0], mag=True)
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=True, mag=[1.0, 2.0, 3.0])
+        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=[1.0, 2.0, 3.0])
+        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, mag=[2.0, 3.0, 4.0])
+        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=[1.0, 2.0], mag=[2.0, 3.0, 4.0])
+        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=[1.0, 2.0, 3.0, 4.0], mag=[2.0, 3.0, 4.0, 5.0])
 
     def test_wrong_input_vector_types(self):
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=['1.0', 2.0, 3.0], acc=self.Rg[0], mag=self.Rm[0])
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=['1.0', '2.0', '3.0'], acc=self.Rg[0], mag=self.Rm[0])
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros[0], acc=['1.0', 2.0, 3.0], mag=[2.0, 3.0, 4.0])
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros[0], acc=[1.0, 2.0, 3.0], mag=['2.0', 3.0, 4.0])
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros[0], acc=['1.0', '2.0', '3.0'], mag=[2.0, 3.0, 4.0])
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros[0], acc=[1.0, 2.0, 3.0], mag=['2.0', '3.0', '4.0'])
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros[0], acc=self.Rg[0], mag=self.Rm[0], q0=['1.0', '0.0', '0.0', '0.0'])
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros[0], acc=self.Rg[0], mag=self.Rm[0], q0=['1.0', 0.0, 0.0, 0.0])
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=['1.0', 2.0, 3.0], acc=self.accelerometers[0], mag=self.magnetometers[0])
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=['1.0', '2.0', '3.0'], acc=self.accelerometers[0], mag=self.magnetometers[0])
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes[0], acc=['1.0', 2.0, 3.0], mag=[2.0, 3.0, 4.0])
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes[0], acc=[1.0, 2.0, 3.0], mag=['2.0', 3.0, 4.0])
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes[0], acc=['1.0', '2.0', '3.0'], mag=[2.0, 3.0, 4.0])
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes[0], acc=[1.0, 2.0, 3.0], mag=['2.0', '3.0', '4.0'])
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes[0], acc=self.accelerometers[0], mag=self.magnetometers[0], q0=['1.0', '0.0', '0.0', '0.0'])
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes[0], acc=self.accelerometers[0], mag=self.magnetometers[0], q0=['1.0', 0.0, 0.0, 0.0])
 
     def test_wrong_magnetic_reference(self):
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, magnetic_ref='34.5')
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, magnetic_ref=False)
-        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, magnetic_ref=['34.5'])
-        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, magnetic_ref=('34.5',))
-        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, magnetic_ref=[1.0, 2.0])
-        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, magnetic_ref=[0.0, 0.0, 0.0])
-        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, magnetic_ref=[[1.0], [2.0], [3.0]])
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, magnetic_ref='34.5')
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, magnetic_ref=False)
+        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, magnetic_ref=['34.5'])
+        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, magnetic_ref=('34.5',))
+        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, magnetic_ref=[1.0, 2.0])
+        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, magnetic_ref=[0.0, 0.0, 0.0])
+        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, magnetic_ref=[[1.0], [2.0], [3.0]])
 
     def test_wrong_input_frame(self):
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, frame=1)
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, frame=1.0)
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, frame=True)
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, frame=['NED'])
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, frame=('NED',))
-        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, frame='NWU')
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, frame=1)
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, frame=1.0)
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, frame=True)
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, frame=['NED'])
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, frame=('NED',))
+        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, frame='NWU')
 
     def test_wrong_weights(self):
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, weights=1)
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, weights=1.0)
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, weights=True)
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, weights="[1.0, 1.0]")
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, weights=['1.0', '1.0'])
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, weights=['1.0', 1.0])
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, weights=[1.0, '1.0'])
-        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, weights=[[1.0], [1.0]])
-        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, weights=[[1.0, 1.0]])
-        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, weights=[1.0])
-        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, weights=[0.5, -0.5])
-        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, weights=[0.0, 0.0])
-        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, weights=np.zeros(4))
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, weights=1)
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, weights=1.0)
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, weights=True)
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, weights="[1.0, 1.0]")
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, weights=['1.0', '1.0'])
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, weights=['1.0', 1.0])
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, weights=[1.0, '1.0'])
+        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, weights=[[1.0], [1.0]])
+        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, weights=[[1.0, 1.0]])
+        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, weights=[1.0])
+        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, weights=[0.5, -0.5])
+        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, weights=[0.0, 0.0])
+        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, weights=np.zeros(4))
 
     def test_wrong_input_frequency(self):
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, frequency="100.0")
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, frequency=[100.0])
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, frequency=(100.0,))
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, frequency=True)
-        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, frequency=0.0)
-        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, frequency=-100.0)
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, frequency="100.0")
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, frequency=[100.0])
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, frequency=(100.0,))
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, frequency=True)
+        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, frequency=0.0)
+        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, frequency=-100.0)
 
     def test_wrong_input_Dt(self):
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, Dt="0.01")
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, Dt=[0.01])
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, Dt=(0.01,))
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, Dt=True)
-        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, Dt=0.0)
-        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, Dt=-0.01)
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, Dt="0.01")
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, Dt=[0.01])
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, Dt=(0.01,))
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, Dt=True)
+        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, Dt=0.0)
+        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, Dt=-0.01)
 
     def test_wrong_initial_quaternion(self):
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, q0=1)
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, q0=1.0)
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, q0=True)
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, q0="[1.0, 0.0, 0.0, 0.0]")
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, q0=['1.0', '0.0', '0.0', '0.0'])
-        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, q0=['1.0', 0.0, 0.0, 0.0])
-        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, q0=[1.0])
-        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, q0=[1.0, 0.0, 0.0])
-        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyros, acc=self.Rg, mag=self.Rm, q0=np.zeros(4))
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, q0=1)
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, q0=1.0)
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, q0=True)
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, q0="[1.0, 0.0, 0.0, 0.0]")
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, q0=['1.0', '0.0', '0.0', '0.0'])
+        self.assertRaises(TypeError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, q0=['1.0', 0.0, 0.0, 0.0])
+        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, q0=[1.0])
+        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, q0=[1.0, 0.0, 0.0])
+        self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, q0=np.zeros(4))
 
 if __name__ == '__main__':
     unittest.main()
