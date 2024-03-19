@@ -1008,41 +1008,28 @@ class TestEKF(unittest.TestCase):
 
 class TestTilt(unittest.TestCase):
     def setUp(self) -> None:
-        # Create random attitudes
-        num_samples = 1000
-        a_ref = REFERENCE_GRAVITY_VECTOR
-        m_ref = REFERENCE_MAGNETIC_VECTOR
-        gyros = random_angvel(num_samples=num_samples, span=(-np.pi, np.pi))
-        self.Qts = ahrs.QuaternionArray(ahrs.filters.AngularRate(gyros).Q)
-        rotations = self.Qts.to_DCM()
-        # Add noise to reference vectors and rotate them by the random attitudes
-        self.noise_sigma = 1e-2
-        self.gyr = gyros + np.random.standard_normal((num_samples, 3)) * self.noise_sigma
-        self.Rg = np.array([R.T @ a_ref for R in rotations]) + np.random.standard_normal((num_samples, 3)) * self.noise_sigma
-        self.Rm = np.array([R.T @ m_ref for R in rotations]) + np.random.standard_normal((num_samples, 3)) * self.noise_sigma
+        # Synthetic sensor data
+        self.accelerometers = np.copy(SENSOR_DATA.accelerometers)
+        self.magnetometers = np.copy(SENSOR_DATA.magnetometers)
 
-    def test_acc_mag_single_sample(self):
-        orientation = ahrs.filters.Tilt(acc=self.Rg[0], mag=self.Rm[0])
-        self.assertLess(ahrs.utils.metrics.qad(self.Qts[0], orientation.Q), self.noise_sigma*10.0)
-
-    def test_acc_mag_multiple_samples(self):
-        orientation = ahrs.filters.Tilt(acc=self.Rg, mag=self.Rm)
-        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(self.Qts, orientation.Q)), self.noise_sigma*10.0)
+    def test_acc_mag(self):
+        orientation = ahrs.QuaternionArray(ahrs.filters.Tilt(acc=self.accelerometers, mag=self.magnetometers).Q)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS, orientation)), THRESHOLD)
 
     def test_wrong_input_vectors(self):
         self.assertRaises(TypeError, ahrs.filters.Tilt, acc=1.0)
-        self.assertRaises(TypeError, ahrs.filters.Tilt, acc="self.Rg")
+        self.assertRaises(TypeError, ahrs.filters.Tilt, acc="self.accelerometers")
         self.assertRaises(TypeError, ahrs.filters.Tilt, acc=True)
         self.assertRaises(TypeError, ahrs.filters.Tilt, acc=1.0, mag=2.0)
-        self.assertRaises(TypeError, ahrs.filters.Tilt, acc=self.Rg, mag=2.0)
-        self.assertRaises(TypeError, ahrs.filters.Tilt, acc=1.0, mag=self.Rm)
-        self.assertRaises(TypeError, ahrs.filters.Tilt, acc="self.Rg", mag="self.Rm")
-        self.assertRaises(TypeError, ahrs.filters.Tilt, acc=self.Rg[0], mag=True)
+        self.assertRaises(TypeError, ahrs.filters.Tilt, acc=self.accelerometers, mag=2.0)
+        self.assertRaises(TypeError, ahrs.filters.Tilt, acc=1.0, mag=self.magnetometers)
+        self.assertRaises(TypeError, ahrs.filters.Tilt, acc="self.accelerometers", mag="self.magnetometers")
+        self.assertRaises(TypeError, ahrs.filters.Tilt, acc=self.accelerometers[0], mag=True)
         self.assertRaises(TypeError, ahrs.filters.Tilt, acc=True, mag=[1.0, 2.0, 3.0])
         self.assertRaises(ValueError, ahrs.filters.Tilt, acc=[1.0, 2.0], mag=[2.0, 3.0, 4.0])
         self.assertRaises(ValueError, ahrs.filters.Tilt, acc=[1.0, 2.0, 3.0, 4.0], mag=[2.0, 3.0, 4.0, 5.0])
-        self.assertRaises(ValueError, ahrs.filters.Tilt, acc=np.zeros(3), mag=self.Rm[0])
-        self.assertRaises(ValueError, ahrs.filters.Tilt, acc=self.Rg[0], mag=np.zeros(3))
+        self.assertRaises(ValueError, ahrs.filters.Tilt, acc=np.zeros(3), mag=self.magnetometers[0])
+        self.assertRaises(ValueError, ahrs.filters.Tilt, acc=self.accelerometers[0], mag=np.zeros(3))
 
     def test_wrong_input_vector_types(self):
         self.assertRaises(TypeError, ahrs.filters.Tilt, acc=['1.0', 2.0, 3.0], mag=[2.0, 3.0, 4.0])
@@ -1052,9 +1039,9 @@ class TestTilt(unittest.TestCase):
 
     def test_wrong_representation(self):
         self.assertRaises(TypeError, ahrs.filters.Tilt, representation=1)
-        self.assertRaises(TypeError, ahrs.filters.Tilt, acc=self.Rg, mag=self.Rm, representation=1)
+        self.assertRaises(TypeError, ahrs.filters.Tilt, acc=self.accelerometers, mag=self.magnetometers, representation=1)
         self.assertRaises(ValueError, ahrs.filters.Tilt, representation="some_representation")
-        self.assertRaises(ValueError, ahrs.filters.Tilt, acc=self.Rg, mag=self.Rm, representation="some_representation")
+        self.assertRaises(ValueError, ahrs.filters.Tilt, acc=self.accelerometers, mag=self.magnetometers, representation="some_representation")
 
 class TestComplementary(unittest.TestCase):
     def setUp(self) -> None:
