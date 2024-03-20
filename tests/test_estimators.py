@@ -1015,6 +1015,11 @@ class TestTilt(unittest.TestCase):
         orientation = ahrs.QuaternionArray(ahrs.filters.Tilt(acc=self.accelerometers, mag=self.magnetometers).Q)
         self.assertLess(np.nanmean(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS, orientation)), THRESHOLD)
 
+    def test_acc_only(self):
+        sensors = Sensors(num_samples=1000, in_degrees=False, yaw=0.0, span=(-np.pi/2, np.pi/2))
+        orientation = ahrs.QuaternionArray(ahrs.filters.Tilt(acc=sensors.accelerometers).Q)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(sensors.quaternions, orientation)), THRESHOLD)
+
     def test_wrong_input_vectors(self):
         self.assertRaises(TypeError, ahrs.filters.Tilt, acc=1.0)
         self.assertRaises(TypeError, ahrs.filters.Tilt, acc="self.accelerometers")
@@ -1044,101 +1049,83 @@ class TestTilt(unittest.TestCase):
 
 class TestComplementary(unittest.TestCase):
     def setUp(self) -> None:
-        # Create random attitudes
-        self.frequency = 100.0
-        self.a_ref = REFERENCE_GRAVITY_VECTOR
-        self.m_ref = REFERENCE_MAGNETIC_VECTOR
-        self.angular_positions = random_angpos(num_samples=NUM_SAMPLES, span=(-0.5*np.pi, 0.5*np.pi), max_positions=20)
-        self.Qts = ahrs.QuaternionArray(rpy=self.angular_positions)
-        angular_velocities = np.vstack((np.zeros(3), self.Qts.angular_velocities(1/self.frequency)))
-        rotations = self.Qts.to_DCM()
-        # Add noise to reference vectors and rotate them by the random attitudes
-        self.noise_sigma = 4*np.pi/50.0
-        self.gyr = angular_velocities + np.random.standard_normal((NUM_SAMPLES, 3)) * self.noise_sigma
-        self.Rg = np.array([R.T @ self.a_ref for R in rotations]) + np.random.standard_normal((NUM_SAMPLES, 3)) * self.noise_sigma
-        self.Rm = np.array([R.T @ self.m_ref for R in rotations]) + np.random.standard_normal((NUM_SAMPLES, 3)) * self.noise_sigma
+        # Synthetic sensor data
+        self.sensors_no_yaw = Sensors(num_samples=1000, in_degrees=False, yaw=0.0, span=(-np.pi/2, np.pi/2))
+        self.sensors = Sensors(num_samples=1000, in_degrees=False, span=(-np.pi/2, np.pi/2))
 
-    def test_gyr_acc(self):
-        angular_positions = np.c_[self.angular_positions[:, :2], np.zeros(NUM_SAMPLES)]
-        angular_positions[:, 2] = 0.0
-        Qts = ahrs.QuaternionArray(rpy=angular_positions)
-        angular_velocities = np.vstack((np.zeros(3), Qts.angular_velocities(1/self.frequency)))
-        rotations = Qts.to_DCM()
-        # Add noise to reference vectors and rotate them by the random attitudes
-        gyr = angular_velocities + np.random.standard_normal((NUM_SAMPLES, 3)) * self.noise_sigma
-        Rg = np.array([R.T @ self.a_ref for R in rotations]) + np.random.standard_normal((NUM_SAMPLES, 3)) * self.noise_sigma
-        orientation = ahrs.filters.Complementary(gyr=gyr, acc=Rg)
-        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(Qts, orientation.Q)), 0.2)
+    def test_imu(self):
+        orientation = ahrs.filters.Complementary(gyr=self.sensors_no_yaw.gyroscopes, acc=self.sensors_no_yaw.accelerometers)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(self.sensors_no_yaw.quaternions, orientation.Q)), THRESHOLD)
 
-    def test_gyr_acc_mag(self):
-        orientation = ahrs.filters.Complementary(gyr=self.gyr, acc=self.Rg, mag=self.Rm)
-        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(self.Qts, orientation.Q)), 0.2)
+    def test_marg(self):
+        orientation = ahrs.filters.Complementary(gyr=self.sensors.gyroscopes, acc=self.sensors.accelerometers, mag=self.sensors.magnetometers)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(self.sensors.quaternions, orientation.Q)), THRESHOLD)
 
     def test_wrong_input_vectors(self):
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=1.0, acc=self.Rg)
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr="self.gyr", acc=self.Rg)
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=True, acc=self.Rg)
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=1.0)
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc="self.Rg")
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=True)
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=1.0, mag=2.0)
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=2.0)
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=1.0, mag=self.Rm)
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc="self.Rg", mag="self.Rm")
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr[0], acc=self.Rg[0], mag=True)
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=True, mag=[1.0, 2.0, 3.0])
-        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr[:2], acc=self.Rg, mag=self.Rm)
-        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr, acc=[1.0, 2.0, 3.0])
-        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr, acc=[1.0, 2.0], mag=[2.0, 3.0, 4.0])
-        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr, acc=[1.0, 2.0, 3.0, 4.0], mag=[2.0, 3.0, 4.0, 5.0])
-        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr[0], acc=np.zeros(3), mag=self.Rm[0])
-        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr[0], acc=self.Rg[0], mag=np.zeros(3))
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=1.0, acc=self.sensors.accelerometers)
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr="self.sensors.gyroscopes", acc=self.sensors.accelerometers)
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=True, acc=self.sensors.accelerometers)
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=1.0)
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc="self.sensors.accelerometers")
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=True)
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=1.0, mag=2.0)
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=self.sensors.accelerometers, mag=2.0)
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=1.0, mag=self.sensors.magnetometers)
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc="self.sensors.accelerometers", mag="self.sensors.magnetometers")
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes[0], acc=self.sensors.accelerometers[0], mag=True)
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=True, mag=[1.0, 2.0, 3.0])
+        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes[:2], acc=self.sensors.accelerometers, mag=self.sensors.magnetometers)
+        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=[1.0, 2.0, 3.0])
+        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=[1.0, 2.0], mag=[2.0, 3.0, 4.0])
+        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=[1.0, 2.0, 3.0, 4.0], mag=[2.0, 3.0, 4.0, 5.0])
+        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes[0], acc=np.zeros(3), mag=self.sensors.magnetometers[0])
+        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes[0], acc=self.sensors.accelerometers[0], mag=np.zeros(3))
 
     def test_wrong_input_vector_types(self):
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=['1.0', 2.0, 3.0], acc=self.Rg[0], mag=self.Rm[0])
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=['1.0', '2.0', '3.0'], acc=self.Rg[0], mag=self.Rm[0])
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr[0], acc=['1.0', 2.0, 3.0], mag=[2.0, 3.0, 4.0])
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr[0], acc=[1.0, 2.0, 3.0], mag=['2.0', 3.0, 4.0])
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr[0], acc=['1.0', '2.0', '3.0'], mag=[2.0, 3.0, 4.0])
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr[0], acc=[1.0, 2.0, 3.0], mag=['2.0', '3.0', '4.0'])
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr[0], acc=self.Rg[0], mag=self.Rm[0], q0=['1.0', '0.0', '0.0', '0.0'])
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr[0], acc=self.Rg[0], mag=self.Rm[0], q0=['1.0', 0.0, 0.0, 0.0])
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=['1.0', 2.0, 3.0], acc=self.sensors.accelerometers[0], mag=self.sensors.magnetometers[0])
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=['1.0', '2.0', '3.0'], acc=self.sensors.accelerometers[0], mag=self.sensors.magnetometers[0])
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes[0], acc=['1.0', 2.0, 3.0], mag=[2.0, 3.0, 4.0])
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes[0], acc=[1.0, 2.0, 3.0], mag=['2.0', 3.0, 4.0])
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes[0], acc=['1.0', '2.0', '3.0'], mag=[2.0, 3.0, 4.0])
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes[0], acc=[1.0, 2.0, 3.0], mag=['2.0', '3.0', '4.0'])
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes[0], acc=self.sensors.accelerometers[0], mag=self.sensors.magnetometers[0], q0=['1.0', '0.0', '0.0', '0.0'])
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes[0], acc=self.sensors.accelerometers[0], mag=self.sensors.magnetometers[0], q0=['1.0', 0.0, 0.0, 0.0])
 
     def test_wrong_input_frequency(self):
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, frequency="100.0")
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, frequency=[100.0])
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, frequency=(100.0,))
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, frequency=True)
-        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, frequency=0.0)
-        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, frequency=-100.0)
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=self.sensors.accelerometers, mag=self.sensors.magnetometers, frequency="100.0")
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=self.sensors.accelerometers, mag=self.sensors.magnetometers, frequency=[100.0])
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=self.sensors.accelerometers, mag=self.sensors.magnetometers, frequency=(100.0,))
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=self.sensors.accelerometers, mag=self.sensors.magnetometers, frequency=True)
+        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=self.sensors.accelerometers, mag=self.sensors.magnetometers, frequency=0.0)
+        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=self.sensors.accelerometers, mag=self.sensors.magnetometers, frequency=-100.0)
 
     def test_wrong_input_Dt(self):
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, Dt="0.01")
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, Dt=[0.01])
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, Dt=(0.01,))
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, Dt=True)
-        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, Dt=0.0)
-        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, Dt=-0.01)
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=self.sensors.accelerometers, mag=self.sensors.magnetometers, Dt="0.01")
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=self.sensors.accelerometers, mag=self.sensors.magnetometers, Dt=[0.01])
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=self.sensors.accelerometers, mag=self.sensors.magnetometers, Dt=(0.01,))
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=self.sensors.accelerometers, mag=self.sensors.magnetometers, Dt=True)
+        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=self.sensors.accelerometers, mag=self.sensors.magnetometers, Dt=0.0)
+        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=self.sensors.accelerometers, mag=self.sensors.magnetometers, Dt=-0.01)
 
     def test_wrong_input_gain(self):
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, gain="0.01")
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, gain=[0.01])
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, gain=(0.01,))
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, gain=True)
-        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, gain=-0.01)
-        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, gain=1.01)
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=self.sensors.accelerometers, mag=self.sensors.magnetometers, gain="0.01")
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=self.sensors.accelerometers, mag=self.sensors.magnetometers, gain=[0.01])
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=self.sensors.accelerometers, mag=self.sensors.magnetometers, gain=(0.01,))
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=self.sensors.accelerometers, mag=self.sensors.magnetometers, gain=True)
+        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=self.sensors.accelerometers, mag=self.sensors.magnetometers, gain=-0.01)
+        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=self.sensors.accelerometers, mag=self.sensors.magnetometers, gain=1.01)
 
     def test_wrong_initial_quaternion(self):
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, q0=1)
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, q0=1.0)
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, q0=True)
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, q0="[1.0, 0.0, 0.0, 0.0]")
-        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, q0=['1.0', '0.0', '0.0', '0.0'])
-        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, q0=[1.0])
-        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, q0=[1.0, 0.0, 0.0])
-        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, q0=[1.0, 2.0, 3.0, 4.0])
-        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, q0=np.zeros(4))
-        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.gyr, acc=self.Rg, mag=self.Rm, q0=np.identity(4))
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=self.sensors.accelerometers, mag=self.sensors.magnetometers, q0=1)
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=self.sensors.accelerometers, mag=self.sensors.magnetometers, q0=1.0)
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=self.sensors.accelerometers, mag=self.sensors.magnetometers, q0=True)
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=self.sensors.accelerometers, mag=self.sensors.magnetometers, q0="[1.0, 0.0, 0.0, 0.0]")
+        self.assertRaises(TypeError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=self.sensors.accelerometers, mag=self.sensors.magnetometers, q0=['1.0', '0.0', '0.0', '0.0'])
+        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=self.sensors.accelerometers, mag=self.sensors.magnetometers, q0=[1.0])
+        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=self.sensors.accelerometers, mag=self.sensors.magnetometers, q0=[1.0, 0.0, 0.0])
+        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=self.sensors.accelerometers, mag=self.sensors.magnetometers, q0=[1.0, 2.0, 3.0, 4.0])
+        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=self.sensors.accelerometers, mag=self.sensors.magnetometers, q0=np.zeros(4))
+        self.assertRaises(ValueError, ahrs.filters.Complementary, gyr=self.sensors.gyroscopes, acc=self.sensors.accelerometers, mag=self.sensors.magnetometers, q0=np.identity(4))
 
 class TestOLEQ(unittest.TestCase):
     def setUp(self) -> None:
