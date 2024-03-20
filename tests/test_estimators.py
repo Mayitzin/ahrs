@@ -229,7 +229,9 @@ class Sensors:
         if quaternions is None:
             self.num_samples = num_samples
             # Generate orientations (angular positions)
-            self.ang_pos = random_angpos(num_samples=self.num_samples, span=(-np.pi, np.pi), max_positions=20)
+            self.ang_pos = random_angpos(num_samples=self.num_samples, span=kwargs.get("span", (-np.pi, np.pi)), max_positions=20)
+            if 'yaw' in kwargs:
+                self.ang_pos[:, 2] = kwargs.get('yaw') * ahrs.DEG2RAD
             self.quaternions = ahrs.QuaternionArray(rpy=self.ang_pos)
             # Estimate angular velocities
             self.ang_vel = self.angular_velocities(self.ang_pos, self.frequency)
