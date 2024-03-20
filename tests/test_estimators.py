@@ -239,7 +239,6 @@ class Sensors:
             self.num_samples = self.quaternions.shape[0]
             self.ang_pos = self.quaternions.to_angles()
             self.ang_vel = np.r_[np.zeros((1, 3)), self.quaternions.angular_velocities(1/self.frequency)]
-
         # Rotation Matrices
         self.rotations = self.quaternions.to_DCM()
 
@@ -263,6 +262,7 @@ class Sensors:
         """Compute synthetic data"""
         # Angular velocities measured in the local frame
         self.gyroscopes = np.copy(self.ang_vel) * ahrs.RAD2DEG
+
         # Add gyro biases: uniform random constant biases within 1/200th of the full range of the gyroscopes
         self.biases_gyroscopes = (np.random.default_rng().random(3)-0.5) * np.ptp(self.gyroscopes)/200
         self.gyroscopes += self.biases_gyroscopes
@@ -275,9 +275,6 @@ class Sensors:
             self.magnetometers[i] = rotations[i].T @ self.reference_magnetic_vector
             self.magnetometers_nd[i] = rotations[i].T @ self.reference_magnetic_vector_nd
             self.magnetometers_enu[i] = rotations[i].T @ self.reference_magnetic_vector_enu
-
-        # # Add centrifugal force based on cross product of angular velocities
-        # self.accelerometers -= __centrifugal_force(self.ang_vel)
 
         # Add noise
         if self.mag_noise < np.ptp(self.magnetometers):
