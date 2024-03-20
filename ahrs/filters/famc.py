@@ -259,7 +259,8 @@ class FAMC:
         --------
         >>> acc_data = np.array([4.098297, 8.663757, 2.1355896])
         >>> mag_data = np.array([-28.71550512, -25.92743566, 4.75683931])
-        >>> famc = ahrs.filtersFAMC()
+        >>> from ahrs.filters import FAMC
+        >>> famc = FAMC()
         >>> famc.estimate(acc=acc_data, mag=mag_data)   # Estimate attitude as quaternion
         array([-0.82311077,  0.45760535, -0.33408929, -0.0383452])
 
