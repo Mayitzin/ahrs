@@ -9,7 +9,7 @@ We start to define the goal of finding an orthogonal matrix :math:`\\mathbf{A}`
 that minimizes the loss function:
 
 .. math::
-    L(\\mathbf{A}) = \\frac{1}{2}\\sum_{i=1}^n |\\hat{\\mathbf{W}}_i - \\mathbf{A}\\hat{\\mathbf{V}}_i|^2
+    L(\\mathbf{A}) = \\frac{1}{2}\\sum_{i=1}^n a_i |\\hat{\\mathbf{W}}_i - \\mathbf{A}\\hat{\\mathbf{V}}_i|^2
 
 where :math:`a_i` are a set of non-negative weights such that :math:`\\sum_{i=1}^na_i=1`,
 :math:`\\hat{\\mathbf{V}}_i` are nonparallel **reference vectors**, and
@@ -31,7 +31,7 @@ where :math:`\\mathrm{tr}` is the `trace <https://en.wikipedia.org/wiki/Trace_(l
 of a matrix, and :math:`\\mathbf{B}` is the **attitude profile matrix**:
 
 .. math::
-    \\mathbf{B} = \\sum_{i=1}^na_i\\hat{\\mathbf{W}}_i^T\\hat{\\mathbf{V}}_i
+    \\mathbf{B} = \\sum_{i=1}^na_i\\hat{\\mathbf{W}}_i\\hat{\\mathbf{V}}_i^T
 
 The quaternion :math:`\\bar{\\mathbf{q}}` representing a rotation is defined by
 Shuster as:
@@ -58,7 +58,7 @@ Because the quaternion works as a versor, it must satisfy:
 The attitude matrix :math:`\\mathbf{A}` is related to the quaternion by:
 
 .. math::
-    \\mathbf{A}(\\bar{\\mathbf{q}}) = (q^2+\\mathbf{Q}\\cdot\\mathbf{Q})\\mathbf{I} + 2\\mathbf{QQ}^T + 2q\\lfloor\\mathbf{Q}\\rfloor_\\times
+    \\mathbf{A}(\\bar{\\mathbf{q}}) = (q^2-\\mathbf{Q}\\cdot\\mathbf{Q})\\mathbf{I} + 2\\mathbf{QQ}^T + 2q\\lfloor\\mathbf{Q}\\rfloor_\\times
 
 where :math:`\\mathbf{I}` is the identity matrix, and :math:`\\lfloor\\mathbf{Q}\\rfloor_\\times`
 is the **antisymmetric matrix** of :math:`\\mathbf{Q}`, a.k.a. the
