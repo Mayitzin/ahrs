@@ -28,8 +28,8 @@ The AMC relates a Direction Cosine Matrix, :math:`\\mathbf{C}`, such that:
 
 .. math::
     \\begin{array}{c}
-    ^b\\mathbf{a} = \\mathbf{C}\,^r\\mathbf{a} \\\\ \\\\
-    ^b\\mathbf{m} = \\mathbf{C}\,^r\\mathbf{m}
+    ^b\\mathbf{a} = \\mathbf{C}\\,^r\\mathbf{a} \\\\ \\\\
+    ^b\\mathbf{m} = \\mathbf{C}\\,^r\\mathbf{m}
     \\end{array}
 
 where :math:`^b\\mathbf{a}=\\begin{bmatrix}a_x&a_y&a_z\\end{bmatrix}^T` and
@@ -53,7 +53,7 @@ pairs with weights. Here, two equivalent weights equal to :math:`0.5` yield the
 loss function:
 
 .. math::
-    L(\\mathbf{C}) = \\frac{1}{2}\\Big[\\frac{1}{2}\\|^b\\mathbf{a}-\\mathbf{C}\,^r\\mathbf{a}\\|^2+\\frac{1}{2}\\|^b\\mathbf{m}-\\mathbf{C}\,^r\\mathbf{m}\\|^2\\Big]
+    L(\\mathbf{C}) = \\frac{1}{2}\\Big[\\frac{1}{2}\\|^b\\mathbf{a}-\\mathbf{C}\\,^r\\mathbf{a}\\|^2+\\frac{1}{2}\\|^b\\mathbf{m}-\\mathbf{C}\\,^r\\mathbf{m}\\|^2\\Big]
 
 Using `Davenport's q-method <./davenport.html>`_ we find the minimum of
 :math:`L(\\mathbf{C})` by calculating the maximum eigenvalue of Davenport's
@@ -82,7 +82,7 @@ The helping arrays are:
 
 .. math::
     \\begin{array}{rcl}
-    \\mathbf{B} &=& \\frac{1}{2}\\big(\,^b\\mathbf{a}(\,^r\\mathbf{a})^T+\,^b\\mathbf{m}(^r\\mathbf{m})^T\\big) \\\\ && \\\\
+    \\mathbf{B} &=& \\frac{1}{2}\\big(\\,^b\\mathbf{a}(\\,^r\\mathbf{a})^T+\\,^b\\mathbf{m}(^r\\mathbf{m})^T\\big) \\\\ && \\\\
     \\mathbf{z}^T &=& \\begin{bmatrix}B_{23}-B_{32}\\\\B_{31}-B_{13}\\\\B_{12}-B_{21}\\end{bmatrix}
     \\end{array}
 
@@ -115,7 +115,7 @@ angle.
 Finally, we must compute the eigenvector of the eigenvalule 1. We start defining:
 
 .. math::
-    \\mathbf{S} = \mathbf{K} - \\mathbf{I}
+    \\mathbf{S} = \\mathbf{K} - \\mathbf{I}
 
 where :math:`\\mathbf{S}` can be further expanded with matrix row operations in
 echelon form :math:`\\mathbf{T}=\\mathbf{\\Lambda}_1\\mathbf{\\Lambda}_2\\mathbf{\\Lambda}_3\\mathbf{S}`:
