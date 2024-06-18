@@ -21,7 +21,20 @@ version in the git repository and install it manually:
 
     git clone https://github.com/Mayitzin/ahrs.git
     cd ahrs/
-    python setup.py install
+    python pip install .
+
+To install as editable do this:
+
+.. code-block:: console
+    git clone https://github.com/Mayitzin/ahrs.git
+    cd ahrs/
+    python pip install -e .
+ 
+To install specific requirements, do this:
+
+.. code-block:: console
+   python pip install .[dev]
+   python pip install .[docs]
 
 This will get you the latest changes of the package, so you can get an updated
 version.
@@ -34,9 +47,10 @@ To build this documentation you first need to have `Sphinx
 <https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html>`_.
 
 .. code-block:: console
-
+    
+    python pip install .[docs]
     cd docs/
-    pip install -r requirements.txt
+    make html
 
 You can then build the documentation by running ``make html`` from the
 ``docs/`` folder to build the HTML documentation in the current folder. Run
