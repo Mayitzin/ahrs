@@ -23,7 +23,7 @@ The most recommended method is to install AHRS directly from this repository to 
 ```shell
 git clone https://github.com/Mayitzin/ahrs.git
 cd ahrs
-python setup.py install
+python pip install .
 ```
 
 Or using [pip](https://pip.pypa.io) for the stable releases:
@@ -33,6 +33,13 @@ pip install ahrs
 ```
 
 AHRS depends merely on [NumPy](https://numpy.org/). More packages are avoided, to reduce its third-party dependency.
+
+## Versioning
+In order to update the version, use hatch and adjust it automatically
+
+```shell
+hatch version <major, minor, patch>
+```
 
 ## Important novelties in 0.3
 

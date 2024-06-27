@@ -5,13 +5,13 @@ import os
 import sys
 from datetime import datetime
 sys.path.insert(0, os.path.abspath('../../ahrs' if sys.platform.startswith('win') else '../..'))
-from tools.versioning import get_version
+from ahrs import __version__
 
 # -- Project information -----------------------------------------------------
 project = 'AHRS'
 author = 'Mario Garcia'
 copyright = f"2019-{datetime.now().year}, {author}"
-release = get_version()
+release = __version__
 
 # -- General configuration ---------------------------------------------------
 extensions = [
