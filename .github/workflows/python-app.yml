@@ -26,12 +26,12 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install flake8 pytest setuptools wheel
+        pip install flake8 pytest setuptools wheel build
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         pip install .
     - name: Build binary wheel and source tarball
       run: |
-        python setup.py sdist bdist_wheel
+        python -m build --sdist --wheel
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names

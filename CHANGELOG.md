@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2024-06-18
+### Added
+- Added pyproject.toml file to replace the deprecated setup.py
+- Added __version__ to main package __init__.py file
+
+### Changed
+- Moved from the setuptools to hatchling build backend
+- Docutils version will now be installed by Sphinx
+- Changed the docs/conf.py to get its version from the package import 
+- Updated documentation for the new hatch workflow
+
+### Removed
+- Removed old requirements.txt
+- Removed requirements.txt from docs
+- Removed tools folder for version management. Check pyproject.toml
+
 ## [0.3.1] - 2021-09-29
 ### Added
 - Error raise if geomagnetic field is invalid in class `EKF`.
