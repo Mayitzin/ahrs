@@ -23,7 +23,7 @@ The most recommended method is to install AHRS directly from this repository to 
 ```shell
 git clone https://github.com/Mayitzin/ahrs.git
 cd ahrs
-python pip install .
+python -m pip install .
 ```
 
 Or using [pip](https://pip.pypa.io) for the stable releases:
