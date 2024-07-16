@@ -307,6 +307,9 @@ References
 .. [Tscherning] C. Tscherning. The Geodesist's Handbook 1984. Association
     Internationale de Géodésie. 1984.
     (https://office.iag-aig.org/doc/5d7f91ee333a3.pdf)
+.. [Jekeli2016] C. Jekeli. Geometric Reference Systems in Geodesy. Division of
+    Geodetic Science, School of Earth Sciences, Ohio State University. 2016.
+    (https://kb.osu.edu/server/api/core/bitstreams/404dbfb8-da94-5f09-baf4-dbee438ece83/content)
 """
 
 import numpy as np
@@ -553,10 +556,10 @@ class WGS:
     def meridian_curvature_radius(self, lat: float) -> float:
         """
         Radius of the curvature in the prime meridian, estimated at a given
-        latitude, :math:`\\phi`, as:
+        latitude, :math:`\\phi`, as per [Jekeli2016]_:
 
         .. math::
-            R_M = \\frac{a(1-e^2)}{\\sqrt[3]{1-e^2\\sin^2\\phi}}
+            R_M = \\frac{a(1-e^2)}{(1-e^2\\sin^2\\phi)^{\\frac{3}{2}}}
 
         Parameters
         ----------
@@ -564,7 +567,7 @@ class WGS:
             Geographical latitude, in decimal degrees.
         """
         e = np.sqrt(self.first_eccentricity_squared)
-        return self.a*(1-e**2)/np.cbrt(1-e**2*np.sin(lat)**2)
+        return self.a*(1-e**2)/((1-e**2*np.sin(lat)**2)**(3/2))
 
     @property
     def first_eccentricity_squared(self) -> float:
