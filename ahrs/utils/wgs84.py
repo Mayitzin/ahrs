@@ -313,7 +313,17 @@ References
 """
 
 import numpy as np
-from ..common.constants import *
+from ..common import DEG2RAD
+from ..common.constants import EARTH_EQUATOR_RADIUS
+from ..common.constants import EARTH_FLATTENING
+from ..common.constants import EARTH_GM
+from ..common.constants import EARTH_ROTATION
+from ..common.constants import UNIVERSAL_GRAVITATION_WGS84
+from ..common.constants import EARTH_C20_GEO
+from ..common.constants import EARTH_ATMOSPHERE_MASS
+from ..common.constants import DYNAMIC_ELLIPTICITY
+from ..common.constants import EARTH_C20_DYN
+from ..common.constants import EARTH_C22_DYN
 
 def international_gravity(lat: float, epoch: str = '1980') -> float:
     """
