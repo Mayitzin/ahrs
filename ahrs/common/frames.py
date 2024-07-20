@@ -91,7 +91,7 @@ def rec2geo(X: np.ndarray, a: float = EARTH_EQUATOR_RADIUS, b: float = EARTH_POL
     h = p/np.cos(lat) - N
     return np.array([lon, lat, h])
 
-def llf2ecef(lat, lon):
+def llf2ecef(lat: float, lon: float) -> np.ndarray:
     """
     Transform coordinates from LLF to ECEF
 
@@ -112,7 +112,7 @@ def llf2ecef(lat, lon):
         [ np.cos(lat), -np.sin(lon)*np.sin(lat), np.cos(lon)*np.sin(lat)],
         [0.0, np.cos(lon), np.sin(lon)]])
 
-def ecef2llf(lat, lon):
+def ecef2llf(lat: float, lon: float) -> np.ndarray:
     """
     Transform coordinates from ECEF to LLF
 
@@ -133,7 +133,7 @@ def ecef2llf(lat, lon):
         [-np.sin(lon)*np.cos(lat), -np.sin(lon)*np.sin(lat), np.cos(lon)],
         [np.cos(lon)*np.cos(lat), np.cos(lon)*np.sin(lat), np.sin(lon)]])
 
-def eci2ecef(w, t=0):
+def eci2ecef(w: float, t: float = 0) -> np.ndarray:
     """
     Transformation between ECI and ECEF
 
@@ -149,7 +149,7 @@ def eci2ecef(w, t=0):
         [-np.sin(w)*t, np.cos(w)*t, 0.0],
         [         0.0,         0.0, 1.0]])
 
-def ecef2enu(lat, lon):
+def ecef2enu(lat: float, lon: float) -> np.ndarray:
     """
     Transform coordinates from ECEF to ENU
 
@@ -170,7 +170,7 @@ def ecef2enu(lat, lon):
         [-np.cos(lat)*np.cos(lon), -np.cos(lat)*np.sin(lon), np.sin(lat)],
         [np.sin(lat)*np.cos(lon), np.sin(lat)*np.sin(lon), np.cos(lat)]])
 
-def enu2ecef(lat, lon):
+def enu2ecef(lat: float, lon: float) -> np.ndarray:
     """
     Transform coordinates from ENU to ECEF
 
@@ -191,7 +191,7 @@ def enu2ecef(lat, lon):
         [np.cos(lon), -np.cos(lat)*np.sin(lon), np.sin(lat)*np.sin(lon)],
         [0.0, np.sin(lat), np.cos(lat)]])
 
-def _ltp_transformation(x):
+def _ltp_transformation(x: np.ndarray) -> np.ndarray:
     """
     Transform coordinates between NED and ENU.
     """
@@ -203,7 +203,7 @@ def _ltp_transformation(x):
         return (A @ x.T).T
     return A @ x
 
-def ned2enu(x):
+def ned2enu(x: np.ndarray) -> np.ndarray:
     """
     Transform coordinates from NED to ENU.
 
@@ -219,7 +219,7 @@ def ned2enu(x):
     """
     return _ltp_transformation(x)
 
-def enu2ned(x):
+def enu2ned(x: np.ndarray) -> np.ndarray:
     """
     Transform coordinates from ENU to NED.
 
