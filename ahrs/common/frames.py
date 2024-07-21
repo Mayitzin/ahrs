@@ -27,7 +27,7 @@ References
     Standarization Document. 2014.
     (ftp://ftp.nga.mil/pub2/gandg/website/wgs84/NGA.STND.0036_1.0.0_WGS84.pdf)
 .. [Laundal2016] Laundal, K.M., Richmond, A.D. Magnetic Coordinate Systems.
-    Space Sci Rev 206, 27–59 (2017). (https://doi.org/10.1007/s11214-016-0275-y)
+    Space Sci Rev 206, 27-59 (2017). (https://doi.org/10.1007/s11214-016-0275-y)
 
 """
 
@@ -36,6 +36,8 @@ from .constants import EARTH_FIRST_ECCENTRICITY
 from .constants import EARTH_SECOND_ECCENTRICITY_2
 from .constants import EARTH_EQUATOR_RADIUS
 from .constants import EARTH_POLAR_RADIUS
+from .constants import EARTH_FLATTENING
+from .constants import RAD2DEG
 
 def geo2rect(lon: float, lat: float, h: float, r: float, ecc: float = EARTH_SECOND_ECCENTRICITY_2) -> np.ndarray:
     """
@@ -132,6 +134,53 @@ def ecef2llf(lat: float, lon: float) -> np.ndarray:
         [-np.sin(lat), np.cos(lat), 0.0],
         [-np.sin(lon)*np.cos(lat), -np.sin(lon)*np.sin(lat), np.cos(lon)],
         [np.cos(lon)*np.cos(lat), np.cos(lon)*np.sin(lat), np.sin(lon)]])
+
+def ecef2lla(ecef : np.ndarray, f: float = EARTH_FLATTENING, a: float = EARTH_EQUATOR_RADIUS) -> np.ndarray:
+    """
+    Calculate geodetic latitude, longitude, and altitude above planetary
+    ellipsoid from a given Earth-centered Earth-fixed (ECEF) position, using
+    Bowring's method.
+
+    It defaults to WGS84 ellipsoid parameters.
+
+    Parameters
+    ----------
+    ecef : np.ndarray
+        ECEF coordinates.
+    f : float, default: 1/298.257223563
+        Flattening of the ellipsoid.
+    a : float, default: 6378137.0
+        Equatorial radius of the ellipsoid.
+
+    Returns
+    -------
+    lla : np.ndarray
+        Geodetic coordinates [longitude, latitude, altitude].
+    """
+    e2 = f * (2 - f)  # Square of the first eccentricity: f * (2 - f) = e^2
+    x, y, z = ecef
+
+    # Compute longitude
+    lon = np.arctan2(y, x)
+
+    # Compute initial latitude approximation
+    p = np.sqrt(x**2 + y**2)
+    beta = np.arctan2(z, (1 - f) * p)
+    lat = np.arctan2(z + e2 * (1 - f) * a * np.sin(beta)**3, p - e2 * a * np.cos(beta)**3)
+    # Iteratively improve latitude
+    for _ in range(5):  # Usually converges in a few iterations
+        sin_lat = np.sin(lat)
+        N = a / np.sqrt(1 - e2 * sin_lat**2)    # Radius of curvature in the vertical prime
+        lat = np.arctan2(z + e2 * N * sin_lat, p)
+
+    # Compute altitude
+    alt = p / np.cos(lat) - N
+
+    # Convert radians to degrees for latitude and longitude
+    lat *= RAD2DEG
+    lon *= RAD2DEG
+
+    return np.array([lat, lon, alt])
 
 def eci2ecef(w: float, t: float = 0) -> np.ndarray:
     """
