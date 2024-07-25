@@ -145,7 +145,7 @@ def ecef2lla(ecef : np.ndarray, f: float = EARTH_FLATTENING, a: float = EARTH_EQ
 
     Parameters
     ----------
-    ecef : np.ndarray
+    ecef : numpy.ndarray
         ECEF coordinates.
     f : float, default: 1/298.257223563
         Flattening of the ellipsoid.
