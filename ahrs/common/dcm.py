@@ -682,6 +682,7 @@ class DCM(np.ndarray):
         """
         return self.from_axisangle(axis, angle)
 
+    @classmethod
     def from_quaternion(self, q: np.ndarray) -> np.ndarray:
         """
         DCM from given quaternion
