@@ -664,7 +664,8 @@ def rot_seq(axes: Union[list, str] = None, angles: Union[list, float] = None, de
     angles : list of floats
         List of rotation angles.
     degrees : bool, default: False
-        Angles are given in degrees. Otherwise, they are given in radians.
+        If True, the angle is given in degrees. Otherwise, it is given in
+        radians.
 
     Returns
     -------
