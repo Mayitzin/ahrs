@@ -11,6 +11,11 @@ This module is private. All functions and objects are available in the main
 
 import numpy as np
 
+def _assert_list_of_strings(item, item_name: str = 'iterable'):
+    """Assert it is a list of strings"""
+    if not all(isinstance(i, str) for i in item):
+        raise TypeError(f"{item_name} must be a list of strings.")
+
 def _assert_valid_array_type(item, item_name: str = 'iterable'):
     """Assert it is a list, tuple, or numpy array"""
     # NOTE: This could be changed to a more pythonic solution looking for the
