@@ -32,5 +32,23 @@ class TestDCM(unittest.TestCase):
         self.assertRaises(TypeError, ahrs.DCM, rpy=["10.0", "20.0", "30.0"])
         self.assertRaises(ValueError, ahrs.DCM, rpy=np.random.random(4))
 
+    def test_wrong_euler(self):
+        self.assertRaises(TypeError, ahrs.DCM, euler=1)
+        self.assertRaises(TypeError, ahrs.DCM, euler=1.0)
+        self.assertRaises(TypeError, ahrs.DCM, euler=True)
+        self.assertRaises(TypeError, ahrs.DCM, euler="x")
+        self.assertRaises(TypeError, ahrs.DCM, euler=["x", "y", "z"])
+        self.assertRaises(TypeError, ahrs.DCM, euler=np.random.random(4))
+        self.assertRaises(TypeError, ahrs.DCM, euler=([], 3))
+        self.assertRaises(ValueError, ahrs.DCM, euler=(3,))
+
+    def test_wrong_quaternion(self):
+        self.assertRaises(TypeError, ahrs.DCM, q=3)
+        self.assertRaises(TypeError, ahrs.DCM, q=3.0)
+        self.assertRaises(TypeError, ahrs.DCM, q="np.eye(3)")
+        self.assertRaises(ValueError, ahrs.DCM, q=np.random.random(3))
+        self.assertRaises(ValueError, ahrs.DCM, q=np.random.random(5))
+        self.assertRaises(ValueError, ahrs.DCM, q=np.random.random((5, 3)))
+
 if __name__ == "__main__":
     unittest.main()
