@@ -112,9 +112,8 @@ from .orientation import chiaverini
 from .orientation import itzhack
 from .orientation import sarabandi
 
-def _assert_iterables(item, item_name: str = 'iterable'):
-    if not isinstance(item, (list, tuple, np.ndarray)):
-        raise TypeError(f"{item_name} must be given as an array, got {type(item)}")
+# Other useful functions
+from ..utils.core import _assert_numerical_iterable
 
 def _assert_SO3(array: np.ndarray, R_name: str = 'R'):
     if array.shape[-2:] != (3, 3) or array.ndim not in [2, 3]:
@@ -237,7 +236,7 @@ class DCM(np.ndarray):
         if array is None:
             array = np.identity(3)
             if 'q' in kwargs:
-                array = DCM.from_q(DCM, np.array(kwargs.pop('q')))
+                array = DCM.from_q(DCM, kwargs.pop('q'))
             if any(x.lower() in ['x', 'y', 'z'] for x in kwargs):
                 array = np.identity(3)
                 array = array@rotation('x', kwargs.pop('x', 0.0), degrees=kwargs.get('degrees', False))
@@ -245,17 +244,25 @@ class DCM(np.ndarray):
                 array = array@rotation('z', kwargs.pop('z', 0.0), degrees=kwargs.get('degrees', False))
             if 'rpy' in kwargs:
                 angles = kwargs.pop('rpy')
-                _assert_iterables(angles, "Roll-Pitch-Yaw angles")
+                _assert_numerical_iterable(angles, "Roll-Pitch-Yaw angles")
                 if len(angles) != 3:
                     raise ValueError("roll-pitch-yaw angles must be an array with 3 rotations in degrees.")
                 array = rot_seq('zyx', angles)
             if 'euler' in kwargs:
-                seq, angs = kwargs.pop('euler')
+                seqangs = kwargs.pop('euler')
+                if not isinstance(seqangs, tuple):
+                    raise TypeError("Euler angles must be given as a tuple with a sequence, as string or list of strings, and its angles, as list of floats.")
+                if len(seqangs) != 2:
+                    raise ValueError("Euler angles must be given as a tuple with a sequence, as string or list of strings, and its angles, as list of floats.")
+                seq, angs = seqangs
+                if not all(isinstance(i, str) for i in seq):
+                    raise TypeError("Euler sequence must be a string or list of strings.")
+                _assert_numerical_iterable(angs, "Euler angles")
                 array = rot_seq(seq, angs)
             if 'axang' in kwargs:
                 ax, ang = kwargs.pop('axang')
                 array = DCM.from_axisangle(DCM, np.array(ax), ang)
-        _assert_iterables(array, "Direction Cosine Matrix")
+        _assert_numerical_iterable(array, "Direction Cosine Matrix")
         _assert_SO3(array, "Direction Cosine Matrix")
         # Create the ndarray instance of type DCM. This will call the standard
         # ndarray constructor, but return an object of type DCM.
@@ -644,7 +651,7 @@ class DCM(np.ndarray):
                [ 0.34202014,  0.46984631,  0.81379768]])
 
         """
-        _assert_iterables(axis)
+        _assert_numerical_iterable(axis, "Axis of rotation")
         if not isinstance(angle, (int, float)):
             raise ValueError(f"`angle` must be a float value. Got {type(angle)}")
         axis = axis / np.linalg.norm(axis)
@@ -751,7 +758,7 @@ class DCM(np.ndarray):
         """
         if q is None:
             return np.identity(3)
-        _assert_iterables(q, "Quaternion")
+        _assert_numerical_iterable(q, "Quaternion")
         q = np.copy(q)
         if q.shape[-1] != 4 or q.ndim > 2:
             raise ValueError(f"Quaternion must be of the form (4,) or (N, 4). Got {q.shape}")
