@@ -7,6 +7,7 @@ import ahrs
 NUM_SAMPLES = 1000
 SAMPLING_FREQUENCY = 100.0
 THRESHOLD = 0.5
+GENERATOR = np.random.default_rng(42)
 
 # Geomagnetic values
 wmm = ahrs.utils.WMM(latitude=ahrs.MUNICH_LATITUDE, longitude=ahrs.MUNICH_LONGITUDE, height=ahrs.MUNICH_HEIGHT)
@@ -18,7 +19,7 @@ NORMAL_GRAVITY = ahrs.utils.WGS().normal_gravity(ahrs.MUNICH_LATITUDE, ahrs.MUNI
 REFERENCE_GRAVITY_VECTOR = np.array([0.0, 0.0, NORMAL_GRAVITY])
 ACC_NOISE_STD_DEVIATION = np.linalg.norm(REFERENCE_GRAVITY_VECTOR) * 0.01
 
-NOISE_SIGMA = abs(np.random.standard_normal(3) * 0.1) * ahrs.RAD2DEG
+NOISE_SIGMA = abs(GENERATOR.standard_normal(3) * 0.1) * ahrs.RAD2DEG
 
 def __gaussian_filter(in_array: np.ndarray, size: int = 10, sigma: float = 1.0) -> np.ndarray:
     """
@@ -73,11 +74,11 @@ def random_angvel(num_samples: int = 500, max_rotations: int = 4, num_axes: int 
         Array of angular velocities.
     """
     span = span if isinstance(span, (list, tuple)) else [-0.5*np.pi, 0.5*np.pi]
-    all_angs = [np.random.uniform(span[0], span[1], np.random.randint(1, max_rotations)) for _ in np.arange(num_axes)]
+    all_angs = [GENERATOR.uniform(span[0], span[1], GENERATOR.integers(1, max_rotations)) for _ in np.arange(num_axes)]
     angvels = np.zeros((num_samples, num_axes))
     for j, angs in enumerate(all_angs):
         num_angs = len(angs)
-        idxs = np.sort(np.random.randint(0, num_samples, 2*num_angs)).reshape((num_angs, 2))
+        idxs = np.sort(GENERATOR.integers(0, num_samples, 2*num_angs)).reshape((num_angs, 2))
         for i, idx in enumerate(idxs):
             angvels[idx[0]:idx[1], j] = angs[i]
     return __gaussian_filter(angvels, size=kwargs.pop('gauss_size', 50 if num_samples > 50 else num_samples//5), sigma=5)
@@ -113,12 +114,12 @@ def random_angpos(num_samples: int = 500, max_positions: int = 4, num_axes: int 
         M-by-3 Array of angular positions.
     """
     span = span if isinstance(span, (list, tuple)) else [-0.5*np.pi, 0.5*np.pi]
-    all_angs = [np.random.uniform(span[0], span[1], np.random.randint(1, max_positions)) for _ in np.arange(num_axes)]
+    all_angs = [GENERATOR.uniform(span[0], span[1], GENERATOR.integers(1, max_positions)) for _ in np.arange(num_axes)]
     angular_positions = np.zeros((num_samples, num_axes))
     for j, angs in enumerate(all_angs):
         # Create angular positions per axis
         num_angs = len(angs)
-        idxs = np.sort(np.random.randint(0, num_samples, 2*num_angs)).reshape((num_angs, 2))
+        idxs = np.sort(GENERATOR.integers(0, num_samples, 2*num_angs)).reshape((num_angs, 2))
         for i, idx in enumerate(idxs):
             # Extend each angular position for several samples
             angular_positions[idx[0]:idx[1], j] = angs[i]
@@ -266,7 +267,7 @@ class Sensors:
         self.gyroscopes = np.copy(self.ang_vel) * ahrs.RAD2DEG
 
         # Add gyro biases: uniform random constant biases within 1/200th of the full range of the gyroscopes
-        self.biases_gyroscopes = (np.random.default_rng().random(3)-0.5) * np.ptp(self.gyroscopes)/200
+        self.biases_gyroscopes = (GENERATOR.random(3)-0.5) * np.ptp(self.gyroscopes)/200
         self.gyroscopes += self.biases_gyroscopes
 
         # Accelerometers and magnetometers are measured w.r.t. global frame (inverse of the local frame)
@@ -281,11 +282,11 @@ class Sensors:
         # Add noise
         if self.mag_noise < np.ptp(self.magnetometers):
             self.mag_noise = np.linalg.norm(REFERENCE_MAGNETIC_VECTOR) * 0.005
-        self.gyroscopes += np.random.standard_normal((self.num_samples, 3)) * self.gyr_noise
-        self.accelerometers += np.random.standard_normal((self.num_samples, 3)) * self.acc_noise
-        self.magnetometers += np.random.standard_normal((self.num_samples, 3)) * self.mag_noise
-        self.magnetometers_nd += np.random.standard_normal((self.num_samples, 3)) * self.mag_noise
-        self.magnetometers_enu += np.random.standard_normal((self.num_samples, 3)) * self.mag_noise
+        self.gyroscopes += GENERATOR.standard_normal((self.num_samples, 3)) * self.gyr_noise
+        self.accelerometers += GENERATOR.standard_normal((self.num_samples, 3)) * self.acc_noise
+        self.magnetometers += GENERATOR.standard_normal((self.num_samples, 3)) * self.mag_noise
+        self.magnetometers_nd += GENERATOR.standard_normal((self.num_samples, 3)) * self.mag_noise
+        self.magnetometers_enu += GENERATOR.standard_normal((self.num_samples, 3)) * self.mag_noise
 
         if not self.in_degrees:
             self.gyroscopes *= ahrs.DEG2RAD
