@@ -2963,14 +2963,16 @@ class QuaternionArray(np.ndarray):
 
         Parameters
         ----------
-        q : numpy.ndarray
-            4 element array to rotate around.
+        q : numpy.ndarray or ahrs.Quaternion
+            4 element array to rotate around. It can be given as a list, tuple,
+            numpy.ndarray, or a Quaternion object. It will be normalized to be
+            a unit quaternion.
         inplace : bool, default: False
-            If False, return a copy. Otherwise, do operation inplace and return
-            None.
+            If False, return a copy. Otherwise, do operation inplace, replace
+            values in array and return None.
         order : str, default: 'H'
-            Order of the elements in the quaternion. Can be ``'H'`` (Hamilton) or
-            ``'S'`` (Scipy).
+            Order of the elements in the quaternion. Can be ``'H'`` (Hamilton)
+            or ``'S'`` (Scipy).
 
         Returns
         -------
@@ -2979,16 +2981,22 @@ class QuaternionArray(np.ndarray):
 
         Examples
         --------
-        >>> q = Quaternion([-0.00085769, -0.0404217, 0.29184193, -0.47288709])
-        >>> v = [0.25557699 0.74814091 0.71491841]
-        >>> q.rotate(v)
-        array([-0.22481078 -0.99218916 -0.31806219])
-        >>> A = [[0.18029565, 0.14234782], [0.47473686, 0.38233722], [0.90000689, 0.06117298]]
-        >>> q.rotate(A)
-        array([[-0.10633285 -0.16347163]
-               [-1.02790041 -0.23738541]
-               [-0.00284403 -0.29514739]])
-
+        >>> qts = np.tile([1., -2., 3., -4], (5, 1))    # Five equal arrays
+        >>> v = np.random.randn(5, 4)*0.1               # Gaussian noise
+        >>> Q = QuaternionArray(qts + v)
+        >>> Q.view()
+        QuaternionArray([[ 0.18873724, -0.36700234,  0.57194646, -0.70891804],
+                         [ 0.21652608, -0.37263592,  0.54594733, -0.71847091],
+                         [ 0.19481676, -0.38515671,  0.54045061, -0.72222841],
+                         [ 0.16899238, -0.3725492 ,  0.56720371, -0.71479271],
+                         [ 0.17139691, -0.36373225,  0.5687926 , -0.71749351]])
+        >>> q = Quaternion([-1., 2., -3., 4.])          # Quaternion to rotate about
+        >>> Q.rotate_by(q)
+        array([[ 0.93054027,  0.10652202, -0.21695865,  0.27509419],
+               [ 0.92025996,  0.14191701, -0.22805842,  0.28455321],
+               [ 0.92852888,  0.14234816, -0.22293603,  0.26051995],
+               [ 0.93786314,  0.10700622, -0.20718376,  0.25697719],
+               [ 0.9370473 ,  0.10659342, -0.20136569,  0.26463573]])
         """
         _assert_iterables(q, 'Quaternion')
         q = np.copy(q)
@@ -2997,7 +3005,7 @@ class QuaternionArray(np.ndarray):
         q /= np.linalg.norm(q)
         qQ = np.zeros_like(self.array)
         if order.upper() == 'S':
-            q = np.roll(q, -1)
+            q = np.roll(q, -1, axis=1)
         qQ[:, 0] = q[0]*self.w - q[1]*self.x - q[2]*self.y - q[3]*self.z
         qQ[:, 1] = q[0]*self.x + q[1]*self.w + q[2]*self.z - q[3]*self.y
         qQ[:, 2] = q[0]*self.y - q[1]*self.z + q[2]*self.w + q[3]*self.x
