@@ -3068,6 +3068,26 @@ class QuaternionArray(np.ndarray):
             Full array with interpolated values if ``inplace`` is set to
             ``False``. Otherwise the QuaternionArray is modified in-place and
             ``None`` is returned.
+
+        Examples
+        --------
+        >>> qts = np.tile([1., -2., 3., -4], (5, 1))    # Five equal arrays
+        >>> v = np.random.randn(5, 4)*0.1               # Gaussian noise
+        >>> Q = QuaternionArray(qts + v)
+        >>> Q[1:3] = np.nan    # 2nd and 3rd Quaternions are NaN
+        >>> Q.view()
+        QuaternionArray([[ 0.17614144, -0.39173347,  0.56303067, -0.70605634],
+                         [        nan,         nan,         nan,         nan],
+                         [        nan,         nan,         nan,         nan],
+                         [ 0.17094453, -0.3723117 ,  0.54109885, -0.73442086],
+                         [ 0.1862619 , -0.38421818,  0.5260265 , -0.73551276]])
+        >>> Q.slerp_nan()
+        >>> Q.view()
+        QuaternionArray([[ 0.17614144, -0.39173347,  0.56303067, -0.70605634],
+                         [ 0.1721561 , -0.37614515,  0.53987073, -0.7320696 ],
+                         [ 0.16823806, -0.35898889,  0.53664261, -0.74487424],
+                         [ 0.17094453, -0.3723117 ,  0.54109885, -0.73442086],
+                         [ 0.1862619 , -0.38421818,  0.5260265 , -0.73551276]])
         """
         self.remove_jumps()
         interpolated_quaternions = np.copy(self.array)
