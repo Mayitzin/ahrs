@@ -3041,6 +3041,22 @@ class QuaternionArray(np.ndarray):
         w : numpy.ndarray
             (N-1)-by-3 array with angular velocities in rad/s.
 
+        Examples
+        --------
+        >>> qts = np.tile([1., -2., 3., -4], (5, 1))    # Five equal arrays
+        >>> v = np.random.randn(5, 4)*0.1               # Gaussian noise
+        >>> Q = QuaternionArray(qts + v)
+        >>> Q.view()
+        QuaternionArray([[ 0.18873724, -0.36700234,  0.57194646, -0.70891804],
+                         [ 0.21652608, -0.37263592,  0.54594733, -0.71847091],
+                         [ 0.19481676, -0.38515671,  0.54045061, -0.72222841],
+                         [ 0.16899238, -0.3725492 ,  0.56720371, -0.71479271],
+                         [ 0.17139691, -0.36373225,  0.5687926 , -0.71749351]])
+        >>> Q.angular_velocities(0.01)
+        array([[ 6.60605698, -4.25771063,  1.02663571],
+               [-0.96002505,  0.61326399, -5.05901551],
+               [-6.1661511 ,  5.08207   , -0.0169264 ],
+               [ 0.55639671,  1.24262468,  1.37105397]])
         """
         if not isinstance(dt, float):
             raise TypeError(f"dt must be a float. Got {type(dt)}.")
