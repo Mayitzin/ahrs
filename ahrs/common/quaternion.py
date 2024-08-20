@@ -2404,14 +2404,9 @@ class QuaternionArray(np.ndarray):
 
         Example
         -------
-        >>> Q = QuaternionArray(np.random.random((3, 4))-0.5)
-        >>> Q[1, 1:] = 0.0
-        >>> Q.view()
-        QuaternionArray([[-0.8061095 ,  0.42513151,  0.37790158, -0.16322091],
-                         [ 0.04515362,  0.        ,  0.        ,  0.        ],
-                         [ 0.29613776,  0.21692562, -0.16253866, -0.91587493]])
+        >>> Q = QuaternionArray([[1., 0., 0., 0.], [1., 2., 3., 4.], [-1., 0., 0., 0.]])
         >>> Q.is_real()
-        array([False,  True, False])
+        array([True, False, True])
         """
         return np.all(np.isclose(self.v, np.zeros_like(self.v)), axis=1)
 
