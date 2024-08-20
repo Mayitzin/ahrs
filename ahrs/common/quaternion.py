@@ -2964,9 +2964,9 @@ class QuaternionArray(np.ndarray):
         Parameters
         ----------
         q : numpy.ndarray or ahrs.Quaternion
-            4 element array to rotate around. It can be given as a list, tuple,
-            numpy.ndarray, or a Quaternion object. It will be normalized to be
-            a unit quaternion.
+            4 element array to rotate around. It can be given as a ``list``,
+            ``tuple``, ``numpy.ndarray``, or an ``ahrs.Quaternion`` object. It
+            will be normalized to be a unit quaternion.
         inplace : bool, default: False
             If False, return a copy. Otherwise, do operation inplace, replace
             values in array and return None.
@@ -2977,7 +2977,7 @@ class QuaternionArray(np.ndarray):
         Returns
         -------
         Q' : numpy.ndarray
-            4-by-N array with all Quaternions rotated around q.
+            N-by-4 array with all Quaternions rotated around q.
 
         Examples
         --------
