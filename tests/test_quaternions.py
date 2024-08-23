@@ -161,6 +161,16 @@ class TestQuaternionArray(unittest.TestCase):
         Q = ahrs.QuaternionArray([[1., 0., 0., 0.], [-1., 0., 0., 0.], [2., 0., 0., 0.]])
         self.assertListEqual(Q.is_identity().tolist(), [True, False, True])
 
+    def test_conjugate(self):
+        Q = ahrs.QuaternionArray([[1., 0., 0., 0.], [1., 2., 3., 4.], [0., 0., 0., 1.]])
+        Q_conj = ahrs.QuaternionArray([[1., 0., 0., 0.], [1., -2., -3., -4.], [0., 0., 0., -1.]])
+        np.testing.assert_almost_equal(Q.conjugate(), Q_conj, decimal=self.decimal_precision)
+
+    def test_conj(self):
+        Q = ahrs.QuaternionArray([[1., 0., 0., 0.], [1., 2., 3., 4.], [0., 0., 0., 1.]])
+        Q_conj = ahrs.QuaternionArray([[1., 0., 0., 0.], [1., -2., -3., -4.], [0., 0., 0., -1.]])
+        np.testing.assert_almost_equal(Q.conj(), Q_conj, decimal=self.decimal_precision)
+
     def test_to_DCM(self):
         R = self.Q1.to_DCM()
         np.testing.assert_equal(R[0], np.identity(3))
