@@ -155,6 +155,12 @@ class TestQuaternionArray(unittest.TestCase):
         Q = ahrs.QuaternionArray([[1., 0., 0., 0.], [1., 2., 3., 4.], [0., 0., 0., 1.]])
         self.assertListEqual(Q.is_versor().tolist(), [True, True, True])
 
+    def test_is_identity(self):
+        Q = ahrs.QuaternionArray([[1., 0., 0., 0.], [1., 2., 3., 4.], [0., 0., 0., 1.]])
+        self.assertListEqual(Q.is_identity().tolist(), [True, False, False])
+        Q = ahrs.QuaternionArray([[1., 0., 0., 0.], [-1., 0., 0., 0.], [2., 0., 0., 0.]])
+        self.assertListEqual(Q.is_identity().tolist(), [True, False, True])
+
     def test_to_DCM(self):
         R = self.Q1.to_DCM()
         np.testing.assert_equal(R[0], np.identity(3))
