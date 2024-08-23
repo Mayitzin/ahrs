@@ -1986,7 +1986,14 @@ class QuaternionArray(np.ndarray):
         the given int. If None is given, a single identity quaternion is
         stored in a 2d array.
     versors : bool, default: True
-        Treat quaternions as versors. It will normalize them immediately.
+        Treat quaternions as versors, and normalize them at creation.
+        Otherwise, the quaternions are left as they are.
+
+        .. warning::
+            Setting this parameter to ``False`` may lead to unexpected results
+            if the quaternions are treated as rotation operators or orientation
+            representations.
+
     order : str, default: 'H'
         Specify the layout of the Quaternions, where the default is ``'H'`` for
         a Hamiltonian notation with the scalar parts preceding the vector parts.
@@ -2074,12 +2081,6 @@ class QuaternionArray(np.ndarray):
     still represent the same rotation in 3D Euclidean space), we can use the
     method :meth:`remove_jumps` to flip them back.
 
-    >>> Q.view()
-    QuaternionArray([[ 0.17614144, -0.39173347,  0.56303067, -0.70605634],
-                     [ 0.17607515, -0.3839024 ,  0.52673809, -0.73767437],
-                     [ 0.16823806, -0.35898889,  0.53664261, -0.74487424],
-                     [ 0.17094453, -0.3723117 ,  0.54109885, -0.73442086],
-                     [ 0.1862619 , -0.38421818,  0.5260265 , -0.73551276]])
     >>> Q[1:3] *= -1
     >>> Q.view()
     QuaternionArray([[ 0.17614144, -0.39173347,  0.56303067, -0.70605634],
@@ -2133,7 +2134,7 @@ class QuaternionArray(np.ndarray):
         # QuaternionArray.
         obj = super(QuaternionArray, subtype).__new__(subtype, q.shape, float, q)
         obj.array = q
-        obj.scalar_vector = False if order == 'S' else True
+        obj.scalar_vector = order == 'H'
         obj.num_qts = q.shape[0]
         return obj
 
