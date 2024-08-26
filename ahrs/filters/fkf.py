@@ -15,7 +15,6 @@ References
 from typing import Tuple
 from typing import Optional
 import numpy as np
-from numpy.typing import ArrayLike
 from ..utils.core import _assert_numerical_iterable
 
 class FKF:
