@@ -44,7 +44,7 @@ class FKF:
         Initial value of the diagonal values of covariance matrix.
 
     """
-    def __init__(self, gyr: Optional[np.ndarray], acc: Optional[np.ndarray], mag: Optional[np.ndarray], **kwargs):
+    def __init__(self, gyr: Optional[np.ndarray] = None, acc: Optional[np.ndarray] = None, mag: Optional[np.ndarray] = None, **kwargs):
         self.gyr: Optional[np.ndarray] = gyr
         self.acc: Optional[np.ndarray] = acc
         self.mag: Optional[np.ndarray] = mag
