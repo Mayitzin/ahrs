@@ -12,7 +12,10 @@ References
 
 """
 
+from typing import Tuple
+from typing import Optional
 import numpy as np
+from numpy.typing import ArrayLike
 from ..utils.core import _assert_numerical_iterable
 
 class FKF:
@@ -42,10 +45,10 @@ class FKF:
         Initial value of the diagonal values of covariance matrix.
 
     """
-    def __init__(self, gyr: np.ndarray, acc: np.ndarray = None, mag: np.ndarray = None, **kwargs):
-        self.gyr: np.ndarray = gyr
-        self.acc: np.ndarray = acc
-        self.mag: np.ndarray = mag
+    def __init__(self, gyr: Optional[np.ndarray], acc: Optional[np.ndarray], mag: Optional[np.ndarray], **kwargs):
+        self.gyr: Optional[np.ndarray] = gyr
+        self.acc: Optional[np.ndarray] = acc
+        self.mag: Optional[np.ndarray] = mag
         self.frequency: float = kwargs.get('frequency', 100.0)
         self.Dt: float = kwargs.get('Dt', (1.0/self.frequency) if self.frequency else 0.01)
         self.sigma_g: float = kwargs.get('sigma_g', 0.01)
@@ -90,7 +93,7 @@ class FKF:
             [x[1], -x[2],   0.0,  x[0]],
             [x[2],  x[1], -x[0],   0.0]])
 
-    def kalman_update(self, xk_1: np.ndarray, yk: np.ndarray, Pk_1: np.ndarray, Phi_k: np.ndarray, Xi_k: np.ndarray, Eps_k: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def kalman_update(self, xk_1: np.ndarray, yk: np.ndarray, Pk_1: np.ndarray, Phi_k: np.ndarray, Xi_k: np.ndarray, Eps_k: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         x_ = Phi_k @ xk_1
         Pk_ = Phi_k @ (Pk_1 @ Phi_k.transpose()) + Xi_k
         Gk = Pk_ @ (np.linalg.inv(Pk_ + Eps_k))
@@ -98,7 +101,7 @@ class FKF:
         xk = x_ + Gk @ (yk - x_)
         return xk, Pk
 
-    def measurement_quaternion_acc_mag(self, q: np.ndarray, acc: np.ndarray, mag: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def measurement_quaternion_acc_mag(self, q: np.ndarray, acc: np.ndarray, mag: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
         Measurement model of Accelerometer and Magnetometer.
 
