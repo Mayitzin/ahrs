@@ -178,9 +178,11 @@ class FKF:
         _assert_numerical_iterable(self.gyr, 'Angular velocity vector')
         _assert_numerical_iterable(self.acc, 'Gravitational acceleration vector')
         _assert_numerical_iterable(self.mag, 'Geomagnetic field vector')
-        gyr = np.copy(self.gyr)
-        acc = np.copy(self.acc)
-        mag = np.copy(self.mag)
+        gyr = np.atleast_2d(np.copy(self.gyr))
+        acc = np.atleast_2d(np.copy(self.acc))
+        mag = np.atleast_2d(np.copy(self.mag))
+        if gyr.shape != acc.shape or gyr.shape != mag.shape:
+            raise ValueError("All input arrays must have the same shape.")
         num_samples = gyr.shape[0]
         Sigma_g = self.sigma_g * np.identity(3)
         Sigma_am = np.diag([self.sigma_a]*3 + [self.sigma_m]*3)     # (eq. 28)
