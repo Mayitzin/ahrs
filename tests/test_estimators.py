@@ -1290,5 +1290,30 @@ class TestROLEQ(unittest.TestCase):
         self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, q0=[1.0, 0.0, 0.0])
         self.assertRaises(ValueError, ahrs.filters.ROLEQ, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, q0=np.zeros(4))
 
+class TestFKF(unittest.TestCase):
+    def setUp(self) -> None:
+        # Synthetic sensor data
+        self.gyroscopes = np.copy(SENSOR_DATA.gyroscopes)
+        self.accelerometers = np.copy(SENSOR_DATA.accelerometers)
+        self.magnetometers = np.copy(SENSOR_DATA.magnetometers)
+
+    def test_estimation(self):
+        orientation = ahrs.QuaternionArray(ahrs.filters.FKF(gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers).Q)
+        orientation.rotate_by(orientation[0]*np.array([1.0, -1.0, -1.0, -1.0]), inplace=True)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS, orientation)), THRESHOLD)
+
+    def test_wrong_input_vectors(self):
+        self.assertRaises(TypeError, ahrs.filters.FKF, gyr=self.gyroscopes, acc=1.0, mag=self.magnetometers)
+        self.assertRaises(TypeError, ahrs.filters.FKF, gyr=self.gyroscopes, acc="self.accelerometers", mag=self.magnetometers)
+        self.assertRaises(TypeError, ahrs.filters.FKF, gyr=self.gyroscopes, acc=True, mag=self.magnetometers)
+        self.assertRaises(TypeError, ahrs.filters.FKF, gyr=self.gyroscopes, acc=1.0, mag=2.0)
+        self.assertRaises(TypeError, ahrs.filters.FKF, gyr=self.gyroscopes, acc=self.accelerometers, mag=2.0)
+        self.assertRaises(TypeError, ahrs.filters.FKF, gyr=self.gyroscopes, acc="self.accelerometers", mag="self.magnetometers")
+        self.assertRaises(TypeError, ahrs.filters.FKF, gyr=self.gyroscopes, acc=self.accelerometers[0], mag=True)
+        self.assertRaises(TypeError, ahrs.filters.FKF, gyr=self.gyroscopes, acc=True, mag=[1.0, 2.0, 3.0])
+        self.assertRaises(ValueError, ahrs.filters.FKF, gyr=self.gyroscopes, acc=[1.0, 2.0, 3.0], mag=self.magnetometers)
+        self.assertRaises(ValueError, ahrs.filters.FKF, gyr=self.gyroscopes, acc=self.accelerometers, mag=[2.0, 3.0, 4.0])
+        self.assertRaises(ValueError, ahrs.filters.FKF, gyr=self.gyroscopes, acc=[1.0, 2.0], mag=[2.0, 3.0, 4.0])
+
 if __name__ == '__main__':
     unittest.main()
