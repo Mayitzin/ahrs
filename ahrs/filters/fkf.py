@@ -93,6 +93,32 @@ class FKF:
             [x[2],  x[1], -x[0],   0.0]])
 
     def kalman_update(self, xk_1: np.ndarray, yk: np.ndarray, Pk_1: np.ndarray, Phi_k: np.ndarray, Xi_k: np.ndarray, Eps_k: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Kalman update step.
+
+        Parameters
+        ----------
+        xk_1 : numpy.ndarray
+            Previous state vector.
+        yk : numpy.ndarray
+            Measurement vector.
+        Pk_1 : numpy.ndarray
+            Previous covariance matrix.
+        Phi_k : numpy.ndarray
+            State transition matrix.
+        Xi_k : numpy.ndarray
+            Process noise covariance matrix.
+        Eps_k : numpy.ndarray
+            Measurement noise covariance matrix.
+
+        Returns
+        -------
+        xk : numpy.ndarray
+            Updated state vector.
+        Pk : numpy.ndarray
+            Updated covariance matrix.
+
+        """
         x_ = Phi_k @ xk_1
         Pk_ = Phi_k @ (Pk_1 @ Phi_k.transpose()) + Xi_k
         Gk = Pk_ @ (np.linalg.inv(Pk_ + Eps_k))
