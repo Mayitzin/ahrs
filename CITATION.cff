@@ -1,0 +1,9 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: "Garcia"
+    given-names: "Mario"
+    orcid: "https://orcid.org/0009-0000-3927-1842"
+title: "Attitude and Heading Reference Systems in Python"
+date-released: 2020-01-10
+url: "https://github.com/Mayitzin/ahrs"
