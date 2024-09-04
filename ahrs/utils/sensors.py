@@ -1,6 +1,33 @@
 # -*- coding: utf-8 -*-
 """
-Submodule for sensor models.
+Submodule for INS sensor models.
+
+This module generates synthetic sensor data of a hypothetical strapdown
+inertial navigation system (INS.) It generates data of a 9-DOF IMU (3-axes
+gyroscope, 3-axes accelerometer, and 3-axes magnetometer) from a given array of
+orientations as quaternions.
+
+The accelerometer data is given as m/s^2, the gyroscope data as deg/s, and the
+magnetometer data as nT.
+
+If no quaternions are provided, it generates random angular positions and
+computes the corresponding quaternions.
+
+The sensor data can be accessed as attributes of the object. For example, the
+gyroscope data can be accessed as ``sensors.gyroscopes``.
+
+Examples
+--------
+>>> sensors = Sensors(num_samples=1000)
+>>> sensors.gyroscopes.shape
+(1000, 3)
+>>> sensors.accelerometers.shape
+(1000, 3)
+>>> sensors.magnetometers.shape
+(1000, 3)
+>>> sensors.quaternions.shape
+(1000, 4)
+
 """
 
 import numpy as np
