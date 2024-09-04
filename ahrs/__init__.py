@@ -15,5 +15,6 @@ from .common.constants import *
 from .common.quaternion import Quaternion
 from .common.quaternion import QuaternionArray
 from .common.dcm import DCM
+from .utils.sensors import Sensors
 
 __version__ = "0.4.0"
