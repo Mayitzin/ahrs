@@ -1129,14 +1129,6 @@ def slerp(q0: np.ndarray, q1: np.ndarray, t_array: np.ndarray, threshold: float 
     s1 = sin_theta/sin_theta_0
     return s0[:,np.newaxis]*q0[np.newaxis,:] + s1[:,np.newaxis]*q1[np.newaxis,:]
 
-def logR(R: np.ndarray) -> np.ndarray:
-    S = 0.5*(R-R.T)
-    y = np.array([S[2, 1], -S[2, 0], S[1, 0]])
-    if np.allclose(np.zeros(3), y):
-        return np.zeros(3)
-    y_norm = np.linalg.norm(y)
-    return np.arcsin(y_norm)*y/y_norm
-
 def chiaverini(dcm: np.ndarray) -> np.ndarray:
     """
     Quaternion from a Direction Cosine Matrix with Chiaverini's algebraic
