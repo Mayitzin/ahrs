@@ -3,11 +3,16 @@ import unittest
 import numpy as np
 import ahrs
 
+GENERATOR = np.random.default_rng(42)
+THRESHOLD = 0.1
+
 class TestDCM(unittest.TestCase):
     def setUp(self) -> None:
         self.R0 = ahrs.DCM()
-        self.vector = np.random.random(3)*180-90
+        self.vector = GENERATOR.random(3)*180-90
         self.R = ahrs.DCM(rpy=self.vector)
+        self.q = ahrs.Quaternion(GENERATOR.random(4)-0.5)
+        self.R1 = ahrs.DCM(q=self.q)
 
     def test_rotation_matrix_in_SO3(self):
         self.assertAlmostEqual(np.linalg.det(self.R), 1.0)
@@ -49,6 +54,12 @@ class TestDCM(unittest.TestCase):
         self.assertRaises(ValueError, ahrs.DCM, q=np.random.random(3))
         self.assertRaises(ValueError, ahrs.DCM, q=np.random.random(5))
         self.assertRaises(ValueError, ahrs.DCM, q=np.random.random((5, 3)))
+
+    def test_default_method_dcm_to_q(self):
+        self.assertLessEqual(ahrs.utils.metrics.qad(self.q, self.R1.to_quaternion()), THRESHOLD)
+
+    def test_chiavereini_method_dcm_to_q(self):
+        self.assertLessEqual(ahrs.utils.metrics.qad(self.q, self.R1.to_quaternion(method='chiaverini')), THRESHOLD)
 
 if __name__ == "__main__":
     unittest.main()
