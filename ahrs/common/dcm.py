@@ -103,8 +103,7 @@ References
 from typing import Tuple
 import numpy as np
 from .mathfuncs import skew
-from .orientation import rotation
-from .orientation import rot_seq
+from .constants import DEG2RAD
 # Functions to convert DCM to quaternion representation
 from .orientation import shepperd
 from .orientation import hughes
@@ -126,6 +125,186 @@ def _assert_SO3(array: np.ndarray, R_name: str = 'R'):
         in_SO3 &= np.allclose([x@x.T for x in array], np.identity(3))
     if not in_SO3:
         raise ValueError("Given attitude is not in SO(3)")
+
+def rotation(ax: str | int = None, ang: float = 0.0, degrees: bool = False) -> np.ndarray:
+    """
+    Return a Direction Cosine Matrix
+
+    The rotation matrix :math:`\\mathbf{R}` [1]_ is created for the given axis
+    with the given angle :math:`\\theta`. Where the possible rotation axes are:
+
+    .. math::
+
+        \\mathbf{R}_X(\\theta) =
+        \\begin{bmatrix}
+        1 & 0 & 0 \\\\
+        0 & \\cos \\theta & -\\sin \\theta \\\\
+        0 & \\sin \\theta &  \\cos \\theta
+        \\end{bmatrix}
+
+        \\mathbf{R}_Y(\\theta) =
+        \\begin{bmatrix}
+        \\cos \\theta & 0 & \\sin \\theta \\\\
+        0 & 1 & 0 \\\\
+        -\\sin \\theta & 0 & \\cos \\theta
+        \\end{bmatrix}
+
+        \\mathbf{R}_Z(\\theta) =
+        \\begin{bmatrix}
+        \\cos \\theta & -\\sin \\theta & 0 \\\\
+        \\sin \\theta &  \\cos \\theta & 0 \\\\
+        0 & 0 & 1
+        \\end{bmatrix}
+
+    where :math:`\\theta` is a float number representing the angle of rotation
+    in degrees.
+
+    Parameters
+    ----------
+    ax : string or int
+        Axis to rotate around. Possible are `X`, `Y` or `Z` (upper- or
+        lowercase) or the corresponding axis index 0, 1 or 2. Defaults to 'z'.
+    angle : float, default: 0.0
+        Angle, in degrees, to rotate around.
+    degrees : bool, default: False
+        If True, the angle is given in degrees. Otherwise, it is given in
+        radians.
+
+    Returns
+    -------
+    R : numpy.ndarray
+        3-by-3 Direction Cosine Matrix.
+
+    Examples
+    --------
+    >>> from ahrs import rotation
+    >>> rotation()
+    array([[1. 0. 0.],
+           [0. 1. 0.],
+           [0. 0. 1.]])
+    >>> rotation('z', 30.0)
+    array([[ 0.8660254 -0.5        0.       ],
+           [ 0.5        0.8660254  0.       ],
+           [ 0.         0.         1.       ]])
+    >>> # Accepts angle input as string
+    ... rotation('x', '-30')
+    array([[ 1.         0.         0.       ],
+           [ 0.         0.8660254  0.5      ],
+           [ 0.        -0.5        0.8660254]])
+
+    Handles wrong inputs
+
+    >>> rotation('false_axis', 'invalid_angle')
+    array([[1. 0. 0.],
+           [0. 1. 0.],
+           [0. 0. 1.]])
+    >>> rotation(None, None)
+    array([[1. 0. 0.],
+           [0. 1. 0.],
+           [0. 0. 1.]])
+
+    References
+    ----------
+    .. [1] http://mathworld.wolfram.com/RotationMatrix.html
+
+    """
+    # Default values
+    valid_axes = list('xyzXYZ')
+    I_3 = np.identity(3)
+    # Handle input
+    if ang == 0.0:
+        return I_3
+    if ax is None:
+        ax = "z"
+    if isinstance(ax, int):
+        if ax < 0:
+            ax = 2      # Negative axes default to 2 (Z-axis)
+        ax = valid_axes[ax] if ax < 3 else "z"
+    try:
+        ang = float(ang)
+    except ValueError:
+        return I_3
+    # Return 3-by-3 Identity matrix if invalid input
+    if ax not in valid_axes:
+        return I_3
+    # Set sin and cos values
+    if degrees:
+        ang = ang*DEG2RAD
+    ca, sa = np.cos(ang), np.sin(ang)
+    # Compute rotation
+    if ax.lower() == "x":
+        return np.array([[1.0, 0.0, 0.0], [0.0, ca, -sa], [0.0, sa, ca]])
+    if ax.lower() == "y":
+        return np.array([[ca, 0.0, sa], [0.0, 1.0, 0.0], [-sa, 0.0, ca]])
+    if ax.lower() == "z":
+        return np.array([[ca, -sa, 0.0], [sa, ca, 0.0], [0.0, 0.0, 1.0]])
+
+def rot_seq(axes: list | str = None, angles: list | float = None, degrees: bool = False) -> np.ndarray:
+    """
+    Direction Cosine Matrix from set of axes and angles.
+
+    The rotation matrix :math:`\\mathbf{R}` is created from the given list of
+    angles rotating around the given axes order.
+
+    Parameters
+    ----------
+    axes : list of str
+        List of rotation axes.
+    angles : list of floats
+        List of rotation angles.
+    degrees : bool, default: False
+        If True, the angle is given in degrees. Otherwise, it is given in
+        radians.
+
+    Returns
+    -------
+    R : numpy.ndarray
+        3-by-3 Direction Cosine Matrix.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import random
+    >>> from ahrs.orientation import rot_seq
+    >>> num_rotations = 5
+    >>> axis_order = random.choices("XYZ", k=num_rotations)
+    >>> axis_order
+    ['Z', 'Z', 'X', 'Z', 'Y']
+    >>> angles = np.random.uniform(low=-180.0, high=180.0, size=num_rotations)
+    >>> angles
+    array([-139.24498146,  99.8691407, -171.30712526, -60.57132043,
+             17.4475838 ])
+    >>> R = rot_seq(axis_order, angles)
+    >>> R   # R = R_z(-139.24) R_z(99.87) R_x(-171.31) R_z(-60.57) R_y(17.45)
+    array([[ 0.85465231  0.3651317   0.36911822]
+           [ 0.3025091  -0.92798938  0.21754072]
+           [ 0.4219688  -0.07426006 -0.90356393]])
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Rotation_matrix#General_rotations
+    .. [2] https://en.wikipedia.org/wiki/Euler_angles
+
+    """
+    accepted_axes = list('xyzXYZ')
+    R = np.identity(3)
+    if axes is None:
+        axes = np.random.choice(accepted_axes, 3)
+    if not isinstance(axes, list):
+        axes = list(axes)
+    num_rotations = len(axes)
+    if num_rotations < 1:
+        return R
+    if angles is None:
+        angles = np.random.uniform(low=-180.0, high=180.0, size=num_rotations)
+    for x in angles:
+        if not isinstance(x, (float, int)):
+            raise TypeError(f"Angles must be float or int numbers. Got {type(x)}")
+    if set(axes).issubset(set(accepted_axes)):
+        # Perform the matrix multiplications
+        for i in range(num_rotations-1, -1, -1):
+            R = rotation(axes[i], angles[i], degrees=degrees) @ R
+    return R
 
 class DCM(np.ndarray):
     """
@@ -469,10 +648,12 @@ class DCM(np.ndarray):
                [ 0.29531805,  0.5473806 ,  0.        ]])
 
         """
-        angle = np.arccos((self.A.trace()-1)/2)
-        S = self.A-self.A.T                         # Skew-symmetric matrix
-        logR = angle*S/(2*np.sin(angle))
-        return logR
+        S = 0.5*(self.A-self.A.T)
+        y = np.array([S[2, 1], -S[2, 0], S[1, 0]])
+        if np.allclose(np.zeros(3), y):
+            return np.zeros(3)
+        y_norm = np.linalg.norm(y)
+        return np.arcsin(y_norm)*y/y_norm
 
     @property
     def adjugate(self) -> np.ndarray:
@@ -874,14 +1055,16 @@ class DCM(np.ndarray):
         q = np.array([1., 0., 0., 0.])
         if method.lower() == 'hughes':
             q = hughes(self.A)
-        if method.lower() == 'chiaverini':
+        elif method.lower() == 'chiaverini':
             q = chiaverini(self.A)
-        if method.lower() == 'shepperd':
+        elif method.lower() == 'shepperd':
             q = shepperd(self.A)
-        if method.lower() == 'itzhack':
+        elif method.lower() == 'itzhack':
             q = itzhack(self.A, version=kw.get('version', 3))
-        if method.lower() == 'sarabandi':
+        elif method.lower() == 'sarabandi':
             q = sarabandi(self.A, eta=kw.get('threshold', 0.0))
+        else:
+            raise ValueError(f"Method {method} not available. Choose from 'chiaverini', 'hughes', 'itzhack', 'sarabandi', 'shepperd'")
         return q/np.linalg.norm(q)
 
     def to_q(self, method: str='chiaverini', **kw) -> np.ndarray:
