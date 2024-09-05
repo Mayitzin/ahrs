@@ -15,7 +15,7 @@ References
 """
 
 import numpy as np
-from ..common.orientation import logR
+from ..common.dcm import DCM
 from typing import Union
 
 def _rotations_guard_clauses(R1: Union[list, np.ndarray], R2: Union[list, np.ndarray]) -> None:
@@ -235,7 +235,8 @@ def angular_distance(R1: np.ndarray, R2: np.ndarray) -> float:
     """
     _rotations_guard_clauses(R1, R2)
     R1, R2 = np.copy(R1), np.copy(R2)
-    return np.linalg.norm(logR(R1@R2.T))
+    R1R2T = DCM(R1@R2.T)
+    return np.linalg.norm(R1R2T.log)
 
 def qdist(q1: np.ndarray, q2: np.ndarray) -> float:
     """
