@@ -1532,17 +1532,23 @@ def shepperd(dcm: np.ndarray) -> np.ndarray:
     q : numpy.ndarray
         Quaternion.
     """
-    d = np.diag(dcm)
-    u = np.array([dcm.trace(), *d])
-    i = u.argmax()      # Index of the largest element in b
+    # Get elements of rotation matrix
+    r11, r12, r13 = dcm[0, 0], dcm[0, 1], dcm[0, 2]
+    r21, r22, r23 = dcm[1, 0], dcm[1, 1], dcm[1, 2]
+    r31, r32, r33 = dcm[2, 0], dcm[2, 1], dcm[2, 2]
+    u = np.array([r11+r22+r33, r11, r22, r33])
+    i = u.argmax()      # Index of the largest element in u
     if i == 0:
-        q = np.array([1.0+sum(d), dcm[1, 2]-dcm[2, 1], dcm[2, 0]-dcm[0, 2], dcm[0, 1]-dcm[1, 0]])
+        d = np.sqrt(1.0+r11+r22+r33)
+        q = 0.5 * np.array([d, (r32-r23)/d, (r13-r31)/d, (r21-r12)/d])
     elif i == 1:
-        q = np.array([dcm[1, 2]-dcm[2, 1], 1.0+d[0]-d[1]-d[2], dcm[1, 0]+dcm[0, 1], dcm[2, 0]+dcm[0, 2]])
+        d = np.sqrt(1.0+r11-r22-r33)
+        q = 0.5 * np.array([(r32-r23)/d, d, (r12+r21)/d, (r31+r13)/d])
     elif i == 2:
-        q = np.array([dcm[2, 0]-dcm[0, 2], dcm[1, 0]+dcm[0, 1], 1.0-d[0]+d[1]-d[2], dcm[2, 1]+dcm[1, 2]])
+        d = np.sqrt(1.0-r11+r22-r33)
+        q = 0.5 * np.array([(r13-r31)/d, (r12+r21)/d, d, (r23+r32)/d])
     else:
-        q = np.array([dcm[0, 1]-dcm[1, 0], dcm[2, 0]+dcm[0, 2], dcm[2, 1]+dcm[1, 2], 1.0-d[0]-d[1]+d[2]])
-    q /= 2.0*np.sqrt(q[i])
+        d = np.sqrt(1.0-r11-r22+r33)
+        q = 0.5 * np.array([(r21-r12)/d, (r31+r13)/d, (r32+r23)/d, d])
+    q /= np.linalg.norm(q)
     return q
-
