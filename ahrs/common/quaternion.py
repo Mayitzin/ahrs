@@ -2606,7 +2606,7 @@ class QuaternionArray(np.ndarray):
         Q[:, 3] = sy*cp*cr - cy*sp*sr
         return Q/np.linalg.norm(Q, axis=1)[:, None]
 
-    def from_DCM(self, DCM: np.ndarray, method: str='chiaverini', inplace: bool = True, **kw) -> np.ndarray:
+    def from_DCM(self, DCM: np.ndarray, method: str='shepperd', inplace: bool = True, **kw) -> np.ndarray:
         """
         Quaternion from Direction Cosine Matrix.
 
