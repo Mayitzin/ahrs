@@ -1011,14 +1011,14 @@ class DCM(np.ndarray):
         """
         return self.from_quaternion(q)
 
-    def to_quaternion(self, method: str='chiaverini', **kw) -> np.ndarray:
+    def to_quaternion(self, method: str='shepperd', **kw) -> np.ndarray:
         """
         Quaternion from Direction Cosine Matrix.
 
         There are five methods available to obtain a quaternion from a
         Direction Cosine Matrix:
 
-        * ``'chiaverini'`` as described in [Chiaverini]_.
+        * ``'shepperd'`` as described in [Chiaverini]_.
         * ``'hughes'`` as described in [Hughes]_.
         * ``'itzhack'`` as described in [Bar-Itzhack]_ using version ``3`` by
           default. Possible options are integers ``1``, ``2`` or ``3``.
@@ -1029,9 +1029,9 @@ class DCM(np.ndarray):
 
         Parameters
         ----------
-        method : str, default: ``'chiaverini'``
-            Method to use. Options are: ``'chiaverini'``, ``'hughes'``,
-            ``'itzhack'``, ``'sarabandi'``, and ``'shepperd'``.
+        method : str, default: ``'shepperd'``
+            Method to use. Options are: ``'shepperd'``, ``'hughes'``,
+            ``'itzhack'``, ``'sarabandi'``, and ``'chiaverini'``.
 
         Examples
         --------
@@ -1040,16 +1040,16 @@ class DCM(np.ndarray):
         DCM([[ 0.92541658, -0.31879578, -0.20487413],
              [ 0.16317591,  0.82317294, -0.54383814],
              [ 0.34202014,  0.46984631,  0.81379768]])
-        >>> R.to_quaternion()   # Uses method 'chiaverini' by default
-        array([ 0.94371436,  0.26853582, -0.14487813,  0.12767944])
+        >>> R.to_quaternion()   # Uses method 'shepperd' by default
+        array([ 0.15842345,  0.5510871 , -0.40599185,  0.71160076])
         >>> R.to_quaternion('shepperd')
-        array([ 0.94371436, -0.26853582,  0.14487813, -0.12767944])
+        array([ 0.15842345,  0.5510871 , -0.40599185,  0.71160076])
         >>> R.to_quaternion('hughes')
-        array([ 0.94371436, -0.26853582,  0.14487813, -0.12767944])
+        array([ 0.15842345,  0.5510871 , -0.40599185,  0.71160076])
         >>> R.to_quaternion('itzhack', version=2)
-        array([ 0.94371436, -0.26853582,  0.14487813, -0.12767944])
+        array([ 0.15842345,  0.5510871 , -0.40599185,  0.71160076])
         >>> R.to_quaternion('sarabandi', threshold=0.5)
-        array([0.94371436, 0.26853582, 0.14487813, 0.12767944])
+        array([0.15842345, 0.5510871 , 0.40599185, 0.71160076])
 
         """
         q = np.array([1., 0., 0., 0.])
@@ -1067,13 +1067,13 @@ class DCM(np.ndarray):
             raise ValueError(f"Method {method} not available. Choose from 'chiaverini', 'hughes', 'itzhack', 'sarabandi', 'shepperd'")
         return q/np.linalg.norm(q)
 
-    def to_q(self, method: str='chiaverini', **kw) -> np.ndarray:
+    def to_q(self, method: str='shepperd', **kw) -> np.ndarray:
         """
         Synonym of method :meth:`to_quaternion`.
 
         Parameters
         ----------
-        method : str, default: ``'chiaverini'``
+        method : str, default: ``'shepperd'``
             Method to use. Options are: ``'chiaverini'``, ``'hughes'``,
             ``'itzhack'``, ``'sarabandi'``, and ``'shepperd'``.
 
@@ -1081,19 +1081,19 @@ class DCM(np.ndarray):
         --------
         >>> R = DCM(rpy=[10.0, -20.0, 30.0])
         >>> R.view()
-        DCM([[ 0.92541658, -0.31879578, -0.20487413],
-             [ 0.16317591,  0.82317294, -0.54383814],
-             [ 0.34202014,  0.46984631,  0.81379768]])
-        >>> R.to_q()   # Uses method 'chiaverini' by default
-        array([ 0.94371436,  0.26853582, -0.14487813,  0.12767944])
+        DCM([[-0.34241004, -0.67294223,  0.65567074],
+             [-0.22200526, -0.62014526, -0.75241845],
+             [ 0.91294525, -0.40319798,  0.06294725]])
+        >>> R.to_q()   # Uses method 'shepperd' by default
+        array([ 0.15842345,  0.5510871 , -0.40599185,  0.71160076])
         >>> R.to_q('shepperd')
-        array([ 0.94371436, -0.26853582,  0.14487813, -0.12767944])
+        array([ 0.15842345,  0.5510871 , -0.40599185,  0.71160076])
         >>> R.to_q('hughes')
-        array([ 0.94371436, -0.26853582,  0.14487813, -0.12767944])
+        array([ 0.15842345,  0.5510871 , -0.40599185,  0.71160076])
         >>> R.to_q('itzhack', version=2)
-        array([ 0.94371436, -0.26853582,  0.14487813, -0.12767944])
+        array([ 0.15842345,  0.5510871 , -0.40599185,  0.71160076])
         >>> R.to_q('sarabandi', threshold=0.5)
-        array([0.94371436, 0.26853582, 0.14487813, 0.12767944])
+        array([0.15842345, 0.5510871 , 0.40599185, 0.71160076])
         """
         return self.to_quaternion(method=method, **kw)
 

@@ -1732,7 +1732,7 @@ class Quaternion(np.ndarray):
             [2.0*(self.x*self.y+self.w*self.z), 1.0-2.0*(self.x**2+self.z**2), 2.0*(self.y*self.z-self.w*self.x)],
             [2.0*(self.x*self.z-self.w*self.y), 2.0*(self.w*self.x+self.y*self.z), 1.0-2.0*(self.x**2+self.y**2)]])
 
-    def from_DCM(self, dcm: np.ndarray, method: str = 'chiaverini', **kw) -> np.ndarray:
+    def from_DCM(self, dcm: np.ndarray, method: str = 'shepperd', **kw) -> np.ndarray:
         """
         Quaternion from Direction Cosine Matrix.
 
@@ -1749,7 +1749,7 @@ class Quaternion(np.ndarray):
         ----------
         dcm : numpy.ndarray
             3-by-3 Direction Cosine Matrix.
-        method : str, default: 'chiaverini'
+        method : str, default: 'shepperd'
             Method to use. Options are: 'chiaverini', 'hughes', 'itzhack',
             'sarabandi', and 'shepperd'.
 
