@@ -1411,6 +1411,117 @@ def shepperd(dcm: np.ndarray) -> np.ndarray:
     """
     Quaternion from a Direction Cosine Matrix with Shepperd's method [Shepperd]_.
 
+    Since it was proposed in 1978, the Shepperd method has been widely used
+    in the aerospace industry.
+
+    An arbitrary rotation in :math:`\\mathbf{R}\\in\\mathbb{R}^3` is
+    represented by an orthogonal matrix of the form:
+
+    .. math::
+        \\mathbf{R} = \\begin{bmatrix}
+            r_{11} & r_{12} & r_{13} \\\\
+            r_{21} & r_{22} & r_{23} \\\\
+            r_{31} & r_{32} & r_{33}
+        \\end{bmatrix}
+
+    The information about the axis and angle of rotation is usually organized
+    as a quaternion :math:`\\mathbf{q} = [q_w, q_x, q_y, q_z]`, where the
+    unit vector :math:`\\mathbf{n} = [n_x, n_y, n_z]` is the axis of rotation,
+    and :math:`\\theta` is the angle of rotation.
+
+    .. math::
+
+        \\begin{array}{rcl}
+        q_w &=& \\cos (\\frac{\\theta}{2}) \\\\
+        q_x &=& n_x \\sin (\\frac{\\theta}{2}) \\\\
+        q_y &=& n_y \\sin (\\frac{\\theta}{2}) \\\\
+        q_z &=& n_z \\sin (\\frac{\\theta}{2})
+        \\end{array}
+
+    This quaternion is unitary, which means that its norm is equal to 1:
+
+    .. math::
+
+        \\|\\mathbf{q}\\| = \\sqrt{q_w^2 + q_x^2 + q_y^2 + q_z^2} = 1
+
+    A :math:`3\\times 3` rotation matrix can be expressed in terms of the
+    quaternion as:
+
+    .. math::
+
+        \\mathbf{R} = \\begin{bmatrix}
+            q_w^2+q_x^2-q_y^2-q_z^2 & 2(q_xq_y-q_zq_w) & 2(q_xq_z+q_yq_w) \\\\
+            2(q_xq_y+q_zq_w) & q_w^2-q_x^2+q_y^2-q_z^2 & 2(q_yq_z-q_xq_w) \\\\
+            2(q_xq_z-q_yq_w) & 2(q_yq_z+q_xq_w) & q_w^2-q_x^2-q_y^2+q_z^2
+        \\end{bmatrix}
+
+    Clearing for the quaternion components, we have:
+
+    .. math::
+
+        \\begin{array}{rcl}
+        4q_w^2 &=& 1 + r_{11} + r_{22} + r_{33} \\\\
+        4q_x^2 &=& 1 + r_{11} - r_{22} - r_{33} \\\\
+        4q_y^2 &=& 1 - r_{11} + r_{22} - r_{33} \\\\
+        4q_z^2 &=& 1 - r_{11} - r_{22} + r_{33} \\\\
+        4q_yq_z &=& r_{23} + r_{32} \\\\
+        4q_xq_z &=& r_{31} + r_{13} \\\\
+        4q_xq_y &=& r_{12} + r_{21} \\\\
+        4q_wq_x &=& r_{32} - r_{23} \\\\
+        4q_wq_y &=& r_{13} - r_{31} \\\\
+        4q_wq_z &=& r_{21} - r_{12}
+        \\end{array}
+
+    From this system of equations, there are 4 possible solutions for the
+    quaternion, which are:
+
+    .. math::
+
+        \\begin{array}{rcl}
+            \\mathbf{q}_1 &=& \\frac{1}{2} \\begin{bmatrix}
+                \\sqrt{1+r_{11}+r_{22}+r_{33}} \\\\
+                \\frac{r_{32}-r_{23}}{\\sqrt{1+r_{11}+r_{22}+r_{33}}} \\\\
+                \\frac{r_{13}-r_{31}}{\\sqrt{1+r_{11}+r_{22}+r_{33}}} \\\\
+                \\frac{r_{21}-r_{12}}{\\sqrt{1+r_{11}+r_{22}+r_{33}}}
+            \\end{bmatrix} \\\\ \\\\
+            \\mathbf{q}_2 &=& \\frac{1}{2} \\begin{bmatrix}
+                \\frac{r_{32}-r_{23}}{\\sqrt{1+r_{11}-r_{22}-r_{33}}} \\\\
+                \\sqrt{1+r_{11}-r_{22}-r_{33}} \\\\
+                \\frac{r_{12}+r_{21}}{\\sqrt{1+r_{11}-r_{22}-r_{33}}} \\\\
+                \\frac{r_{31}+r_{13}}{\\sqrt{1+r_{11}-r_{22}-r_{33}}}
+            \\end{bmatrix} \\\\ \\\\
+            \\mathbf{q}_3 &=& \\frac{1}{2} \\begin{bmatrix}
+                \\frac{r_{13}-r_{31}}{\\sqrt{1-r_{11}+r_{22}-r_{33}}} \\\\
+                \\frac{r_{12}+r_{21}}{\\sqrt{1-r_{11}+r_{22}-r_{33}}} \\\\
+                \\sqrt{1-r_{11}+r_{22}-r_{33}} \\\\
+                \\frac{r_{23}+r_{32}}{\\sqrt{1-r_{11}+r_{22}-r_{33}}}
+            \\end{bmatrix} \\\\ \\\\
+            \\mathbf{q}_4 &=& \\frac{1}{2} \\begin{bmatrix}
+                \\frac{r_{21}-r_{12}}{\\sqrt{1-r_{11}-r_{22}+r_{33}}} \\\\
+                \\frac{r_{31}+r_{13}}{\\sqrt{1-r_{11}-r_{22}+r_{33}}} \\\\
+                \\frac{r_{32}+r_{23}}{\\sqrt{1-r_{11}-r_{22}+r_{33}}} \\\\
+                \\sqrt{1-r_{11}-r_{22}+r_{33}}
+            \\end{bmatrix}
+        \\end{array}
+
+    Numerically, one of the solutions is better conditioned than the others
+    due to the square root operation or when dividing by very small numbers.
+
+    To obtain the better conditioned solution for each case, we get the ordinal
+    number :math:`i` of the largest element in the following vector:
+
+    .. math::
+
+        \\mathbf{u}_i = \\begin{bmatrix}
+            r_{11} + r_{22} + r_{33} \\\\ r_{11} \\\\ r_{22} \\\\ r_{33}
+        \\end{bmatrix}
+
+    The best solution is, then, the one corresponding to the largest element in
+    :math:`\\mathbf{u}_i`.
+
+    So, for example, if :math:`r_{11} + r_{22} + r_{33}` is the largest among
+    the four elements, the best solution is :math:`\\mathbf{q}_1`.
+
     Parameters
     ----------
     dcm : numpy.ndarray
@@ -1422,8 +1533,8 @@ def shepperd(dcm: np.ndarray) -> np.ndarray:
         Quaternion.
     """
     d = np.diag(dcm)
-    b = np.array([dcm.trace(), *d])
-    i = b.argmax()
+    u = np.array([dcm.trace(), *d])
+    i = u.argmax()      # Index of the largest element in b
     if i == 0:
         q = np.array([1.0+sum(d), dcm[1, 2]-dcm[2, 1], dcm[2, 0]-dcm[0, 2], dcm[0, 1]-dcm[1, 0]])
     elif i == 1:
