@@ -26,6 +26,7 @@ version in the git repository and install it manually:
 To install as editable do this:
 
 .. code-block:: console
+
     git clone https://github.com/Mayitzin/ahrs.git
     cd ahrs/
     python pip install -e .
@@ -33,6 +34,7 @@ To install as editable do this:
 To install specific requirements, do this:
 
 .. code-block:: console
+
    python pip install .[dev]
    python pip install .[docs]
 
