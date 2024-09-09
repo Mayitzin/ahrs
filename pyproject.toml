@@ -37,7 +37,7 @@ classifiers = [
 ]
 dependencies = [
     "numpy>=1.17",
-    "docutils<=0.18.1",
+    "docutils>=0.18.1",
 ]
 
 [tool.hatch.version]
