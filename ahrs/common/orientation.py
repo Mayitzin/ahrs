@@ -774,9 +774,9 @@ def rpy2q(angles: np.ndarray, in_deg: bool = False) -> np.ndarray:
     if in_deg:
         angles *= DEG2RAD
     if angles.ndim < 2:
-        yaw, pitch, roll = angles
+        roll, pitch, yaw = angles
     else:
-        yaw, pitch, roll = angles.T
+        roll, pitch, yaw = angles.T
     cr = np.cos(0.5*roll)
     sr = np.sin(0.5*roll)
     cp = np.cos(0.5*pitch)
