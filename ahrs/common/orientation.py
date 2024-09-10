@@ -1210,9 +1210,9 @@ def chiaverini(dcm: np.ndarray) -> np.ndarray:
         return q
     Q = np.zeros((dcm.shape[0], 4))
     Q[:, 0] = 0.5*np.sqrt(np.clip(dcm.trace(axis1=1, axis2=2), -1.0, 3.0) + 1.0)
-    Q[:, 1] = 0.5*np.sign(dcm[:, 2, 1] - dcm[:, 1, 2])*np.sqrt(np.clip(dcm[:, 0, 0]-dcm[:, 1, 1]-dcm[:, 2, 2], -1.0, 1.0) + 1.0)
-    Q[:, 2] = 0.5*np.sign(dcm[:, 0, 2] - dcm[:, 2, 0])*np.sqrt(np.clip(dcm[:, 1, 1]-dcm[:, 2, 2]-dcm[:, 0, 0], -1.0, 1.0) + 1.0)
-    Q[:, 3] = 0.5*np.sign(dcm[:, 1, 0] - dcm[:, 0, 1])*np.sqrt(np.clip(dcm[:, 2, 2]-dcm[:, 0, 0]-dcm[:, 1, 1], -1.0, 1.0) + 1.0)
+    Q[:, 1] = 0.5*np.sign(dcm[:, 2, 1] - dcm[:, 1, 2])*np.sqrt(np.clip(dcm[:, 0, 0]-dcm[:, 1, 1]-dcm[:, 2, 2], -1.0, 3.0) + 1.0)
+    Q[:, 2] = 0.5*np.sign(dcm[:, 0, 2] - dcm[:, 2, 0])*np.sqrt(np.clip(dcm[:, 1, 1]-dcm[:, 2, 2]-dcm[:, 0, 0], -1.0, 3.0) + 1.0)
+    Q[:, 3] = 0.5*np.sign(dcm[:, 1, 0] - dcm[:, 0, 1])*np.sqrt(np.clip(dcm[:, 2, 2]-dcm[:, 0, 0]-dcm[:, 1, 1], -1.0, 3.0) + 1.0)
     Q /= np.linalg.norm(Q, axis=1)[:, None]
     return Q
 
