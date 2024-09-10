@@ -1258,8 +1258,25 @@ def hughes(C: np.ndarray) -> np.ndarray:
         \\end{bmatrix}
         \\end{array}
 
-    Provided :math:`\\eta\\neq 0`. If :math:`\\eta =0`, then :math:`\\boldsymbol{\\epsilon}` is
-    simply :math:`\\mathbf{a}`.
+    The plus sign is chosen if it is advantageous to have a unique :math:`\\eta`;
+    corresponding to :math:`\\phi \\in [0, \\pi]`. To ensure uniqueness, the
+    vector part is multiplied by -1 if :math:`\\eta > 0`.
+
+    If :math:`\\eta = 0`, then it is a pure quaternion, and its vector part is:
+
+    .. math::
+
+        \\boldsymbol{\\epsilon} = \\begin{bmatrix}
+            \\sqrt{\\frac{1+c_{11}}{2}} \\\\
+            \\sqrt{\\frac{1+c_{22}}{2}} \\\\
+            \\sqrt{\\frac{1+c_{33}}{2}}
+        \\end{bmatrix}
+
+    Finally, we normalize the quaternion to have unitary norm.
+
+    .. math::
+
+        \\mathbf{q} = \\frac{\\mathbf{q}}{\\|\\mathbf{q}\\|}
 
     Parameters
     ----------
@@ -1284,8 +1301,11 @@ def hughes(C: np.ndarray) -> np.ndarray:
         if np.isclose(n, 0):                    # trace = -1: q_w = 0 (Pure Quaternion)
             e = np.sqrt((1.0+np.diag(C))/2.0)
         else:
-            e = 0.25*np.array([C[1, 2]-C[2, 1], C[2, 0]-C[0, 2], C[0, 1]-C[1, 0]])/n    # (eq. 16)
-        return np.array([n, *e])
+            e = np.array([C[1, 2]-C[2, 1], C[2, 0]-C[0, 2], C[0, 1]-C[1, 0]])/(4*n)    # (eq. 16)
+        if n > 0:
+            e *= -1
+        q = np.array([n, *e])
+        return q / np.linalg.norm(q)
     # Handle three-dimensional array
     tr = np.clip(np.trace(C, axis1=1, axis2=2), -1.0, 3.0)
     Q = np.zeros((C.shape[0], 4))
