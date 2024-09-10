@@ -1201,9 +1201,9 @@ def chiaverini(dcm: np.ndarray) -> np.ndarray:
     if dcm.ndim < 3:
         q = np.zeros(4)
         q[0] = 0.5*np.sqrt(np.clip(dcm.trace(), -1.0, 3.0) + 1.0)
-        q[1] = 0.5*np.sign(dcm[2, 1]-dcm[1, 2])*np.sqrt(np.clip(dcm[0, 0]-dcm[1, 1]-dcm[2, 2], -1.0, 1.0)+1.0)
-        q[2] = 0.5*np.sign(dcm[0, 2]-dcm[2, 0])*np.sqrt(np.clip(dcm[1, 1]-dcm[2, 2]-dcm[0, 0], -1.0, 1.0)+1.0)
-        q[3] = 0.5*np.sign(dcm[1, 0]-dcm[0, 1])*np.sqrt(np.clip(dcm[2, 2]-dcm[0, 0]-dcm[1, 1], -1.0, 1.0)+1.0)
+        q[1] = 0.5*np.sign(dcm[2, 1]-dcm[1, 2])*np.sqrt(np.clip(dcm[0, 0]-dcm[1, 1]-dcm[2, 2], -1.0, 3.0)+1.0)
+        q[2] = 0.5*np.sign(dcm[0, 2]-dcm[2, 0])*np.sqrt(np.clip(dcm[1, 1]-dcm[2, 2]-dcm[0, 0], -1.0, 3.0)+1.0)
+        q[3] = 0.5*np.sign(dcm[1, 0]-dcm[0, 1])*np.sqrt(np.clip(dcm[2, 2]-dcm[0, 0]-dcm[1, 1], -1.0, 3.0)+1.0)
         if not any(q):
             q[0] = 1.0
         q /= np.linalg.norm(q)
@@ -1372,8 +1372,8 @@ def sarabandi(dcm: np.ndarray, eta: float = 0.0) -> np.ndarray:
     :math:`q_w` can even become negative due to rounding errors, which is not
     allowed for our unit quaternion.
 
-    To obtain a more robust solution, we can to involve the off-diagonal
-    elements of the rotation matrix.
+    To obtain a more robust solution, we involve the off-diagonal elements of
+    the rotation matrix.
 
     Using the system of linear equations to substitute :math:`q_w`, :math:`q_x`,
     :math:`q_y` and :math:`q_z` in :math:`q_w^2 + q_x^2 + q_y^2 + q_z^2 = 1` we
@@ -1437,6 +1437,11 @@ def sarabandi(dcm: np.ndarray, eta: float = 0.0) -> np.ndarray:
             \\right.
         \\end{array}
 
+    Finally, if :math:`q_w` is positive, we redefine the sign of the quaternion
+    elements, with the signs of :math:`r_{32}-r_{23}`, :math:`r_{13}-r_{31}`,
+    and :math:`r_{21}-r_{12}` assigned to :math:`q_x`, :math:`q_y`, and
+    :math:`q_z`, respectively.
+
     Parameters
     ----------
     dcm : numpy.ndarray
@@ -1453,7 +1458,7 @@ def sarabandi(dcm: np.ndarray, eta: float = 0.0) -> np.ndarray:
     r11, r12, r13 = dcm[0, 0], dcm[0, 1], dcm[0, 2]
     r21, r22, r23 = dcm[1, 0], dcm[1, 1], dcm[1, 2]
     r31, r32, r33 = dcm[2, 0], dcm[2, 1], dcm[2, 2]
-    # Compute qw
+    # Compute qw (eq. 23)
     dw = r11+r22+r33
     if dw > eta:
         qw = 0.5*np.sqrt(1.0+dw)
@@ -1461,7 +1466,7 @@ def sarabandi(dcm: np.ndarray, eta: float = 0.0) -> np.ndarray:
         nom = (r32-r23)**2+(r13-r31)**2+(r21-r12)**2
         denom = 3.0-dw
         qw = 0.5*np.sqrt(nom/denom)
-    # Compute qx
+    # Compute qx (eq. 24)
     dx = r11-r22-r33
     if dx > eta:
         qx = 0.5*np.sqrt(1.0+dx)
@@ -1469,7 +1474,7 @@ def sarabandi(dcm: np.ndarray, eta: float = 0.0) -> np.ndarray:
         nom = (r32-r23)**2+(r12+r21)**2+(r31+r13)**2
         denom = 3.0-dx
         qx = 0.5*np.sqrt(nom/denom)
-    # Compute qy
+    # Compute qy (eq. 25)
     dy = -r11+r22-r33
     if dy > eta:
         qy = 0.5*np.sqrt(1.0+dy)
@@ -1477,7 +1482,7 @@ def sarabandi(dcm: np.ndarray, eta: float = 0.0) -> np.ndarray:
         nom = (r13-r31)**2+(r12+r21)**2+(r23+r32)**2
         denom = 3.0-dy
         qy = 0.5*np.sqrt(nom/denom)
-    # Compute qz
+    # Compute qz (eq. 26)
     dz = -r11-r22+r33
     if dz > eta:
         qz = 0.5*np.sqrt(1.0+dz)
