@@ -1299,7 +1299,143 @@ def hughes(C: np.ndarray) -> np.ndarray:
 
 def sarabandi(dcm: np.ndarray, eta: float = 0.0) -> np.ndarray:
     """
-    Quaternion from a Direction Cosine Matrix with Sarabandi's method [Sarabandi]_.
+    Quaternion from a Direction Cosine Matrix using Sarabandi's method
+    [Sarabandi]_.
+
+    A rotation matrix :math:`\\mathbf{R}` can be expressed as:
+
+    .. math::
+
+        \\mathbf{R} = \\begin{bmatrix}
+            r_{11} & r_{12} & r_{13} \\\\
+            r_{21} & r_{22} & r_{23} \\\\
+            r_{31} & r_{32} & r_{33}
+        \\end{bmatrix}
+
+    A quaternion :math:`\\mathbf{q}` describing the same rotation can be
+    expressed as:
+
+    .. math::
+
+        \\mathbf{q} = \\begin{bmatrix}
+            q_w \\ q_x \\ q_y \\ q_z
+        \\end{bmatrix} = \\begin{bmatrix}
+            \\cos (\\frac{\\theta}{2}) \\\\
+            n_x \\sin (\\frac{\\theta}{2}) \\\\
+            n_y \\sin (\\frac{\\theta}{2}) \\\\
+            n_z \\sin (\\frac{\\theta}{2})
+        \\end{bmatrix}
+
+    where :math:`\\theta` is the rotation angle, and :math:`\\mathbf{n}` is the
+    unitary rotation axis. The quaternion is also unitary, i.e.,
+    :math:`\\|\\mathbf{q}\\| = 1`.
+
+    The rotation matrix :math:`\\mathbf{R}` can be expressed in terms of the
+    quaternion :math:`\\mathbf{q}` as:
+
+    .. math::
+
+        \\mathbf{R} = \\begin{bmatrix}
+            1 - 2q_y^2 - 2q_z^2 & 2(q_xq_y - q_zq_w) & 2(q_xq_z + q_yq_w) \\\\
+            2(q_xq_y + q_zq_w) & 1 - 2q_x^2 - 2q_z^2 & 2(q_yq_z - q_xq_w) \\\\
+            2(q_xq_z - q_yq_w) & 2(q_yq_z + q_xq_w) & 1 - 2q_x^2 - 2q_y^2
+        \\end{bmatrix}
+
+    As with `Shepperd's method <./shepperd.html>`_, we build a system of linear
+    equations with :math:`q_w`, :math:`q_x`, :math:`q_y` and :math:`q_z`:
+
+    .. math::
+
+        \\begin{array}{rcl}
+        4q_w^2 &=& 1 + r_{11} + r_{22} + r_{33} \\\\
+        4q_x^2 &=& 1 + r_{11} - r_{22} - r_{33} \\\\
+        4q_y^2 &=& 1 - r_{11} + r_{22} - r_{33} \\\\
+        4q_z^2 &=& 1 - r_{11} - r_{22} + r_{33} \\\\
+        4q_yq_z &=& r_{23} + r_{32} \\\\
+        4q_xq_z &=& r_{31} + r_{13} \\\\
+        4q_xq_y &=& r_{12} + r_{21} \\\\
+        4q_wq_x &=& r_{32} - r_{23} \\\\
+        4q_wq_y &=& r_{13} - r_{31} \\\\
+        4q_wq_z &=& r_{21} - r_{12}
+        \\end{array}
+
+    Clearing for :math:`q_w`, we get:
+
+    .. math::
+
+        q_w = \\frac{1}{2}\\sqrt{1 + r_{11} + r_{22} + r_{33}}
+
+    We see that
+    :math:`\\mathrm{trace}(\\mathbf{R}) = r_{11}+r_{22}+r_{33} = 2\\cos\\theta + 1`.
+
+    This becomes ill-conditioned when :math:`\\theta \\rightarrow \\pi`, and
+    :math:`q_w` can even become negative due to rounding errors, which is not
+    allowed for our unit quaternion.
+
+    To obtain a more robust solution, we can to involve the off-diagonal
+    elements of the rotation matrix.
+
+    Using the system of linear equations to substitute :math:`q_w`, :math:`q_x`,
+    :math:`q_y` and :math:`q_z` in :math:`q_w^2 + q_x^2 + q_y^2 + q_z^2 = 1` we
+    get:
+
+    .. math::
+
+        \\frac{1+r_{11}+r_{22}+r_{33}}{4} +
+        \\Bigg(\\frac{r_{32}-r_{23}}{4q_w}\\Bigg)^2 +
+        \\Bigg(\\frac{r_{13}-r_{31}}{4q_w}\\Bigg)^2 +
+        \\Bigg(\\frac{r_{21}-r_{12}}{4q_w}\\Bigg)^2 = 1
+
+    Solving for :math:`q_w`:
+
+    .. math::
+
+        q_w = \\frac{1}{2}\\sqrt{\\frac{(r_{32}-r_{23})^2 + (r_{13}-r_{31})^2 + (r_{21}-r_{12})^2}{3 - r_{11} - r_{22} - r_{33}}}
+
+    This new definition of :math:`q_w` is now ill-conditioned when
+    :math:`\\theta \\rightarrow 0`. Thus, both definitions can be seen as
+    complementary.
+
+    Now we simply establish a threshold for the trace of the rotation matrix.
+    This threshold is easily defined from the terms inside the square root.
+
+    .. math::
+
+        q_w =
+        \\left\\{
+        \\begin{array}{lc}
+            \\frac{1}{2}\\sqrt{1+r_{11}+r_{22}+r_{33}} & \\mathrm{if}\\; r_{11}+r_{22}+r_{33} > \\eta \\\\
+            \\frac{1}{2}\\sqrt{\\frac{(r_{32}-r_{23})^2 + (r_{13}-r_{31})^2 + (r_{21}-r_{12})^2}{3-r_{11}-r_{22}-r_{33}}} & \\mathrm{otherwise}
+        \\end{array}
+        \\right.
+
+    Repeating the same process for the other elements of the quaternion:
+
+    .. math::
+
+        \\begin{array}{rcl}
+        q_x &=&
+            \\left\\{
+            \\begin{array}{lc}
+                \\frac{1}{2}\\sqrt{1+r_{11}-r_{22}-r_{33}} & \\mathrm{if}\\; r_{11}-r_{22}-r_{33} > \\eta \\\\
+                \\frac{1}{2}\\sqrt{\\frac{(r_{32}-r_{23})^2 + (r_{12}+r_{21})^2 + (r_{31}+r_{13})^2}{3-r_{11}+r_{22}+r_{33}}} & \\mathrm{otherwise}
+            \\end{array}
+            \\right.\\\\\\\\
+        q_y &=&
+            \\left\\{
+            \\begin{array}{lc}
+                \\frac{1}{2}\\sqrt{1-r_{11}+r_{22}-r_{33}} & \\mathrm{if}\\; -r_{11}+r_{22}-r_{33} > \\eta \\\\
+                \\frac{1}{2}\\sqrt{\\frac{(r_{13}-r_{31})^2 + (r_{12}+r_{21})^2 + (r_{23}+r_{32})^2}{3+r_{11}-r_{22}+r_{33}}} & \\mathrm{otherwise}
+            \\end{array}
+            \\right.\\\\\\\\
+        q_z &=&
+            \\left\\{
+            \\begin{array}{lc}
+                \\frac{1}{2}\\sqrt{1-r_{11}-r_{22}+r_{33}} & \\mathrm{if}\\; -r_{11}-r_{22}+r_{33} > \\eta \\\\
+                \\frac{1}{2}\\sqrt{\\frac{(r_{21}-r_{12})^2 + (r_{31}+r_{13})^2 + (r_{23}+r_{32})^2}{3+r_{11}+r_{22}-r_{33}}} & \\mathrm{otherwise}
+            \\end{array}
+            \\right.
+        \\end{array}
 
     Parameters
     ----------
@@ -1349,7 +1485,13 @@ def sarabandi(dcm: np.ndarray, eta: float = 0.0) -> np.ndarray:
         nom = (r21-r12)**2+(r31+r13)**2+(r23+r32)**2
         denom = 3.0-dz
         qz = 0.5*np.sqrt(nom/denom)
-    return np.array([qw, qx, qy, qz])
+    q = np.array([qw, qx, qy, qz])
+    # Re-define the sign of the quaternion if q_w is positive
+    if q[0] > 0.0:
+        q[1] *= np.sign(r32-r23)
+        q[2] *= np.sign(r13-r31)
+        q[3] *= np.sign(r21-r12)
+    return q / np.linalg.norm(q)
 
 def itzhack(dcm: np.ndarray, version: int = 3) -> np.ndarray:
     """
