@@ -1512,15 +1512,15 @@ def shepperd(dcm: np.ndarray) -> np.ndarray:
 
     .. math::
 
-        \\mathbf{u}_i = \\begin{bmatrix}
+        \\mathbf{u} = \\begin{bmatrix}
             r_{11} + r_{22} + r_{33} \\\\ r_{11} \\\\ r_{22} \\\\ r_{33}
         \\end{bmatrix}
 
     The best solution is, then, the one corresponding to the largest element in
-    :math:`\\mathbf{u}_i`.
+    :math:`\\mathbf{u}`.
 
-    So, for example, if :math:`r_{11} + r_{22} + r_{33}` is the largest among
-    the four elements, the best solution is :math:`\\mathbf{q}_1`.
+    For example, if :math:`r_{11} + r_{22} + r_{33}` is the largest of
+    :math:`\\mathbf{u}`, the best solution is :math:`\\mathbf{q}_1`.
 
     Parameters
     ----------
