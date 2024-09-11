@@ -622,13 +622,24 @@ class DCM(np.ndarray):
         """
         Logarithm of DCM.
 
-        The logarithmic map is defined as the inverse of the exponential map.
-        It corresponds to the logarithm given by the Rodrigues rotation formula:
+        The logarithmic map is defined as the inverse of the exponential map
+        [Cardoso]_ . It corresponds to the logarithm given by the Rodrigues
+        rotation formula:
 
         .. math::
-            \\log(\\mathbf{R}) = \\frac{\\theta(\\mathbf{R}-\\mathbf{R}^T)}{2\\sin\\theta}
+            \\log(\\mathbf{R}) = \\frac{\\theta(\\mathbf{R}^T-\\mathbf{R})}{2\\sin\\theta}
 
         with :math:`\\theta=\\arccos\\Big(\\frac{\\mathrm{tr}(\\mathbf{R}-1)}{2}\\Big)`.
+
+        The angle of rotation :math:`-\\pi < \\theta < \\pi`, satisfies
+        :math:`1+2\\cos\\theta = \\mathrm{tr}(\\mathbf{R})`.
+
+        When :math:`\\theta=0`, we have the trivial case :math:`\\mathbf{R}=\\mathbf{I}`:
+
+        .. math::
+
+            \\log\\Bigg(\\begin{bmatrix}1 & 0 & 0 \\\\ 0 & 1 & 0 \\\\ 0 & 0 & 1\\end{bmatrix}\\Bigg) =
+            \\begin{bmatrix}0 & 0 & 0 \\\\ 0 & 0 & 0 \\\\ 0 & 0 & 0\\end{bmatrix}
 
         Returns
         -------
@@ -637,23 +648,33 @@ class DCM(np.ndarray):
 
         Examples
         --------
-        >>> R = DCM(rpy=[10.0, -20.0, 30.0])
+        >>> R = DCM(rpy=[10.0, -20.0, 30.0] * ahrs.DEG2RAD)
         >>> R.view()
         DCM([[ 0.92541658, -0.31879578, -0.20487413],
              [ 0.16317591,  0.82317294, -0.54383814],
              [ 0.34202014,  0.46984631,  0.81379768]])
         >>> R.log
-        array([[ 0.        , -0.26026043, -0.29531805],
-               [ 0.26026043,  0.        , -0.5473806 ],
-               [ 0.29531805,  0.5473806 ,  0.        ]])
+        array([[ 0.        ,  0.26026043,  0.29531805],
+               [-0.26026043,  0.        ,  0.5473806 ],
+               [-0.29531805, -0.5473806 ,  0.        ]])
+
+        Reference
+        ---------
+        .. [Cardoso] J. Cardoso and F. Silva Leite. Exponentials of
+            skew-symmetric matrices and logarithms of orthogonal matrices.
+            Journal of Computational and Applied Mathematics. Volume 233, Issue
+            11, 1 April 2010, Pages 2867-2875.
+            (https://www.sciencedirect.com/science/article/pii/S0377042709007791)
 
         """
-        S = 0.5*(self.A-self.A.T)
-        y = np.array([S[2, 1], -S[2, 0], S[1, 0]])
-        if np.allclose(np.zeros(3), y):
-            return np.zeros(3)
-        y_norm = np.linalg.norm(y)
-        return np.arcsin(y_norm)*y/y_norm
+        trace_R = self.A.trace()
+        if np.isclose(trace_R, 3.0):
+            return np.zeros((3, 3))
+        theta = np.arccos((self.A.trace()-1)/2)
+        nom = theta * (self.A.T - self.A)
+        denom = 2*np.sin(theta)
+        logR = nom / denom
+        return logR
 
     @property
     def adjugate(self) -> np.ndarray:
