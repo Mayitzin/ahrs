@@ -1544,35 +1544,35 @@ def itzhack(dcm: np.ndarray, version: int = 3) -> np.ndarray:
         raise ValueError('version must be 1, 2 or 3.')
     if np.isnan(dcm).any():
         return np.array([np.nan]*4)
+    # Get elements of DCM
+    d11, d12, d13 = dcm[0, 0], dcm[0, 1], dcm[0, 2]
+    d21, d22, d23 = dcm[1, 0], dcm[1, 1], dcm[1, 2]
+    d31, d32, d33 = dcm[2, 0], dcm[2, 1], dcm[2, 2]
     is_orthogonal = np.isclose(np.linalg.det(dcm), 1.0) and np.allclose(dcm@dcm.T, np.eye(3))
-    if is_orthogonal:
-        if version == 1:
-            K2 = np.array([
-                [dcm[0, 0]-dcm[1, 1], dcm[1, 0]+dcm[0, 1], dcm[2, 0], -dcm[2, 1]],
-                [dcm[1, 0]+dcm[0, 1], dcm[1, 1]-dcm[0, 0], dcm[2, 1], dcm[2, 0]],
-                [dcm[2, 0], dcm[2, 1], -dcm[0, 0]-dcm[1, 1], dcm[0, 1]-dcm[1, 0]],
-                [-dcm[2, 1], dcm[2, 0], dcm[0, 1]-dcm[1, 0], dcm[0, 0]+dcm[1, 1]]])/2.0
-            eigval, eigvec = np.linalg.eig(K2)
-            q = eigvec[:, np.where(np.isclose(eigval, 1.0))[0]].flatten().real
-            return np.roll(q, 1)
+    if version in [1, 2] and not is_orthogonal:
+        raise ValueError('Given matrix is non-orthogonal. Versions 1 and 2 are for orthogonal matrices.')
+    if version == 1:
+        K2 = np.array([
+            [ d11-d22, d21+d12,      d31,    -d32],
+            [ d21+d12, d22-d11,      d32,     d31],
+            [ d31,         d32, -d11-d22, d12-d21],
+            [-d32,         d31,  d12-d21, d11+d22]]) / 2.0
+        eigval, eigvec = np.linalg.eig(K2)
+        q = eigvec[:, np.where(np.isclose(eigval, 1.0))[0]].flatten().real
+    else:
+        K3 = np.array([
+            [d11-d22-d33,     d21+d12,     d31+d13,     d23-d32],
+            [d21+d12,     d22-d11-d33,     d32+d23,     d31-d13],
+            [d31+d13,         d32+d23, d33-d11-d22,     d12-d21],
+            [d23-d32,         d31-d13,     d12-d21, d11+d22+d33]]) / 3.0
+        eigval, eigvec = np.linalg.eig(K3)
         if version == 2:
-            K3 = np.array([
-                [dcm[0, 0]-dcm[1, 1]-dcm[2, 2], dcm[1, 0]+dcm[0, 1], dcm[2, 0]+dcm[0, 2], dcm[1, 2]-dcm[2, 1]],
-                [dcm[1, 0]+dcm[0, 1], dcm[1, 1]-dcm[0, 0]-dcm[2, 2], dcm[2, 1]+dcm[1, 2], dcm[2, 0]-dcm[0, 2]],
-                [dcm[2, 0]+dcm[0, 2], dcm[2, 1]+dcm[1, 2], dcm[2, 2]-dcm[0, 0]-dcm[1, 1], dcm[0, 1]-dcm[1, 0]],
-                [dcm[1, 2]-dcm[2, 1], dcm[2, 0]-dcm[0, 2], dcm[0, 1]-dcm[1, 0], dcm[0, 0]+dcm[1, 1]+dcm[2, 2]]])/3.0
-            eigval, eigvec = np.linalg.eig(K3)
             q = eigvec[:, np.where(np.isclose(eigval, 1.0))[0]].flatten().real
-            return np.roll(q, 1)
-    # Non-orthogonal DCM. Use version 3
-    K3 = np.array([
-        [dcm[0, 0]-dcm[1, 1]-dcm[2, 2], dcm[1, 0]+dcm[0, 1], dcm[2, 0]+dcm[0, 2], dcm[1, 2]-dcm[2, 1]],
-        [dcm[1, 0]+dcm[0, 1], dcm[1, 1]-dcm[0, 0]-dcm[2, 2], dcm[2, 1]+dcm[1, 2], dcm[2, 0]-dcm[0, 2]],
-        [dcm[2, 0]+dcm[0, 2], dcm[2, 1]+dcm[1, 2], dcm[2, 2]-dcm[0, 0]-dcm[1, 1], dcm[0, 1]-dcm[1, 0]],
-        [dcm[1, 2]-dcm[2, 1], dcm[2, 0]-dcm[0, 2], dcm[0, 1]-dcm[1, 0], dcm[0, 0]+dcm[1, 1]+dcm[2, 2]]])/3.0
-    eigval, eigvec = np.linalg.eig(K3)
-    q = eigvec[:, eigval.argmax()]
-    return np.roll(q, 1)
+        else:
+            q = eigvec[:, eigval.argmax()]
+    q = np.roll(q, 1)       # Original implementation uses [qx, qy, qz, qw]
+    q[0] *= -1              # Original implementation computes inverse rotation
+    return q / np.linalg.norm(q)
 
 def shepperd(dcm: np.ndarray) -> np.ndarray:
     """
