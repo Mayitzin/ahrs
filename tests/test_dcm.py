@@ -4,7 +4,7 @@ import numpy as np
 import ahrs
 
 GENERATOR = np.random.default_rng(42)
-THRESHOLD = 0.1
+THRESHOLD = 1e-6
 
 class TestDCM(unittest.TestCase):
     def setUp(self) -> None:
@@ -55,11 +55,32 @@ class TestDCM(unittest.TestCase):
         self.assertRaises(ValueError, ahrs.DCM, q=np.random.random(5))
         self.assertRaises(ValueError, ahrs.DCM, q=np.random.random((5, 3)))
 
-    def test_default_method_dcm_to_q(self):
+    def test_dcm_to_q_default(self):
         self.assertLessEqual(ahrs.utils.metrics.qad(self.q, self.R1.to_quaternion()), THRESHOLD)
 
-    def test_chiavereini_method_dcm_to_q(self):
+    def test_dcm_to_q_chiavereini(self):
         self.assertLessEqual(ahrs.utils.metrics.qad(self.q, self.R1.to_quaternion(method='chiaverini')), THRESHOLD)
+
+    def test_dcm_to_q_hughes(self):
+        self.assertLessEqual(ahrs.utils.metrics.qad(self.q, self.R1.to_quaternion(method='hughes')), THRESHOLD)
+
+    def test_dcm_to_q_itzhack(self):
+        self.assertLessEqual(ahrs.utils.metrics.qad(self.q, self.R1.to_quaternion(method='itzhack')), THRESHOLD)
+
+    def test_dcm_to_q_itzhack_v1(self):
+        self.assertLessEqual(ahrs.utils.metrics.qad(self.q, self.R1.to_quaternion(method='itzhack', version=1)), THRESHOLD)
+
+    def test_dcm_to_q_itzhack_v2(self):
+        self.assertLessEqual(ahrs.utils.metrics.qad(self.q, self.R1.to_quaternion(method='itzhack', version=2)), THRESHOLD)
+
+    def test_dcm_to_q_itzhack_v3(self):
+        self.assertLessEqual(ahrs.utils.metrics.qad(self.q, self.R1.to_quaternion(method='itzhack', version=3)), THRESHOLD)
+
+    def test_dcm_to_q_sarabandi(self):
+        self.assertLessEqual(ahrs.utils.metrics.qad(self.q, self.R1.to_quaternion(method='sarabandi')), THRESHOLD)
+
+    def test_dcm_to_q_shepperd(self):
+        self.assertLessEqual(ahrs.utils.metrics.qad(self.q, self.R1.to_quaternion(method='shepperd')), THRESHOLD)
 
 if __name__ == "__main__":
     unittest.main()
