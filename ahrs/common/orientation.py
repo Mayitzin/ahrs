@@ -1520,10 +1520,215 @@ def sarabandi(dcm: np.ndarray, eta: float = 0.0) -> np.ndarray:
 
 def itzhack(dcm: np.ndarray, version: int = 3) -> np.ndarray:
     """
-    Quaternion from a Direction Cosine Matrix with Bar-Itzhack's method [Itzhack]_.
+    Quaternion from a Direction Cosine Matrix with Bar-Itzhack's method
+    [Bar-Itzhack]_.
 
-    Versions 1 and 2 are used with orthogonal matrices (which all rotation
-    matrices should be.)
+    This method to compute the quaternion from a Direction Cosine Matrix (DCM)
+    is based on the eigenvalue decomposition of the matrix :math:`\\mathbf{K}`,
+    and does not require any voting scheme like other known methods.
+
+    Moreover, this method is able to handle non-orthogonal matrices, while
+    other methods require an orthogonal matrix to be used.
+
+    As defined in `Wahba's problem <https://en.wikipedia.org/wiki/Wahba%27s_problem>`_,
+    we are looking for the quaternion, :math:`\\mathbf{q} = [q_x, q_y, q_z, q_w]`,
+    that minimizes the following cost function:
+
+    .. math::
+
+        L(\\mathbf{D}) = \\frac{1}{2}\\sum_{i=1}^{k}a_i|\\mathbf{b}_i - \\mathbf{D}\\mathbf{r}_i|^2
+
+    where :math:`\\mathbf{D}` is the DCM obtained from the quaternion `\\mathbf{q}`:
+
+    .. math::
+
+        \\mathbf{D}(\\mathbf{q}) = \\begin{bmatrix}
+            q_w^2 + q_x^2 - q_y^2 - q_z^2 & 2(q_xq_y - q_wq_z) & 2(q_xq_z + q_wq_y) \\\\
+            2(q_xq_y + q_wq_z) & q_w^2 - q_x^2 + q_y^2 - q_z^2 & 2(q_yq_z - q_wq_x) \\\\
+            2(q_xq_z - q_wq_y) & 2(q_yq_z + q_wq_x) & q_w^2 - q_x^2 - q_y^2 + q_z^2
+        \\end{bmatrix}
+
+    .. warning::
+
+        This method defines the quaternion as :math:`[q_x, q_y, q_z, q_w]` with
+        a trailing scalar part, while other methods use
+        :math:`[q_w, q_x, q_y, q_z]`, with a leading scalar part.
+
+        The algebra in this documentation will be using Itzhack's convention.
+        To cope with this, this package's implementation re-orders the
+        quaternion at the end to match the most common definition.
+
+    :math:`\\mathbf{r}` are unit vectors in the reference coordinate frame,
+    :math:`\\mathbf{b}` are the same vectors but in the body coordinate frame,
+    and :math:`\\mathbf{a}` are a set of nonnegative weights assign to each
+    pair.
+
+    Paul Davenport [Davenport1968]_ finds the optimal quaternion,
+    :math:`\\mathbf{q}^*`, that minimizes the cost function, through the
+    eigenvalue decomposition of the matrix :math:`\\mathbf{K}`:
+
+    .. math::
+
+        \\mathbf{K} = \\begin{bmatrix}
+            \\mathbf{S} - \\boldsymbol{\\sigma}\\mathbf{I}_3 & \\mathbf{z} \\\\
+            \\mathbf{z}^T & \\boldsymbol{\\sigma}
+        \\end{bmatrix}
+
+    `Davenport's Method <../filters/davenport.html>`_ yields the quaternion
+    describing a rotation from one frame to another when the components of at
+    least two vectors in each frame are known in both frames.
+
+    If we know the precise DCM that characterizes a certain rotation, we can
+    use it to generate such pairs, and then apply Daveport's method back to
+    these pairs, which yield a quaternion. Thus, we have computed the sought
+    quaternion.
+
+    Itzhack's algorithm has three versions depending on the given DCM. The
+    first two algorithms are for a given **orthogonal** attitude matrix.
+
+    **Version 1**
+
+    Because only two vectors are necessary to determine attitude, we can
+    simplify the computation choosing two unit vectors of the reference
+    coordinates:
+
+    .. math::
+
+        \\begin{array}{rcl}
+        \\mathbf{r}_1^T &=& \\begin{bmatrix} 1 & 0 & 0 \\end{bmatrix} \\\\
+        \\mathbf{r}_2^T &=& \\begin{bmatrix} 0 & 1 & 0 \\end{bmatrix}
+        \\end{array}
+
+    From the relation :math:`\\mathbf{b}_i = \\mathbf{D}\\mathbf{r}_i`, it is
+    evident that the vectors in the body system that correspond to
+    :math:`\\mathbf{r}_1` and :math:`\\mathbf{r}_2` are :math:`\\mathbf{b}_1`
+    and :math:`\\mathbf{b}_2`, respectively.
+
+    .. note::
+
+        The matrix :math:`\\mathbf{D}` is `one-based indexing
+        <https://en.wikipedia.org/wiki/Zero-based_numbering>`_. Thus,
+
+        .. math::
+
+            \\mathbf{D} = \\begin{bmatrix}
+                | & | & | \\\\ \\mathbf{d}_1 & \\mathbf{d}_2 & \\mathbf{d}_3 \\\\ | & | & |
+            \\end{bmatrix}
+            = \\begin{bmatrix}
+                d_{11} & d_{12} & d_{13} \\\\
+                d_{21} & d_{22} & d_{23} \\\\
+                d_{31} & d_{32} & d_{33}
+            \\end{bmatrix}
+
+    Because :math:`\\mathbf{D}` and :math:`\\mathbf{r}_i` are available and
+    have a simple form, we can compute :math:`\\mathbf{K}_2` directly using
+    :math:`a_i = 0.5`:
+
+    .. math::
+
+        \\mathbf{K}_2 = \\frac{1}{2}\\begin{bmatrix}
+            d_{11} - d_{22} & d_{21} + d_{12} & d_{31} & -d_{32} \\\\
+            d_{21} + d_{12} & d_{22} - d_{11} & d_{32} & d_{31} \\\\
+            d_{31} & d_{32} & -d_{11} - d_{22} & d_{12} - d_{21} \\\\
+            -d_{32} & d_{31} & d_{12} - d_{21} & d_{11} + d_{22}
+        \\end{bmatrix}
+
+    The sought quaternion, :math:`\\mathbf{q}`, is obtained by computing the
+    eigenvector of :math:`\\mathbf{K}_2` that belongs to the eigenvalue 1.
+
+    **Version 2**
+
+    If the given DCM is **imprecise but still orthogonal**, we can use either
+    two or three pairs and obtain the same results.
+
+    However, the quaternion obtained when using three pairs yields the DCM that
+    is the closest orthogonal matrix.
+
+    Re-defining our cost function as:
+
+    .. math::
+
+        L(\\mathbf{D}) = \\sum_{i=1}^{k}a_i - \\mathrm{tr}(\\mathbf{DB})^T
+
+    where:
+
+    .. math::
+
+        \\mathbf{B} = \\sum_{i=1}^{k}a_i\\mathbf{b}_i\\mathbf{r}_i^T
+
+    In this case, the matrix :math:`\\mathbf{D}_{\\mathrm{orth}}` that
+    minimizes the cost function :math:`L(\\mathbf{D})` is the same matrix that
+    maximizes :math:`\\mathrm{tr}(\\mathbf{DB})^T`, and is computable as:
+
+    .. math::
+
+        \\mathbf{D}_{\\mathrm{orth}} = \\mathbf{B}(\\mathbf{B}^T\\mathbf{B})^{-\\frac{1}{2}}
+
+    Adding a third pair of vectors similar to the first two:
+
+    .. math::
+
+        \\mathbf{r}_3^T = \\begin{bmatrix} 0 & 0 & 1 \\end{bmatrix}
+
+    we easily redefine the matrix :math:`\\mathbf{B}`:
+
+    .. math::
+
+        \\begin{array}{rcl}
+        \\mathbf{B}
+            &=& \\frac{1}{3} \\mathbf{b}_1\\mathbf{r}_1^T + \\frac{1}{3} \\mathbf{b}_2\\mathbf{r}_2^T + \\frac{1}{3} \\mathbf{b}_3\\mathbf{r}_3^T \\\\
+            &=& \\frac{1}{3}\\begin{bmatrix} \\mathbf{d}_1 & \\mathbf{d}_2 & \\mathbf{d}_3 \\end{bmatrix} \\\\
+            &=& \\frac{1}{3}\\mathbf{D}
+        \\end{array}
+
+    Therefore,
+
+    .. math::
+
+        \\mathbf{D}_{\\mathrm{orth}} = \\mathbf{D}(\\mathbf{D}^T\\mathbf{D})^{-\\frac{1}{2}}
+
+    Using only two vectors would still yield an optimal quaternion, but it
+    would not correspond to the closest orthogonal matrix of the given
+    imprecise \\mathbf{D}.
+
+    Thus, :math:`\\mathbf{D}_{\\mathrm{orth}}` is the closest orthogonal matrix
+    of the given imprecise :math:`\\mathbf{D}` that solves Wahba's problem.
+
+    From here, we define :math:`\\mathbf{K}_3` as:
+
+    .. math::
+
+        \\mathbf{K}_3 = \\frac{1}{3}\\begin{bmatrix}
+            d_{11} - d_{22} - d_{33} & d_{21} + d_{12} & d_{31} + d_{13} & d_{23} - d_{32} \\\\
+            d_{21} + d_{12} & d_{22} - d_{11} - d_{33} & d_{32} + d_{23} & d_{31} - d_{13} \\\\
+            d_{31} + d_{13} & d_{32} + d_{23} & d_{33} - d_{11} - d_{22} & d_{12} - d_{21} \\\\
+            d_{23} - d_{32} & d_{31} - d_{13} & d_{12} - d_{21} & d_{11} + d_{22} + d_{33}
+        \\end{bmatrix}
+
+    And, similarly to version 1, the sought quaternion, :math:`\\mathbf{q}`, is
+    the eigenvector of :math:`\\mathbf{K}_3` that belongs to the eigenvalue 1.
+
+    **Version 3**
+
+    If a given DCM is not quite orthogonal, the results will not be correct.
+    If two resulting quaternions are converted to DCM, the two DCMs will be
+    orthogonal because this is an inherent quality of the expression of the DCM
+    in terms of the corresponding quaternion.
+
+    Therefore, for a given non-orthogonal DCM, we re-use the same matrix
+    :math:`\\mathbf{K}_3`.
+
+    The sought quaternion, :math:`\\mathbf{q}`, is the eigenvector of
+    :math:`\\mathbf{K}_3` that belongs to its largest eigenvalue,
+    :math:`\\lambda_{\\mathrm{max}}`.
+
+    The main benefit of this version is that the computed quaternion yields the
+    closest orthogonal matrix to the given DCM.
+
+    Finally, the extraction of the quaternion from the :math:`\\mathbf{K}`
+    matrix can be done either using the `QUEST <../filters/quest.html>`_ and
+    similar algorithms or, preferably, using a known standard algorithm for
+    computing the eigenvalues and eigenvectors of a real symmetric matrix.
 
     Parameters
     ----------
@@ -1556,7 +1761,7 @@ def itzhack(dcm: np.ndarray, version: int = 3) -> np.ndarray:
             [ d11-d22, d21+d12,      d31,    -d32],
             [ d21+d12, d22-d11,      d32,     d31],
             [ d31,         d32, -d11-d22, d12-d21],
-            [-d32,         d31,  d12-d21, d11+d22]]) / 2.0
+            [-d32,         d31,  d12-d21, d11+d22]]) / 2.0  # (eq. 1)
         eigval, eigvec = np.linalg.eig(K2)
         q = eigvec[:, np.where(np.isclose(eigval, 1.0))[0]].flatten().real
     else:
@@ -1564,7 +1769,7 @@ def itzhack(dcm: np.ndarray, version: int = 3) -> np.ndarray:
             [d11-d22-d33,     d21+d12,     d31+d13,     d23-d32],
             [d21+d12,     d22-d11-d33,     d32+d23,     d31-d13],
             [d31+d13,         d32+d23, d33-d11-d22,     d12-d21],
-            [d23-d32,         d31-d13,     d12-d21, d11+d22+d33]]) / 3.0
+            [d23-d32,         d31-d13,     d12-d21, d11+d22+d33]]) / 3.0    # (eq. 2)
         eigval, eigvec = np.linalg.eig(K3)
         if version == 2:
             q = eigvec[:, np.where(np.isclose(eigval, 1.0))[0]].flatten().real
