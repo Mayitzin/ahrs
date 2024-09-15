@@ -1,2 +1,5 @@
-Sphinx>=8.0
+sphinx
+sphinx-autodoc
+sphinx-mathjax
+sphinx-napoleon
 pydata_sphinx_theme

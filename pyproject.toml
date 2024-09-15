@@ -15,7 +15,6 @@ authors = [
     {name = "Mario Garcia", email = "mariogc@protonmail.com"}
 ]
 classifiers = [
-    "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Intended Audience :: Education",
     "Intended Audience :: Science/Research",
@@ -55,7 +54,7 @@ dev = [
     "black",
 ]
 docs = [
-    "sphinx>=8.0",
+    "sphinx",
     "pydata_sphinx_theme"
 ]
 build = [
