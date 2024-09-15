@@ -41,3 +41,4 @@ html_theme = "pydata_sphinx_theme"
 html_static_path = ['_static']
 html_logo = "ahrs_logo.png"
 html_favicon = "ahrs_icon.ico"
+html_css_files = []  # Explicitly set to an empty list
