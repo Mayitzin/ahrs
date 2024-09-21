@@ -55,6 +55,9 @@ dev = [
 ]
 docs = [
     "sphinx",
+    "sphinx-autodoc",
+    "sphinx-mathjax",
+    "sphinx-napoleon",
     "pydata_sphinx_theme"
 ]
 build = [
