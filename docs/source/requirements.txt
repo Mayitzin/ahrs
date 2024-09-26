@@ -1,2 +1,2 @@
-Sphinx>=6.0
-pydata_sphinx_theme>=0.13
+sphinx<7.2
+pydata_sphinx_theme

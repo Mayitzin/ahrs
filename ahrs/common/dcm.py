@@ -103,8 +103,7 @@ References
 from typing import Tuple
 import numpy as np
 from .mathfuncs import skew
-from .orientation import rotation
-from .orientation import rot_seq
+from .constants import DEG2RAD
 # Functions to convert DCM to quaternion representation
 from .orientation import shepperd
 from .orientation import hughes
@@ -126,6 +125,186 @@ def _assert_SO3(array: np.ndarray, R_name: str = 'R'):
         in_SO3 &= np.allclose([x@x.T for x in array], np.identity(3))
     if not in_SO3:
         raise ValueError("Given attitude is not in SO(3)")
+
+def rotation(ax: str | int = None, ang: float = 0.0, degrees: bool = False) -> np.ndarray:
+    """
+    Return a Direction Cosine Matrix
+
+    The rotation matrix :math:`\\mathbf{R}` [1]_ is created for the given axis
+    with the given angle :math:`\\theta`. Where the possible rotation axes are:
+
+    .. math::
+
+        \\mathbf{R}_X(\\theta) =
+        \\begin{bmatrix}
+        1 & 0 & 0 \\\\
+        0 & \\cos \\theta & -\\sin \\theta \\\\
+        0 & \\sin \\theta &  \\cos \\theta
+        \\end{bmatrix}
+
+        \\mathbf{R}_Y(\\theta) =
+        \\begin{bmatrix}
+        \\cos \\theta & 0 & \\sin \\theta \\\\
+        0 & 1 & 0 \\\\
+        -\\sin \\theta & 0 & \\cos \\theta
+        \\end{bmatrix}
+
+        \\mathbf{R}_Z(\\theta) =
+        \\begin{bmatrix}
+        \\cos \\theta & -\\sin \\theta & 0 \\\\
+        \\sin \\theta &  \\cos \\theta & 0 \\\\
+        0 & 0 & 1
+        \\end{bmatrix}
+
+    where :math:`\\theta` is a float number representing the angle of rotation
+    in degrees.
+
+    Parameters
+    ----------
+    ax : string or int
+        Axis to rotate around. Possible are `X`, `Y` or `Z` (upper- or
+        lowercase) or the corresponding axis index 0, 1 or 2. Defaults to 'z'.
+    angle : float, default: 0.0
+        Angle, in degrees, to rotate around.
+    degrees : bool, default: False
+        If True, the angle is given in degrees. Otherwise, it is given in
+        radians.
+
+    Returns
+    -------
+    R : numpy.ndarray
+        3-by-3 Direction Cosine Matrix.
+
+    Examples
+    --------
+    >>> from ahrs import rotation
+    >>> rotation()
+    array([[1. 0. 0.],
+           [0. 1. 0.],
+           [0. 0. 1.]])
+    >>> rotation('z', 30.0)
+    array([[ 0.8660254 -0.5        0.       ],
+           [ 0.5        0.8660254  0.       ],
+           [ 0.         0.         1.       ]])
+    >>> # Accepts angle input as string
+    ... rotation('x', '-30')
+    array([[ 1.         0.         0.       ],
+           [ 0.         0.8660254  0.5      ],
+           [ 0.        -0.5        0.8660254]])
+
+    Handles wrong inputs
+
+    >>> rotation('false_axis', 'invalid_angle')
+    array([[1. 0. 0.],
+           [0. 1. 0.],
+           [0. 0. 1.]])
+    >>> rotation(None, None)
+    array([[1. 0. 0.],
+           [0. 1. 0.],
+           [0. 0. 1.]])
+
+    References
+    ----------
+    .. [1] http://mathworld.wolfram.com/RotationMatrix.html
+
+    """
+    # Default values
+    valid_axes = list('xyzXYZ')
+    I_3 = np.identity(3)
+    # Handle input
+    if ang == 0.0:
+        return I_3
+    if ax is None:
+        ax = "z"
+    if isinstance(ax, int):
+        if ax < 0:
+            ax = 2      # Negative axes default to 2 (Z-axis)
+        ax = valid_axes[ax] if ax < 3 else "z"
+    try:
+        ang = float(ang)
+    except ValueError:
+        return I_3
+    # Return 3-by-3 Identity matrix if invalid input
+    if ax not in valid_axes:
+        return I_3
+    # Set sin and cos values
+    if degrees:
+        ang = ang*DEG2RAD
+    ca, sa = np.cos(ang), np.sin(ang)
+    # Compute rotation
+    if ax.lower() == "x":
+        return np.array([[1.0, 0.0, 0.0], [0.0, ca, -sa], [0.0, sa, ca]])
+    if ax.lower() == "y":
+        return np.array([[ca, 0.0, sa], [0.0, 1.0, 0.0], [-sa, 0.0, ca]])
+    if ax.lower() == "z":
+        return np.array([[ca, -sa, 0.0], [sa, ca, 0.0], [0.0, 0.0, 1.0]])
+
+def rot_seq(axes: list | str = None, angles: list | float = None, degrees: bool = False) -> np.ndarray:
+    """
+    Direction Cosine Matrix from set of axes and angles.
+
+    The rotation matrix :math:`\\mathbf{R}` is created from the given list of
+    angles rotating around the given axes order.
+
+    Parameters
+    ----------
+    axes : list of str
+        List of rotation axes.
+    angles : list of floats
+        List of rotation angles.
+    degrees : bool, default: False
+        If True, the angle is given in degrees. Otherwise, it is given in
+        radians.
+
+    Returns
+    -------
+    R : numpy.ndarray
+        3-by-3 Direction Cosine Matrix.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import random
+    >>> from ahrs.orientation import rot_seq
+    >>> num_rotations = 5
+    >>> axis_order = random.choices("XYZ", k=num_rotations)
+    >>> axis_order
+    ['Z', 'Z', 'X', 'Z', 'Y']
+    >>> angles = np.random.uniform(low=-180.0, high=180.0, size=num_rotations)
+    >>> angles
+    array([-139.24498146,  99.8691407, -171.30712526, -60.57132043,
+             17.4475838 ])
+    >>> R = rot_seq(axis_order, angles)
+    >>> R   # R = R_z(-139.24) R_z(99.87) R_x(-171.31) R_z(-60.57) R_y(17.45)
+    array([[ 0.85465231  0.3651317   0.36911822]
+           [ 0.3025091  -0.92798938  0.21754072]
+           [ 0.4219688  -0.07426006 -0.90356393]])
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Rotation_matrix#General_rotations
+    .. [2] https://en.wikipedia.org/wiki/Euler_angles
+
+    """
+    accepted_axes = list('xyzXYZ')
+    R = np.identity(3)
+    if axes is None:
+        axes = np.random.choice(accepted_axes, 3)
+    if not isinstance(axes, list):
+        axes = list(axes)
+    num_rotations = len(axes)
+    if num_rotations < 1:
+        return R
+    if angles is None:
+        angles = np.random.uniform(low=-180.0, high=180.0, size=num_rotations)
+    for x in angles:
+        if not isinstance(x, (float, int)):
+            raise TypeError(f"Angles must be float or int numbers. Got {type(x)}")
+    if set(axes).issubset(set(accepted_axes)):
+        # Perform the matrix multiplications
+        for i in range(num_rotations-1, -1, -1):
+            R = rotation(axes[i], angles[i], degrees=degrees) @ R
+    return R
 
 class DCM(np.ndarray):
     """
@@ -443,13 +622,24 @@ class DCM(np.ndarray):
         """
         Logarithm of DCM.
 
-        The logarithmic map is defined as the inverse of the exponential map.
-        It corresponds to the logarithm given by the Rodrigues rotation formula:
+        The logarithmic map is defined as the inverse of the exponential map
+        [Cardoso]_ . It corresponds to the logarithm given by the Rodrigues
+        rotation formula:
 
         .. math::
-            \\log(\\mathbf{R}) = \\frac{\\theta(\\mathbf{R}-\\mathbf{R}^T)}{2\\sin\\theta}
+            \\log(\\mathbf{R}) = \\frac{\\theta(\\mathbf{R}^T-\\mathbf{R})}{2\\sin\\theta}
 
         with :math:`\\theta=\\arccos\\Big(\\frac{\\mathrm{tr}(\\mathbf{R}-1)}{2}\\Big)`.
+
+        The angle of rotation :math:`-\\pi < \\theta < \\pi`, satisfies
+        :math:`1+2\\cos\\theta = \\mathrm{tr}(\\mathbf{R})`.
+
+        When :math:`\\theta=0`, we have the trivial case :math:`\\mathbf{R}=\\mathbf{I}`:
+
+        .. math::
+
+            \\log\\Bigg(\\begin{bmatrix}1 & 0 & 0 \\\\ 0 & 1 & 0 \\\\ 0 & 0 & 1\\end{bmatrix}\\Bigg) =
+            \\begin{bmatrix}0 & 0 & 0 \\\\ 0 & 0 & 0 \\\\ 0 & 0 & 0\\end{bmatrix}
 
         Returns
         -------
@@ -458,20 +648,32 @@ class DCM(np.ndarray):
 
         Examples
         --------
-        >>> R = DCM(rpy=[10.0, -20.0, 30.0])
+        >>> R = DCM(rpy=[10.0, -20.0, 30.0] * ahrs.DEG2RAD)
         >>> R.view()
         DCM([[ 0.92541658, -0.31879578, -0.20487413],
              [ 0.16317591,  0.82317294, -0.54383814],
              [ 0.34202014,  0.46984631,  0.81379768]])
         >>> R.log
-        array([[ 0.        , -0.26026043, -0.29531805],
-               [ 0.26026043,  0.        , -0.5473806 ],
-               [ 0.29531805,  0.5473806 ,  0.        ]])
+        array([[ 0.        ,  0.26026043,  0.29531805],
+               [-0.26026043,  0.        ,  0.5473806 ],
+               [-0.29531805, -0.5473806 ,  0.        ]])
+
+        Reference
+        ---------
+        .. [Cardoso] J. Cardoso and F. Silva Leite. Exponentials of
+            skew-symmetric matrices and logarithms of orthogonal matrices.
+            Journal of Computational and Applied Mathematics. Volume 233, Issue
+            11, 1 April 2010, Pages 2867-2875.
+            (https://www.sciencedirect.com/science/article/pii/S0377042709007791)
 
         """
-        angle = np.arccos((self.A.trace()-1)/2)
-        S = self.A-self.A.T                         # Skew-symmetric matrix
-        logR = angle*S/(2*np.sin(angle))
+        trace_R = self.A.trace()
+        if np.isclose(trace_R, 3.0):
+            return np.zeros((3, 3))
+        theta = np.arccos((self.A.trace()-1)/2)
+        nom = theta * (self.A.T - self.A)
+        denom = 2*np.sin(theta)
+        logR = nom / denom
         return logR
 
     @property
@@ -830,14 +1032,14 @@ class DCM(np.ndarray):
         """
         return self.from_quaternion(q)
 
-    def to_quaternion(self, method: str='chiaverini', **kw) -> np.ndarray:
+    def to_quaternion(self, method: str='shepperd', **kw) -> np.ndarray:
         """
         Quaternion from Direction Cosine Matrix.
 
         There are five methods available to obtain a quaternion from a
         Direction Cosine Matrix:
 
-        * ``'chiaverini'`` as described in [Chiaverini]_.
+        * ``'shepperd'`` as described in [Chiaverini]_.
         * ``'hughes'`` as described in [Hughes]_.
         * ``'itzhack'`` as described in [Bar-Itzhack]_ using version ``3`` by
           default. Possible options are integers ``1``, ``2`` or ``3``.
@@ -848,9 +1050,9 @@ class DCM(np.ndarray):
 
         Parameters
         ----------
-        method : str, default: ``'chiaverini'``
-            Method to use. Options are: ``'chiaverini'``, ``'hughes'``,
-            ``'itzhack'``, ``'sarabandi'``, and ``'shepperd'``.
+        method : str, default: ``'shepperd'``
+            Method to use. Options are: ``'shepperd'``, ``'hughes'``,
+            ``'itzhack'``, ``'sarabandi'``, and ``'chiaverini'``.
 
         Examples
         --------
@@ -859,38 +1061,40 @@ class DCM(np.ndarray):
         DCM([[ 0.92541658, -0.31879578, -0.20487413],
              [ 0.16317591,  0.82317294, -0.54383814],
              [ 0.34202014,  0.46984631,  0.81379768]])
-        >>> R.to_quaternion()   # Uses method 'chiaverini' by default
-        array([ 0.94371436,  0.26853582, -0.14487813,  0.12767944])
+        >>> R.to_quaternion()   # Uses method 'shepperd' by default
+        array([ 0.15842345,  0.5510871 , -0.40599185,  0.71160076])
         >>> R.to_quaternion('shepperd')
-        array([ 0.94371436, -0.26853582,  0.14487813, -0.12767944])
+        array([ 0.15842345,  0.5510871 , -0.40599185,  0.71160076])
         >>> R.to_quaternion('hughes')
-        array([ 0.94371436, -0.26853582,  0.14487813, -0.12767944])
+        array([ 0.15842345,  0.5510871 , -0.40599185,  0.71160076])
         >>> R.to_quaternion('itzhack', version=2)
-        array([ 0.94371436, -0.26853582,  0.14487813, -0.12767944])
+        array([ 0.15842345,  0.5510871 , -0.40599185,  0.71160076])
         >>> R.to_quaternion('sarabandi', threshold=0.5)
-        array([0.94371436, 0.26853582, 0.14487813, 0.12767944])
+        array([0.15842345, 0.5510871 , 0.40599185, 0.71160076])
 
         """
         q = np.array([1., 0., 0., 0.])
         if method.lower() == 'hughes':
             q = hughes(self.A)
-        if method.lower() == 'chiaverini':
+        elif method.lower() == 'chiaverini':
             q = chiaverini(self.A)
-        if method.lower() == 'shepperd':
+        elif method.lower() == 'shepperd':
             q = shepperd(self.A)
-        if method.lower() == 'itzhack':
+        elif method.lower() == 'itzhack':
             q = itzhack(self.A, version=kw.get('version', 3))
-        if method.lower() == 'sarabandi':
+        elif method.lower() == 'sarabandi':
             q = sarabandi(self.A, eta=kw.get('threshold', 0.0))
+        else:
+            raise ValueError(f"Method {method} not available. Choose from 'chiaverini', 'hughes', 'itzhack', 'sarabandi', 'shepperd'")
         return q/np.linalg.norm(q)
 
-    def to_q(self, method: str='chiaverini', **kw) -> np.ndarray:
+    def to_q(self, method: str='shepperd', **kw) -> np.ndarray:
         """
         Synonym of method :meth:`to_quaternion`.
 
         Parameters
         ----------
-        method : str, default: ``'chiaverini'``
+        method : str, default: ``'shepperd'``
             Method to use. Options are: ``'chiaverini'``, ``'hughes'``,
             ``'itzhack'``, ``'sarabandi'``, and ``'shepperd'``.
 
@@ -898,19 +1102,19 @@ class DCM(np.ndarray):
         --------
         >>> R = DCM(rpy=[10.0, -20.0, 30.0])
         >>> R.view()
-        DCM([[ 0.92541658, -0.31879578, -0.20487413],
-             [ 0.16317591,  0.82317294, -0.54383814],
-             [ 0.34202014,  0.46984631,  0.81379768]])
-        >>> R.to_q()   # Uses method 'chiaverini' by default
-        array([ 0.94371436,  0.26853582, -0.14487813,  0.12767944])
+        DCM([[-0.34241004, -0.67294223,  0.65567074],
+             [-0.22200526, -0.62014526, -0.75241845],
+             [ 0.91294525, -0.40319798,  0.06294725]])
+        >>> R.to_q()   # Uses method 'shepperd' by default
+        array([ 0.15842345,  0.5510871 , -0.40599185,  0.71160076])
         >>> R.to_q('shepperd')
-        array([ 0.94371436, -0.26853582,  0.14487813, -0.12767944])
+        array([ 0.15842345,  0.5510871 , -0.40599185,  0.71160076])
         >>> R.to_q('hughes')
-        array([ 0.94371436, -0.26853582,  0.14487813, -0.12767944])
+        array([ 0.15842345,  0.5510871 , -0.40599185,  0.71160076])
         >>> R.to_q('itzhack', version=2)
-        array([ 0.94371436, -0.26853582,  0.14487813, -0.12767944])
+        array([ 0.15842345,  0.5510871 , -0.40599185,  0.71160076])
         >>> R.to_q('sarabandi', threshold=0.5)
-        array([0.94371436, 0.26853582, 0.14487813, 0.12767944])
+        array([0.15842345, 0.5510871 , 0.40599185, 0.71160076])
         """
         return self.to_quaternion(method=method, **kw)
 
