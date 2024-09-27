@@ -55,6 +55,7 @@ dev = [
 ]
 docs = [
     "sphinx",
+    "sphinxcontrib-bibtex",
     "pydata_sphinx_theme"
 ]
 build = [
