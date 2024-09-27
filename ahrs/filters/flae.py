@@ -120,7 +120,7 @@ When :math:`\\mathbf{f}_{\\Sigma D}(\\mathbf{q})=0`, the equation satisfies:
     \\end{bmatrix}
     \\end{array}
 
-Intuitively, we would solve it with :math:`\mathbf{q}=\\mathbf{P}_{\\Sigma D}^\\dagger\\mathbf{D}_\\Sigma^b`,
+Intuitively, we would solve it with :math:`\\mathbf{q}=\\mathbf{P}_{\\Sigma D}^\\dagger\\mathbf{D}_\\Sigma^b`,
 but the pseudo-inverse of :math:`\\mathbf{P}_{\\Sigma D}` is very difficult to
 compute. However, it is possible to transform the equation by the pseudo-inverse
 matrices of :math:`\\mathbf{q}` and :math:`\\mathbf{D}_\\Sigma^b`:
