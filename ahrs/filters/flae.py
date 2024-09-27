@@ -332,7 +332,6 @@ References
 
 """
 
-import warnings
 import numpy as np
 from ..common.mathfuncs import cosd
 from ..common.mathfuncs import sind
@@ -340,8 +339,6 @@ from ..common.constants import MUNICH_LATITUDE
 from ..common.constants import MUNICH_LONGITUDE
 from ..common.constants import MUNICH_HEIGHT
 from ..utils.core import _assert_numerical_iterable
-
-warnings.filterwarnings('error')
 
 # Reference Observations in Munich, Germany
 from ..utils.wmm import WMM
