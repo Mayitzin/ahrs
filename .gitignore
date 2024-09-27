@@ -20,6 +20,7 @@ dist/*
 # developer environments
 .idea
 .vscode
+.env
 
 # Documentation
 doctest/*
