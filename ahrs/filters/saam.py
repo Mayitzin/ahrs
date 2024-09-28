@@ -3,8 +3,8 @@
 Super-fast Attitude from Accelerometer and Magnetometer
 =======================================================
 
-This novel estimator proposed by [Wu]_, offers an extremely simplified
-computation of `Davenport's <../davenport.html>`_ solution to
+This novel estimator proposed by :cite:p:`wu2018-2`, offers an extremely
+simplified computation of `Davenport's <../davenport.html>`_ solution to
 `Wahba's problem <https://en.wikipedia.org/wiki/Wahba%27s_problem>`_, where the
 full solution is reduced to a couple of floating point operations, without
 losing much accuracy, and sparing computational time.
@@ -103,15 +103,6 @@ quaternion representing the attitude is:
 This estimator is extremely short and relies solely on linear operations,
 making it very suitable for low-cost and simple processors. Its accuracy is
 comparable to that of QUEST and FQA, but it is one order of magnitude faster.
-
-References
-----------
-.. [Wu] Jin Wu, Zebo Zhou, Hassen Fourati, Yuhua Cheng. A Super Fast Attitude
-    Determination Algorithm for Consumer-Level Accelerometer and Magnetometer.
-    IEEE Transactions on Con-sumer Electronics, Institute of Electrical and
-    Electronics Engineers, 2018, 64 (3), pp. 375. 381.10.1109/tce.2018.2859625.
-    hal-01922922
-    (https://hal.inria.fr/hal-01922922/document)
 
 """
 

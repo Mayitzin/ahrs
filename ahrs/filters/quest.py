@@ -3,7 +3,8 @@
 QUEST
 =====
 
-QUaternion ESTimator as described by Shuster in [Shuster1981]_ and [Shuster1978]_.
+QUaternion ESTimator as described by Shuster in :cite:p:`shuster1981` and
+:cite:p:`shuster1978`.
 
 We start to define the goal of finding an orthogonal matrix :math:`\\mathbf{A}`
 that minimizes the loss function:
@@ -187,15 +188,6 @@ This solution can still lead to an indeterminant result if both :math:`\\gamma`
 and :math:`\\mathbf{X}` vanish simultaneously. :math:`\\gamma` vanishes if and
 only if the angle of rotation is equal to :math:`\\pi`, even if
 :math:`\\mathbf{X}` does not vanish along.
-
-References
-----------
-.. [Shuster1981] Shuster, M.D. and Oh, S.D. "Three-Axis Attitude Determination
-    from Vector Observations," Journal of Guidance and Control, Vol.4, No.1,
-    Jan.-Feb. 1981, pp. 70-77.
-.. [Shuster1978] Shuster, Malcom D. Approximate Algorithms for Fast Optimal
-    Attitude Computation, AIAA Guidance and Control Conference. August 1978.
-    (http://www.malcolmdshuster.com/Pub_1978b_C_PaloAlto_scan.pdf)
 
 """
 

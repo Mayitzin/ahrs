@@ -4,7 +4,7 @@ Recursive Optimal Linear Estimator of Quaternion
 ================================================
 
 This is a modified `OLEQ <./oleq.html>`_, where a recursive estimation of the
-attitude is made with the measured angular velocity [Zhou2018]_. This
+attitude is made with the measured angular velocity :cite:p:`zhou2018`. This
 estimation is set as the initial value for the OLEQ estimation, simplyfing the
 rotational operations.
 
@@ -69,14 +69,6 @@ computations, and the accuracy is maintained.
 For this case, however the three sensor data (gyroscopes, accelerometers and
 magnetometers) have to be provided, along with the an initial quaternion,
 :math:`\\mathbf{q}_0` from which the attitude will be built upon.
-
-References
-----------
-.. [Zhou2018] Zhou, Z.; Wu, J.; Wang, J.; Fourati, H. Optimal, Recursive and
-    Sub-Optimal Linear Solutions to Attitude Determination from Vector
-    Observations for GNSS/Accelerometer/Magnetometer Orientation Measurement.
-    Remote Sens. 2018, 10, 377.
-    (https://www.mdpi.com/2072-4292/10/3/377)
 
 """
 

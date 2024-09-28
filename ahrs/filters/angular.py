@@ -7,12 +7,12 @@ Unitary quaternions [#]_ are used when representing an attitude. They can be
 updated via integration of angular rate measurements of a gyroscope.
 
 The easiest way to do so is by integrating the differential
-equation for a local rotation rate [Sola]_.
+equation for a local rotation rate :cite:p:`sola2017quaternion`.
 
 In a kinematic system, the angular velocity :math:`\\boldsymbol\\omega` of a
 rigid body at any instantaneous time is described with respect to a fixed frame
 coinciding instantaneously with its body frame. Thus, this angular
-velocity is *in terms of* the body frame [Jia]_.
+velocity is *in terms of* the body frame :cite:p:`jia2024`.
 
 Accumulating rotation over time in quaternion form is done by integrating the
 differential equation of :math:`\\mathbf{q}` with a defined rotation rate.
@@ -28,7 +28,8 @@ continuous solution for :math:`\\mathbf{q}`, but a discrete set of values can:
 
 In the simplest practical case, the angular rates are measured by `gyroscopes
 <https://en.wikipedia.org/wiki/Gyroscope>`_, reading instantaneous angular
-velocities, :math:`\\boldsymbol\\omega(t_n)=\\begin{bmatrix}\\omega_x&\\omega_y&\\omega_z\\end{bmatrix}^T`,
+velocities, :math:`\\boldsymbol\\omega(t_n)
+=\\begin{bmatrix}\\omega_x&\\omega_y&\\omega_z\\end{bmatrix}^T`,
 in *rad/s*, at discrete times :math:`t_n = n\\Delta t` in the local sensor
 frame.
 
@@ -44,7 +45,8 @@ use the quaternion derivative to integrate it and estimate the new attitude.
 An orientation (attitude) is described with a quaternion :math:`\\mathbf{q} (t)`
 at a time :math:`t`, and with :math:`\\mathbf{q} (t+\\Delta t)` at a time
 :math:`t+\\Delta t`. This is after a rotation change :math:`\\Delta\\mathbf{q}`
-during :math:`\\Delta t` seconds is performed on the local frame [Jia]_.
+during :math:`\\Delta t` seconds is performed on the local frame
+:cite:p:`jia2024`.
 
 This rotation change about the instantaneous axis
 :math:`\\mathbf{u}=\\frac{\\boldsymbol\\omega}{\\|\\boldsymbol\\omega\\|}`
@@ -147,7 +149,7 @@ get its exponential series as:
 We recognize the power-series expansion of `Euler's formula
 <https://en.wikipedia.org/wiki/Euler%27s_formula#Using_power_series>`_, which
 helps to map the quaternion :math:`\\mathbf{q}` from a rotation vector
-:math:`\\mathbf{v}`. This **exponential map** [Sola]_ is formerly defined as:
+:math:`\\mathbf{v}`. This **exponential map** :cite:p:`sola2017quaternion` is formerly defined as:
 
 .. math::
     \\mathbf{q} = e^\\mathbf{v} =
@@ -252,9 +254,9 @@ represent a valid orientation.
     \\mathbf{q}_{t+1} \\gets \\frac{\\mathbf{q}_{t+1}}{\\|\\mathbf{q}_{t+1}\\|}
 
 Numerical Integration based on Runge-Kutta methods can be employed to increase
-the accuracy, and are shown to be more effective. See [Sola]_ and [Zhao]_ for a
-comparison of the different methods, their accuracy, and their computational
-load.
+the accuracy, and are shown to be more effective. See :cite:p:`sola2017quaternion`
+and :cite:p:`zhao2013` for a comparison of the different methods, their
+accuracy, and their computational load.
 
 Footnotes
 ---------
@@ -272,18 +274,6 @@ Footnotes
         \\dddot{\\mathbf{q}} &=& \\frac{1}{6}\\mathbf{q}\\boldsymbol\\omega^3 + \\frac{1}{4}\\mathbf{q}\\dot{\\boldsymbol\\omega}\\boldsymbol\\omega + \\frac{1}{2}\\mathbf{q}\\boldsymbol\\omega\\dot{\\boldsymbol\\omega} \\\\
         \\mathbf{q}^{i\\geq 4} &=& \\frac{1}{2^i}\\mathbf{q}\\boldsymbol\\omega^i + \\cdots
         \\end{array}
-
-References
-----------
-
-.. [Jia] Yan-Bin Jia. Quaternions. 2018.
-    (http://web.cs.iastate.edu/~cs577/handouts/quaternion.pdf)
-.. [Sola] Solà, Joan. Quaternion kinematics for the error-state Kalman Filter.
-    October 12, 2017.
-    (http://www.iri.upc.edu/people/jsola/JoanSola/objectes/notes/kinematics.pdf)
-.. [Zhao] F. Zhao and B.G.M. van Wachem. A novel Quaternion integration
-    approach for describing the behaviour of non-spherical particles.
-    (https://link.springer.com/content/pdf/10.1007/s00707-013-0914-2.pdf)
 
 """
 

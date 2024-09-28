@@ -3,9 +3,10 @@
 Fourati's nonlinear attitude estimation
 =======================================
 
-Attitude estimation algorithm as proposed by [Fourati]_, whose approach
-combines a quaternion-based nonlinear filter with the Levenberg Marquardt
-Algorithm (LMA.)
+Attitude estimation algorithm as proposed in :cite:p:`fourati2011`, whose
+approach combines a quaternion-based nonlinear filter with the
+`Levenberg-Marquardt Algorithm (LMA.)
+<https://en.wikipedia.org/wiki/Levenberg%E2%80%93Marquardt_algorithm>`_.
 
 The estimation algorithm has a complementary structure that exploits
 measurements from an accelerometer, a magnetometer and a gyroscope, combined in
@@ -92,7 +93,8 @@ of the vector :math:`\\mathbf{v}`.
     so that they operate with a *Hamilton product*.
 
 To achieve an optimal attitude estimation, a nonlinear system is developed,
-whose **output** is the stack of the accelerometer and magnetometer measurements:
+whose **output** is the stack of the accelerometer and magnetometer
+measurements:
 
 .. math::
     \\mathbf{y} = \\begin{bmatrix}f_x & f_y & f_z & h_x & h_y & h_z\\end{bmatrix}^T
@@ -209,15 +211,6 @@ to obtain the new attitude :math:`\\mathbf{q}_t`:
     Do not confuse the correction term :math:`\\Delta` with the sampling step
     :math:`\\Delta_t`, which is actually the inverse of the sampling frequency
     :math:`f=\\frac{1}{\\Delta_t}`.
-
-References
-----------
-.. [Fourati] Hassen Fourati, Noureddine Manamanni, Lissan Afilal, Yves
-    Handrich. A Nonlinear Filtering Approach for the Attitude and Dynamic Body
-    Acceleration Estimation Based on Inertial and Magnetic Sensors: Bio-Logging
-    Application. IEEE Sensors Journal, Institute of Electrical and Electronics
-    Engineers, 2011, 11 (1), pp. 233-244. 10.1109/JSEN.2010.2053353.
-    (https://hal.archives-ouvertes.fr/hal-00624142/file/Papier_IEEE_Sensors_Journal.pdf)
 
 """
 

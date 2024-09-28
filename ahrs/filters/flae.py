@@ -4,7 +4,7 @@ Fast Linear Attitude Estimator
 ==============================
 
 The Fast Linear Attitude Estimator (FLAE) obtains the attitude quaternion with
-an eigenvalue-based solution as proposed by [Wu]_.
+an eigenvalue-based solution as proposed by :cite:p:`wu2018`.
 
 A symbolic solution to the corresponding characteristic polynomial is also
 derived for a higher computation speed.
@@ -321,14 +321,6 @@ faster) calculation of the eigenvalues.
 FLAE advocates for the symbolic method to calculate the eigenvalue. However,
 the Newton iteration can be also used to achieve a similar performance to that
 of QUEST.
-
-References
-----------
-.. [Wu] Jin Wu, Zebo Zhou, Bin Gao, Rui Li, Yuhua Cheng, et al. Fast Linear
-    Quaternion Attitude Estimator Using Vector Observations. IEEE Transactions
-    on Automation Science and Engineering, Institute of Electrical and
-    Electronics Engineers, 2018.
-    (https://hal.inria.fr/hal-01513263)
 
 """
 

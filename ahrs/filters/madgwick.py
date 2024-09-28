@@ -9,7 +9,7 @@ Madgwick Orientation Filter
 
 This is an orientation filter applicable to IMUs consisting of tri-axial
 gyroscopes and accelerometers, and MARG arrays, which also include tri-axial
-magnetometers, proposed by Sebastian Madgwick [Madgwick]_.
+magnetometers, proposed by Sebastian Madgwick :cite:p:`madgwick2010`.
 
 The filter employs a quaternion representation of orientation to describe the
 nature of orientations in three-dimensions and is not subject to the
@@ -367,12 +367,6 @@ Footnotes
 .. [#] In reality, Earth's magnetic field varies slowly over time, which is a
     phenomenon known as `Geomagnetic secular variation <https://en.wikipedia.org/wiki/Geomagnetic_secular_variation>`_,
     but such shift can be omited for practical purposes.
-
-References
-----------
-.. [Madgwick] Sebastian Madgwick. An efficient orientation filter for inertial
-    and inertial/magnetic sensor arrays. April 30, 2010.
-    http://www.x-io.co.uk/open-source-imu-and-ahrs-algorithms/
 
 """
 

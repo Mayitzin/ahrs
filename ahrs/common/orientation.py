@@ -104,7 +104,6 @@ def q_random(size: int = 1) -> np.ndarray:
         return q[0]
     return q
 
-
 def q_norm(q: np.ndarray) -> np.ndarray:
     """
     Normalize quaternion [WQ1]_ :math:`\\mathbf{q}_u`, also known as a versor
@@ -1085,7 +1084,7 @@ def slerp(q0: np.ndarray, q1: np.ndarray, t_array: np.ndarray, threshold: float 
     arc of a great circle passing through any two existing quaternion endpoints
     lying on the unit radius hypersphere.
 
-    Based on the method detailed in [Wiki_SLERP]_
+    Based on the method detailed in :cite:p:`Wiki_SLERP`.
 
     Parameters
     ----------
@@ -1105,10 +1104,6 @@ def slerp(q0: np.ndarray, q1: np.ndarray, t_array: np.ndarray, threshold: float 
     -------
     q : numpy.ndarray
         New quaternion representing the interpolated rotation.
-
-    References
-    ----------
-    .. [Wiki_SLERP] https://en.wikipedia.org/wiki/Slerp
 
     """
     qdot = q0@q1
@@ -1132,7 +1127,7 @@ def slerp(q0: np.ndarray, q1: np.ndarray, t_array: np.ndarray, threshold: float 
 def chiaverini(dcm: np.ndarray) -> np.ndarray:
     """
     Quaternion from a Direction Cosine Matrix with Chiaverini's algebraic
-    method [Chiaverini]_.
+    method :cite:p:`Chiaverini1999`.
 
     Defining the unit quaternion as:
 
@@ -1218,7 +1213,8 @@ def chiaverini(dcm: np.ndarray) -> np.ndarray:
 
 def hughes(C: np.ndarray) -> np.ndarray:
     """
-    Quaternion from a Direction Cosine Matrix with Hughes' method [Hughes]_.
+    Quaternion from a Direction Cosine Matrix with trigonometric Hughes' method
+    :cite:p:`hughes1986spacecraft17`.
 
     Defining the quaternion (reluctantly called "Euler Parameters" in Hughes'
     book) as:
@@ -1320,7 +1316,7 @@ def hughes(C: np.ndarray) -> np.ndarray:
 def sarabandi(dcm: np.ndarray, eta: float = 0.0) -> np.ndarray:
     """
     Quaternion from a Direction Cosine Matrix using Sarabandi's method
-    [Sarabandi]_.
+    :cite:p:`sarabandi2019`.
 
     A rotation matrix :math:`\\mathbf{R}` can be expressed as:
 
@@ -1521,7 +1517,7 @@ def sarabandi(dcm: np.ndarray, eta: float = 0.0) -> np.ndarray:
 def itzhack(dcm: np.ndarray, version: int = 3) -> np.ndarray:
     """
     Quaternion from a Direction Cosine Matrix with Bar-Itzhack's method
-    [Bar-Itzhack]_.
+    :cite:p:`BarItzhack2000`.
 
     This method to compute the quaternion from a Direction Cosine Matrix (DCM)
     is based on the eigenvalue decomposition of the matrix :math:`\\mathbf{K}`,
@@ -1775,13 +1771,14 @@ def itzhack(dcm: np.ndarray, version: int = 3) -> np.ndarray:
             q = eigvec[:, np.where(np.isclose(eigval, 1.0))[0]].flatten().real
         else:
             q = eigvec[:, eigval.argmax()]
-    q = np.roll(q, 1)       # Original implementation uses [qx, qy, qz, qw]
+    q = np.roll(q, 1)       # Re-arrange quaternion to [qw, qx, qy, qz]
     q[0] *= -1              # Original implementation computes inverse rotation
     return q / np.linalg.norm(q)
 
 def shepperd(dcm: np.ndarray) -> np.ndarray:
     """
-    Quaternion from a Direction Cosine Matrix with Shepperd's method [Shepperd]_.
+    Quaternion from a Direction Cosine Matrix with Shepperd's method
+    :cite:p:`Shepperd1978`.
 
     Since it was proposed in 1978, the Shepperd method has been widely used
     in the aerospace industry.

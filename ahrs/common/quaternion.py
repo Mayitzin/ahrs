@@ -3,9 +3,11 @@
 Quaternion
 ==========
 
-Quaternions were initially defined by `William Hamilton <https://en.wikipedia.org/wiki/History_of_quaternions>`_
-in 1843 to describe a `Cayley-Dickson construction <https://en.wikipedia.org/wiki/Cayley%E2%80%93Dickson_construction>`_
-in four dimensions.
+Quaternions were initially defined by `William Hamilton
+<https://en.wikipedia.org/wiki/History_of_quaternions>`_ in 1843 to describe a
+`Cayley-Dickson construction
+<https://en.wikipedia.org/wiki/Cayley%E2%80%93Dickson_construction>`_ in four
+dimensions.
 
 Since then, many interpretations have appeared for different applications. The
 most common definition of a quaternion :math:`\\mathbf{q}` is as an ordered
@@ -16,7 +18,8 @@ expression of the form:
 
 where :math:`w`, :math:`x`, :math:`y` and :math:`z` are real numbers, and
 :math:`i`, :math:`j` and :math:`k` are three imaginary unit numbers defined so
-that [Sola]_ [Kuipers]_ [WikiQuaternion]_ :
+that :cite:p:`sola2017quaternion` :cite:p:`kuipers1999`
+:cite:p:`Wiki_Quaternion`:
 
 .. math::
     i^2 = j^2 = k^2 = ijk = -1
@@ -54,8 +57,9 @@ quaternion [#]_:
     followed by the scalar part, increasing the confusion among readers. Here,
     the definition above will be used throughout the package.
 
-Let's say, for example, we want to use the quaternion :math:`\\mathbf{q}=\\begin{pmatrix}0.7071 & 0 & 0.7071 & 0\\end{pmatrix}`
-with this class:
+Let's say, for example, we want to use the quaternion
+:math:`\\mathbf{q}=\\begin{pmatrix}0.7071 & 0 & 0.7071 & 0\\end{pmatrix}` with
+this class:
 
 .. code:: python
 
@@ -88,11 +92,12 @@ transformations in 3D:
 .. math::
     \\mathbf{a}' = \\mathbf{qa}
 
-Back in the XVIII century `Leonhard Euler <https://en.wikipedia.org/wiki/Leonhard_Euler>`_
-showed that any **rotation around the origin** can be described by a
-three-dimensional axis and a rotation magnitude.
-`Euler's Rotation Theorem <https://en.wikipedia.org/wiki/Euler%27s_rotation_theorem>`_
-is the basis for most three-dimensional rotations out there.
+Back in the XVIII century `Leonhard Euler
+<https://en.wikipedia.org/wiki/Leonhard_Euler>`_ showed that any **rotation
+around the origin** can be described by a three-dimensional axis and a rotation
+magnitude. `Euler's Rotation Theorem
+<https://en.wikipedia.org/wiki/Euler%27s_rotation_theorem>`_ is the basis for
+most three-dimensional rotations out there.
 
 Later, in 1840, `Olinde Rodrigues <https://en.wikipedia.org/wiki/Olinde_Rodrigues>`_
 came up with a formula using Euler's principle in vector form:
@@ -176,7 +181,7 @@ Some important observations here help us to clarify this further:
 * When :math:`\\theta=180` (half-circle), then :math:`q_w=0`, making
   :math:`\\mathbf{q}` a **pure quaternion**.
 * The negative values of a versor, :math:`\\begin{pmatrix}-q_w & -q_x & -q_y & -q_z\\end{pmatrix}`
-  represent the *same rotation* [Grosskatthoefer]_.
+  represent the *same rotation* :cite:p:`grosskatthoefer2012`.
 
 .. code:: python
 
@@ -194,13 +199,14 @@ Some important observations here help us to clarify this further:
     True
 
 To summarize, unit quaternions can also be defined using Euler's rotation
-theorem [#]_ in the form [Kuipers]_:
+theorem [#]_ in the form :cite:p:`kuipers1999`:
 
 .. math::
     \\mathbf{q} = \\begin{bmatrix}\\cos\\theta \\\\ \\mathbf{v}\\sin\\theta\\end{bmatrix}
 
-And they have similar algebraic characteristics as normal vectors [Sola]_ [Eberly]_.
-For example, given two quaternions :math:`\\mathbf{p}` and :math:`\\mathbf{q}`:
+And they have similar algebraic characteristics as normal vectors
+:cite:p:`sola2017quaternion` :cite:p:`eberly2002`. For example, given two
+quaternions :math:`\\mathbf{p}` and :math:`\\mathbf{q}`:
 
 .. math::
     \\mathbf{p} \\pm \\mathbf{q} = \\begin{bmatrix}p_w\\pm q_w \\\\ \\mathbf{p}_v \\pm \\mathbf{q}_v \\end{bmatrix}
@@ -218,9 +224,10 @@ For example, given two quaternions :math:`\\mathbf{p}` and :math:`\\mathbf{q}`:
     >>> p-q
     Quaternion([ 0.62597531, -0.1299716 ,  0.69342116,  0.33230917])
 
-The **quaternion product** uses the `Hamilton product <https://en.wikipedia.org/wiki/Quaternion#Hamilton_product>`_
-to perform their multiplication [#]_, which can be represented in vector form,
-as a known scalar-vector form, or even as a matrix multiplication:
+The **quaternion product** uses the `Hamilton product
+<https://en.wikipedia.org/wiki/Quaternion#Hamilton_product>`_ to perform their
+multiplication [#]_, which can be represented in vector form, as a known
+scalar-vector form, or even as a matrix multiplication:
 
 .. math::
     \\begin{array}{rl}
@@ -296,47 +303,6 @@ Footnotes
     quaternion product, but here is not used in order to avoid any confusions
     with the `outer product <https://en.wikipedia.org/wiki/Outer_product>`_.
 
-References
-----------
-.. [Bar-Itzhack] Y. Bar-Itzhack. New method for Extracting the Quaternion from
-    a Rotation Matrix. Journal of Guidance, Control, and Dynamics,
-    23(6):1085–1087, 2000. (https://arc.aiaa.org/doi/abs/10.2514/2.4654)
-.. [Chiaverini] S. Chiaverini & B. Siciliano. The Unit Quaternion: A Useful
-    Tool for Inverse Kinematics of Robot Manipulators. Systems Analysis
-    Modelling Simulation. May 1999.
-    (https://www.researchgate.net/publication/262391661)
-.. [Dantam] Dantam, N. (2014) Quaternion Computation. Institute for Robotics
-    and Intelligent Machines. Georgia Tech. (http://www.neil.dantam.name/note/dantam-quaternion.pdf)
-.. [Eberly] Eberly, D. (2010) Quaternion Algebra and Calculus. Geometric Tools.
-    https://www.geometrictools.com/Documentation/Quaternions.pdf
-.. [Grosskatthoefer] K. Grosskatthoefer. Introduction into quaternions from
-    spacecraft attitude representation. TU Berlin. 2012.
-    (http://www.tu-berlin.de/fileadmin/fg169/miscellaneous/Quaternions.pdf)
-.. [Hughes] P. Hughes. Spacecraft Attitude Dynamics. 1986. p. 18
-.. [Kuffner] James J. Kuffner. Effective Sampling and Distance Metrics for 3D
-    Rigid Body Path Planning. Proc. 2004 IEEE International Conference on
-    Robotics and Automation. 2004.
-.. [Kuipers] Kuipers, Jack. Quaternions and Rotation Sequences. Princenton
-    University Press. 1999.
-.. [Markley2007] F. Landis Markley. Averaging Quaternions. Journal of Guidance,
-    Control, and Dynamics. Vol 30, Num 4. 2007
-    (https://arc.aiaa.org/doi/abs/10.2514/1.28949)
-.. [Sarabandi] Sarabandi, S. et al. (2018) Accurate Computation of Quaternions
-    from Rotation Matrices.
-    (http://www.iri.upc.edu/files/scidoc/2068-Accurate-Computation-of-Quaternions-from-Rotation-Matrices.pdf)
-.. [Sarkka] Särkkä, S. (2007) Notes on Quaternions (https://users.aalto.fi/~ssarkka/pub/quat.pdf)
-.. [Shepperd] S.W. Shepperd. "Quaternion from rotation matrix." Journal of
-    Guidance and Control, Vol. 1, No. 3, pp. 223-224, 1978.
-    (https://arc.aiaa.org/doi/10.2514/3.55767b)
-.. [Shoemake] K. Shoemake. Uniform random rotations. Graphics Gems III, pages
-    124-132. Academic, New York, 1992.
-.. [Sola] Solà, Joan. Quaternion kinematics for the error-state Kalman Filter.
-    October 12, 2017. (http://www.iri.upc.edu/people/jsola/JoanSola/objectes/notes/kinematics.pdf)
-.. [WikiConversions] https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
-.. [WikiQuaternion] https://en.wikipedia.org/wiki/Quaternion
-.. [Wiki_SLERP] https://en.wikipedia.org/wiki/Slerp
-.. [MarioGC1] https://mariogc.com/post/angular-velocity-quaternions/
-
 """
 
 import numpy as np
@@ -368,7 +334,7 @@ def slerp(q0: np.ndarray, q1: np.ndarray, t_array: np.ndarray, threshold: float 
     It returns as many rotations between ``q0`` and ``q1`` as elements in
     ``t_array``.
 
-    Based on the method detailed in [Wiki_SLERP]_.
+    Based on the method detailed in :cite:p:`Wiki_SLERP`.
 
     Parameters
     ----------
@@ -412,8 +378,8 @@ def random_attitudes(n: int = 1, representation: str = 'quaternion') -> np.ndarr
     Generate random attitudes
 
     To generate a random quaternion a mapping in SO(3) is first created and
-    then transformed as explained originally by [Shoemake]_ and summarized in
-    [Kuffner]_.
+    then transformed as explained originally by :cite:p:`shoemake1992` and
+    summarized in :cite:p:`kuffner2004`.
 
     First, three uniform random values are sampled from the interval [0, 1]:
 
@@ -1139,7 +1105,7 @@ class Quaternion(np.ndarray):
 
         Given two unit quaternions :math:`\\mathbf{p}=(p_w, p_x, p_y, p_z)` and
         :math:`\\mathbf{q} = (q_w, q_x, q_y, q_z)`, their product is obtained
-        [Dantam]_ [MWQW]_ as:
+        :cite:p:`dantam2014` [MWQW]_ as:
 
         .. math::
 
@@ -1183,7 +1149,7 @@ class Quaternion(np.ndarray):
 
         Given two unit quaternions :math:`\\mathbf{p}=(p_w, p_x, p_y, p_z)` and
         :math:`\\mathbf{q} = (q_w, q_x, q_y, q_z)`, their product is obtained
-        [Dantam]_ [MWQW]_ as:
+        :cite:p:`dantam2014` [MWQW]_ as:
 
         .. math::
             \\mathbf{pq} =
@@ -1395,7 +1361,7 @@ class Quaternion(np.ndarray):
 
         Given two unit quaternions :math:`\\mathbf{p}=(p_w, \\mathbf{p}_v)` and
         :math:`\\mathbf{q} = (q_w, \\mathbf{q}_v)`, their product is defined
-        [Sola]_ [Dantam]_ as:
+        :cite:p:`sola2017quaternion` :cite:p:`dantam2014` as:
 
         .. math::
             \\begin{eqnarray}
@@ -1492,7 +1458,7 @@ class Quaternion(np.ndarray):
         Matrix form of a left-sided quaternion multiplication Q.
 
         Matrix representation of quaternion product with a left sided
-        quaternion [Sarkka]_:
+        quaternion :cite:p:`särkkä2007`:
 
         .. math::
             \\mathbf{qp} = \\mathbf{L}(\\mathbf{q})\\mathbf{p} =
@@ -1521,7 +1487,7 @@ class Quaternion(np.ndarray):
         Matrix form of a right-sided quaternion multiplication Q.
 
         Matrix representation of quaternion product with a right sided
-        quaternion [Sarkka]_:
+        quaternion :cite:p:`särkkä2007`:
 
         .. math::
             \\mathbf{qp} = \\mathbf{R}(\\mathbf{p})\\mathbf{q} =
@@ -1648,8 +1614,9 @@ class Quaternion(np.ndarray):
         """
         Return corresponding Euler angles of quaternion.
 
-        Given a unit quaternion :math:`\\mathbf{q} = \\begin{pmatrix}q_w & q_x & q_y & q_z\\end{pmatrix}`,
-        its corresponding Euler angles [WikiConversions]_ are:
+        Given a unit quaternion
+        :math:`\\mathbf{q} = \\begin{pmatrix}q_w & q_x & q_y & q_z\\end{pmatrix}`,
+        its corresponding Euler angles :cite:p:`Wiki_Conversions` are:
 
         .. math::
             \\begin{bmatrix}
@@ -1682,7 +1649,7 @@ class Quaternion(np.ndarray):
         where :math:`\\mathbf{q}_v = \\begin{bmatrix}q_x & q_y & q_z\\end{bmatrix}`
         is the vector part, and :math:`q_w` is the scalar part.
 
-        The resulting matrix :math:`\\mathbf{R}` [WikiConversions]_ has the
+        The resulting matrix :math:`\\mathbf{R}` :cite:p:`Wiki_Conversions` has the
         form:
 
         .. math::
@@ -1739,11 +1706,14 @@ class Quaternion(np.ndarray):
         There are five methods available to obtain a quaternion from a
         Direction Cosine Matrix:
 
-        * ``'chiaverini'`` as described in [Chiaverini]_
-        * ``'hughes'`` as described in [Hughes]_
-        * ``'itzhack'`` as described in [Bar-Itzhack]_
-        * ``'sarabandi'`` as described in [Sarabandi]_
-        * ``'shepperd'`` as described in [Shepperd]_
+        * ``'chiaverini'`` as described in :cite:p:`Chiaverini1999`.
+        * ``'hughes'`` as described in :cite:p:`hughes1986spacecraft17`.
+        * ``'itzhack'`` as described in :cite:p:`BarItzhack2000` using version ``3`` by
+          default. Possible options are integers ``1``, ``2`` or ``3``.
+        * ``'sarabandi'`` as described in :cite:p:`sarabandi2019` with a threshold equal
+          to ``0.0`` by default. Possible threshold values are floats between
+          ``-3.0`` and ``3.0``.
+        * ``'shepperd'`` as described in :cite:p:`shepperd1978`.
 
         Parameters
         ----------
@@ -1941,8 +1911,15 @@ class Quaternion(np.ndarray):
         Generate a random quaternion
 
         A mapping in SO(3) is first created and then transformed as explained
-        originally by [Shoemake]_. It calls the function :func:`random_attitudes`
-        with ``n=1``.
+        originally by :cite:p:`shoemake1992`. It calls the function
+        :func:`random_attitudes` with ``n=1``.
+
+        .. warning::
+
+            The generated random quaternion is returned as a NumPy array,
+            but **it is not set in the object**. To create a :class:`Quaternion`
+            object with random values, we can indicate this when creating the
+            object. See examples below.
 
         Returns
         -------
@@ -1952,8 +1929,12 @@ class Quaternion(np.ndarray):
         Examples
         --------
         >>> q = Quaternion()
+        >>> q
+        Quaternion([1., 0., 0., 0.])
         >>> q.random()
-        array([ 0.18257419, -0.36514837,  0.54772256, -0.73029674])
+        array([-0.13952338,  0.96330741, -0.18034361, -0.14159178])
+        >>> q
+        Quaternion([1., 0., 0., 0.])
 
         It can be called when the Quaternion object is created:
 
@@ -2613,14 +2594,14 @@ class QuaternionArray(np.ndarray):
         There are five methods available to obtain a quaternion from a
         Direction Cosine Matrix:
 
-        * ``'chiaverini'`` as described in [Chiaverini]_.
-        * ``'hughes'`` as described in [Hughes]_.
-        * ``'itzhack'`` as described in [Bar-Itzhack]_ using version ``3`` by
+        * ``'chiaverini'`` as described in :cite:p:`Chiaverini1999`.
+        * ``'hughes'`` as described in :cite:p:`hughes1986spacecraft17`.
+        * ``'itzhack'`` as described in :cite:p:`BarItzhack2000` using version ``3`` by
           default. Possible options are integers ``1``, ``2`` or ``3``.
-        * ``'sarabandi'`` as described in [Sarabandi]_ with a threshold equal
+        * ``'sarabandi'`` as described in :cite:p:`sarabandi2019` with a threshold equal
           to ``0.0`` by default. Possible threshold values are floats between
           ``-3.0`` and ``3.0``.
-        * ``'shepperd'`` as described in [Shepperd]_.
+        * ``'shepperd'`` as described in :cite:p:`shepperd1978`.
 
         Parameters
         ----------
@@ -2690,7 +2671,7 @@ class QuaternionArray(np.ndarray):
         Return corresponding roll-pitch-yaw angles of quaternion.
 
         Having a unit quaternion :math:`\\mathbf{q} = \\begin{pmatrix}q_w & q_x & q_y & q_z\\end{pmatrix}`,
-        its corresponding roll-pitch-yaw angles [WikiConversions]_ are:
+        its corresponding roll-pitch-yaw angles :cite:p:`Wiki_Conversions` are:
 
         .. math::
             \\begin{bmatrix}
@@ -2741,7 +2722,7 @@ class QuaternionArray(np.ndarray):
         is the vector part, :math:`q_w` is the scalar part, and :math:`\\|\\mathbf{q}\\|=1`.
 
         The `rotation matrix <https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions>`_
-        :math:`\\mathbf{R}` [WikiConversions]_ built from :math:`\\mathbf{q}`
+        :math:`\\mathbf{R}` :cite:p:`Wiki_Conversions` built from :math:`\\mathbf{q}`
         has the form:
 
         .. math::
@@ -2799,7 +2780,7 @@ class QuaternionArray(np.ndarray):
 
     def average(self, span: Tuple[int, int] = None, weights: np.ndarray = None) -> np.ndarray:
         """
-        Average quaternion using Markley's method [Markley2007]_
+        Average quaternion using Markley's method :cite:`markley2007`.
 
         It has to be clear that we intend to average **attitudes** rather than
         quaternions. It just happens that we represent these attitudes with
@@ -3033,7 +3014,7 @@ class QuaternionArray(np.ndarray):
             \\end{array}
 
         where :math:`\\Delta t` is the time step between consecutive
-        quaternions [MarioGC1]_.
+        quaternions :cite:p:`garcia2022`.
 
         Parameters
         ----------

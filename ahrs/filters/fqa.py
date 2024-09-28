@@ -5,7 +5,7 @@ Factored Quaternion Algorithm
 
 The factored quaternion algorithm (FQA) produces a quaternion output to
 represent the orientation, restricting the use of magnetic data to the
-determination of the rotation about the vertical axis.
+determination of the rotation about the vertical axis :cite:p:`yun2008`.
 
 The FQA and the `TRIAD <../triad.html>`_ algorithm produce an equivalent
 solution to the same problem, with the difference that the former produces a
@@ -222,12 +222,6 @@ Footnotes
 ---------
 .. [#] The local geomagnetic field can be obtained with the World Magnetic
     Model. See the `WMM documentation <../WMM.html>`_ page for further details.
-
-References
-----------
-.. [Yun] Xiaoping Yun et al. (2008) A Simplified Quaternion-Based Algorithm for
-    Orientation Estimation From Earth Gravity and Magnetic Field Measurements.
-    https://ieeexplore.ieee.org/document/4419916
 
 """
 

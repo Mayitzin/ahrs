@@ -1,9 +1,9 @@
 """
-The World Geodetic System 1984 (WGS 84) [WGS84]_ describes the best geodetic
-reference system for the Earth available for the practical applications of
-mapping, charting, geopositioning, and navigation, using data, techniques and
-technology available through 2013 by the United States of America's National
-Geospatial-Intelligence Agency (NGA.)
+The World Geodetic System 1984 (WGS 84) :cite:p:`wgs84-2014` describes the best
+geodetic reference system for the Earth available for the practical
+applications of mapping, charting, geopositioning, and navigation, using data,
+techniques and technology available through 2013 by the United States of
+America's National Geospatial-Intelligence Agency (NGA.)
 
 The WGS 84 Coordinate System is a Conventional Terrestrial Reference System
 (`CTRS <https://gssc.esa.int/navipedia/index.php/Conventional_Terrestrial_Reference_System>`_),

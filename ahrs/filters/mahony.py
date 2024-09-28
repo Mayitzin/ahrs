@@ -3,19 +3,21 @@
 Mahony Orientation Filter
 =========================
 
-This estimator proposed by Robert Mahony et al. [Mahony2008]_ is formulated as
-a deterministic kinematic observer on the Special Orthogonal group SO(3) driven
-by an instantaneous attitude and angular velocity measurements.
+This estimator proposed by Robert Mahony et al. :cite:p:`mahony2008` is formulated
+as a deterministic kinematic observer on the Special Orthogonal group SO(3)
+driven by an instantaneous attitude and angular velocity measurements
+:cite:p:`hamel2006`.
 
 By exploiting the geometry of the special orthogonal group a related observer,
 the *passive complementary filter*, is derived that decouples the gyro
-measurements from the reconstructed attitude in the observer inputs.
+measurements from the reconstructed attitude in the observer inputs
+:cite:p:`mahony2005`.
 
 Direct and passive filters are extended to estimate gyro bias on-line. This
-leads to an observer on SO(3), termed the **Explicit Complementary Filter**,
-that requires only accelerometer and gyro outputs, suitable for hardware
-implementation, and providing good estimates as well as online gyro bias
-computation.
+leads to an observer on SO(3), termed the **Explicit Complementary Filter**
+:cite:p:`euston2008`, that requires only accelerometer and gyro outputs,
+suitable for hardware implementation, and providing good estimates as well as
+online gyro bias computation.
 
 Sensor Models
 -------------
@@ -241,28 +243,6 @@ newest estimated attitude.
 
 .. math::
     \\mathbf{q}_t = \\mathbf{q}_{t-1} + \\dot{\\hat{\\mathbf{q}}}_t\\Delta t
-
-References
-----------
-.. [Mahony2008] Robert Mahony, Tarek Hamel, and Jean-Michel Pflimlin. Nonlinear
-   Complementary Filters on the Special Orthogonal Group. IEEE Transactions
-   on Automatic Control, Institute of Electrical and Electronics Engineers,
-   2008, 53 (5), pp.1203-1217.
-   (https://hal.archives-ouvertes.fr/hal-00488376/document)
-.. [Mahony2005] Robert Mahony, Tarek Hamel, and Jean-Michel Pflimlin.
-   Complementary filter design on the special orthogonal group SO(3).
-   Proceedings of the 44th IEEE Conference on Decision and Control, and the
-   European Control Conference 2005. Seville, Spain. December 12-15, 2005.
-   (https://folk.ntnu.no/skoge/prost/proceedings/cdc-ecc05/pdffiles/papers/1889.pdf)
-.. [Euston] Mark Euston, Paul W. Coote, Robert E. Mahony, Jonghyuk Kim, and
-   Tarek Hamel. A complementary filter for attitude estimation of a fixed-wing
-   UAV. IEEE/RSJ International Conference on Intelligent Robots and Systems,
-   340-345. 2008.
-   (http://users.cecs.anu.edu.au/~Jonghyuk.Kim/pdf/2008_Euston_iros_v1.04.pdf)
-.. [Hamel] Tarek Hamel and Robert Mahony. Attitude estimation on SO(3) based on
-   direct inertial measurements. IEEE International Conference on Robotics and
-   Automation. ICRA 2006. pp. 2170-2175
-   (http://users.cecs.anu.edu.au/~Robert.Mahony/Mahony_Robert/2006_MahHamPfl-C68.pdf)
 
 """
 

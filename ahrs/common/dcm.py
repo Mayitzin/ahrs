@@ -58,10 +58,11 @@ Even better, the product of two or more rotation matrices yields another
 rotation matrix in :math:`SO(3)`.
 
 `Direction cosines <https://en.wikipedia.org/wiki/Direction_cosine>`_ are
-cosines of angles between a vector and a base coordinate frame [WikipediaDCM]_.
-In this case, the direction cosines describe the differences between orthogonal
-vectors :math:`\\mathbf{r}_i` and the base frame. The matrix containing these
-differences is commonly named the **Direction Cosine Matrix**.
+cosines of angles between a vector and a base coordinate frame
+:cite:p:`Wiki_DirectionCosine`. In this case, the direction cosines describe
+the differences between orthogonal vectors :math:`\\mathbf{r}_i` and the base
+frame. The matrix containing these differences is commonly named the
+**Direction Cosine Matrix**.
 
 These matrices are used for two main purposes:
 
@@ -72,31 +73,11 @@ These matrices are used for two main purposes:
 Because of the latter, the DCM is also known as the **rotation matrix**.
 
 DCMs are, therefore, the most common representation of rotations
-[WikipediaRotMat]_, especially in real applications of spacecraft tracking and
-location.
+:cite:p:`Wolfram_RotationMatrix`, especially in real applications of spacecraft
+tracking and location.
 
 Throughout this package they will be used to represent the attitudes with
 respect to the global frame.
-
-References
-----------
-.. [WikipediaDCM] Wikipedia: Direction Cosine.
-    (https://en.wikipedia.org/wiki/Direction_cosine)
-.. [WikipediaRotMat] Wikipedia: Rotation Matrix
-    (https://mathworld.wolfram.com/RotationMatrix.html)
-.. [Ma] Yi Ma, Stefano Soatto, Jana Kosecka, and S. Shankar Sastry. An
-    Invitation to 3-D Vision: From Images to Geometric Models. Springer
-    Verlag. 2003.
-    (https://www.eecis.udel.edu/~cer/arv/readings/old_mkss.pdf)
-.. [Huyhn] Huynh, D.Q. Metrics for 3D Rotations: Comparison and Analysis. J
-    Math Imaging Vis 35, 155–164 (2009).
-.. [Curtis] Howard D Curtis. Orbital Mechanics for Engineering Students (Third
-    Edition) Butterworth-Heinemann. 2014.
-.. [Kuipers] Kuipers, Jack B. Quaternions and Rotation Sequences: A Primer with
-    Applications to Orbits, Aerospace and Virtual Reality. Princeton;
-    Oxford: Princeton University Press, 1999.
-.. [Diebel] Diebel, James. Representing Attitude; Euler Angles, Unit
-    Quaternions, and Rotation. Stanford University. 20 October 2006.
 
 """
 
@@ -1039,14 +1020,14 @@ class DCM(np.ndarray):
         There are five methods available to obtain a quaternion from a
         Direction Cosine Matrix:
 
-        * ``'shepperd'`` as described in [Chiaverini]_.
-        * ``'hughes'`` as described in [Hughes]_.
-        * ``'itzhack'`` as described in [Bar-Itzhack]_ using version ``3`` by
+        * ``'chiaverini'`` as described in :cite:p:`Chiaverini1999`.
+        * ``'hughes'`` as described in :cite:p:`hughes1986spacecraft17`.
+        * ``'itzhack'`` as described in :cite:p:`BarItzhack2000` using version ``3`` by
           default. Possible options are integers ``1``, ``2`` or ``3``.
-        * ``'sarabandi'`` as described in [Sarabandi]_ with a threshold equal
+        * ``'sarabandi'`` as described in :cite:p:`sarabandi2019` with a threshold equal
           to ``0.0`` by default. Possible threshold values are floats between
           ``-3.0`` and ``3.0``.
-        * ``'shepperd'`` as described in [Shepperd]_.
+        * ``'shepperd'`` as described in :cite:p:`shepperd1978`.
 
         Parameters
         ----------

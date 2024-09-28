@@ -3,9 +3,10 @@
 Algebraic Quaternion Algorithm
 ==============================
 
-Roberto Valenti's Algebraic Quaterion Algorithm (AQUA) [Valenti2015]_ estimates
-a quaternion with the algebraic solution of a system from inertial/magnetic
-observations, solving `Wahba's Problem <https://en.wikipedia.org/wiki/Wahba%27s_problem>`_.
+Roberto Valenti's Algebraic Quaterion Algorithm (AQUA) :cite:p:`valenti2015`
+estimates a quaternion with the algebraic solution of a system from
+inertial+magnetic observations, solving `Wahba's Problem
+<https://en.wikipedia.org/wiki/Wahba%27s_problem>`_.
 
 AQUA computes the "tilt" quaternion and the "heading" quaternion separately in
 two sub-parts. This avoids the impact of the magnetic disturbances on the roll
@@ -15,7 +16,7 @@ AQUA can be used with a complementary filter to fuse the gyroscope data
 together with accelerometer and magnetic field readings. The correction part of
 the filter is based on the independently estimated quaternions and works for
 both IMU (Inertial Measurement Unit) and MARG (Magnetic, Angular Rate, and
-Gravity) sensors [Valenti2016]_.
+Gravity) sensors :cite:p:`valenti2016`.
 
 Quaternion as Orientation
 -------------------------
@@ -383,10 +384,10 @@ two *delta quaternions*:
     ^L_G\\mathbf{q} = \\, ^L_G\\mathbf{q}_\\omega \\, \\Delta\\mathbf{q}_\\mathrm{acc} \\, \\Delta\\mathbf{q}_\\mathrm{mag}
     \\end{equation}
 
-The delta quaternions are computed and filtered independently by the high-frequency
-noise. This correction is divided in two steps: correction of roll and pitch of
-the predicted quaternion, and then the correction of the yaw angle if readings
-of the magnetic field are provided.
+The delta quaternions are computed and filtered independently by the
+high-frequency noise. This correction is divided in two steps: correction of
+roll and pitch of the predicted quaternion, and then the correction of the yaw
+angle if readings of the magnetic field are provided.
 
 Accelerometer-Based Correction
 ------------------------------
@@ -556,18 +557,6 @@ velocity measurement.
 Footnotes
 ---------
 .. [#] Any vector :math:`\\mathbf{x}` is a **unit vector** if :math:`\\|\\mathbf{x}\\|=1`.
-
-References
-----------
-.. [Valenti2015] Valenti, R.G.; Dryanovski, I.; Xiao, J. Keeping a Good
-    Attitude: A Quaternion-Based Orientation Filter for IMUs and MARGs. Sensors
-    2015, 15, 19302-19330.
-    (https://res.mdpi.com/sensors/sensors-15-19302/article_deploy/sensors-15-19302.pdf)
-.. [Valenti2016] R. G. Valenti, I. Dryanovski and J. Xiao, "A Linear Kalman
-    Filter for MARG Orientation Estimation Using the Algebraic Quaternion
-    Algorithm," in IEEE Transactions on Instrumentation and Measurement, vol.
-    65, no. 2, pp. 467-481, 2016.
-    (https://ieeexplore.ieee.org/document/7345567)
 
 """
 

@@ -8,13 +8,13 @@ Attitude estimation via gravity acceleration measurements.
 The simplest way to estimate the attitude from the gravitational acceleration
 is using 3D `geometric quadrants <https://en.wikipedia.org/wiki/Quadrant_(plane_geometry)>`_.
 
-Although some methods use ``arctan`` to estimate the angles [ST-AN4509]_ [AD-AN1057]_,
-it is preferred to use ``arctan2`` to explore all quadrants searching the tilt
-angles.
+Although some methods use ``arctan`` to estimate the angles :cite:p:`stm4509`
+:cite:p:`fisher2010` it is preferred to use ``arctan2`` to explore all
+quadrants searching the tilt angles.
 
 First, we normalize the gravity vector, so that it has magnitude equal to 1.
-Then, we get the angles to the main axes with `arctan2 <https://en.wikipedia.org/wiki/Atan2>`_
-[FS-AN3461]_ [Trimpe]_:
+Then, we get the angles to the main axes with `arctan2
+<https://en.wikipedia.org/wiki/Atan2>`_ :cite:p:`pedley2013` :cite:p:`trimpe2012`:
 
 .. math::
     \\begin{array}{ll}
@@ -68,7 +68,7 @@ the *normalized* vector of the measured magnetic field, which means
 :math:`\\|\\mathbf{m}\\|=1`.
 
 The yaw angle :math:`\\psi` is the tilt-compensated heading angle relative to
-magnetic North, computed as [FS-AN4248]_:
+magnetic North, computed as :cite:p:`ozyagcilar2015`:
 
 .. math::
     \\begin{array}{ll}
@@ -90,28 +90,6 @@ Finally, we transform the roll-pitch-yaw angles to a quaternion representation:
 
 Setting the property ``as_angles`` to ``True`` will avoid this last conversion
 returning the attitude as angles.
-
-References
-----------
-.. [Trimpe] Sebastian Trimpe and Raffaello D'Andrea. The Balancing cube. A
-    dynamic sculpture as test bed for distributed estimation and control. IEEE
-    Control Systems Magazine. December 2012.
-    (http://trimpe.is.tuebingen.mpg.de/publications/trimpe-CSM12.pdf)
-.. [FS-AN3461] Mark Pedley. Tilt Sensing Using a Three-Axis Accelerometer.
-    Freescale Semiconductor Application Note. Document Number: AN3461. 2013.
-    (https://www.nxp.com/files-static/sensors/doc/app_note/AN3461.pdf)
-.. [FS-AN4248] Talat Ozyagcilar. Implementing a Tilt-Compensated eCompass using
-    Accelerometer and Magnetometer sensors. Freescale Semoconductor Application
-    Note. Document Number: AN4248. 2015.
-    (https://www.nxp.com/files-static/sensors/doc/app_note/AN4248.pdf)
-.. [AD-AN1057] Christopher J. Fisher. Using an Accelerometer for Inclination
-    Sensing. Analog Devices. Application Note. AN-1057.
-    (https://www.analog.com/media/en/technical-documentation/application-notes/AN-1057.pdf)
-.. [ST-AN4509] Tilt measurement using a low-g 3-axis accelerometer.
-    STMicroelectronics. Application note AN4509. 2014.
-    (https://www.st.com/resource/en/application_note/dm00119046.pdf)
-.. [WikiConversions] Wikipedia: Conversion between quaternions and Euler angles.
-    (https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles)
 
 """
 
@@ -298,7 +276,7 @@ class Tilt:
 
         The orientation of the roll and pitch angles is estimated using the
         measurements of the accelerometers, and finally converted to a
-        quaternion representation according to [WikiConversions]_
+        quaternion representation according to :cite:p:`Wiki_Conversions`.
 
         Parameters
         ----------

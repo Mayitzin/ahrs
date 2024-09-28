@@ -9,11 +9,11 @@ observations of tri-axial gyroscopes, accelerometers and magnetometers.
 
 The **state** is the physical state, which can be described by dynamic
 variables. The **noise** in the measurements means that there is a certain
-degree of uncertainty in them [Hartikainen2011]_.
+degree of uncertainty in them :cite:p:`hartikainen2011`.
 
 A `dynamical system <https://en.wikipedia.org/wiki/Dynamical_system>`_ is a
 system whose state evolves over time, so differential equations are normally
-used to model them [Labbe2015]_. There is also noise in the dynamics of the
+used to model them :cite:p:`labbe2015`. There is also noise in the dynamics of the
 system, **process noise**, which means we cannot be entirely deterministic, but
 we can get indirect noisy measurements.
 
@@ -23,7 +23,7 @@ observed measurements.
 
 The instantaneous state of the system is represented with a vector updated
 through discrete time increments to generate the next state. The simplest of
-the state space models are linear models [Hartikainen2011]_, which can be
+the state space models are linear models :cite:p:`hartikainen2011`, which can be
 expressed with equations of the following form:
 
 .. math::
@@ -66,7 +66,8 @@ to :math:`\\mathbf{x}_t` over a discrete time step :math:`\\Delta t`.
 
 A common way to obtain :math:`\\mathbf{F}` uses the `matrix exponential
 <https://en.wikipedia.org/wiki/Matrix_exponential>`_, which can be expanded
-with a `Taylor series <https://en.wikipedia.org/wiki/Taylor_series>`_ [Sola]_:
+with a `Taylor series <https://en.wikipedia.org/wiki/Taylor_series>`_
+:cite:p:`sola2017quaternion` :
 
 .. math::
     \\mathbf{F} = e^{\\mathbf{A}\\Delta t} = \\mathbf{I} + \\mathbf{A}\\Delta t + \\frac{(\\mathbf{A}\\Delta t)^2}{2!} + \\frac{(\\mathbf{A}\\Delta t)^3}{3!} + \\cdots = \\sum_{k=0}^\\infty\\frac{(\\mathbf{A}\\Delta t)^k}{k!}
@@ -77,7 +78,7 @@ The main goal is to find an equation that recursively finds the value of
 Kalman Filter
 -------------
 
-The solution proposed by [Kalman1960]_ models a system with a set of
+The solution proposed by :cite:p:`kalman1960` models a system with a set of
 :math:`n^{th}`-order differential equations, converts them into an equivalent
 set of first-order differential equations, and puts them into the matrix form
 :math:`\\dot{\\mathbf{x}}=\\mathbf{Ax}`. Once in this form several techniques
@@ -149,7 +150,7 @@ always another Gaussian, but Gaussians are not closed under nonlinear functions.
 The EKF handles nonlinearity by forming a Gaussian approximation to the joint
 distribution of state :math:`\\mathbf{x}` and measurements :math:`\\mathbf{z}`
 using `Taylor series <https://en.wikipedia.org/wiki/Taylor_series>`_ based
-transformations [Hartikainen2011]_.
+transformations :cite:p:`hartikainen2011`.
 
 Likewise, the EKF is split into two steps:
 
@@ -211,7 +212,7 @@ t_0 + n\\Delta t`.
 
 Gyroscope data are treated as external inputs to the filter rather than as
 measurements, and their measurement noises enter the filter as *process noise*
-rather than as measurement noise [Sabatini2011]_.
+rather than as measurement noise :cite:p:`sabatini2011`.
 
 For this model, the quaternion :math:`\\mathbf{q}` will be the **state vector**,
 and the angular velocity :math:`\\boldsymbol\\omega`, in *rad/s*, will be the
@@ -254,7 +255,7 @@ approximation method is required.
 
 Using the `Euler-Rodrigues rotation formula
 <https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation#Using_quaternion_as_rotations>`_
-to redefine the quaternion [Sabatini2011]_ we find:
+to redefine the quaternion :cite:p:`sabatini2011` we find:
 
 .. math::
     \\hat{\\mathbf{q}}_t =
@@ -316,10 +317,10 @@ of the quaternion [#]_:
 
 The angular rates :math:`\\boldsymbol\\omega` are measured by the gyroscopes in
 the local *sensor frame*. Hence, this term describes the evolution of the
-orientation with respect to the local frame [Sola]_.
+orientation with respect to the local frame :cite:p:`sola2017quaternion`.
 
 Using the definition of :math:`\\dot{\\mathbf{q}}`, the predicted state,
-:math:`\\hat{\\mathbf{q}}_t` is written as [Wertz]_:
+:math:`\\hat{\\mathbf{q}}_t` is written as :cite:p:`spence1978`:
 
 .. math::
     \\begin{array}{rcl}
@@ -488,9 +489,10 @@ further simplifying the computation to:
     The assumption that the noise variances of the gyroscope axes are all equal
     (:math:`\\sigma_{wx}=\\sigma_{wy}=\\sigma_{wz}`) is almost never true in
     reality. It is possible to infer the individual variances through a careful
-    modeling and calibration process [Lam2003]_. If these three different
-    values are at hand, it is then recommended to compute the Process Noise
-    Covariance with :math:`\\mathbf{W}_t\\boldsymbol\\Sigma_\\boldsymbol\\omega\\mathbf{W}_t^T`.
+    modeling and calibration process :cite:p:`lam2003`. If these three
+    different values are at hand, it is then recommended to compute the Process
+    Noise Covariance with
+    :math:`\\mathbf{W}_t\\boldsymbol\\Sigma_\\boldsymbol\\omega\\mathbf{W}_t^T`.
 
 Finally, the prediction step of this model would propagate the covariance
 matrix like:
@@ -718,7 +720,7 @@ with
 
 The measurement noise covariance matrix, :math:`\\mathbf{R}\\in\\mathbb{R}^{6\\times 6}`,
 is expressed directly in terms of the statistics of the measurement noise
-affecting each sensor [Sabatini2011]_. The sensor noises are considered as
+affecting each sensor :cite:p:`sabatini2011`. The sensor noises are considered as
 uncorrelated and isotropic, which creates a diagonal matrix:
 
 .. math::
@@ -757,7 +759,7 @@ constraint. The easiest solution is to normalize the corrected state.
     \\mathbf{q}_t \\leftarrow \\frac{1}{\\|\\mathbf{q}_t\\|}\\mathbf{q}_t
 
 Even though it is neither elegant nor optimal, this "brute-force" approach to
-compute the final quaternion is proven to work generally well [Sabatini2011]_.
+compute the final quaternion is proven to work generally well :cite:p:`sabatini2011`.
 
 Initial values
 --------------
@@ -784,7 +786,7 @@ of this estimation is computed as:
 
 where :math:`\\mathbf{a}_0` and :math:`\\mathbf{m}_0` are the accelerometer and
 magnetometer measurements. Each column of this rotation matrix should be
-normalized. Then, we get the initial quaternion with [Chiaverini]_:
+normalized. Then, we get the initial quaternion with :cite:p:`Chiaverini1999`:
 
 .. math::
     \\mathbf{q}_0 =
@@ -860,24 +862,6 @@ Footnotes
     location on Earth. Simpler models consider only the latitude and height
     above sea level to estimate this magnitude. For the purpose of analysis a
     common value of *9.81* is given.
-
-References
-----------
-.. [Kalman1960] Rudolf Kalman. A New Approach to Linear Filtering and Prediction
-    Problems. 1960.
-.. [Hartikainen2011] J. Hartikainen, A. Solin and S. Särkkä. Optimal Filtering with
-    Kalman Filters and Smoothers. 2011
-.. [Sabatini2011] Sabatini, A.M. Kalman-Filter-Based Orientation Determination
-    Using Inertial/Magnetic Sensors: Observability Analysis and Performance
-    Evaluation. Sensors 2011, 11, 9182-9206.
-    (https://www.mdpi.com/1424-8220/11/10/9182)
-.. [Labbe2015] Roger R. Labbe Jr. Kalman and Bayesian Filters in Python.
-    (https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python)
-.. [Lam2003] Lam, Quang & Stamatakos, Nick & Woodruff, Craig & Ashton, Sandy.
-    Gyro Modeling and Estimation of Its Random Noise Sources. AAIA 2003.
-    DOI: 10.2514/6.2003-5562.
-    (https://www.researchgate.net/publication/268554081)
-
 
 """
 
