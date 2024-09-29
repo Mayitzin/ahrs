@@ -1105,7 +1105,7 @@ class Quaternion(np.ndarray):
 
         Given two unit quaternions :math:`\\mathbf{p}=(p_w, p_x, p_y, p_z)` and
         :math:`\\mathbf{q} = (q_w, q_x, q_y, q_z)`, their product is obtained
-        :cite:p:`dantam2014` [MWQW]_ as:
+        :cite:p:`dantam2014` :cite:p:`MathWorks_QuaternionMultiplication` as:
 
         .. math::
 
@@ -1149,7 +1149,7 @@ class Quaternion(np.ndarray):
 
         Given two unit quaternions :math:`\\mathbf{p}=(p_w, p_x, p_y, p_z)` and
         :math:`\\mathbf{q} = (q_w, q_x, q_y, q_z)`, their product is obtained
-        :cite:p:`dantam2014` [MWQW]_ as:
+        :cite:p:`dantam2014` :cite:p:`MathWorks_QuaternionMultiplication` as:
 
         .. math::
             \\mathbf{pq} =

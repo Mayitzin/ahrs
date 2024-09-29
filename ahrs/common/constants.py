@@ -20,9 +20,10 @@ Name         Description         Value
 **Geodesy**
 
 The following constants are set as defined in the latest report of the World
-Geodetic System 1984 [WGS84]_ and can be compared against [Chambat]_. The
-CODATA constants are differentiated with a suffix of their origin indicating
-their epoch as of [CODATA2014]_ or [CODATA2018]_.
+Geodetic System 1984 :cite:p:`wgs84-2014` and can be compared against
+:cite:p:`chambat2001`. The CODATA constants :cite:p:`mohr2016` and
+:cite:p:`tiesinga2021` are differentiated with an ending indicating their epoch
+as ``CODATA2014`` and ``CODATA2018`` respectively.
 
 ====================================  ==============================================  =============
 Name                                  Description                                     Value
@@ -67,9 +68,9 @@ Name                                  Description                               
 ``UNIVERSAL_GRAVITATION_WGS84``       Universal Gravitation defined in WGS84          ``6.67428e-11``
 ====================================  ==============================================  =============
 
-The values above are set as defined in [WGS84]_, although most of these values
-can be also obtained with the class ``WGS`` of this package, which builds the
-World's Geodetic System independently.
+The values above are set as defined in :cite:p:`wgs84-2014`, although most of
+these values can be also obtained with the class ``WGS`` of this package, which
+builds the World's Geodetic System independently.
 
 The elemental defining parameters (equatorial radius, flattening, gravitational
 constant and rotational velocity) are set, by default, to that of Earth's, and
@@ -93,8 +94,9 @@ all other parameters are derived from these. Just to compare:
     0.0066943799901413165
 
 These values are, so far, determined for the Earth. However, other celestial
-bodies have been measured and their values are, as defined in [Archinal]_,
-[Park]_ and [Williams]_, set as follows:
+bodies have been measured and their values are, as defined in
+:cite:p:`archinal2018`, :cite:p:`park2019` and :cite:p:`williams2024`, set as
+follows:
 
 ==========================  ==========================
 Name                        Value
@@ -144,32 +146,6 @@ Name                        Value
 ``PLUTO_ROTATION``          ``-1.138559183467410e-05``
 ``PLUTO_MASS``              ``1.303e22``
 ==========================  ==========================
-
-References
-----------
-.. [WGS84] World Geodetic System 1984. Its Definition and Relationships with
-    Local Geodetic Systems. National Geospatial-Intelligence Agency (NGA)
-    Standarization Document. 2014.
-    (ftp://ftp.nga.mil/pub2/gandg/website/wgs84/NGA.STND.0036_1.0.0_WGS84.pdf)
-.. [Chambat] F. Chambat. Mean radius, mass, and inertia for reference Earth
-    models. Physics of the Earth and Planetary Interiors Vol 124 (2001)
-    p237–253.
-.. [Archinal] Archinal, B.A. et al. 2018. "Report of the IAU/IAG Working Group
-    on cartographic coordinates and rotational elements: 2015" Celestial Mech.
-    Dyn. Astr. 130:22.
-    (https://astropedia.astrogeology.usgs.gov/download/Docs/WGCCRE/WGCCRE2015reprint.pdf)
-.. [CODATA2018] 2018 CODATA Recommended Values of the Fundamental Constants of
-    Physics and Chemistry. NIST. June 2019.
-    (https://physics.nist.gov/cuu/pdf/wallet_2018.pdf)
-.. [CODATA2014] 2014 CODATA Recommended Values of the Fundamental Constants of
-    Physics and Chemistry. NIST. August 2015.
-    (https://physics.nist.gov/cuu/pdf/wallet_2014.pdf)
-.. [Park] Ryan S. Park. Planets and Pluto: Physical Characteristics. NASA Jet
-    Propulsion Laboratory. California Institute of Technology. 29th May 2020.
-    (https://ssd.jpl.nasa.gov/?planet_phys_par)
-.. [Williams] David R. Williams. Planetary Fact Sheet - Metric. NASA Goddard
-    Space Flight Center. 21st October 2019.
-    (https://nssdc.gsfc.nasa.gov/planetary/factsheet/)
 
 """
 

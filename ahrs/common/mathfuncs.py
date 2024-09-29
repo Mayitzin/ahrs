@@ -76,7 +76,8 @@ def sind(x):
 
 def skew(x):
     """
-    Return the 3-by-3 skew-symmetric matrix [Wiki_skew]_ of a 3-element vector x.
+    Return the 3-by-3 skew-symmetric matrix :cite:p:`Wiki_skew` of a 3-element
+    vector ``x``.
 
     Parameters
     ----------
@@ -101,10 +102,6 @@ def skew(x):
     [[ 0. -6.  5.]
      [ 6.  0. -4.]
      [-5.  4.  0.]]
-
-    References
-    ----------
-    .. [Wiki_skew] https://en.wikipedia.org/wiki/Skew-symmetric_matrix
 
     """
     if isinstance(x, (list, tuple, np.ndarray)):

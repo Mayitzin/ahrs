@@ -604,7 +604,7 @@ class DCM(np.ndarray):
         Logarithm of DCM.
 
         The logarithmic map is defined as the inverse of the exponential map
-        [Cardoso]_ . It corresponds to the logarithm given by the Rodrigues
+        :cite:p:`cardoso2009`. It corresponds to the logarithm given by the Rodrigues
         rotation formula:
 
         .. math::
@@ -638,14 +638,6 @@ class DCM(np.ndarray):
         array([[ 0.        ,  0.26026043,  0.29531805],
                [-0.26026043,  0.        ,  0.5473806 ],
                [-0.29531805, -0.5473806 ,  0.        ]])
-
-        Reference
-        ---------
-        .. [Cardoso] J. Cardoso and F. Silva Leite. Exponentials of
-            skew-symmetric matrices and logarithms of orthogonal matrices.
-            Journal of Computational and Applied Mathematics. Volume 233, Issue
-            11, 1 April 2010, Pages 2867-2875.
-            (https://www.sciencedirect.com/science/article/pii/S0377042709007791)
 
         """
         trace_R = self.A.trace()
