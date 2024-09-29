@@ -270,11 +270,14 @@ Footnotes
 
     .. math::
         \\begin{array}{rcl}
-        \\dot{\\mathbf{q}} &=& \\frac{1}{2}\\mathbf{q}\\boldsymbol\\omega \\\\
-        \\ddot{\\mathbf{q}} &=& \\frac{1}{4}\\mathbf{q}\\boldsymbol\\omega^2 + \\frac{1}{2}\\mathbf{q}\\dot{\\boldsymbol\\omega} \\\\
-        \\dddot{\\mathbf{q}} &=& \\frac{1}{6}\\mathbf{q}\\boldsymbol\\omega^3 + \\frac{1}{4}\\mathbf{q}\\dot{\\boldsymbol\\omega}\\boldsymbol\\omega + \\frac{1}{2}\\mathbf{q}\\boldsymbol\\omega\\dot{\\boldsymbol\\omega} \\\\
-        \\mathbf{q}^{i\\geq 4} &=& \\frac{1}{2^i}\\mathbf{q}\\boldsymbol\\omega^i + \\cdots
+        \\dot{\\mathbf{q}}_n &=& \\frac{1}{2}\\mathbf{q}_n\\boldsymbol\\omega_n \\\\
+        \\ddot{\\mathbf{q}}_n &=& \\frac{1}{4}\\mathbf{q}_n\\boldsymbol\\omega^2_n + \\frac{1}{2}\\mathbf{q}_n\\dot{\\boldsymbol\\omega} \\\\
+        \\dddot{\\mathbf{q}}_n &=& \\frac{1}{2^3}\\mathbf{q}_n\\boldsymbol\\omega^3_n + \\frac{1}{4}\\mathbf{q}_n\\dot{\\boldsymbol\\omega}\\boldsymbol\\omega_n + \\frac{1}{2}\\mathbf{q}\\boldsymbol\\omega_n\\dot{\\boldsymbol\\omega} \\\\
+        \\mathbf{q}^{i\\geq 4}_n &=& \\frac{1}{2^i}\\mathbf{q}_n\\boldsymbol\\omega^i_n + \\cdots
         \\end{array}
+
+    where all products and the powers of :math:`\\boldsymbol\\omega` are
+    interpreted in terms of the quaternion product.
 
 """
 
