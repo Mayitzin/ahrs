@@ -7,12 +7,12 @@ Unitary quaternions [#]_ are used when representing an attitude. They can be
 updated via integration of angular rate measurements of a gyroscope.
 
 The easiest way to do so is by integrating the differential
-equation for a local rotation rate [Sola]_.
+equation for a local rotation rate :cite:p:`sola2017quaternion`.
 
 In a kinematic system, the angular velocity :math:`\\boldsymbol\\omega` of a
 rigid body at any instantaneous time is described with respect to a fixed frame
 coinciding instantaneously with its body frame. Thus, this angular
-velocity is *in terms of* the body frame [Jia]_.
+velocity is *in terms of* the body frame :cite:p:`jia2024`.
 
 Accumulating rotation over time in quaternion form is done by integrating the
 differential equation of :math:`\\mathbf{q}` with a defined rotation rate.
@@ -28,7 +28,8 @@ continuous solution for :math:`\\mathbf{q}`, but a discrete set of values can:
 
 In the simplest practical case, the angular rates are measured by `gyroscopes
 <https://en.wikipedia.org/wiki/Gyroscope>`_, reading instantaneous angular
-velocities, :math:`\\boldsymbol\\omega(t_n)=\\begin{bmatrix}\\omega_x&\\omega_y&\\omega_z\\end{bmatrix}^T`,
+velocities, :math:`\\boldsymbol\\omega(t_n)
+=\\begin{bmatrix}\\omega_x&\\omega_y&\\omega_z\\end{bmatrix}^T`,
 in *rad/s*, at discrete times :math:`t_n = n\\Delta t` in the local sensor
 frame.
 
@@ -44,7 +45,8 @@ use the quaternion derivative to integrate it and estimate the new attitude.
 An orientation (attitude) is described with a quaternion :math:`\\mathbf{q} (t)`
 at a time :math:`t`, and with :math:`\\mathbf{q} (t+\\Delta t)` at a time
 :math:`t+\\Delta t`. This is after a rotation change :math:`\\Delta\\mathbf{q}`
-during :math:`\\Delta t` seconds is performed on the local frame [Jia]_.
+during :math:`\\Delta t` seconds is performed on the local frame
+:cite:p:`jia2024`.
 
 This rotation change about the instantaneous axis
 :math:`\\mathbf{u}=\\frac{\\boldsymbol\\omega}{\\|\\boldsymbol\\omega\\|}`
@@ -147,7 +149,7 @@ get its exponential series as:
 We recognize the power-series expansion of `Euler's formula
 <https://en.wikipedia.org/wiki/Euler%27s_formula#Using_power_series>`_, which
 helps to map the quaternion :math:`\\mathbf{q}` from a rotation vector
-:math:`\\mathbf{v}`. This **exponential map** [Sola]_ is formerly defined as:
+:math:`\\mathbf{v}`. This **exponential map** :cite:p:`sola2017quaternion` is formerly defined as:
 
 .. math::
     \\mathbf{q} = e^\\mathbf{v} =
@@ -164,7 +166,8 @@ integrate :math:`\\dot{\\mathbf{q}}` to obtain:
 
 Using the `Euler-Rodrigues rotation formula
 <https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation#Using_quaternion_as_rotations>`_
-and the exponential map from above we find a **closed-form solution** [Wertz]_:
+and the exponential map from above we find a **closed-form solution**
+:cite:p:`spence1978`:
 
 .. math::
     \\mathbf{q}_{t+1} =
@@ -197,7 +200,7 @@ from `Taylor series <https://en.wikipedia.org/wiki/Taylor_series>`_ of
     \\frac{1}{3!}\\dddot{\\mathbf{q}}_t\\Delta t^3 + \\cdots
 
 Using the definition of :math:`\\dot{\\mathbf{q}}` the new orientation
-:math:`\\mathbf{q}_{t+1}` is written as [Wertz]_:
+:math:`\\mathbf{q}_{t+1}` is written as :cite:p:`spence1978`:
 
 .. math::
     \\begin{array}{rcl}
@@ -206,8 +209,8 @@ Using the definition of :math:`\\dot{\\mathbf{q}}` the new orientation
     \\frac{1}{3!}\\Big(\\frac{1}{2}\\boldsymbol\\Omega(\\boldsymbol\\omega)\\Delta t\\Big)^3 + \\cdots\\Bigg]\\mathbf{q}_t \\\\
     && \\qquad{} + \\frac{1}{4}\\dot{\\boldsymbol\\Omega}(\\boldsymbol\\omega)\\Delta t^2\\mathbf{q}_t
     + \\Big[\\frac{1}{12}\\dot{\\boldsymbol\\Omega}(\\boldsymbol\\omega)\\boldsymbol\\Omega(\\boldsymbol\\omega)
-    + \\frac{1}{24}\\boldsymbol\\Omega(\\boldsymbol\\omega)\\dot{\\boldsymbol\\Omega}(\\boldsymbol\\omega)
-    + \\frac{1}{12}\\ddot{\\boldsymbol\\Omega}(\\boldsymbol\\omega)\\Big]\\Delta t^3\\mathbf{q}_t
+    + \\frac{1}{24}\\boldsymbol\\Omega(\\boldsymbol\\omega)\\dot{\\boldsymbol\\Omega}(\\boldsymbol\\omega)\\Big]\\Delta t^3\\mathbf{q}_t
+    + \\frac{1}{12}\\ddot{\\boldsymbol\\Omega}(\\boldsymbol\\omega)\\Delta t^3\\mathbf{q}_t
     + \\cdots
     \\end{array}
 
@@ -220,17 +223,17 @@ of :math:`\\boldsymbol\\Omega` reducing the series to:
     \\frac{1}{2!}\\Big(\\frac{1}{2}\\boldsymbol\\Omega(\\boldsymbol\\omega)\\Delta t\\Big)^2 +
     \\frac{1}{3!}\\Big(\\frac{1}{2}\\boldsymbol\\Omega(\\boldsymbol\\omega)\\Delta t\\Big)^3 + \\cdots\\Bigg]\\mathbf{q}_t
 
-The error of the approximation vanishes rapidly at higher orders, or when the
-time step :math:`\\Delta t \\to 0`. The more terms we have, the better our
-approximation should be, assuming the sensor signals are unbiased and noiseless,
-with the downside of a big computational demand.
-
 Notice the series for :math:`\\mathbf{q}_{t+1}` also follows the form of the
 matrix exponential:
 
 .. math::
     e^{\\frac{\\Delta t}{2}\\boldsymbol\\Omega(\\boldsymbol\\omega)} =
     \\sum_{k=0}^\\infty \\frac{1}{k!} \\Big(\\frac{\\Delta t}{2}\\boldsymbol\\Omega(\\boldsymbol\\omega)\\Big)^k
+
+The error of the approximation vanishes rapidly at higher orders (:math:`k \\to
+0`), or when the time step :math:`\\Delta t \\to 0`. The more terms we have,
+the better our approximation should be, assuming the sensor signals are
+unbiased and noiseless, with the downside of a big computational demand.
 
 For our purpose a truncation up to the second term, making it of first order
 (:math:`k=1`), is implemented.
@@ -252,9 +255,9 @@ represent a valid orientation.
     \\mathbf{q}_{t+1} \\gets \\frac{\\mathbf{q}_{t+1}}{\\|\\mathbf{q}_{t+1}\\|}
 
 Numerical Integration based on Runge-Kutta methods can be employed to increase
-the accuracy, and are shown to be more effective. See [Sola]_ and [Zhao]_ for a
-comparison of the different methods, their accuracy, and their computational
-load.
+the accuracy, and are shown to be more effective. See :cite:p:`sola2017quaternion`
+and :cite:p:`zhao2013` for a comparison of the different methods, their
+accuracy, and their computational load.
 
 Footnotes
 ---------
@@ -267,23 +270,14 @@ Footnotes
 
     .. math::
         \\begin{array}{rcl}
-        \\dot{\\mathbf{q}} &=& \\frac{1}{2}\\mathbf{q}\\boldsymbol\\omega \\\\
-        \\ddot{\\mathbf{q}} &=& \\frac{1}{4}\\mathbf{q}\\boldsymbol\\omega^2 + \\frac{1}{2}\\mathbf{q}\\dot{\\boldsymbol\\omega} \\\\
-        \\dddot{\\mathbf{q}} &=& \\frac{1}{6}\\mathbf{q}\\boldsymbol\\omega^3 + \\frac{1}{4}\\mathbf{q}\\dot{\\boldsymbol\\omega}\\boldsymbol\\omega + \\frac{1}{2}\\mathbf{q}\\boldsymbol\\omega\\dot{\\boldsymbol\\omega} \\\\
-        \\mathbf{q}^{i\\geq 4} &=& \\frac{1}{2^i}\\mathbf{q}\\boldsymbol\\omega^i + \\cdots
+        \\dot{\\mathbf{q}}_n &=& \\frac{1}{2}\\mathbf{q}_n\\boldsymbol\\omega_n \\\\
+        \\ddot{\\mathbf{q}}_n &=& \\frac{1}{4}\\mathbf{q}_n\\boldsymbol\\omega^2_n + \\frac{1}{2}\\mathbf{q}_n\\dot{\\boldsymbol\\omega} \\\\
+        \\dddot{\\mathbf{q}}_n &=& \\frac{1}{2^3}\\mathbf{q}_n\\boldsymbol\\omega^3_n + \\frac{1}{4}\\mathbf{q}_n\\dot{\\boldsymbol\\omega}\\boldsymbol\\omega_n + \\frac{1}{2}\\mathbf{q}\\boldsymbol\\omega_n\\dot{\\boldsymbol\\omega} \\\\
+        \\mathbf{q}^{i\\geq 4}_n &=& \\frac{1}{2^i}\\mathbf{q}_n\\boldsymbol\\omega^i_n + \\cdots
         \\end{array}
 
-References
-----------
-
-.. [Jia] Yan-Bin Jia. Quaternions. 2018.
-    (http://web.cs.iastate.edu/~cs577/handouts/quaternion.pdf)
-.. [Sola] Solà, Joan. Quaternion kinematics for the error-state Kalman Filter.
-    October 12, 2017.
-    (http://www.iri.upc.edu/people/jsola/JoanSola/objectes/notes/kinematics.pdf)
-.. [Zhao] F. Zhao and B.G.M. van Wachem. A novel Quaternion integration
-    approach for describing the behaviour of non-spherical particles.
-    (https://link.springer.com/content/pdf/10.1007/s00707-013-0914-2.pdf)
+    where all products and the powers of :math:`\\boldsymbol\\omega` are
+    interpreted in terms of the quaternion product.
 
 """
 

@@ -53,13 +53,6 @@ def q_conj(q: np.ndarray) -> np.ndarray:
            [ 0.578965, -0.202390, -0.280560, -0.738321],
            [ 0.848611, -0.442224, -0.112601, -0.267611]])
 
-    References
-    ----------
-    .. [1] Dantam, N. (2014) Quaternion Computation. Institute for Robotics
-           and Intelligent Machines. Georgia Tech.
-           (http://www.neil.dantam.name/note/dantam-quaternion.pdf)
-    .. [2] https://en.wikipedia.org/wiki/Quaternion#Conjugation,_the_norm,_and_reciprocal
-
     """
     q = np.copy(q)
     if q.ndim > 2 or q.shape[-1] != 4:
@@ -104,11 +97,10 @@ def q_random(size: int = 1) -> np.ndarray:
         return q[0]
     return q
 
-
 def q_norm(q: np.ndarray) -> np.ndarray:
     """
-    Normalize quaternion [WQ1]_ :math:`\\mathbf{q}_u`, also known as a versor
-    [WV1]_ :
+    Normalize quaternion :cite:p:`Wiki_Quaternion` :math:`\\mathbf{q}_u`, also
+    known as a versor :cite:p:`Wiki_Versor`:
 
     .. math::
 
@@ -142,11 +134,6 @@ def q_norm(q: np.ndarray) -> np.ndarray:
     >>> np.linalg.norm(q)
     1.0
 
-    References
-    ----------
-    .. [WQ1] https://en.wikipedia.org/wiki/Quaternion#Unit_quaternion
-    .. [WV1] https://en.wikipedia.org/wiki/Versor
-
     """
     if q.ndim > 2 or q.shape[-1] != 4:
         raise ValueError(f"Quaternion must be of shape (4,) or (N, 4), but has shape {q.shape}")
@@ -159,7 +146,8 @@ def q_prod(p: np.ndarray, q: np.ndarray) -> np.ndarray:
     Product of two unit quaternions.
 
     Given two unit quaternions :math:`\\mathbf{p}=(p_w, \\mathbf{p}_v)` and
-    :math:`\\mathbf{q} = (q_w, \\mathbf{q}_v)`, their product is defined [ND]_ [MWQW]_
+    :math:`\\mathbf{q} = (q_w, \\mathbf{q}_v)`, their product is defined
+    :cite:p:`dantam2014` :cite:p:`MathWorks_QuaternionMultiplication`.
     as:
 
     .. math::
@@ -214,14 +202,6 @@ def q_prod(p: np.ndarray, q: np.ndarray) -> np.ndarray:
     array([0.49753507, 0.50806522, 0.52711628, 0.4652709 ])
     >>> quaternion.q_prod(q[0], q[1])
     array([-0.36348726,  0.38962514,  0.34188103,  0.77407146])
-
-    References
-    ----------
-    .. [ND] Dantam, N. (2014) Quaternion Computation. Institute for Robotics
-            and Intelligent Machines. Georgia Tech.
-            (http://www.neil.dantam.name/note/dantam-quaternion.pdf)
-    .. [MWQM] Mathworks: Quaternion Multiplication.
-           https://www.mathworks.com/help/aeroblks/quaternionmultiplication.html
 
     """
     pq = np.zeros(4)
@@ -541,8 +521,9 @@ def rotation(ax: Union[str, int] = None, ang: float = 0.0, degrees: bool = False
     """
     Return a Direction Cosine Matrix
 
-    The rotation matrix :math:`\\mathbf{R}` [1]_ is created for the given axis
-    with the given angle :math:`\\theta`. Where the possible rotation axes are:
+    The rotation matrix :math:`\\mathbf{R}` :cite:p:`Wolfram_RotationMatrix` is
+    created for the given axis with the given angle :math:`\\theta`. Where the
+    possible rotation axes are:
 
     .. math::
 
@@ -613,10 +594,6 @@ def rotation(ax: Union[str, int] = None, ang: float = 0.0, degrees: bool = False
     array([[1. 0. 0.],
            [0. 1. 0.],
            [0. 0. 1.]])
-
-    References
-    ----------
-    .. [1] http://mathworld.wolfram.com/RotationMatrix.html
 
     """
     # Default values
@@ -1085,7 +1062,7 @@ def slerp(q0: np.ndarray, q1: np.ndarray, t_array: np.ndarray, threshold: float 
     arc of a great circle passing through any two existing quaternion endpoints
     lying on the unit radius hypersphere.
 
-    Based on the method detailed in [Wiki_SLERP]_
+    Based on the method detailed in :cite:p:`Wiki_SLERP`.
 
     Parameters
     ----------
@@ -1105,10 +1082,6 @@ def slerp(q0: np.ndarray, q1: np.ndarray, t_array: np.ndarray, threshold: float 
     -------
     q : numpy.ndarray
         New quaternion representing the interpolated rotation.
-
-    References
-    ----------
-    .. [Wiki_SLERP] https://en.wikipedia.org/wiki/Slerp
 
     """
     qdot = q0@q1
@@ -1132,7 +1105,7 @@ def slerp(q0: np.ndarray, q1: np.ndarray, t_array: np.ndarray, threshold: float 
 def chiaverini(dcm: np.ndarray) -> np.ndarray:
     """
     Quaternion from a Direction Cosine Matrix with Chiaverini's algebraic
-    method [Chiaverini]_.
+    method :cite:p:`Chiaverini1999`.
 
     Defining the unit quaternion as:
 
@@ -1218,7 +1191,8 @@ def chiaverini(dcm: np.ndarray) -> np.ndarray:
 
 def hughes(C: np.ndarray) -> np.ndarray:
     """
-    Quaternion from a Direction Cosine Matrix with Hughes' method [Hughes]_.
+    Quaternion from a Direction Cosine Matrix with trigonometric Hughes' method
+    :cite:p:`hughes1986spacecraft17`.
 
     Defining the quaternion (reluctantly called "Euler Parameters" in Hughes'
     book) as:
@@ -1320,7 +1294,7 @@ def hughes(C: np.ndarray) -> np.ndarray:
 def sarabandi(dcm: np.ndarray, eta: float = 0.0) -> np.ndarray:
     """
     Quaternion from a Direction Cosine Matrix using Sarabandi's method
-    [Sarabandi]_.
+    :cite:p:`sarabandi2019`.
 
     A rotation matrix :math:`\\mathbf{R}` can be expressed as:
 
@@ -1521,7 +1495,7 @@ def sarabandi(dcm: np.ndarray, eta: float = 0.0) -> np.ndarray:
 def itzhack(dcm: np.ndarray, version: int = 3) -> np.ndarray:
     """
     Quaternion from a Direction Cosine Matrix with Bar-Itzhack's method
-    [Bar-Itzhack]_.
+    :cite:p:`BarItzhack2000`.
 
     This method to compute the quaternion from a Direction Cosine Matrix (DCM)
     is based on the eigenvalue decomposition of the matrix :math:`\\mathbf{K}`,
@@ -1563,7 +1537,7 @@ def itzhack(dcm: np.ndarray, version: int = 3) -> np.ndarray:
     and :math:`\\mathbf{a}` are a set of nonnegative weights assign to each
     pair.
 
-    Paul Davenport [Davenport1968]_ finds the optimal quaternion,
+    Paul Davenport :cite:p:`davenport1968` finds the optimal quaternion,
     :math:`\\mathbf{q}^*`, that minimizes the cost function, through the
     eigenvalue decomposition of the matrix :math:`\\mathbf{K}`:
 
@@ -1775,13 +1749,14 @@ def itzhack(dcm: np.ndarray, version: int = 3) -> np.ndarray:
             q = eigvec[:, np.where(np.isclose(eigval, 1.0))[0]].flatten().real
         else:
             q = eigvec[:, eigval.argmax()]
-    q = np.roll(q, 1)       # Original implementation uses [qx, qy, qz, qw]
+    q = np.roll(q, 1)       # Re-arrange quaternion to [qw, qx, qy, qz]
     q[0] *= -1              # Original implementation computes inverse rotation
     return q / np.linalg.norm(q)
 
 def shepperd(dcm: np.ndarray) -> np.ndarray:
     """
-    Quaternion from a Direction Cosine Matrix with Shepperd's method [Shepperd]_.
+    Quaternion from a Direction Cosine Matrix with Shepperd's method
+    :cite:p:`shepperd1978`.
 
     Since it was proposed in 1978, the Shepperd method has been widely used
     in the aerospace industry.

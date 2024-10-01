@@ -3,12 +3,8 @@
 Fast Kalman Filter
 ==================
 
-References
-----------
-.. [Guo] Siwen Guo, Jin Wu, Zuocai Wang, and Jide Qian, "Novel MARG-Sensor
-    Orientation Estimation Algorithm Using Fast Kalman Filter." Journal of
-    Sensors, vol. 2017, Article ID 8542153, 12 pages.
-    https://doi.org/10.1155/2017/8542153 and https://github.com/zarathustr/FKF
+Quaternion-based Fast Kalman Filter algorithm for orientation estimation
+:cite:p:`guo2017`.
 
 """
 

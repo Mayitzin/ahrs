@@ -3,10 +3,10 @@
 TRIAD
 =====
 
-The Tri-Axial Attitude Determination (`TRIAD <https://en.wikipedia.org/wiki/Triad_method>`_)
-was first described in [Black]_ to algebraically estimate an attitude
-represented as a Direction Cosine Matrix from two orthogonal vector
-observations.
+The Tri-Axial Attitude Determination (`TRIAD
+<https://en.wikipedia.org/wiki/Triad_method>`_) was first described by Harold
+Black in :cite:p:`black1964` to algebraically estimate an attitude represented
+as a Direction Cosine Matrix from two orthogonal vector observations.
 
 Given two non-parallel reference *unit vectors* :math:`\\mathbf{v}_1` and
 :math:`\\mathbf{v}_2` and their corresponding *unit vectors* :math:`\\mathbf{w}_1`
@@ -29,10 +29,10 @@ following triad:
     \\end{array}
 
 The TRIAD method, initially developed to estimate the attitude of spacecrafts
-[Shuster2007]_, uses the position of the sun (using a `star tracker
+:cite:p:`shuster2007`, uses the position of the sun (using a `star tracker
 <https://en.wikipedia.org/wiki/Star_tracker>`_) and the magnetic field of Earth
-as references [Hall]_ [Makley]_. These are represented as vectors to build an
-appropriate *reference* frame :math:`\\mathbf{M}_r`:
+as references :cite:p:`hall2000` :cite:p:`markley2014`. These are represented
+as vectors to build an appropriate *reference* frame :math:`\\mathbf{M}_r`:
 
 .. math::
     \\mathbf{M}_r = \\begin{bmatrix} \\mathbf{q}_r & \\mathbf{r}_r & \\mathbf{s}_r \\end{bmatrix}
@@ -75,7 +75,7 @@ and computational requirements are minimal.
 
 It is only required that :math:`\\mathbf{M}_r` has an inverse, but that is
 already ensured, since :math:`\\mathbf{q}_r`, :math:`\\mathbf{r}_r`,
-and :math:`\\mathbf{s}_r` are linearly independent [Lerner1]_.
+and :math:`\\mathbf{s}_r` are linearly independent :cite:p:`lerner1978`.
 
 Strapdown INS
 -------------
@@ -223,21 +223,6 @@ Footnotes
 ---------
 .. [#] This package's author resides in Munich, and examples of geographical
     locations will take it as a reference.
-
-References
-----------
-.. [Black] Black, Harold. "A Passive System for Determining the Attitude of a
-    Satellite," AIAA Journal, Vol. 2, July 1964, pp. 1350–1351.
-.. [Lerner1] Lerner, G. M. "Three-Axis Attitude Determination" in Spacecraft
-    Attitude Determination and Control, edited by J.R. Wertz. 1978. p. 420-426.
-.. [Hall] Chris Hall. Spacecraft Attitude Dynamics and Control. Chapter 4:
-    Attitude Determination. 2003.
-    (http://www.dept.aoe.vt.edu/~cdhall/courses/aoe4140/attde.pdf)
-.. [Makley] F.L. Makley et al. Fundamentals of Spacecraft Attitude
-    Determination and Control. 2014. Pages 184-186.
-.. [Shuster2007] Shuster, Malcolm D. The optimization of TRIAD. The Journal of
-    the Astronautical Sciences, Vol. 55, No 2, April – June 2007, pp. 245–257.
-    (http://www.malcolmdshuster.com/Pub_2007f_J_OptTRIAD_AAS.pdf)
 
 """
 
@@ -414,7 +399,7 @@ class TRIAD:
         """
         Attitude Estimation.
 
-        The equation numbers in the code refer to [Lerner1]_.
+        The equation numbers in the code refer to :cite:p:`lerner1978`.
 
         Parameters
         ----------

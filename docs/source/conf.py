@@ -15,9 +15,11 @@ release = __version__
 
 # -- General configuration ---------------------------------------------------
 extensions = [
+    'sphinxcontrib.bibtex',
     'sphinx.ext.autodoc',
     'sphinx.ext.mathjax',
-    'sphinx.ext.napoleon']
+    'sphinx.ext.napoleon',
+]
 
 # Napoleon settings
 napoleon_numpy_docstring = True
@@ -42,3 +44,6 @@ html_static_path = ['_static']
 html_logo = "ahrs_logo.png"
 html_favicon = "ahrs_icon.ico"
 html_css_files = []  # Explicitly set to an empty list
+
+# Bibliography file
+bibtex_bibfiles = ['refs.bib']

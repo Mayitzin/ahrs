@@ -11,6 +11,7 @@
 *.DS_Store
 build/*
 dist/*
+*/.ipynb_checkpoints/*
 
 # test-related
 .coverage
@@ -20,6 +21,7 @@ dist/*
 # developer environments
 .idea
 .vscode
+.env
 
 # Documentation
 doctest/*

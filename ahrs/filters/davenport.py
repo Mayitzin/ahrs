@@ -19,14 +19,14 @@ is the i-th vector in the reference frame, and :math:`w_i` are a set of :math:`N
 nonnegative weights for each observation. This famous formulation is known as
 `Wahba's problem <https://en.wikipedia.org/wiki/Wahba%27s_problem>`_.
 
-A first elegant solution was proposed by [Davenport1968]_ that solves this in
-terms of quaternions, yielding a unique optimal solution. The corresponding
-**gain function** is defined as:
+A first elegant solution was proposed by :cite:p:`davenport1968` that solves
+this in terms of quaternions, yielding a unique optimal solution. The
+corresponding **objective function** is defined as:
 
 .. math::
     g(\\mathbf{A}) = 1 - L(\\mathbf{A}) = \\sum_{i=1}^Nw_i\\mathbf{U}^T\\mathbf{AV}
 
-The gain function is at maximum when the loss function :math:`L(\\mathbf{A})`
+The objective function is at maximum when the loss function :math:`L(\\mathbf{A})`
 is at minimum. The goal is, then, to find the optimal attitude matrix
 :math:`\\mathbf{A}`, which *maximizes* :math:`g(\\mathbf{A})`. We first notice
 that:
@@ -37,13 +37,15 @@ that:
     =& \\mathrm{tr}(\\mathbf{AB}^T)
     \\end{array}
 
-where :math:`\\mathrm{tr}` denotes the `trace <https://en.wikipedia.org/wiki/Trace_(linear_algebra)>`_
-of a matrix, and :math:`\\mathbf{B}` is the *attitude profile matrix*:
+where :math:`\\mathrm{tr}` denotes the `trace
+<https://en.wikipedia.org/wiki/Trace_(linear_algebra)>`_ of a matrix, and
+:math:`\\mathbf{B}` is the *attitude profile matrix*:
 
 .. math::
     \\mathbf{B} = \\sum_{i=1}^Nw_i\\mathbf{UV}
 
-Now, we must parametrize the attitude matrix in terms of a quaternion :math:`\\mathbf{q}`:
+Now, we must parametrize the attitude matrix in terms of a quaternion
+:math:`\\mathbf{q}` :cite:p:`lerner1978` :
 
 .. math::
     \\mathbf{A}(\\mathbf{q}) = (q_w^2-\\mathbf{q}_v\\cdot\\mathbf{q}_v)\\mathbf{I}_3+2\\mathbf{q}_v\\mathbf{q}_v^T-2q_w\\lfloor\\mathbf{q}\\rfloor_\\times
@@ -54,7 +56,7 @@ matrix <https://en.wikipedia.org/wiki/Skew-symmetric_matrix>`_ of a vector
 :math:`\\mathbf{x}`. See the `quaternion page <../quaternion.html>`_ for further
 details about this representation mapping.
 
-The gain function, in terms of quaternion, becomes:
+The objective function, in terms of quaternion, becomes:
 
 .. math::
     g(\\mathbf{q}) = (q_w^2-\\mathbf{q}_v\\cdot\\mathbf{q}_v)\\mathrm{tr}\\mathbf{B}^T + 2\\mathrm{tr}\\big(\\mathbf{q}_v\\mathbf{q}_v^T\\mathbf{B}^T\\big) + 2q_w\\mathrm{tr}(\\lfloor\\mathbf{q}\\rfloor_\\times\\mathbf{B}^T)
@@ -94,14 +96,6 @@ largest eigenvalue :math:`\\lambda` is chosen.
 The biggest disadvantage of this method is its computational load in the last
 step of computing the eigenvalues and eigenvectors to find the optimal
 quaternion.
-
-References
-----------
-.. [Davenport1968] Paul B. Davenport. A Vector Approach to the Algebra of Rotations
-    with Applications. NASA Technical Note D-4696. August 1968.
-    (https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/19680021122.pdf)
-.. [Lerner2] Lerner, G. M. "Three-Axis Attitude Determination" in Spacecraft
-    Attitude Determination and Control, edited by J.R. Wertz. 1978. p. 426-428.
 
 """
 

@@ -1,9 +1,9 @@
 """
-The World Geodetic System 1984 (WGS 84) [WGS84]_ describes the best geodetic
-reference system for the Earth available for the practical applications of
-mapping, charting, geopositioning, and navigation, using data, techniques and
-technology available through 2013 by the United States of America's National
-Geospatial-Intelligence Agency (NGA.)
+The World Geodetic System 1984 (WGS 84) :cite:p:`wgs84-2014` describes the best
+geodetic reference system for the Earth available for the practical
+applications of mapping, charting, geopositioning, and navigation, using data,
+techniques and technology available through 2013 by the United States of
+America's National Geospatial-Intelligence Agency (NGA.)
 
 The WGS 84 Coordinate System is a Conventional Terrestrial Reference System
 (`CTRS <https://gssc.esa.int/navipedia/index.php/Conventional_Terrestrial_Reference_System>`_),
@@ -119,7 +119,7 @@ its gravity field is easier to handle assuming it is one. The deviations of the
 field are so small that they are considered linear for this model.
 
 The definition of the **potential of the normal gravity field** :math:`U`
-[Heiskanen]_ is:
+:cite:p:`hofmann2006` is:
 
 .. math::
     U = V + \\Phi
@@ -201,7 +201,7 @@ coordinates.
 
 Using the property :math:`\\tan\\beta=\\frac{b}{a}\\tan\\phi`, we define a
 closed form formula to find the normal gravity :math:`\\mathrm{g}` at any given latitude
-:math:`\\phi` [Somigliana1929]_:
+:math:`\\phi` :cite:p:`somigliana1929`:
 
 .. math::
     \\mathrm{g}(\\phi) = \\frac{ag_e \\cos^2\\phi + bg_p\\sin^2\\phi}{\\sqrt{a^2\\cos^2\\phi + b^2\\sin^2\\phi}}
@@ -243,9 +243,9 @@ where :math:`h` is the height, in meters, above the ellipsoid's surface.
 Other Gravitational Methods
 ---------------------------
 
-The well known **International Gravity Formula** [Lambert]_ as described by
-Helmut Moritz in [Tscherning]_ for the `Geodetic Reference System 1980
-<https://en.wikipedia.org/wiki/Geodetic_Reference_System_1980>`_
+The well known **International Gravity Formula** :cite:p:`lambert1945` as
+described by Helmut Moritz in 1984 :cite:p:`moritz1984` for the `Geodetic
+Reference System 1980 <https://en.wikipedia.org/wiki/Geodetic_Reference_System_1980>`_
 is implemented in ``ahrs``:
 
 .. math::
@@ -270,6 +270,9 @@ included here:
 
 Although this is thought and mainly used for European latitudes.
 
+Advanced Gravitational Methods
+------------------------------
+
 All methods above can be used for cartography and basic gravitational
 references. For more advanced and precise estimations it is recommended to use
 the `EGM2008 <https://earth-info.nga.mil/GandG/wgs84/gravitymod/egm2008/>`_,
@@ -278,7 +281,8 @@ and order 2159.
 
 Because of its high complexity and demanding computation, the implementation of
 the EGM2008 is left out of this module in favour of the more convenient
-applications developed in `Fortran by the NGA <https://earth-info.nga.mil/GandG/wgs84/gravitymod/egm2008/egm08_wgs84.html>`_.
+applications developed in `Fortran by the NGA
+<https://earth-info.nga.mil/GandG/wgs84/gravitymod/egm2008/egm08_wgs84.html>`_.
 
 Footnotes
 ---------
@@ -286,30 +290,6 @@ Footnotes
     terms of spherical harmonics. But that definition is out of the scope of
     this package.
 
-References
-----------
-.. [WGS84] World Geodetic System 1984. Its Definition and Relationships with
-    Local Geodetic Systems. National Geospatial-Intelligence Agency (NGA)
-    Standarization Document. 2014.
-    (ftp://ftp.nga.mil/pub2/gandg/website/wgs84/NGA.STND.0036_1.0.0_WGS84.pdf)
-.. [Heiskanen] Heiskanen, W. A. and Moritz, H. Physical Geodesy. W. H. Freeman
-    and Company. 1967.
-.. [WELMEC2021] WELMEC Directives 2014/31/EU and 2014/32/EU: Common Application.
-    Non-Automatic Weighing Instruments (NAWI); Automatic Weighing Instruments
-    (AWI); Multi-dimensional Measuring Instruments (MDMI.)
-    (https://www.welmec.org/welmec/documents/guides/2/2021/WELMEC_Guide_2_v2021.pdf)
-.. [Lambert] Walter D. Lambert. The International Gravity Formula. U.S. Coast
-    and Geodetic Survey. 1945. (http://earth.geology.yale.edu/~ajs/1945A/360.pdf)
-.. [Somigliana1929] Carlo Somigliana. Teoria generale del campo gravitazionale
-    dell'ellissoide di rotazione. Memorie della Società Astronomia Italiana,
-    Vol. 4, p.425. 1929
-    (http://articles.adsabs.harvard.edu/pdf/1929MmSAI...4..425S)
-.. [Tscherning] C. Tscherning. The Geodesist's Handbook 1984. Association
-    Internationale de Géodésie. 1984.
-    (https://office.iag-aig.org/doc/5d7f91ee333a3.pdf)
-.. [Jekeli2016] C. Jekeli. Geometric Reference Systems in Geodesy. Division of
-    Geodetic Science, School of Earth Sciences, Ohio State University. 2016.
-    (https://kb.osu.edu/server/api/core/bitstreams/404dbfb8-da94-5f09-baf4-dbee438ece83/content)
 """
 
 import numpy as np
@@ -329,10 +309,10 @@ def international_gravity(lat: float, epoch: str = '1980') -> float:
     """
     International Gravity Formula
 
-    Estimate the normal gravity, :math:`\\mathrm{g}`, using the International Gravity
-    Formula [Lambert]_, adapted from Stokes' formula, and adopted by the
-    `International Association of Geodesy <https://www.iag-aig.org/>`_ at its
-    Stockholm Assembly in 1930.
+    Compute the normal gravity, :math:`\\mathrm{g}`, using the International
+    Gravity Formula :cite:p:`lambert1945`, adapted from Stokes' formula, and
+    adopted by the `International Association of Geodesy <https://www.iag-aig.org/>`_
+    in 1930.
 
     The expression for gravity on a spheroid, which combines gravitational
     attraction and centrifugal acceleration, at a certain latitude,
@@ -428,7 +408,8 @@ def welmec_gravity(lat: float, h: float = 0.0) -> float:
     Reference normal gravity of WELMEC's gravity zone
 
     Gravity zones are implemented by European States on their territories for
-    weighing instruments that are sensitive to variations of gravity [WELMEC2021]_.
+    weighing instruments that are sensitive to variations of gravity
+    :cite:p:`welmec2023`.
 
     Manufacturers may adjust their instruments using the reference gravity
     formula:
@@ -494,8 +475,8 @@ class WGS:
         body using Somigliana's formula (on surface) and a series expansion
         (above surface).
 
-        Somigliana's closed formula as desribed by H. Moritz in [Tscherning]_
-        is:
+        Somigliana's closed formula as desribed by H. Moritz in
+        :cite:p:`moritz1984` is:
 
         .. math::
             \\mathrm{g} = \\frac{a\\mathrm{g}_e \\cos^2\\phi + b\\mathrm{g}_p\\sin^2\\phi}{\\sqrt{a^2cos^2\\phi + b^2\\sin^2\\phi}}
@@ -566,7 +547,7 @@ class WGS:
     def meridian_curvature_radius(self, lat: float) -> float:
         """
         Radius of the curvature in the prime meridian, estimated at a given
-        latitude, :math:`\\phi`, as per [Jekeli2016]_:
+        latitude, :math:`\\phi`, as per :cite:p:`jekeli2016`:
 
         .. math::
             R_M = \\frac{a(1-e^2)}{(1-e^2\\sin^2\\phi)^{\\frac{3}{2}}}

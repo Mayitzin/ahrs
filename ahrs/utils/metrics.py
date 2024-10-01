@@ -2,16 +2,6 @@
 """
 Common metrics used in 3D Orientation representations.
 
-References
-----------
-.. [Huynh] Huynh, D.Q. Metrics for 3D Rotations: Comparison and Analysis. J
-    Math Imaging Vis 35, 155-164 (2009).
-.. [Kuffner] Kuffner, J.J. Effective Sampling and Distance Metrics for 3D Rigid
-    Body Path Planning. IEEE International Conference on Robotics and
-    Automation (ICRA 2004)
-.. [Hartley] R. Hartley, J. Trumpf, Y. Dai, H. Li. Rotation Averaging.
-    International Journal of Computer Vision. Volume 101, Number 2. 2013.
-
 """
 
 import numpy as np
@@ -65,7 +55,7 @@ def _quaternions_guard_clauses(q1: Union[list, np.ndarray], q2: Union[list, np.n
 
 def euclidean(x: np.ndarray, y: np.ndarray, **kwargs) -> float:
     """
-    Euclidean distance between two arrays as described in [Huynh]_:
+    Euclidean distance between two arrays as described in :cite:p:`huynh2009`:
 
     .. math::
         d(\\mathbf{x}, \\mathbf{y}) = \\sqrt{(x_0-y_0)^2 + \\dots + (x_n-y_n)^2}
@@ -115,7 +105,7 @@ def chordal(R1: np.ndarray, R2: np.ndarray) -> Union[float, np.ndarray]:
     The chordal distance between two rotations :math:`\\mathbf{R}_1` and
     :math:`\\mathbf{R}_2` in SO(3) is the Euclidean distance between them in
     the embedding space :math:`\\mathbb{R}^{3\\times 3}=\\mathbb{R}^9`
-    [Hartley]_:
+    :cite:p:`hartley2013`:
 
     .. math::
         d(\\mathbf{R}_1, \\mathbf{R}_2) = \\|\\mathbf{R}_1-\\mathbf{R}_2\\|_F
@@ -158,7 +148,7 @@ def chordal(R1: np.ndarray, R2: np.ndarray) -> Union[float, np.ndarray]:
 
 def identity_deviation(R1: np.ndarray, R2: np.ndarray) -> float:
     """
-    Deviation from Identity Matrix as defined in [Huynh]_:
+    Deviation from Identity Matrix as defined in :cite:p:`huynh2009`:
 
     .. math::
         d(\\mathbf{R}_1, \\mathbf{R}_2) = \\|\\mathbf{I}-\\mathbf{R}_1\\mathbf{R}_2^T\\|_F
@@ -200,7 +190,7 @@ def identity_deviation(R1: np.ndarray, R2: np.ndarray) -> float:
 def angular_distance(R1: np.ndarray, R2: np.ndarray) -> float:
     """
     Angular distance between two rotations :math:`\\mathbf{R}_1` and
-    :math:`\\mathbf{R}_2` in SO(3), as defined in [Hartley]_:
+    :math:`\\mathbf{R}_2` in SO(3), as defined in :cite:p:`hartley2013`:
 
     .. math::
         d(\\mathbf{R}_1, \\mathbf{R}_2) = \\|\\log(\\mathbf{R}_1\\mathbf{R}_2^T)\\|
@@ -240,8 +230,8 @@ def angular_distance(R1: np.ndarray, R2: np.ndarray) -> float:
 
 def qdist(q1: np.ndarray, q2: np.ndarray) -> float:
     """
-    Euclidean distance between two unit quaternions as defined in [Huynh]_ and
-    [Hartley]_:
+    Euclidean distance between two unit quaternions as defined in :cite:p:`huynh2009` and
+    :cite:p:`hartley2013`:
 
     .. math::
         d(\\mathbf{q}_1, \\mathbf{q}_2) = \\mathrm{min} \\{ \\|\\mathbf{q}_1-\\mathbf{q}_2\\|, \\|\\mathbf{q}_1-\\mathbf{q}_2\\|\\}
@@ -287,7 +277,8 @@ def qdist(q1: np.ndarray, q2: np.ndarray) -> float:
 
 def qeip(q1: np.ndarray, q2: np.ndarray) -> float:
     """
-    Euclidean distance of inner products as defined in [Huynh]_ and [Kuffner]_:
+    Euclidean distance of inner products as defined in :cite:p:`huynh2009` and
+    :cite:p:`kuffner2004`:
 
     .. math::
         d(\\mathbf{q}_1, \\mathbf{q}_2) = 1 - |\\mathbf{q}_1\\cdot\\mathbf{q}_2|
@@ -333,7 +324,7 @@ def qeip(q1: np.ndarray, q2: np.ndarray) -> float:
 
 def qcip(q1: np.ndarray, q2: np.ndarray) -> float:
     """
-    Cosine of inner products as defined in [Huynh]_:
+    Cosine of inner products as defined in :cite:p:`huynh2009`:
 
     .. math::
         d(\\mathbf{q}_1, \\mathbf{q}_2) = \\arccos(|\\mathbf{q}_1\\cdot\\mathbf{q}_2|)
@@ -379,7 +370,7 @@ def qcip(q1: np.ndarray, q2: np.ndarray) -> float:
 
 def qad(q1: np.ndarray, q2: np.ndarray) -> float:
     """
-    Quaternion Angle Difference as defined in [Thibaud]_:
+    Quaternion Angle Difference as defined in :cite:p:`thibaud2017`:
 
     .. math::
 
@@ -412,12 +403,6 @@ def qad(q1: np.ndarray, q2: np.ndarray) -> float:
     >>> ahrs.utils.qad(q1, -q1)
     0.0
 
-    References
-    ----------
-    .. [Thibaud] Thibaud Michel, Pierre Genevès, Hassen Fourati, Nabil Layaïda.
-      On Attitude Estimation with Smartphones. IEEE International Conference on
-      Pervasive Computing and Communications, Mar 2017, Kona, United States.
-      ⟨hal-01376745v2⟩
     """
     _quaternions_guard_clauses(q1, q2)
     q1, q2 = np.copy(q1), np.copy(q2)

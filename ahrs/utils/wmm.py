@@ -1,12 +1,12 @@
 """
-The main utility of the World Magnetic Model (WMM) [WMM]_ is to provide
-magnetic declination for any desired location on the globe.
+The main utility of the World Magnetic Model (WMM) :cite:p:`chulliat2020` is to
+provide magnetic declination for any desired location on the globe.
 
 In addition to the magnetic declination, the WMM also provides the complete
 geometry of the field from 1 km below the World Geodetic System (WGS 84)
-[WGS84]_ ellipsoid surface to approximately 850 km above it. The magnetic field
-extends deep into the Earth and far out into space, but the WMM is not valid at
-these extremes.
+:cite:p:`wgs84-2014` ellipsoid surface to approximately 850 km above it. The
+magnetic field extends deep into the Earth and far out into space, but the WMM
+is not valid at these extremes.
 
 Earth's magnetic field is viewed as a magnetic dipole produced by a sphere of
 uniform magnetization. The "south" of the dipole lies on the northern
@@ -45,12 +45,12 @@ where :math:`a` is Earth's mean radius; :math:`g_n^m` and :math:`h_n^m` are
 *Gaussian coefficients* of degree :math:`n` and order :math:`m`; :math:`r`,
 :math:`\\theta`, and :math:`\\phi` are the geocentric radius, coelevation and
 longitude in spherical polar coordinates; and :math:`P_n^m(\\theta)` are the
-associated Legendre functions [Heiskanen]_.
+associated Legendre functions :cite:p`hofmann2006`.
 
 The time-dependent Gauss coefficients are estimated empirically from a
-least-squares fit using satellite magnetic measurements [Langel]_. These
-coefficients are provided by the NCEI Geomagnetic Modeling Team and British
-Geological Survey in a file with extension COF [WMM2020]_.
+least-squares fit using satellite magnetic measurements :cite:p:`langel1998`.
+These coefficients are provided by the NCEI Geomagnetic Modeling Team and
+British Geological Survey in a file with extension COF :cite:p:`chulliat2020`.
 
 With degree :math:`n=1` only dipoles are considered. For :math:`n=2` the
 quadrupoles, :math:`n=3` the octuploles, and so on. The method of this WMM
@@ -168,9 +168,9 @@ of the regular update cycle of the World Magnetic Model both institutions have
 released the latest model on December 10th, 2019.
 
 This script is based on the originally conceived one by Christopher Weiss
-(cmweiss@gmail.com) [Weiss]_, who adapted it from the geomagc software and
-World Magnetic Model of the NOAA Satellite and Information Service, National
-Geophysical Data Center [Chulliat]_.
+(cmweiss@gmail.com) :cite:p:`weiss2016`, who adapted it from the geomagc
+software and World Magnetic Model of the NOAA Satellite and Information
+Service, National Geophysical Data Center :cite:p:`chulliat2020`.
 
 License
 -------
@@ -181,30 +181,6 @@ consisting predominantly of the material produced by U.S. government agencies
 must provide notice with such work(s) identifying the U.S. Government material
 incorporated and stating that such material is not subject to copyright
 protection.
-
-References
-----------
-.. [Chulliat] Chulliat, A., W. Brown, P. Alken, C. Beggan, M. Nair, G. Cox, A.
-    Woods, S. Macmillan, B. Meyer and M. Paniccia, The US/UK World Magnetic
-    Model for 2020-2025: Technical Report, National Centers for Environmental
-    Information, NOAA, doi:10.25923/ytk1-yx35, 2020.
-    (https://www.ngdc.noaa.gov/geomag/WMM/data/WMM2020/WMM2020_Report.pdf)
-.. [Heiskanen] W. A. Heiskanen and H. Moritz. Physical Geodesy. TU Graz. 1993.
-.. [Langel] R. A. Langel and W. J. Hinze. The Magnetic Field of Earth's
-    Lithosphere: The Satellite Perspective. Cambridge University Press. 1998.
-.. [Weiss] Christopher Weiss' GeoMag repository (https://github.com/cmweiss/geomag)
-.. [Wertz] James R. Wertz. Spacecraft Attitude Determination and Control.
-    Kluwer Academics. 1978.
-.. [WGS84] World Geodetic System 1984. Its Definition and Relationships with
-    Local Geodetic Systems. National Geospatial-Intelligence Agency (NGA)
-    Standarization Document. 2014.
-    ftp://ftp.nga.mil/pub2/gandg/website/wgs84/NGA.STND.0036_1.0.0_WGS84.pdf
-.. [WMM] The World Magnetic Model (https://www.ncei.noaa.gov/products/world-magnetic-model)
-.. [WMM-TR] Chulliat, A. et al. (2020). The US/UK World Magnetic Model for
-    2020-2025 : Technical Report. https://doi.org/10.25923/ytk1-yx35
-.. [WMM2020] WMM2020 Model values: NCEI Geomagnetic Modeling Team and British
-    Geological Survey. 2019. World Magnetic Model 2020. NOAA National Centers
-    for Environmental Information. doi: 10.25921/11v3-da71, 2020.
 
 """
 
@@ -562,8 +538,8 @@ class WMM:
     def denormalize_coefficients(self, latitude: float) -> None:
         """
         Recursively estimate associated Legendre polynomials and derivatives
-        done in a recursive way as described by Michael Plett in [Wertz]_ for
-        an efficient computation.
+        done in a recursive way as described by Michael Plett in
+        :cite:p:`plett1978` for an efficient computation.
 
         Given the Gaussian coefficients, it is possible to estimate the
         magnetic field at any latitude on Earth for a certain date.

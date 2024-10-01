@@ -88,6 +88,7 @@ Loading and visualizing the data is left to the preference of the user.
    metrics
    constants
    nomenclature
+   bibliography
 
 Indices
 =======

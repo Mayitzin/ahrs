@@ -23,7 +23,8 @@ the form:
     L(\\mathbf{C}) = \\sum_{i=1}^n a_i \\|\\mathbf{D}_i^b - \\mathbf{CD}_i^r \\|^2
 
 being :math:`a_i` the weight of the *i*-th sensor output. The goal of **OLEQ**
-is to find this optimal attitude, but in the form of a quaternion [Zhou2018]_.
+is to find this optimal attitude, but in the form of a quaternion
+:cite:p:`zhou2018`.
 
 First, notice that the attitude matrix is related to quaternion
 :math:`\\mathbf{q}=\\begin{bmatrix}q_w & q_x & q_y & q_z\\end{bmatrix}^T` via:
@@ -137,14 +138,6 @@ over and over again indefinitely.
 
 This equals the least-square of the set of pre-computed single rotated
 quaternions.
-
-References
-----------
-.. [Zhou2018] Zhou, Z.; Wu, J.; Wang, J.; Fourati, H. Optimal, Recursive and
-    Sub-Optimal Linear Solutions to Attitude Determination from Vector
-    Observations for GNSS/Accelerometer/Magnetometer Orientation Measurement.
-    Remote Sens. 2018, 10, 377.
-    (https://www.mdpi.com/2072-4292/10/3/377)
 
 """
 

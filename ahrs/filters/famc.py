@@ -15,7 +15,8 @@ solutions using Euler Angles, Direction Cosine Matrices and Quaternions.
 The matrix operations in these solutions are the main focus of attention in
 this method. The operations are analytically simplified, where the accuracy is
 maintained, while the time consumption is reduced, yielding the **Fast
-Accelerometer-Magnetometer Combination (FAMC)**, whose main contributions are:
+Accelerometer-Magnetometer Combination (FAMC)** :cite:p:`liu2018`, whose main
+contributions are:
 
 - Analytic eigenvalue results are given for the dynamic magnetometer reference
   vector.
@@ -112,7 +113,8 @@ angle.
     corresponding to an eigenvalue equal to 1, disorienting the system and
     rendering this estimator useless on polar regions.
 
-Finally, we must compute the eigenvector of the eigenvalule 1. We start defining:
+Finally, we must compute the eigenvector of the eigenvalule 1. We start
+defining:
 
 .. math::
     \\mathbf{S} = \\mathbf{K} - \\mathbf{I}
@@ -150,13 +152,6 @@ which is easily normalized:
 
 .. math::
     \\mathbf{q} = \\frac{1}{\\sqrt{a^2+b^2+c^2+1}}\\begin{pmatrix}-1 & a & b & c\\end{pmatrix}
-
-References
-----------
-.. [Liu] Zhuohua Liu, Wei Liu, Xiangyang Gong, and Jin Wu, "Simplified Attitude
-    Determination Algorithm Using Accelerometer and Magnetometer with Extremely
-    Low Execution Time," Journal of Sensors, vol. 2018, Article ID 8787236, 11
-    pages, 2018. https://doi.org/10.1155/2018/8787236.
 
 """
 

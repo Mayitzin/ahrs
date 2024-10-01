@@ -238,7 +238,7 @@ RNAV    Area Navigation
 RTU     Remote Terminal Unit
 SBAS    Satellite-Based Augmentation System
 SBC     Single Board Computer
-SCADA   System Control and Data Acquisition
+SCADA   Supervisory Control and Data Acquisition
 SCI     Serial Communications Interface
 SI      Système International d'unités
 SLERP   Spherical Linear Interpolation

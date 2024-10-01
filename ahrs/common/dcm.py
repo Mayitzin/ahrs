@@ -58,10 +58,11 @@ Even better, the product of two or more rotation matrices yields another
 rotation matrix in :math:`SO(3)`.
 
 `Direction cosines <https://en.wikipedia.org/wiki/Direction_cosine>`_ are
-cosines of angles between a vector and a base coordinate frame [WikipediaDCM]_.
-In this case, the direction cosines describe the differences between orthogonal
-vectors :math:`\\mathbf{r}_i` and the base frame. The matrix containing these
-differences is commonly named the **Direction Cosine Matrix**.
+cosines of angles between a vector and a base coordinate frame
+:cite:p:`Wiki_DirectionCosine`. In this case, the direction cosines describe
+the differences between orthogonal vectors :math:`\\mathbf{r}_i` and the base
+frame. The matrix containing these differences is commonly named the
+**Direction Cosine Matrix**.
 
 These matrices are used for two main purposes:
 
@@ -72,31 +73,11 @@ These matrices are used for two main purposes:
 Because of the latter, the DCM is also known as the **rotation matrix**.
 
 DCMs are, therefore, the most common representation of rotations
-[WikipediaRotMat]_, especially in real applications of spacecraft tracking and
-location.
+:cite:p:`Wolfram_RotationMatrix`, especially in real applications of spacecraft
+tracking and location.
 
 Throughout this package they will be used to represent the attitudes with
 respect to the global frame.
-
-References
-----------
-.. [WikipediaDCM] Wikipedia: Direction Cosine.
-    (https://en.wikipedia.org/wiki/Direction_cosine)
-.. [WikipediaRotMat] Wikipedia: Rotation Matrix
-    (https://mathworld.wolfram.com/RotationMatrix.html)
-.. [Ma] Yi Ma, Stefano Soatto, Jana Kosecka, and S. Shankar Sastry. An
-    Invitation to 3-D Vision: From Images to Geometric Models. Springer
-    Verlag. 2003.
-    (https://www.eecis.udel.edu/~cer/arv/readings/old_mkss.pdf)
-.. [Huyhn] Huynh, D.Q. Metrics for 3D Rotations: Comparison and Analysis. J
-    Math Imaging Vis 35, 155–164 (2009).
-.. [Curtis] Howard D Curtis. Orbital Mechanics for Engineering Students (Third
-    Edition) Butterworth-Heinemann. 2014.
-.. [Kuipers] Kuipers, Jack B. Quaternions and Rotation Sequences: A Primer with
-    Applications to Orbits, Aerospace and Virtual Reality. Princeton;
-    Oxford: Princeton University Press, 1999.
-.. [Diebel] Diebel, James. Representing Attitude; Euler Angles, Unit
-    Quaternions, and Rotation. Stanford University. 20 October 2006.
 
 """
 
@@ -338,6 +319,7 @@ class DCM(np.ndarray):
     All DCM are created as an identity matrix, which means no rotation.
 
     >>> from ahrs import DCM
+    >>> from ahrs import DEG2RAD
     >>> DCM()
     DCM([[1., 0., 0.],
          [0., 1., 0.],
@@ -346,15 +328,15 @@ class DCM(np.ndarray):
     A rotation around a single axis can be defined by giving the desired axis
     and its value, in degrees.
 
-    >>> DCM(x=10.0)
+    >>> DCM(x=10.0*DEG2RAD)
     DCM([[ 1.        ,  0.        ,  0.        ],
          [ 0.        ,  0.98480775, -0.17364818],
          [ 0.        ,  0.17364818,  0.98480775]])
-    >>> DCM(y=20.0)
+    >>> DCM(y=20.0*DEG2RAD)
     DCM([[ 0.93969262,  0.        ,  0.34202014],
          [ 0.        ,  1.        ,  0.        ],
          [-0.34202014,  0.        ,  0.93969262]])
-    >>> DCM(z=30.0)
+    >>> DCM(z=30.0*DEG2RAD)
     DCM([[ 0.8660254, -0.5      ,  0.       ],
          [ 0.5      ,  0.8660254,  0.       ],
          [ 0.       ,  0.       ,  1.       ]])
@@ -362,7 +344,7 @@ class DCM(np.ndarray):
     If we want a rotation conforming the roll-pitch-yaw sequence, we can give
     the corresponding angles.
 
-    >>> DCM(rpy=[30.0, 20.0, 10.0])
+    >>> DCM(rpy=np.array([30.0, 20.0, 10.0])*DEG2RAD)
     DCM([[ 0.81379768, -0.44096961,  0.37852231],
          [ 0.46984631,  0.88256412,  0.01802831],
          [-0.34202014,  0.16317591,  0.92541658]])
@@ -371,7 +353,7 @@ class DCM(np.ndarray):
         Notice the angles are given in reverse order, as it is the way the
         matrices are multiplied.
 
-    >>> DCM(z=30.0) @ DCM(y=20.0) @ DCM(x=10.0)
+    >>> DCM(z=30.0*DEG2RAD) @ DCM(y=20.0*DEG2RAD) @ DCM(x=10.0*DEG2RAD)
     DCM([[ 0.81379768, -0.44096961,  0.37852231],
          [ 0.46984631,  0.88256412,  0.01802831],
          [-0.34202014,  0.16317591,  0.92541658]])
@@ -380,11 +362,11 @@ class DCM(np.ndarray):
     elements: the order of the axis to rotate about, and the value of the
     rotation angles (again in reverse order)
 
-    >>> DCM(euler=('zyz', [40.0, 50.0, 60.0]))
+    >>> DCM(euler=('zyz', np.array([40.0, 50.0, 60.0])*DEG2RAD))
     DCM([[-0.31046846, -0.74782807,  0.58682409],
          [ 0.8700019 ,  0.02520139,  0.49240388],
          [-0.38302222,  0.66341395,  0.64278761]])
-    >>> DCM(z=40.0) @ DCM(y=50.0) @ DCM(z=60.0)
+    >>> DCM(z=40.0*DEG2RAD) @ DCM(y=50.0*DEG2RAD) @ DCM(z=60.0*DEG2RAD)
     DCM([[-0.31046846, -0.74782807,  0.58682409],
          [ 0.8700019 ,  0.02520139,  0.49240388],
          [-0.38302222,  0.66341395,  0.64278761]])
@@ -402,7 +384,7 @@ class DCM(np.ndarray):
     Finally, we can also build the rotation matrix from an axis-angle
     representation:
 
-    >>> DCM(axang=([1., 2., 3.], 60.0))
+    >>> DCM(axang=([1., 2., 3.], 60.0*DEG2RAD))
     DCM([[-0.81295491,  0.52330834,  0.25544608],
          [ 0.03452394, -0.3945807 ,  0.91821249],
          [ 0.58130234,  0.75528436,  0.30270965]])
@@ -623,7 +605,7 @@ class DCM(np.ndarray):
         Logarithm of DCM.
 
         The logarithmic map is defined as the inverse of the exponential map
-        [Cardoso]_ . It corresponds to the logarithm given by the Rodrigues
+        :cite:p:`cardoso2009`. It corresponds to the logarithm given by the Rodrigues
         rotation formula:
 
         .. math::
@@ -657,14 +639,6 @@ class DCM(np.ndarray):
         array([[ 0.        ,  0.26026043,  0.29531805],
                [-0.26026043,  0.        ,  0.5473806 ],
                [-0.29531805, -0.5473806 ,  0.        ]])
-
-        Reference
-        ---------
-        .. [Cardoso] J. Cardoso and F. Silva Leite. Exponentials of
-            skew-symmetric matrices and logarithms of orthogonal matrices.
-            Journal of Computational and Applied Mathematics. Volume 233, Issue
-            11, 1 April 2010, Pages 2867-2875.
-            (https://www.sciencedirect.com/science/article/pii/S0377042709007791)
 
         """
         trace_R = self.A.trace()
@@ -1039,14 +1013,14 @@ class DCM(np.ndarray):
         There are five methods available to obtain a quaternion from a
         Direction Cosine Matrix:
 
-        * ``'shepperd'`` as described in [Chiaverini]_.
-        * ``'hughes'`` as described in [Hughes]_.
-        * ``'itzhack'`` as described in [Bar-Itzhack]_ using version ``3`` by
+        * ``'chiaverini'`` as described in :cite:p:`Chiaverini1999`.
+        * ``'hughes'`` as described in :cite:p:`hughes1986spacecraft17`.
+        * ``'itzhack'`` as described in :cite:p:`BarItzhack2000` using version ``3`` by
           default. Possible options are integers ``1``, ``2`` or ``3``.
-        * ``'sarabandi'`` as described in [Sarabandi]_ with a threshold equal
+        * ``'sarabandi'`` as described in :cite:p:`sarabandi2019` with a threshold equal
           to ``0.0`` by default. Possible threshold values are floats between
           ``-3.0`` and ``3.0``.
-        * ``'shepperd'`` as described in [Shepperd]_.
+        * ``'shepperd'`` as described in :cite:p:`shepperd1978`.
 
         Parameters
         ----------

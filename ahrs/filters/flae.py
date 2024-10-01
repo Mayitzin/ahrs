@@ -4,7 +4,7 @@ Fast Linear Attitude Estimator
 ==============================
 
 The Fast Linear Attitude Estimator (FLAE) obtains the attitude quaternion with
-an eigenvalue-based solution as proposed by [Wu]_.
+an eigenvalue-based solution as proposed by :cite:p:`wu2018`.
 
 A symbolic solution to the corresponding characteristic polynomial is also
 derived for a higher computation speed.
@@ -120,7 +120,7 @@ When :math:`\\mathbf{f}_{\\Sigma D}(\\mathbf{q})=0`, the equation satisfies:
     \\end{bmatrix}
     \\end{array}
 
-Intuitively, we would solve it with :math:`\mathbf{q}=\\mathbf{P}_{\\Sigma D}^\\dagger\\mathbf{D}_\\Sigma^b`,
+Intuitively, we would solve it with :math:`\\mathbf{q}=\\mathbf{P}_{\\Sigma D}^\\dagger\\mathbf{D}_\\Sigma^b`,
 but the pseudo-inverse of :math:`\\mathbf{P}_{\\Sigma D}` is very difficult to
 compute. However, it is possible to transform the equation by the pseudo-inverse
 matrices of :math:`\\mathbf{q}` and :math:`\\mathbf{D}_\\Sigma^b`:
@@ -322,17 +322,8 @@ FLAE advocates for the symbolic method to calculate the eigenvalue. However,
 the Newton iteration can be also used to achieve a similar performance to that
 of QUEST.
 
-References
-----------
-.. [Wu] Jin Wu, Zebo Zhou, Bin Gao, Rui Li, Yuhua Cheng, et al. Fast Linear
-    Quaternion Attitude Estimator Using Vector Observations. IEEE Transactions
-    on Automation Science and Engineering, Institute of Electrical and
-    Electronics Engineers, 2018.
-    (https://hal.inria.fr/hal-01513263)
-
 """
 
-import warnings
 import numpy as np
 from ..common.mathfuncs import cosd
 from ..common.mathfuncs import sind
@@ -340,8 +331,6 @@ from ..common.constants import MUNICH_LATITUDE
 from ..common.constants import MUNICH_LONGITUDE
 from ..common.constants import MUNICH_HEIGHT
 from ..utils.core import _assert_numerical_iterable
-
-warnings.filterwarnings('error')
 
 # Reference Observations in Munich, Germany
 from ..utils.wmm import WMM
