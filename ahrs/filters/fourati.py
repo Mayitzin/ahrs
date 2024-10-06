@@ -16,7 +16,7 @@ predicted by the gyroscope.
 
 The **rigid body attitude** in space is determined when the body's orientation
 frame :math:`(X_B, Y_B, Z_B)` is specified with respect to the navigation frame
-:math:`(Y_N, Y_N, Z_N)`, where the navigation frame follows the NED convention
+:math:`(X_N, Y_N, Z_N)`, where the navigation frame follows the NED convention
 (North-East-Down.)
 
 The unit quaternion, :math:`\\mathbf{q}`, is defined as a scalar-vector pair of
@@ -29,10 +29,10 @@ where :math:`s` is the scalar part and :math:`\\mathbf{v}=\\begin{pmatrix}v_x & 
 is the vector part of the quaternion.
 
 .. note::
-    Most literature, and this package's documentation, use the notation
+    Most literature, and this Python package's documentation, use the notation
     :math:`\\mathbf{q}=\\begin{pmatrix}q_w & q_x & q_y & q_z\\end{pmatrix}` to
-    define a quaternion, but this algorithm uses a different one, and it will
-    preserved to keep the coherence with the original document.
+    define a quaternion, but this algorithm uses a different one. The latter
+    will preserved in this page to keep coherence with the original document.
 
 The sensor configuration consists of a three-axis gyroscope, a three-axis
 accelerometer, a three-axis magnetometer. Their outputs can be modelled,
@@ -167,12 +167,12 @@ supression and the filter's response time, and
 
 .. math::
     \\begin{array}{rcl}
-    \\mathbf{X} &=& -2\\begin{bmatrix}\\lfloor\\hat{\\mathbf{f}}\\rfloor_\\times & \\lfloor\\hat{\\mathbf{h}}\\rfloor_\\times\\end{bmatrix} \\\\
+    \\mathbf{X} &=& -2\\begin{bmatrix}\\lfloor\\hat{\\mathbf{f}}\\rfloor_\\times & \\lfloor\\hat{\\mathbf{h}}\\rfloor_\\times\\end{bmatrix}^T \\\\
     &=& -2\\begin{bmatrix}
     0 & -\\hat{f}_z & \\hat{f}_y & 0 & -\\hat{h}_z & \\hat{h}_y \\\\
     \\hat{f}_z & 0 & -\\hat{f}_x & \\hat{h}_z & 0 & -\\hat{h}_x \\\\
     -\\hat{f}_y & \\hat{f}_x & 0 & -\\hat{h}_y & \\hat{h}_x & 0
-    \\end{bmatrix}
+    \\end{bmatrix}^T
     \\end{array}
 
 The resulting structure of the nonlinear filter is complementary: it blends the
@@ -290,6 +290,23 @@ class Fourati:
     ------
     ValueError
         When dimension of input array(s) ``acc``, ``gyr``, or ``mag`` are not equal.
+
+    Examples
+    --------
+    >>> gyro_data.shape, acc_data.shape, mag_data.shape      # NumPy arrays with sensor data
+    ((1000, 3), (1000, 3), (1000, 3))
+    >>> from ahrs.filters import Fourati
+    >>> fourati = Fourati(gyr=gyro_data, acc=acc_data, mag=mag_data)
+    >>> fourati.Q       # Estimated attitudes as Quaternions
+    array([[-0.82311077,  0.45760535, -0.33408929, -0.0383452 ],
+           [-0.82522048,  0.4547043 , -0.33277675, -0.03892033],
+           [-0.82463698,  0.4546915 , -0.33422422, -0.03903417],
+           ...,
+           [-0.82420642,  0.56217735,  0.02548005, -0.06317571],
+           [-0.82364606,  0.56311099,  0.0241655 , -0.06268338],
+           [-0.81844766,  0.57077781,  0.02532182, -0.06095017]])
+    >>> fourati.Q.shape
+    (1000, 4)
 
     """
     def __init__(self, gyr: np.ndarray = None, acc: np.ndarray = None, mag: np.ndarray = None, **kwargs):
