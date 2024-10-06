@@ -977,6 +977,12 @@ class Quaternion(np.ndarray):
         .. math::
             \\log\\mathbf{q} = \\begin{bmatrix} 0 \\\\ \\mathbf{u}\\frac{\\pi}{2} \\end{bmatrix}
 
+        And for **real quaternions** (:math:`\\mathbf{q}=\\begin{pmatrix}q_w & 0 & 0 & 0\\end{pmatrix}`)
+        the logarithm is:
+
+        .. math::
+            \\log\\mathbf{q} = \\begin{bmatrix} 0 & 0 & 0 & 0 \\end{bmatrix}
+
         Returns
         -------
         log : numpy.ndarray
@@ -996,7 +1002,10 @@ class Quaternion(np.ndarray):
         array([ 0.        ,  0.41981298, -0.83962595,  1.25943893])
 
         """
-        u = self.v/np.linalg.norm(self.v)
+        norm_v = np.linalg.norm(self.v)
+        if norm_v == 0.0:
+            return np.zeros(4)
+        u = self.v / norm_v
         if self.is_versor():
             if self.is_pure():
                 return np.array([0.0, *(0.5*np.pi*u)])
