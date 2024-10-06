@@ -33,13 +33,17 @@ COLORS_FLOATS = [hex_to_float(c) for c in COLORS]
 def describe_methods(obj):
     """Return the description of the methods of an object."""
     for method_name in [x for x in dir(obj) if hasattr(obj.__getattribute__(x), '__call__') and not x.startswith('__')]:
+        class_and_method = f"{obj.__class__.__name__}.{method_name+'()': <20}"
         method_description = '<No description found>'
-        method_docstring = getattr(obj, method_name).__doc__
-        if isinstance(method_docstring, str):
-            method_description = method_docstring.split('\n')[1].strip()
-            if len(method_description) < 1:
-                method_description = [x.strip() for x in method_docstring.split('\n') if len(x) > 0][1]
-        print(f"DCM.{method_name+'()': <20} {method_description.replace(':meth:', '')}")
+        try:
+            method_docstring = getattr(obj, method_name).__doc__
+            if isinstance(method_docstring, str):
+                method_description = method_docstring.split('\n')[1].strip()
+                if len(method_description) < 1:
+                    method_description = [x.strip() for x in method_docstring.split('\n') if len(x) > 0][1]
+            print(class_and_method + f"{method_description.replace(':meth:', '')}")
+        except Exception as e:
+            print(class_and_method + f"{method_description} ({e})")
 
 def plot(*data, **kw):
     """
