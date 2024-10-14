@@ -376,7 +376,7 @@ class WMM:
         if all([self.latitude, self.longitude]):
             self.magnetic_field(self.latitude, self.longitude, self.height, date=self.date)
 
-    def _guard_clauses(self):
+    def _guard_clauses(self) -> None:
         for item in ['latitude', 'longitude', 'height']:
             if not isinstance(self.__getattribute__(item), (int, float)):
                 raise TypeError(f"{item} must be int or float. Got {type(self.__getattribute__(item))}")
