@@ -641,7 +641,7 @@ def rot_seq(axes: Union[list, str] = None, angles: Union[list, float] = None, de
     angles : list of floats
         List of rotation angles.
     degrees : bool, default: False
-        If True, the angle is given in degrees. Otherwise, it is given in
+        If True, the angle was given in degrees. Otherwise, it was given in
         radians.
 
     Returns
@@ -653,7 +653,6 @@ def rot_seq(axes: Union[list, str] = None, angles: Union[list, float] = None, de
     --------
     >>> import numpy as np
     >>> import random
-    >>> from ahrs.orientation import rot_seq
     >>> num_rotations = 5
     >>> axis_order = random.choices("XYZ", k=num_rotations)
     >>> axis_order
@@ -668,30 +667,29 @@ def rot_seq(axes: Union[list, str] = None, angles: Union[list, float] = None, de
            [ 0.3025091  -0.92798938  0.21754072]
            [ 0.4219688  -0.07426006 -0.90356393]])
 
-    References
-    ----------
-    .. [1] https://en.wikipedia.org/wiki/Rotation_matrix#General_rotations
-    .. [2] https://en.wikipedia.org/wiki/Euler_angles
-
     """
-    accepted_axes = list('xyzXYZ')
-    R = np.identity(3)
+    valid_axes = list('xyzXYZ')
     if axes is None:
-        axes = np.random.choice(accepted_axes, 3)
-    if not isinstance(axes, list):
+        axes = ['z']
+    if isinstance(axes, str):
         axes = list(axes)
+    if not isinstance(axes, list):
+        raise TypeError(f"Axes must be a list of 'x', 'y' or 'z' characters. Got {type(axes)}")
+    if not set(axes).issubset(set(valid_axes)):
+        raise ValueError("Axes must be a list of 'x', 'y' or 'z' characters")
+    R = np.identity(3)
     num_rotations = len(axes)
     if num_rotations < 1:
         return R
     if angles is None:
+        # Creates random rotations around each given axis if None given in `angles`
         angles = np.random.uniform(low=-180.0, high=180.0, size=num_rotations)
     for x in angles:
         if not isinstance(x, (float, int)):
             raise TypeError(f"Angles must be float or int numbers. Got {type(x)}")
-    if set(axes).issubset(set(accepted_axes)):
-        # Perform the matrix multiplications
-        for i in range(num_rotations-1, -1, -1):
-            R = rotation(axes[i], angles[i], degrees=degrees) @ R
+    # All good. Perform the matrix multiplications
+    for i in range(num_rotations-1, -1, -1):
+        R = rotation(axes[i], angles[i], degrees=degrees) @ R
     return R
 
 def dcm2quat(R: np.ndarray) -> np.ndarray:

@@ -192,9 +192,6 @@ def rotation(ax: str | int = None, ang: float = 0.0, degrees: bool = False) -> n
     # Default values
     valid_axes = list('xyzXYZ')
     I_3 = np.identity(3)
-    # Handle input
-    if ang == 0.0:
-        return I_3
     if ax is None:
         ax = "z"
     if isinstance(ax, int):
@@ -204,6 +201,9 @@ def rotation(ax: str | int = None, ang: float = 0.0, degrees: bool = False) -> n
     try:
         ang = float(ang)
     except ValueError:
+        return I_3
+    # Handle input
+    if ang == 0.0:
         return I_3
     # Return 3-by-3 Identity matrix if invalid input
     if ax not in valid_axes:
@@ -222,10 +222,10 @@ def rotation(ax: str | int = None, ang: float = 0.0, degrees: bool = False) -> n
 
 def rot_seq(axes: list | str = None, angles: list | float = None, degrees: bool = False) -> np.ndarray:
     """
-    Direction Cosine Matrix from set of axes and angles.
+    Rotation matrix from a sequence of Euler angles
 
-    The rotation matrix :math:`\\mathbf{R}` is created from the given list of
-    angles rotating around the given axes order.
+    A rotation matrix :math:`\\mathbf{R}` :cite:p:`Wolfram_RotationMatrix` is
+    created from the given list of angles rotating around the given axes order.
 
     Parameters
     ----------
@@ -234,7 +234,7 @@ def rot_seq(axes: list | str = None, angles: list | float = None, degrees: bool 
     angles : list of floats
         List of rotation angles.
     degrees : bool, default: False
-        If True, the angle is given in degrees. Otherwise, it is given in
+        If True, the angle was given in degrees. Otherwise, it was given in
         radians.
 
     Returns
@@ -246,7 +246,6 @@ def rot_seq(axes: list | str = None, angles: list | float = None, degrees: bool 
     --------
     >>> import numpy as np
     >>> import random
-    >>> from ahrs.orientation import rot_seq
     >>> num_rotations = 5
     >>> axis_order = random.choices("XYZ", k=num_rotations)
     >>> axis_order
@@ -261,30 +260,29 @@ def rot_seq(axes: list | str = None, angles: list | float = None, degrees: bool 
            [ 0.3025091  -0.92798938  0.21754072]
            [ 0.4219688  -0.07426006 -0.90356393]])
 
-    References
-    ----------
-    .. [1] https://en.wikipedia.org/wiki/Rotation_matrix#General_rotations
-    .. [2] https://en.wikipedia.org/wiki/Euler_angles
-
     """
-    accepted_axes = list('xyzXYZ')
-    R = np.identity(3)
+    valid_axes = list('xyzXYZ')
     if axes is None:
-        axes = np.random.choice(accepted_axes, 3)
-    if not isinstance(axes, list):
+        axes = ['z']
+    if isinstance(axes, str):
         axes = list(axes)
+    if not isinstance(axes, list):
+        raise TypeError(f"Axes must be a list of 'x', 'y' or 'z' characters. Got {type(axes)}")
+    if not set(axes).issubset(set(valid_axes)):
+        raise ValueError("Axes must be a list of 'x', 'y' or 'z' characters")
+    R = np.identity(3)
     num_rotations = len(axes)
     if num_rotations < 1:
         return R
     if angles is None:
+        # Creates random rotations around each given axis if None given in `angles`
         angles = np.random.uniform(low=-180.0, high=180.0, size=num_rotations)
     for x in angles:
         if not isinstance(x, (float, int)):
             raise TypeError(f"Angles must be float or int numbers. Got {type(x)}")
-    if set(axes).issubset(set(accepted_axes)):
-        # Perform the matrix multiplications
-        for i in range(num_rotations-1, -1, -1):
-            R = rotation(axes[i], angles[i], degrees=degrees) @ R
+    # All good. Perform the matrix multiplications
+    for i in range(num_rotations-1, -1, -1):
+        R = rotation(axes[i], angles[i], degrees=degrees) @ R
     return R
 
 class DCM(np.ndarray):
@@ -416,8 +414,8 @@ class DCM(np.ndarray):
                 if len(seqangs) != 2:
                     raise ValueError("Euler angles must be given as a tuple with a sequence, as string or list of strings, and its angles, as list of floats.")
                 seq, angs = seqangs
-                if not all(isinstance(i, str) for i in seq):
-                    raise TypeError("Euler sequence must be a string or list of strings.")
+                # if not all(isinstance(i, str) for i in seq):
+                #     raise TypeError("Euler sequence must be a string or list of strings.")
                 _assert_numerical_iterable(angs, "Euler angles")
                 array = rot_seq(seq, angs)
             if 'axang' in kwargs:
