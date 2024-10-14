@@ -13,10 +13,19 @@ class TestDCM(unittest.TestCase):
         self.R = ahrs.DCM(rpy=self.vector)
         self.q = ahrs.Quaternion(GENERATOR.random(4)-0.5)
         self.R1 = ahrs.DCM(q=self.q)
+        self.multi_R = ahrs.DCM(np.atleast_2d([self.R0, self.R, self.R1]))
 
     def test_rotation_matrix_in_SO3(self):
         self.assertAlmostEqual(np.linalg.det(self.R), 1.0)
         np.testing.assert_almost_equal(self.R@self.R.T, np.identity(3))
+        self.assertRaises(ValueError, ahrs.DCM, -self.R)
+        self.assertRaises(ValueError, ahrs.DCM, self.R[:2, :2])
+        # Test construction of array with many rotation matrices
+        self.assertTrue(all(np.allclose(self.multi_R[i].T, rt) for i, rt, in enumerate(np.transpose(self.multi_R, (0, 2, 1)))))
+        self.assertRaises(ValueError, ahrs.DCM, GENERATOR.random((4, 3, 3)) - 0.5)
+        self.assertRaises(ValueError, ahrs.DCM, GENERATOR.random((4, 2, 2)) - 0.5)
+        self.assertRaises(ValueError, ahrs.DCM, np.zeros((4, 3, 3)))
+        self.assertRaises(ValueError, ahrs.DCM, np.ones((4, 3, 3)))
 
     def test_identity_rotation_matrix(self):
         np.testing.assert_equal(self.R0, np.identity(3))
