@@ -641,7 +641,7 @@ def slerp_I(q: np.ndarray, ratio: float, t: float) -> np.ndarray:
     q /= np.linalg.norm(q)              # (eq. 51)
     return q
 
-def adaptive_gain(gain: float, a_local: np.ndarray, t1: float = 0.1, t2: float = 0.2, g: float = GRAVITY) -> float:
+def adaptive_gain(a_local: np.ndarray, alpha_bar: float = 0.1, t1: float = 0.1, t2: float = 0.2, g: float = GRAVITY) -> float:
     """
     Adaptive filter gain factor
 
@@ -649,7 +649,7 @@ def adaptive_gain(gain: float, a_local: np.ndarray, t1: float = 0.1, t2: float =
     :math:`f(e_m)`:
 
     .. math::
-        \\alpha = a f(e_m)
+        \\alpha = \\overline{\\alpha} f(e_m)
 
     where the magnitude error is defined by the measured acceleration
     :math:`\\mathbf{a}` before normalization and the reference gravity
@@ -682,10 +682,10 @@ def adaptive_gain(gain: float, a_local: np.ndarray, t1: float = 0.1, t2: float =
 
     Parameters
     ----------
-    gain : float
-        Gain yielding best results in static conditions.
     a_local : numpy.ndarray
         Measured local acceleration vector.
+    alpha_bar : float
+        Gain yielding best results in static conditions.
     t1 : float, default: 0.1
         First threshold.
     t2 : float, default: 0.2
@@ -696,37 +696,33 @@ def adaptive_gain(gain: float, a_local: np.ndarray, t1: float = 0.1, t2: float =
 
     Returns
     -------
-    alpha : float
+    gain : float
         Gain factor.
 
     Examples
     --------
     >>> from ahrs.filters.aqua import adaptive_gain
-    >>> alpha = 0.01    # Best gain in static conditions
+    >>> alpha_bar = 0.01    # Best gain in static conditions
     >>> acc = np.array([0.0699, 9.7688, -0.2589])   # Measured acceleration. Quasi-static state.
-    >>> adaptive_gain(alpha, acc)
+    >>> adaptive_gain(alpha_bar, acc)
     0.01
     >>> acc = np.array([0.8868, 10.8803, -0.4562])  # New measured acceleration. Slightly above first threshold.
-    >>> adaptive_gain(alpha, acc)
+    >>> adaptive_gain(alpha_bar, acc)
     0.008615664547367627
     >>> acc = np.array([4.0892, 12.7667, -2.6047])  # New measured acceleration. Above second threshold.
-    >>> adaptive_gain(alpha, acc)
+    >>> adaptive_gain(alpha_bar, acc)
     0.0
-    >>> adaptive_gain(alpha, acc, t1=0.2, t2=0.5)   # Same acceleration. New thresholds.
+    >>> adaptive_gain(alpha_bar, acc, t1=0.2, t2=0.5)   # Same acceleration. New thresholds.
     0.005390131074499384
-    >>> adaptive_gain(alpha, acc, t1=0.2, t2=0.5, g=9.82)   # Same acceleration and thresholds. New reference gravity.
+    >>> adaptive_gain(alpha_bar, acc, t1=0.2, t2=0.5, g=9.82)   # Same acceleration and thresholds. New reference gravity.
     0.005466716107480152
 
     """
     if t1 > t2:
         raise ValueError("The second threshold should be greater than the first threshold.")
     em = abs(np.linalg.norm(a_local)-g)/g   # Magnitude error (eq. 60)
-    f = 0.0
-    if t1 < em < t2:
-        f = (t2-em)/t1
-    if em <= t1:
-        f = 1.0
-    return f*gain   # Filtering gain (eq. 61)
+    f_em = np.clip((t2-em)/t1, 0.0, 1.0)    # Gain factor
+    return alpha_bar * f_em   # Filtering gain (eq. 61)
 
 class AQUA:
     """
@@ -991,7 +987,7 @@ class AQUA:
         gx, gy, gz = q2R(qInt).T@a                          # Predicted gravity (eq. 44)
         q_acc = np.array([np.sqrt((gz+1)/2.0), -gy/np.sqrt(2.0*(gz+1)), gx/np.sqrt(2.0*(gz+1)), 0.0])     # Delta Quaternion (eq. 47)
         if self.adaptive:
-            self.alpha = adaptive_gain(self.alpha, acc)
+            self.alpha = adaptive_gain(acc)
         q_acc = slerp_I(q_acc, self.alpha, self.threshold)
         q_prime = q_prod(qInt, q_acc)                       # (eq. 53)
         return q_prime/np.linalg.norm(q_prime)
@@ -1047,7 +1043,7 @@ class AQUA:
         # Accelerometer-Based Quaternion
         q_acc = np.array([np.sqrt((gz+1.0)/2.0), -gy/np.sqrt(2.0*(gz+1.0)), gx/np.sqrt(2.0*(gz+1.0)), 0.0])     # Delta Quaternion (eq. 47)
         if self.adaptive:
-            self.alpha = adaptive_gain(self.alpha, acc)
+            self.alpha = adaptive_gain(acc)
         q_acc = slerp_I(q_acc, self.alpha, self.threshold)
         q_prime = q_prod(qInt, q_acc)                       # (eq. 53)
         q_prime /= np.linalg.norm(q_prime)
