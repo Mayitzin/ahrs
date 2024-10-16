@@ -3,30 +3,9 @@
 Submodule for INS sensor models.
 
 This module generates synthetic sensor data of a hypothetical strapdown
-inertial navigation system (INS.) It generates data of a 9-DOF IMU (3-axes
-gyroscope, 3-axes accelerometer, and 3-axes magnetometer) from a given array of
+inertial navigation system (INS.) It mimics a 9-DOF IMU (3-axes gyroscope,
+3-axes accelerometer, and 3-axes magnetometer) from a given array of
 orientations as quaternions.
-
-The accelerometer data is given as m/s^2, the gyroscope data as deg/s, and the
-magnetometer data as nT.
-
-If no quaternions are provided, it generates random angular positions and
-computes the corresponding quaternions.
-
-The sensor data can be accessed as attributes of the object. For example, the
-gyroscope data can be accessed as ``sensors.gyroscopes``.
-
-Examples
---------
->>> sensors = Sensors(num_samples=1000)
->>> sensors.gyroscopes.shape
-(1000, 3)
->>> sensors.accelerometers.shape
-(1000, 3)
->>> sensors.magnetometers.shape
-(1000, 3)
->>> sensors.quaternions.shape
-(1000, 4)
 
 """
 
@@ -89,14 +68,20 @@ def random_angpos(num_samples: int = 500, max_positions: int = 4, num_axes: int 
     """
     Random angular positions
 
-    Create an array of synthetic random angular positions with reference to a
-    local sensor coordinate frame.
+    Create an array of synthetic random angular positions with respect to each
+    axis of a three-dimensional global coordinate frame.
 
     These angular positions are "simulated" by creating a random number of
     positions per axis, extend them for several samples, and then smoothing
     them with a gaussian filter.
 
     This creates smooth transitions between the different angular positions.
+
+    .. warning::
+
+        It must be stressed, these are **ANGULAR** positions, not **linear**.
+        They are measured in radians, and **do not** represent translations or
+        positions in a three-dimensional space.
 
     Parameters
     ----------
@@ -136,7 +121,7 @@ class Sensors:
     It generates data of a 9-DOF IMU (3-axes gyroscope, 3-axes accelerometer,
     and 3-axes magnetometer) from a given array of orientations as quaternions.
 
-    The accelerometer data is given as m/s^2, the gyroscope data as deg/s, and
+    The accelerometer data is given as m/s^2, the gyroscope data as rad/s, and
     the magnetometer data as nT.
 
     If no quaternions are provided, it generates random angular positions and
@@ -144,6 +129,20 @@ class Sensors:
 
     The sensor data can be accessed as attributes of the object. For example,
     the gyroscope data can be accessed as ``sensors.gyroscopes``.
+
+    Simulating N observations, the most used attributes are:
+
+    - ``gyroscopes``: N-by-3 array with gyroscope data, as rad/s.
+    - ``accelerometers``: N-by-3 array with accelerometer data, as m/s^2.
+    - ``magnetometers``: N-by-3 array with magnetometer data, as nT.
+    - ``quaternions``: N-by-4 array with orientations as quaternions.
+    - ``rotations``: N-by-3-by-3 array with orientations as 3x3 Rotation
+      matrices.
+    - ``ang_pos``: N-by-3 array with orientations as Euler angles (roll, pitch,
+      yaw).
+    - ``ang_vel``: N-by-3 array with angular velocities around the X-, Y-, and
+      Z-axes. Obtained from differentiation of the orientations.
+    - ``frequency``: Sampling frequency of the data, in Hz.
 
     Parameters
     ----------
@@ -153,7 +152,7 @@ class Sensors:
         Number of samples to generate.
     freq : float, default: 100.0
         Sampling frequency, in Hz, of the data.
-    in_degrees : bool, default: True
+    in_degrees : bool, default: False
         If True, the gyroscope data is generated in degrees per second.
         Otherwise in radians per second.
     normalized_mag : bool, default: False
@@ -192,7 +191,7 @@ class Sensors:
     """
     def __init__(self, quaternions: QuaternionArray = None, num_samples: int = 500, freq: float = SAMPLING_FREQUENCY, **kwargs):
         self.frequency = freq
-        self.in_degrees = kwargs.get('in_degrees', True)
+        self.in_degrees = kwargs.get('in_degrees', False)
         self.normalized_mag = kwargs.get('normalized_mag', False)
 
         # Reference earth frames
@@ -206,6 +205,7 @@ class Sensors:
 
         # Orientations as quaternions
         if quaternions is None:
+            # Orientations were NOT given
             self.num_samples = num_samples
             # Generate orientations (angular positions)
             self.ang_pos = random_angpos(num_samples=self.num_samples, span=kwargs.get("span", (-np.pi, np.pi)), max_positions=20)
@@ -215,6 +215,7 @@ class Sensors:
             # Estimate angular velocities
             self.ang_vel = self.angular_velocities(self.ang_pos, self.frequency)
         else:
+            # Orientations were given (as quaternions)
             # Define angular positions and velocities
             self.quaternions = QuaternionArray(quaternions)
             self.num_samples = self.quaternions.shape[0]
@@ -246,6 +247,8 @@ class Sensors:
 
         # Add gyro biases: uniform random constant biases within 1/200th of the full range of the gyroscopes
         self.biases_gyroscopes = (GENERATOR.random(3)-0.5) * np.ptp(self.gyroscopes)/200
+        if not self.in_degrees:
+            self.biases_gyroscopes *= DEG2RAD
         self.gyroscopes += self.biases_gyroscopes
 
         # Accelerometers and magnetometers are measured w.r.t. global frame (inverse of the local frame)
