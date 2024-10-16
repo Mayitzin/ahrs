@@ -8,6 +8,7 @@ available in the repository https://https://github.com/Mayitzin/ezview
 """
 
 import copy
+from inspect import getmembers, isfunction
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -44,6 +45,20 @@ def describe_methods(obj):
             print(class_and_method + f"{method_description.replace(':meth:', '')}")
         except Exception as e:
             print(class_and_method + f"{method_description} ({e})")
+
+def describe_functions(module):
+    """Return the description of the functions of a module."""
+    for function_name in [item[0] for item in getmembers(module, isfunction) if not item[0].startswith('_')]:
+        function_description = '<No description found>'
+        try:
+            function_docstring = getattr(module, function_name).__doc__
+            if isinstance(function_docstring, str):
+                function_description = function_docstring.split('\n')[1].strip()
+                if len(function_description) < 1:
+                    function_description = [x.strip() for x in function_docstring.split('\n') if len(x) > 0][1]
+            print(f"{module.__name__}.{function_name+'()': <24}" + f"{function_description.replace(':meth:', '')}")
+        except Exception as e:
+            print(f"{module.__name__}.{function_name+'()': <24}" + f"{function_description} ({e})")
 
 def plot(*data, **kw):
     """
