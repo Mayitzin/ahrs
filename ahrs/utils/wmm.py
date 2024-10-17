@@ -366,6 +366,7 @@ class WMM:
                  longitude: float = MUNICH_LONGITUDE,
                  height: float = MUNICH_HEIGHT,
                  frame: str = 'NED') -> None:
+        self.epoch: float = 2015
         self.reset_coefficients(date)
         self.__dict__.update(dict.fromkeys(['X', 'Y', 'Z', 'H', 'F', 'I', 'D', 'GV']))
         self.latitude: float = latitude
