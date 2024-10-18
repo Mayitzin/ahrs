@@ -58,6 +58,13 @@ class TestDCM(unittest.TestCase):
 
     def test_identity_rotation_matrix(self):
         np.testing.assert_equal(self.R0, np.identity(3))
+        np.testing.assert_equal(ahrs.DCM(), np.identity(3))
+        np.testing.assert_equal(ahrs.DCM(x=0.0), np.identity(3))
+        np.testing.assert_equal(ahrs.DCM(y=0.0), np.identity(3))
+        np.testing.assert_equal(ahrs.DCM(z=0.0), np.identity(3))
+        np.testing.assert_almost_equal(ahrs.DCM(x=360.0*ahrs.DEG2RAD), np.identity(3))
+        np.testing.assert_almost_equal(ahrs.DCM(y=360.0*ahrs.DEG2RAD), np.identity(3))
+        np.testing.assert_almost_equal(ahrs.DCM(z=360.0*ahrs.DEG2RAD), np.identity(3))
 
     def test_wrong_input_matrix(self):
         self.assertRaises(TypeError, ahrs.DCM, 3)
