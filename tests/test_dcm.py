@@ -49,6 +49,12 @@ class TestDCM(unittest.TestCase):
         np.testing.assert_almost_equal(R, np.array([[SQRT2_2, -SQRT2_2, 0.0], [SQRT2_2, SQRT2_2, 0.0], [0.0, 0.0, 1.0]]))
         R = ahrs.DCM(euler=(None, [45*ahrs.DEG2RAD]))
         np.testing.assert_almost_equal(R, np.array([[SQRT2_2, -SQRT2_2, 0.0], [SQRT2_2, SQRT2_2, 0.0], [0.0, 0.0, 1.0]]))
+        R = ahrs.DCM(euler=(0, [45*ahrs.DEG2RAD]))
+        np.testing.assert_almost_equal(R, np.array([[1.0, 0.0, 0.0], [0.0, SQRT2_2, -SQRT2_2], [0.0, SQRT2_2, SQRT2_2]]))
+        R = ahrs.DCM(euler=(1, [45*ahrs.DEG2RAD]))
+        np.testing.assert_almost_equal(R, np.array([[SQRT2_2, 0.0, SQRT2_2], [0.0, 1.0, 0.0], [-SQRT2_2, 0.0, SQRT2_2]]))
+        R = ahrs.DCM(euler=(2, [45*ahrs.DEG2RAD]))
+        np.testing.assert_almost_equal(R, np.array([[SQRT2_2, -SQRT2_2, 0.0], [SQRT2_2, SQRT2_2, 0.0], [0.0, 0.0, 1.0]]))
 
     def test_identity_rotation_matrix(self):
         np.testing.assert_equal(self.R0, np.identity(3))
@@ -78,9 +84,6 @@ class TestDCM(unittest.TestCase):
         self.assertRaises(TypeError, ahrs.DCM, euler=np.random.random(4))
         self.assertRaises(TypeError, ahrs.DCM, euler=([], 3))
         self.assertRaises(ValueError, ahrs.DCM, euler=(3,))
-        self.assertRaises(TypeError, ahrs.DCM, euler=(0, [45*ahrs.DEG2RAD]))
-        self.assertRaises(TypeError, ahrs.DCM, euler=(2, [45*ahrs.DEG2RAD]))
-        self.assertRaises(TypeError, ahrs.DCM, euler=(1, [45*ahrs.DEG2RAD]))
 
     def test_wrong_quaternion(self):
         self.assertRaises(TypeError, ahrs.DCM, q=3)
