@@ -205,6 +205,8 @@ def rotation(ax: str | int = None, ang: float = 0.0, degrees: bool = False) -> n
     # Handle input
     if ang == 0.0:
         return I_3
+    if np.isclose((ang*DEG2RAD) % (2*np.pi), 0.0):
+        return I_3
     # Return 3-by-3 Identity matrix if invalid input
     if ax not in valid_axes:
         return I_3
