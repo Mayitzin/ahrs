@@ -264,6 +264,8 @@ def rot_seq(axes: list | str = None, angles: list | float = None, degrees: bool 
     valid_axes = list('xyzXYZ')
     if axes is None:
         axes = ['z']
+    if isinstance(axes, int):
+        axes = ['z'] if abs(axes) > 2 else valid_axes[axes]
     if isinstance(axes, str):
         axes = list(axes)
     if not isinstance(axes, list):

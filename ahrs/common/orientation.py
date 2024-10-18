@@ -671,6 +671,8 @@ def rot_seq(axes: Union[list, str] = None, angles: Union[list, float] = None, de
     valid_axes = list('xyzXYZ')
     if axes is None:
         axes = ['z']
+    if isinstance(axes, int):
+        axes = ['z'] if abs(axes) > 2 else valid_axes[axes]
     if isinstance(axes, str):
         axes = list(axes)
     if not isinstance(axes, list):
