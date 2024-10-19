@@ -65,6 +65,12 @@ class TestSAAM(unittest.TestCase):
         saam_rotations = np.transpose(saam_rotations, (0, 2, 1))
         self.assertLess(np.nanmean(ahrs.utils.metrics.chordal(REFERENCE_ROTATIONS, saam_rotations)), THRESHOLD)
 
+    def test_wrong_input_vectors_in_method_estimate(self):
+        saam = ahrs.filters.SAAM()
+        self.assertIsNone(saam.estimate(acc=self.accelerometers[0], mag=[0., 0., 0.]))
+        self.assertIsNone(saam.estimate(acc=[0., 0., 0.], mag=self.magnetometers[0]))
+        self.assertIsNone(saam.estimate(acc=[0., 0., 0.], mag=[0., 0., 0.]))
+
     def test_wrong_input_vectors(self):
         self.assertRaises(TypeError, ahrs.filters.SAAM, acc=1.0, mag=2.0)
         self.assertRaises(TypeError, ahrs.filters.SAAM, acc=self.accelerometers, mag=2.0)
