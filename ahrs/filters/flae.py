@@ -489,7 +489,13 @@ class FLAE:
             raise ValueError(f"Accelerometer sample must be a (3,) array. Got array of shape {acc.shape}")
         if mag.size != 3:
             raise ValueError(f"Magnetometer sample must be a (3,) array. Got array of shape {mag.shape}")
-        Db = np.r_[[acc/np.linalg.norm(acc)], [mag/np.linalg.norm(mag)]]
+        acc_norm = np.linalg.norm(acc)
+        if acc_norm == 0:
+            raise ValueError("Accelerometer sample is all zeros")
+        mag_norm = np.linalg.norm(mag)
+        if mag_norm == 0:
+            raise ValueError("Magnetometer sample is all zeros")
+        Db = np.r_[[acc/acc_norm], [mag/mag_norm]]
         H = self.a * Db.T @ self.ref                                # (eq. 42)
         W = self._P1Hx(H[0]) + self._P2Hy(H[1]) + self._P3Hz(H[2])  # (eq. 44)
         if method.lower() == 'eig':
@@ -524,8 +530,10 @@ class FLAE:
             L *= 1.0/(2.0*np.sqrt(6))
             lam = L[(np.abs(L-1.0)).argmin()]               # Eigenvalue closest to 1
         N = W - lam*np.identity(4)                          # (eq. 54)
-        # Return identity quaternion if N is singular matrix
-        if np.linalg.matrix_rank(N[1:, :-1]) != N[1:, :-1].shape[0]:
+        try:
+            # Return identity quaternion if N is singular matrix
+            _ = np.linalg.inv(N)
+        except np.linalg.LinAlgError:
             return np.array([1., 0., 0., 0.])
         # Solve for N and get fundamental solution
         r = np.linalg.solve(N[1:, :-1], N[1:, -1])          # (eq. 55)
