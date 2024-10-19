@@ -109,6 +109,12 @@ class TestFAMC(unittest.TestCase):
         quaternions_famc = ahrs.QuaternionArray(ahrs.filters.FAMC(self.accelerometers, self.magnetometers).Q)
         self.assertLess(np.nanmean(ahrs.utils.metrics.qad(quaternions_famc, REFERENCE_QUATERNIONS)), THRESHOLD)
 
+    def test_wrong_input_vectors_in_method_estimate(self):
+        famc = ahrs.filters.FAMC()
+        self.assertIsNone(famc.estimate(acc=self.accelerometers[0], mag=[0., 0., 0.]))
+        self.assertIsNone(famc.estimate(acc=[0., 0., 0.], mag=self.magnetometers[0]))
+        self.assertIsNone(famc.estimate(acc=[0., 0., 0.], mag=[0., 0., 0.]))
+
     def test_wrong_input_vectors(self):
         self.assertRaises(TypeError, ahrs.filters.FAMC, acc=1.0, mag=2.0)
         self.assertRaises(TypeError, ahrs.filters.FAMC, acc=self.accelerometers, mag=2.0)
