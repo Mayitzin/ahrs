@@ -482,11 +482,14 @@ class FLAE:
         array([ 0.42455176,  0.68971918, -0.58315259, -0.06305803])
 
         """
+        # Check input data
         _assert_valid_method(method, ['symbolic', 'eig', 'newton'])
         _assert_numerical_iterable(acc, 'Gravitational acceleration vector')
         _assert_numerical_iterable(mag, 'Geomagnetic field vector')
+        acc = np.copy(acc)
         if acc.size != 3:
             raise ValueError(f"Accelerometer sample must be a (3,) array. Got array of shape {acc.shape}")
+        mag = np.copy(mag)
         if mag.size != 3:
             raise ValueError(f"Magnetometer sample must be a (3,) array. Got array of shape {mag.shape}")
         acc_norm = np.linalg.norm(acc)
@@ -495,7 +498,8 @@ class FLAE:
         mag_norm = np.linalg.norm(mag)
         if mag_norm == 0:
             raise ValueError("Magnetometer sample is all zeros")
-        Db = np.r_[[acc/acc_norm], [mag/mag_norm]]
+        # Start Fusion
+        Db = np.r_[[acc/acc_norm], [mag/mag_norm]]                  # (eq. 19)
         H = self.a * Db.T @ self.ref                                # (eq. 42)
         W = self._P1Hx(H[0]) + self._P2Hy(H[1]) + self._P3Hz(H[2])  # (eq. 44)
         if method.lower() == 'eig':
