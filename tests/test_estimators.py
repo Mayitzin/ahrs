@@ -208,6 +208,18 @@ class TestQUEST(unittest.TestCase):
         quest = ahrs.filters.QUEST(self.accelerometers, self.magnetometers)
         self.assertLess(np.nanmean(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS, quest.Q)), THRESHOLD)
 
+    def test_different_magnetic_references(self):
+        sq22 = np.sqrt(2)/2
+        quest = ahrs.filters.QUEST(None, None, magnetic_dip=-45)
+        np.testing.assert_almost_equal(quest.m_q, np.array([sq22, 0, -sq22]))
+        quest = ahrs.filters.QUEST(None, None, magnetic_dip=-45.0)
+        np.testing.assert_almost_equal(quest.m_q, np.array([sq22, 0, -sq22]))
+        quest = ahrs.filters.QUEST(None, None, magnetic_dip=[1, 0, -1])
+        np.testing.assert_almost_equal(quest.m_q, np.array([sq22, 0, -sq22]))
+        quest = ahrs.filters.QUEST(None, None, magnetic_dip=None)
+        wmm = ahrs.utils.WMM(latitude=ahrs.MUNICH_LATITUDE, longitude=ahrs.MUNICH_LONGITUDE, height=ahrs.MUNICH_HEIGHT)
+        np.testing.assert_almost_equal(quest.m_q, np.array([wmm.X, wmm.Y, wmm.Z])/np.linalg.norm([wmm.X, wmm.Y, wmm.Z]))
+
     def test_wrong_input_vectors(self):
         self.assertRaises(TypeError, ahrs.filters.QUEST, acc=1.0, mag=2.0)
         self.assertRaises(TypeError, ahrs.filters.QUEST, acc=self.accelerometers, mag=2.0)
@@ -229,6 +241,8 @@ class TestQUEST(unittest.TestCase):
         self.assertRaises(TypeError, ahrs.filters.QUEST, self.accelerometers, self.magnetometers, magnetic_dip=False)
         self.assertRaises(TypeError, ahrs.filters.QUEST, self.accelerometers, self.magnetometers, magnetic_dip=['34.5'])
         self.assertRaises(TypeError, ahrs.filters.QUEST, self.accelerometers, self.magnetometers, magnetic_dip=('34.5',))
+        self.assertRaises(TypeError, ahrs.filters.QUEST, self.accelerometers, self.magnetometers, magnetic_dip=[None, None, None])
+        self.assertRaises(ValueError, ahrs.filters.QUEST, self.accelerometers, self.magnetometers, magnetic_dip=[34.5])
 
 class TestDavenport(unittest.TestCase):
     def setUp(self) -> None:
