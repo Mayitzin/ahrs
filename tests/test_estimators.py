@@ -822,6 +822,11 @@ class TestTilt(unittest.TestCase):
         self.assertRaises(TypeError, ahrs.filters.Tilt, acc=['1.0', '2.0', '3.0'], mag=[2.0, 3.0, 4.0])
         self.assertRaises(TypeError, ahrs.filters.Tilt, acc=[1.0, 2.0, 3.0], mag=['2.0', '3.0', '4.0'])
 
+    def test_zero_magnetic_field(self):
+        self.assertRaises(ValueError, ahrs.filters.Tilt, acc=self.accelerometers[0], mag=np.zeros(3))
+        tilt = ahrs.filters.Tilt()
+        self.assertRaises(ValueError, tilt.estimate, acc=self.accelerometers[0], mag=np.zeros(3))
+
     def test_wrong_representation(self):
         self.assertRaises(TypeError, ahrs.filters.Tilt, representation=1)
         self.assertRaises(TypeError, ahrs.filters.Tilt, acc=self.accelerometers, mag=self.magnetometers, representation=1)
