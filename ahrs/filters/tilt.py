@@ -321,7 +321,7 @@ class Tilt:
         ez = 0.0                                        # Yaw
         if mag is not None:
             _assert_numerical_iterable(mag, 'Geomagnetic field vector')
-            if not(np.linalg.norm(mag) > 0):
+            if np.linalg.norm(mag) == 0:
                 raise ValueError("Magnetic field must be non-zero")
             mx, my, mz = mag/np.linalg.norm(mag)
             # Get tilted reference frame
