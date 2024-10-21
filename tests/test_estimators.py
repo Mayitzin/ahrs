@@ -790,6 +790,10 @@ class TestTilt(unittest.TestCase):
         orientation = ahrs.QuaternionArray(ahrs.filters.Tilt(acc=self.accelerometers, mag=self.magnetometers).Q)
         self.assertLess(np.nanmean(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS, orientation)), THRESHOLD)
 
+    def test_acc_mag_return_rotmat(self):
+        tilt = ahrs.filters.Tilt(acc=SENSOR_DATA.accelerometers, mag=SENSOR_DATA.magnetometers, representation='rotmat')
+        self.assertLess(np.nanmean(ahrs.utils.metrics.chordal(REFERENCE_ROTATIONS, tilt.Q)), THRESHOLD)
+
     def test_acc_only(self):
         sensors = ahrs.Sensors(num_samples=1000, in_degrees=False, yaw=0.0, span=(-np.pi/2, np.pi/2))
         tilt = ahrs.filters.Tilt(acc=sensors.accelerometers)
@@ -800,6 +804,11 @@ class TestTilt(unittest.TestCase):
         tilt = ahrs.filters.Tilt(acc=sensors.accelerometers, representation='angles')
         self.assertLess(np.nanmean(ahrs.utils.metrics.rmse(sensors.ang_pos, tilt.Q)), THRESHOLD)
         self.assertLess(np.nanmean(ahrs.utils.metrics.rmse(sensors.ang_pos, tilt.angles)), THRESHOLD)
+
+    def test_acc_only_return_rotmat(self):
+        sensors = ahrs.Sensors(num_samples=1000, in_degrees=False, yaw=0.0, span=(-np.pi/2, np.pi/2))
+        tilt = ahrs.filters.Tilt(acc=sensors.accelerometers, representation='rotmat')
+        self.assertLess(np.nanmean(ahrs.utils.metrics.chordal(sensors.rotations, tilt.Q)), THRESHOLD)
 
     def test_wrong_input_vectors(self):
         self.assertRaises(TypeError, ahrs.filters.Tilt, acc=1.0)
