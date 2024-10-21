@@ -792,8 +792,14 @@ class TestTilt(unittest.TestCase):
 
     def test_acc_only(self):
         sensors = ahrs.Sensors(num_samples=1000, in_degrees=False, yaw=0.0, span=(-np.pi/2, np.pi/2))
-        orientation = ahrs.QuaternionArray(ahrs.filters.Tilt(acc=sensors.accelerometers).Q)
-        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(sensors.quaternions, orientation)), THRESHOLD)
+        tilt = ahrs.filters.Tilt(acc=sensors.accelerometers)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(sensors.quaternions, tilt.Q)), THRESHOLD)
+
+    def test_acc_only_return_angles(self):
+        sensors = ahrs.Sensors(num_samples=1000, in_degrees=False, yaw=0.0, span=(-np.pi/2, np.pi/2))
+        tilt = ahrs.filters.Tilt(acc=sensors.accelerometers, representation='angles')
+        self.assertLess(np.nanmean(ahrs.utils.metrics.rmse(sensors.ang_pos, tilt.Q)), THRESHOLD)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.rmse(sensors.ang_pos, tilt.angles)), THRESHOLD)
 
     def test_wrong_input_vectors(self):
         self.assertRaises(TypeError, ahrs.filters.Tilt, acc=1.0)
