@@ -210,6 +210,7 @@ class Tilt:
         self.representation: str = kwargs.get('representation', 'quaternion')
         self.as_angles: bool = kwargs.get('as_angles', self.representation == 'angles') # Old parameter. Backwards compatiblity.
         _assert_representation(self.representation)
+        self.angles: np.ndarray = None
         if self.acc is not None:
             self.Q = self._compute_all()
 
@@ -238,28 +239,28 @@ class Tilt:
             return self.estimate(self.acc, self.mag, self.representation)
         # Normalization of 2D arrays
         a = self.acc/np.linalg.norm(self.acc, axis=1)[:, None]
-        angles = np.zeros((len(a), 3))   # Allocation of angles array
+        self.angles = np.zeros((len(a), 3))   # Allocation of angles array
         # Estimate tilt angles
-        angles[:, 0] = np.arctan2(a[:, 1], a[:, 2])
-        angles[:, 1] = np.arctan2(-a[:, 0], np.sqrt(a[:, 1]**2 + a[:, 2]**2))
+        self.angles[:, 0] = np.arctan2(a[:, 1], a[:, 2])
+        self.angles[:, 1] = np.arctan2(-a[:, 0], np.sqrt(a[:, 1]**2 + a[:, 2]**2))
         if self.mag is not None:
             _assert_numerical_iterable(self.mag, 'Geomagnetic field vector')
             # Estimate heading angle
             m = self.mag/np.linalg.norm(self.mag, axis=1)[:, None]
-            my2 = m[:, 2]*np.sin(angles[:, 0]) - m[:, 1]*np.cos(angles[:, 0])
-            mz2 = m[:, 1]*np.sin(angles[:, 0]) + m[:, 2]*np.cos(angles[:, 0])
-            mx3 = m[:, 0]*np.cos(angles[:, 1]) + mz2*np.sin(angles[:, 1])
-            angles[:, 2] = np.arctan2(my2, mx3)
+            my2 = m[:, 2]*np.sin(self.angles[:, 0]) - m[:, 1]*np.cos(self.angles[:, 0])
+            mz2 = m[:, 1]*np.sin(self.angles[:, 0]) + m[:, 2]*np.cos(self.angles[:, 0])
+            mx3 = m[:, 0]*np.cos(self.angles[:, 1]) + mz2*np.sin(self.angles[:, 1])
+            self.angles[:, 2] = np.arctan2(my2, mx3)
         # Return angles in degrees
         if self.representation == 'angles':
-            return angles*RAD2DEG
+            return self.angles*RAD2DEG
         # RPY to Quaternion
-        cp = np.cos(0.5*angles[:, 1])
-        sp = np.sin(0.5*angles[:, 1])
-        cr = np.cos(0.5*angles[:, 0])
-        sr = np.sin(0.5*angles[:, 0])
-        cy = np.cos(0.5*angles[:, 2])
-        sy = np.sin(0.5*angles[:, 2])
+        cp = np.cos(0.5*self.angles[:, 1])
+        sp = np.sin(0.5*self.angles[:, 1])
+        cr = np.cos(0.5*self.angles[:, 0])
+        sr = np.sin(0.5*self.angles[:, 0])
+        cy = np.cos(0.5*self.angles[:, 2])
+        sy = np.sin(0.5*self.angles[:, 2])
         Q = np.zeros((len(self.acc), 4))
         Q[:, 0] = cy*cp*cr + sy*sp*sr
         Q[:, 1] = cy*cp*sr - sy*sp*cr
