@@ -415,6 +415,22 @@ class TestMadgwick(unittest.TestCase):
         self.assertRaises(ValueError, ahrs.filters.Madgwick, gyr=self.gyroscopes, acc=[1.0, 2.0, 3.0])
         self.assertRaises(ValueError, ahrs.filters.Madgwick, gyr=self.gyroscopes, acc=[1.0, 2.0], mag=[2.0, 3.0, 4.0])
         self.assertRaises(ValueError, ahrs.filters.Madgwick, gyr=self.gyroscopes, acc=[1.0, 2.0, 3.0, 4.0], mag=[2.0, 3.0, 4.0, 5.0])
+        self.assertRaises(ValueError, ahrs.filters.Madgwick, gyr=self.gyroscopes, acc=[1.0, 2.0, 3.0], mag=[2.0, 3.0])
+
+    def test_wrong_input_in_updateIMU(self):
+        madgwick = ahrs.filters.Madgwick()
+        np.testing.assert_almost_equal(madgwick.updateIMU(q=[1., 0., 0., 0.], gyr=[0., 0., 0.], acc=self.accelerometers[0]), [1., 0., 0., 0.])
+        self.assertRaises(TypeError, madgwick.updateIMU, q=None, gyr=self.gyroscopes[0], acc=self.accelerometers[0])
+        self.assertRaises(TypeError, madgwick.updateIMU, q=[1., 0., 0., 0.], gyr=None, acc=self.accelerometers[0])
+        self.assertRaises(TypeError, madgwick.updateIMU, q=[1., 0., 0., 0.], gyr=self.gyroscopes[0], acc=None)
+
+    def test_wrong_input_in_updateMARG(self):
+        madgwick = ahrs.filters.Madgwick()
+        np.testing.assert_almost_equal(madgwick.updateMARG(q=[1., 0., 0., 0.], gyr=[0., 0., 0.], acc=self.accelerometers[0], mag=self.magnetometers[0]), [1., 0., 0., 0.])
+        self.assertRaises(TypeError, madgwick.updateMARG, q=None, gyr=self.gyroscopes[0], acc=self.accelerometers[0], mag=self.magnetometers[0])
+        self.assertRaises(TypeError, madgwick.updateMARG, q=[1., 0., 0., 0.], gyr=None, acc=self.accelerometers[0], mag=self.magnetometers[0])
+        self.assertRaises(TypeError, madgwick.updateMARG, q=[1., 0., 0., 0.], gyr=self.gyroscopes[0], acc=None, mag=self.magnetometers[0])
+        self.assertRaises(TypeError, madgwick.updateMARG, q=[1., 0., 0., 0.], gyr=self.gyroscopes[0], acc=self.accelerometers[0], mag=None)
 
     def test_wrong_input_vector_types(self):
         self.assertRaises(TypeError, ahrs.filters.Madgwick, gyr=['1.0', 2.0, 3.0], acc=self.accelerometers[0], mag=self.magnetometers[0])
