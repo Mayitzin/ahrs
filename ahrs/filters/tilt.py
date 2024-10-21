@@ -185,7 +185,7 @@ class Tilt:
            [1.98459171e-03, -8.34729603e-05, 0.00000000e+00]])
 
     .. note::
-        It will return the angles, in degrees, following the standard order
+        It will return the angles, in radians, following the standard order
         ``Roll->Pitch->Yaw``.
 
     The yaw angle is, expectedly, equal to zero, because the heading cannot be
@@ -251,9 +251,9 @@ class Tilt:
             mz2 = m[:, 1]*np.sin(self.angles[:, 0]) + m[:, 2]*np.cos(self.angles[:, 0])
             mx3 = m[:, 0]*np.cos(self.angles[:, 1]) + mz2*np.sin(self.angles[:, 1])
             self.angles[:, 2] = np.arctan2(my2, mx3)
-        # Return angles in degrees
+        # Return angles in radians
         if self.representation == 'angles':
-            return self.angles*RAD2DEG
+            return self.angles
         # RPY to Quaternion
         cp = np.cos(0.5*self.angles[:, 1])
         sp = np.sin(0.5*self.angles[:, 1])
@@ -301,7 +301,7 @@ class Tilt:
         array([0.09867706 0.33683592 0.52706394 0.77395607])
 
         Optionally, the attitude can be retrieved as roll-pitch-yaw angles, in
-        degrees.
+        radians.
 
         >>> tilt = Tilt(as_angles=True)
         >>> tilt.estimate(acc=acc_data, mag=mag_data)
@@ -329,7 +329,7 @@ class Tilt:
             bx = mx*np.cos(ey) + np.sin(ey)*(my*np.sin(ex) + mz*np.cos(ex))
             ez = np.arctan2(-by, bx)
         if representation == 'angles':
-            return np.array([ex, ey, ez])*RAD2DEG
+            return np.array([ex, ey, ez])
         #### Euler to Quaternion
         cp = np.cos(0.5*ey)
         sp = np.sin(0.5*ey)
