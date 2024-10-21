@@ -628,7 +628,7 @@ class Madgwick:
         _assert_numerical_iterable(gyr, 'Tri-axial gyroscope sample')
         _assert_numerical_iterable(acc, 'Tri-axial accelerometer sample')
         dt = self.Dt if dt is None else dt
-        if gyr is None or not np.linalg.norm(gyr) > 0:
+        if np.linalg.norm(gyr) == 0:
             return q
         qDot = 0.5 * q_prod(q, [0, *gyr])                           # (eq. 12)
         a_norm = np.linalg.norm(acc)
@@ -703,9 +703,9 @@ class Madgwick:
         _assert_numerical_iterable(acc, 'Tri-axial accelerometer sample')
         _assert_numerical_iterable(mag, 'Tri-axial magnetometer sample')
         dt = self.Dt if dt is None else dt
-        if gyr is None or not np.linalg.norm(gyr) > 0:
+        if np.linalg.norm(gyr) == 0:
             return q
-        if mag is None or not np.linalg.norm(mag) > 0:
+        if np.linalg.norm(mag) == 0:
             return self.updateIMU(q, gyr, acc)
         qDot = 0.5 * q_prod(q, [0, *gyr])                           # (eq. 12)
         a_norm = np.linalg.norm(acc)
