@@ -334,7 +334,7 @@ class OLEQ:
         # Normalize measurements (eq. 1)
         a_norm = np.linalg.norm(acc)
         m_norm = np.linalg.norm(mag)
-        if not a_norm > 0 or not m_norm > 0:    # handle NaN
+        if a_norm == 0 or m_norm == 0:    # handle NaN
             return None
         acc = np.copy(acc)/a_norm
         mag = np.copy(mag)/m_norm
