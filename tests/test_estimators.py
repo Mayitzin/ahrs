@@ -981,6 +981,8 @@ class TestOLEQ(unittest.TestCase):
         self.assertRaises(TypeError, ahrs.filters.OLEQ, acc="self.accelerometers", mag="self.magnetometers")
         self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=self.accelerometers[0], mag=True)
         self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=True, mag=[1.0, 2.0, 3.0])
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, weights='1.0')
+        self.assertRaises(TypeError, ahrs.filters.OLEQ, weights=['1.0', '1.0'])
         self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=[1.0, 2.0, 3.0])
         self.assertRaises(ValueError, ahrs.filters.OLEQ, mag=[2.0, 3.0, 4.0])
         self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=[1.0, 2.0], mag=[2.0, 3.0, 4.0])
@@ -1025,6 +1027,11 @@ class TestOLEQ(unittest.TestCase):
         self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.accelerometers, mag=self.magnetometers, weights=[0.5, -0.5])
         self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.accelerometers, mag=self.magnetometers, weights=[0.0, 0.0])
         self.assertRaises(ValueError, ahrs.filters.OLEQ, acc=self.accelerometers, mag=self.magnetometers, weights=np.zeros(4))
+
+    def test_method_estimate(self):
+        oleq = ahrs.filters.OLEQ()
+        self.assertIsNone(oleq.estimate(acc=self.accelerometers[0], mag=[0., 0., 0.]))
+        self.assertIsNone(oleq.estimate(acc=[0., 0., 0.], mag=self.magnetometers[0]))
 
 class TestROLEQ(unittest.TestCase):
     def setUp(self) -> None:
