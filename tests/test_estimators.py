@@ -291,6 +291,10 @@ class TestAQUA(unittest.TestCase):
         self.assertRaises(TypeError, ahrs.filters.AQUA, acc=True, mag=[1.0, 2.0, 3.0])
         self.assertRaises(ValueError, ahrs.filters.AQUA, acc=[1.0, 2.0], mag=[2.0, 3.0, 4.0])
         self.assertRaises(ValueError, ahrs.filters.AQUA, acc=[1.0, 2.0, 3.0, 4.0], mag=[2.0, 3.0, 4.0, 5.0])
+        self.assertRaises(TypeError, ahrs.filters.AQUA, acc='self.accelerometers', mag=self.magnetometers)
+        self.assertRaises(TypeError, ahrs.filters.AQUA, acc=self.accelerometers, mag='self.magnetometers')
+        self.assertRaises(ValueError, ahrs.filters.AQUA, acc=[[1., 2., 3.]], mag=self.magnetometers)
+        self.assertRaises(ValueError, ahrs.filters.AQUA, acc=self.accelerometers, mag=[[1., 2., 3.]])
 
     def test_wrong_input_vector_types(self):
         self.assertRaises(TypeError, ahrs.filters.AQUA, acc=['1.0', 2.0, 3.0], mag=[2.0, 3.0, 4.0])
