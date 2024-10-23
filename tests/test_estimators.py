@@ -398,6 +398,14 @@ class TestMadgwick(unittest.TestCase):
         madgwick_quaternions.rotate_by(madgwick_quaternions[0]*np.array([1.0, -1.0, -1.0, -1.0]), inplace=True)
         self.assertLess(np.nanmean(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS, madgwick_quaternions)), THRESHOLD)
 
+    def test_zeroed_magnetometer(self):
+        # It returns estimation with Gyro and Acc only
+        madgwick_quaternions_imu = ahrs.QuaternionArray(ahrs.filters.Madgwick(gyr=self.gyroscopes, acc=self.accelerometers).Q)
+        zeroed_magnetometers = np.zeros_like(self.magnetometers)
+        zeroed_magnetometers[0] = self.magnetometers[0]     # Initial mag value used for initial quaternion estimation
+        madgwick_quaternions_marg = ahrs.QuaternionArray(ahrs.filters.Madgwick(gyr=self.gyroscopes, acc=self.accelerometers, mag=zeroed_magnetometers).Q)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(madgwick_quaternions_imu, madgwick_quaternions_marg)), THRESHOLD)
+
     def test_wrong_input_vectors(self):
         self.assertRaises(TypeError, ahrs.filters.Madgwick, gyr=1.0, acc=self.accelerometers)
         self.assertRaises(TypeError, ahrs.filters.Madgwick, gyr="self.gyroscopes", acc=self.accelerometers)
@@ -416,6 +424,9 @@ class TestMadgwick(unittest.TestCase):
         self.assertRaises(ValueError, ahrs.filters.Madgwick, gyr=self.gyroscopes, acc=[1.0, 2.0], mag=[2.0, 3.0, 4.0])
         self.assertRaises(ValueError, ahrs.filters.Madgwick, gyr=self.gyroscopes, acc=[1.0, 2.0, 3.0, 4.0], mag=[2.0, 3.0, 4.0, 5.0])
         self.assertRaises(ValueError, ahrs.filters.Madgwick, gyr=self.gyroscopes, acc=[1.0, 2.0, 3.0], mag=[2.0, 3.0])
+        self.assertRaises(ValueError, ahrs.filters.Madgwick, gyr=self.gyroscopes[:10], acc=self.accelerometers, mag=self.magnetometers)
+        self.assertRaises(ValueError, ahrs.filters.Madgwick, gyr=self.gyroscopes, acc=self.accelerometers[:10], mag=self.magnetometers)
+        self.assertRaises(ValueError, ahrs.filters.Madgwick, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers[:10])
 
     def test_wrong_input_in_updateIMU(self):
         madgwick = ahrs.filters.Madgwick()
