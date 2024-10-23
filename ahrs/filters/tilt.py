@@ -94,7 +94,6 @@ returning the attitude as angles.
 """
 
 import numpy as np
-from ..common.constants import RAD2DEG
 from ..common.orientation import q2R
 from ..utils.core import _assert_numerical_iterable
 
@@ -312,7 +311,7 @@ class Tilt:
         _assert_numerical_iterable(acc, 'Gravitational acceleration vector')
         acc = np.copy(acc)
         a_norm = np.linalg.norm(acc)
-        if not a_norm > 0:
+        if a_norm == 0:
             raise ValueError("Gravitational acceleration must be non-zero")
         ax, ay, az = acc/a_norm
         ### Tilt from Accelerometer
