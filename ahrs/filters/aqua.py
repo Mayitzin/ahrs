@@ -815,7 +815,6 @@ class AQUA:
         if np.array(self.acc).ndim < 2:
             if self.mag is None:
                 return self.estimate(self.acc)
-            _assert_numerical_iterable(self.mag, 'Magnetometer data')
             _assert_same_shapes(self.acc, self.mag, ['acc', 'mag'])
             return self.estimate(self.acc, self.mag)
         # Multiple samples were given
@@ -833,10 +832,10 @@ class AQUA:
                 Q[t] = self.estimate(self.acc[t])
             return Q
         Q[0] = self.estimate(self.acc[0], self.mag[0]) if self.q0 is None else self.q0.copy()
+        _assert_same_shapes(self.acc, self.mag, ['acc', 'mag'])
         if self.gyr is not None:
             _assert_numerical_iterable(self.mag, 'Magnetometer data')
             _assert_numerical_iterable(self.gyr, 'Gyroscope data')
-            _assert_same_shapes(self.acc, self.mag, ['acc', 'mag'])
             _assert_same_shapes(self.acc, self.gyr, ['acc', 'gyr'])
             for t in range(1, num_samples):
                 Q[t] = self.updateMARG(Q[t-1], self.gyr[t], self.acc[t], self.mag[t])
@@ -918,6 +917,7 @@ class AQUA:
         q : numpy.ndarray
             Estimated quaternion.
         """
+        _assert_numerical_iterable(acc, 'Accelerometer data')
         ax, ay, az = acc/np.linalg.norm(acc)
         # Quaternion from Accelerometer Readings (eq. 25)
         if az >= 0:
@@ -926,6 +926,7 @@ class AQUA:
             q_acc = np.array([-ay/np.sqrt(2*(1-az)), np.sqrt((1-az)/2.0), 0.0, ax/np.sqrt(2*(1-az))])
         q_acc /= np.linalg.norm(q_acc)
         if mag is not None:
+            _assert_numerical_iterable(mag, 'Magnetometer data')
             m_norm = np.linalg.norm(mag)
             if m_norm == 0:
                 raise ValueError("Invalid geomagnetic field. Its must contain non-zero values.")
