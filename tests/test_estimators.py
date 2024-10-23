@@ -956,6 +956,21 @@ class TestOLEQ(unittest.TestCase):
         orientation.rotate_by(orientation[0]*np.array([1.0, -1.0, -1.0, -1.0]), inplace=True)
         self.assertLess(np.nanmean(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS, orientation)), THRESHOLD)
 
+    def test_setting_reference_frames(self):
+        oleq = ahrs.filters.OLEQ(magnetic_ref=[0.0, 0.0, 1.0])
+        np.testing.assert_array_equal(oleq.m_ref, [0.0, 0.0, 1.0])
+        oleq = ahrs.filters.OLEQ(magnetic_ref=np.array([0.0, 0.0, 1.0]))
+        np.testing.assert_array_equal(oleq.m_ref, [0.0, 0.0, 1.0])
+        oleq = ahrs.filters.OLEQ(magnetic_ref=[0.0, 0.0, 1.0], frame='ENU')
+        np.testing.assert_array_equal(oleq.m_ref, [0.0, 0.0, 1.0])
+        oleq = ahrs.filters.OLEQ(magnetic_ref=[0.0, 0.0, 1.0], frame='NED')
+        np.testing.assert_array_equal(oleq.m_ref, [0.0, 0.0, 1.0])
+        sq2 = np.sqrt(2)/2
+        oleq = ahrs.filters.OLEQ(magnetic_ref=-45.0)
+        np.testing.assert_almost_equal(oleq.m_ref, [-sq2, 0.0, sq2])
+        oleq = ahrs.filters.OLEQ(magnetic_ref=-45.0, frame='ENU')
+        np.testing.assert_almost_equal(oleq.m_ref, [0.0, sq2, sq2])
+
     def test_wrong_input_vectors(self):
         self.assertRaises(TypeError, ahrs.filters.OLEQ, acc=1.0)
         self.assertRaises(TypeError, ahrs.filters.OLEQ, acc="self.accelerometers")
