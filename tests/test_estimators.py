@@ -847,6 +847,18 @@ class TestTilt(unittest.TestCase):
         tilt = ahrs.filters.Tilt()
         self.assertRaises(ValueError, tilt.estimate, acc=self.accelerometers[0], mag=np.zeros(3))
 
+    def test_method_estimate(self):
+        orientation = ahrs.QuaternionArray(ahrs.filters.Tilt(acc=self.accelerometers, mag=self.magnetometers).Q)
+        orientation_as_angles = ahrs.filters.Tilt(acc=self.accelerometers, mag=self.magnetometers, representation='angles').Q
+        orientation_as_rotmat = ahrs.filters.Tilt(acc=self.accelerometers, mag=self.magnetometers, representation='rotmat').Q
+        tilt = ahrs.filters.Tilt()
+        first_estimation_quaternion = tilt.estimate(acc=self.accelerometers[0], mag=self.magnetometers[0])
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(orientation[0], first_estimation_quaternion)), THRESHOLD)
+        first_estimation_angles = tilt.estimate(acc=self.accelerometers[0], mag=self.magnetometers[0], representation='angles')
+        self.assertLess(np.nanmean(ahrs.utils.metrics.rmse(orientation_as_angles[0], first_estimation_angles)), THRESHOLD)
+        first_estimation_rotmat = tilt.estimate(acc=self.accelerometers[0], mag=self.magnetometers[0], representation='rotmat')
+        self.assertLess(np.nanmean(ahrs.utils.metrics.chordal(orientation_as_rotmat[0], first_estimation_rotmat)), THRESHOLD)
+
     def test_wrong_representation(self):
         self.assertRaises(TypeError, ahrs.filters.Tilt, representation=1)
         self.assertRaises(TypeError, ahrs.filters.Tilt, acc=self.accelerometers, mag=self.magnetometers, representation=1)
