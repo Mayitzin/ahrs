@@ -564,20 +564,21 @@ import numpy as np
 from ..common.orientation import q_prod, q2R
 from ..common.constants import MUNICH_LATITUDE, MUNICH_HEIGHT
 from ..utils.core import _assert_numerical_iterable
+from ..utils.core import _assert_same_shapes
 
 # Reference Observations in Munich, Germany
 from ..utils.wgs84 import WGS
 GRAVITY = WGS().normal_gravity(MUNICH_LATITUDE, MUNICH_HEIGHT)
 
-def _assert_same_shapes(item1, item2, item_names: list = None):
-    for item in [item1, item2]:
-        if not isinstance(item, (list, tuple, np.ndarray)):
-            raise TypeError(f"{item} must be an array. Got {type(item)}")
-    if item_names is None:
-        item_names = ['item1', 'item2']
-    item1, item2 = np.copy(item1), np.copy(item2)
-    if item1.shape != item2.shape:
-        raise ValueError(f"{item_names[0]} and {item_names[1]} must have the same shape. Got {item1.shape} and {item2.shape}")
+# def _assert_same_shapes(item1, item2, item_names: list = None):
+#     for item in [item1, item2]:
+#         if not isinstance(item, (list, tuple, np.ndarray)):
+#             raise TypeError(f"{item} must be an array. Got {type(item)}")
+#     if item_names is None:
+#         item_names = ['item1', 'item2']
+#     item1, item2 = np.copy(item1), np.copy(item2)
+#     if item1.shape != item2.shape:
+#         raise ValueError(f"{item_names[0]} and {item_names[1]} must have the same shape. Got {item1.shape} and {item2.shape}")
 
 def slerp_I(q: np.ndarray, ratio: float, t: float) -> np.ndarray:
     """
@@ -985,13 +986,13 @@ class AQUA:
         if not a_norm > 0:
             return qInt
         a = acc/a_norm
-        gx, gy, gz = q2R(qInt).T@a                          # Predicted gravity (eq. 44)
-        q_acc = np.array([np.sqrt((gz+1)/2.0), -gy/np.sqrt(2.0*(gz+1)), gx/np.sqrt(2.0*(gz+1)), 0.0])     # Delta Quaternion (eq. 47)
+        gx, gy, gz = q2R(qInt).T @ a                          # Predicted gravity (eq. 44)
+        q_acc = np.array([np.sqrt((gz+1.0)/2.0), -gy/np.sqrt(2.0*(gz+1.0)), gx/np.sqrt(2.0*(gz+1.0)), 0.0])     # Delta Quaternion (eq. 47)
         if self.adaptive:
             self.alpha = adaptive_gain(acc)
         q_acc = slerp_I(q_acc, self.alpha, self.threshold)
         q_prime = q_prod(qInt, q_acc)                       # (eq. 53)
-        return q_prime/np.linalg.norm(q_prime)
+        return q_prime / np.linalg.norm(q_prime)
 
     def updateMARG(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, mag: np.ndarray, dt: float = None) -> np.ndarray:
         """
