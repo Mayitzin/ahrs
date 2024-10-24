@@ -965,7 +965,7 @@ class AQUA:
 
         """
         dt = self.Dt if dt is None else dt
-        if gyr is None or not np.linalg.norm(gyr) > 0:
+        if gyr is None or np.linalg.norm(gyr) == 0:
             return q
         # PREDICTION
         qDot = self.Omega(gyr) @ q                          # Quaternion derivative (eq. 39)
