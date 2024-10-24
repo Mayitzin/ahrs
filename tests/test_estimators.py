@@ -279,8 +279,42 @@ class TestAQUA(unittest.TestCase):
         self.magnetometers = np.copy(SENSOR_DATA.magnetometers)
 
     def test_acc_mag(self):
-        aqua_quaternions = ahrs.QuaternionArray(ahrs.filters.AQUA(acc=self.accelerometers, mag=self.magnetometers).Q)
+        aqua = ahrs.filters.AQUA(acc=self.accelerometers, mag=self.magnetometers)
+        aqua_quaternions = ahrs.QuaternionArray(aqua.Q)
         self.assertLess(np.nanmean(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS, aqua_quaternions.conjugate())), THRESHOLD)
+
+    def test_slerp_I(self):
+        # Interpolation between given quaternions and identity quaternion.
+        # See https://ahrs.readthedocs.io/en/latest/filters/aqua.html#ahrs.filters.aqua.slerp_I
+        slerp_threshold = 0.9
+        # SLERP at one third of arc length between quaternions
+        alpha = 1/3
+        # Interpolate between [1, 0, 0, 0] and [0, 0, 0, 1]
+        interpolated_quaternion = ahrs.filters.aqua.slerp_I(np.array([0., 0., 0., 1]), alpha, slerp_threshold)
+        expected_quaternion = np.array([np.cos(np.pi/6), 0., 0., 0.5])
+        np.testing.assert_almost_equal(interpolated_quaternion, expected_quaternion)
+        # Interpolate between [1, 0, 0, 0] and [0, 0, -1, 0]
+        interpolated_quaternion = ahrs.filters.aqua.slerp_I(np.array([0., 0., -1., 0.]), alpha, slerp_threshold)
+        expected_quaternion = np.array([np.cos(np.pi/6), 0., -0.5, 0.])
+        np.testing.assert_almost_equal(interpolated_quaternion, expected_quaternion)
+        # SLERP at half of arc length between quaternions
+        alpha = 1/2
+        sq22 = np.sqrt(2)/2     # ~ 0.7071
+        # SLERP between [1, 0, 0, 0] and [0, 0, 0, 1]
+        interpolated_quaternion = ahrs.filters.aqua.slerp_I(np.array([0., 0., 0., 1]), alpha, slerp_threshold)
+        expected_quaternion = np.array([sq22, 0., 0., sq22])
+        np.testing.assert_almost_equal(interpolated_quaternion, expected_quaternion)
+        # SLERP between [1, 0, 0, 0] and [0, 0, -1, 0]
+        interpolated_quaternion = ahrs.filters.aqua.slerp_I(np.array([0., 0., -1., 0.]), alpha, slerp_threshold)
+        expected_quaternion = np.array([sq22, 0., -sq22, 0.])
+        np.testing.assert_almost_equal(interpolated_quaternion, expected_quaternion)
+        # LERP (qw > 0.5) between [1, 0, 0, 0] and [0.7071, 0, 0, 0.7071]
+        slerp_threshold = 0.5
+        input_quaternion = np.array([sq22, 0., 0., sq22])   # Normalized [1, 0, 0, 1]
+        interpolated_quaternion = ahrs.filters.aqua.slerp_I(input_quaternion, alpha, slerp_threshold)
+        expected_quaternion = np.array([(1+sq22)/2, 0., 0., sq22/2])
+        expected_quaternion /= np.linalg.norm(expected_quaternion)
+        np.testing.assert_almost_equal(interpolated_quaternion, expected_quaternion)
 
     def test_wrong_input_vectors(self):
         self.assertRaises(TypeError, ahrs.filters.AQUA, acc=1.0, mag=2.0)
