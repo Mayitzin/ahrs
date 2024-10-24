@@ -935,7 +935,7 @@ class AQUA:
 
     def updateIMU(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, dt: float = None) -> np.ndarray:
         """
-        Quaternion Estimation with a IMU architecture.
+        Quaternion Estimation with IMU architecture.
 
         The estimation is made in two steps: a *prediction* is done with the
         angular rate (gyroscope) to integrate and estimate the current
@@ -973,7 +973,7 @@ class AQUA:
         qInt /= np.linalg.norm(qInt)
         # CORRECTION
         a_norm = np.linalg.norm(acc)
-        if not a_norm > 0:
+        if a_norm == 0:
             return qInt
         a = acc/a_norm
         gx, gy, gz = q2R(qInt).T @ a                          # Predicted gravity (eq. 44)
@@ -986,7 +986,7 @@ class AQUA:
 
     def updateMARG(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, mag: np.ndarray, dt: float = None) -> np.ndarray:
         """
-        Quaternion Estimation with a MARG architecture.
+        Quaternion Estimation with MARG architecture.
 
         The estimation is made in two steps: a *prediction* is done with the
         angular rate (gyroscope) to integrate and estimate the current
@@ -1020,7 +1020,7 @@ class AQUA:
 
         """
         dt = self.Dt if dt is None else dt
-        if gyr is None or not np.linalg.norm(gyr)>0:
+        if gyr is None or np.linalg.norm(gyr) == 0:
             return q
         # PREDICTION
         qDot = self.Omega(gyr) @ q                          # Quaternion derivative (eq. 39)
@@ -1028,7 +1028,7 @@ class AQUA:
         qInt /= np.linalg.norm(qInt)
         # CORRECTION
         a_norm = np.linalg.norm(acc)
-        if not a_norm > 0:
+        if a_norm == 0:
             return qInt
         a = acc/a_norm
         gx, gy, gz = q2R(qInt).T @ a                        # Predicted gravity (eq. 44)
@@ -1041,7 +1041,7 @@ class AQUA:
         q_prime /= np.linalg.norm(q_prime)
         # Magnetometer-Based Quaternion
         m_norm = np.linalg.norm(mag)
-        if not m_norm > 0:
+        if m_norm == 0:
             return q_prime
         lx, ly, _ = q2R(q_prime).T @ (mag/m_norm)           # World frame magnetic vector (eq. 54)
         Gamma = lx**2 + ly**2                               # (eq. 28)
