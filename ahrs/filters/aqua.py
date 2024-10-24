@@ -570,16 +570,6 @@ from ..utils.core import _assert_same_shapes
 from ..utils.wgs84 import WGS
 GRAVITY = WGS().normal_gravity(MUNICH_LATITUDE, MUNICH_HEIGHT)
 
-# def _assert_same_shapes(item1, item2, item_names: list = None):
-#     for item in [item1, item2]:
-#         if not isinstance(item, (list, tuple, np.ndarray)):
-#             raise TypeError(f"{item} must be an array. Got {type(item)}")
-#     if item_names is None:
-#         item_names = ['item1', 'item2']
-#     item1, item2 = np.copy(item1), np.copy(item2)
-#     if item1.shape != item2.shape:
-#         raise ValueError(f"{item_names[0]} and {item_names[1]} must have the same shape. Got {item1.shape} and {item2.shape}")
-
 def slerp_I(q: np.ndarray, ratio: float, t: float) -> np.ndarray:
     """
     Interpolation with identity quaternion
