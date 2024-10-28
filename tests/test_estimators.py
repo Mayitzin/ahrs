@@ -1192,5 +1192,49 @@ class TestFKF(unittest.TestCase):
         self.assertRaises(ValueError, ahrs.filters.FKF, gyr=self.gyroscopes, acc=self.accelerometers, mag=[2.0, 3.0, 4.0])
         self.assertRaises(ValueError, ahrs.filters.FKF, gyr=self.gyroscopes, acc=[1.0, 2.0], mag=[2.0, 3.0, 4.0])
 
+class TestAngular(unittest.TestCase):
+    def setUp(self) -> None:
+        # Synthetic sensor data
+        self.gyroscopes = np.copy(SENSOR_DATA.gyroscopes)
+
+    def test_estimation(self):
+        orientation = ahrs.QuaternionArray(ahrs.filters.AngularRate(gyr=self.gyroscopes).Q)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS, orientation)), THRESHOLD)
+
+    def test_wrong_input_gyroscope_types(self):
+        self.assertRaises(TypeError, ahrs.filters.AngularRate, gyr=1.0)
+        self.assertRaises(TypeError, ahrs.filters.AngularRate, gyr="self.gyroscopes")
+        self.assertRaises(TypeError, ahrs.filters.AngularRate, gyr=True)
+        self.assertRaises(TypeError, ahrs.filters.AngularRate, gyr=['1.0', '2.0', '3.0'])
+
+    def test_wrong_input_gyroscope_values(self):
+        self.assertRaises(ValueError, ahrs.filters.AngularRate, gyr=[1.0, 2.0])
+        self.assertRaises(ValueError, ahrs.filters.AngularRate, gyr=np.zeros(4))
+
+    def test_wrong_input_frequency(self):
+        self.assertRaises(TypeError, ahrs.filters.AngularRate, gyr=self.gyroscopes, frequency="100.0")
+        self.assertRaises(TypeError, ahrs.filters.AngularRate, gyr=self.gyroscopes, frequency=[100.0])
+        self.assertRaises(TypeError, ahrs.filters.AngularRate, gyr=self.gyroscopes, frequency=(100.0,))
+        self.assertRaises(TypeError, ahrs.filters.AngularRate, gyr=self.gyroscopes, frequency=True)
+        self.assertRaises(ValueError, ahrs.filters.AngularRate, gyr=self.gyroscopes, frequency=0.0)
+        self.assertRaises(ValueError, ahrs.filters.AngularRate, gyr=self.gyroscopes, frequency=-100.0)
+
+    def test_wrong_input_Dt(self):
+        self.assertRaises(TypeError, ahrs.filters.AngularRate, gyr=self.gyroscopes, Dt="0.01")
+        self.assertRaises(TypeError, ahrs.filters.AngularRate, gyr=self.gyroscopes, Dt=[0.01])
+        self.assertRaises(TypeError, ahrs.filters.AngularRate, gyr=self.gyroscopes, Dt=(0.01,))
+        self.assertRaises(TypeError, ahrs.filters.AngularRate, gyr=self.gyroscopes, Dt=True)
+        self.assertRaises(ValueError, ahrs.filters.AngularRate, gyr=self.gyroscopes, Dt=0.0)
+        self.assertRaises(ValueError, ahrs.filters.AngularRate, gyr=self.gyroscopes, Dt=-0.01)
+
+    def test_wrong_initial_quaternion(self):
+        self.assertRaises(TypeError, ahrs.filters.AngularRate, gyr=self.gyroscopes, q0=1)
+        self.assertRaises(TypeError, ahrs.filters.AngularRate, gyr=self.gyroscopes, q0=1.0)
+        self.assertRaises(TypeError, ahrs.filters.AngularRate, gyr=self.gyroscopes, q0=True)
+        self.assertRaises(TypeError, ahrs.filters.AngularRate, gyr=self.gyroscopes, q0="[1.0, 0.0, 0.0, 0.0]")
+        self.assertRaises(ValueError, ahrs.filters.AngularRate, gyr=self.gyroscopes, q0=[1.0])
+        self.assertRaises(ValueError, ahrs.filters.AngularRate, gyr=self.gyroscopes, q0=[1.0, 0.0, 0.0])
+        self.assertRaises(ValueError, ahrs.filters.AngularRate, gyr=self.gyroscopes, q0=np.zeros(4))
+
 if __name__ == '__main__':
     unittest.main()
