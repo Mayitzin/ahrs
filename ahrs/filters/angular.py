@@ -388,6 +388,9 @@ class AngularRate:
         """Estimate all quaternions with given sensor values."""
         if self.method.lower() == 'integration':
             return self.integrate_angular_positions(self.gyr, dt=self.Dt)
+        self.gyr = np.copy(self.gyr)
+        if self.gyr.ndim < 2:
+            return self.update(self.q0, self.gyr)
         num_samples = len(self.gyr)
         Q = np.zeros((num_samples, 4))
         Q[0] = self.q0
@@ -511,11 +514,15 @@ class AngularRate:
                [-0.92504595, -0.23174096,  0.20086376, -0.22414251]])
 
         """
-        dt = self.Dt if dt is None else dt
+        _assert_numerical_iterable(self.q0, 'q0')
+        _assert_numerical_iterable(gyr, 'gyr')
+        if len(gyr) != 3:
+            raise ValueError(f"gyr must be a 3-element array. Got {len(gyr)} instead.")
         if method.lower() not in ['series', 'closed']:
             raise ValueError(f"Invalid method '{method}'. Try 'series' or 'closed'")
+        dt = self.Dt if dt is None else dt
         q = np.copy(q)
-        if gyr is None or not np.linalg.norm(gyr)>0:
+        if np.linalg.norm(gyr) == 0:
             return q
         Omega = np.array([
             [   0.0, -gyr[0], -gyr[1], -gyr[2]],
