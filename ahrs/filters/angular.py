@@ -378,11 +378,27 @@ class AngularRate:
         self.order: int = order
         self.method: str = kw.get('method', 'closed')
         self.representation: str = kw.get('representation', 'quaternion')
-        self.Dt: float = kw.get('Dt', 1.0/self.frequency)
+        self.Dt: float = kw.get('Dt', 1.0/self.frequency  if self.frequency else 0.01)
+        # Check if inputs are valid
+        self._assert_validity_of_inputs()
         if self.gyr is not None:
             if self.method.lower() == 'integration':
                 self.W = self.integrate_angular_positions(self.gyr, dt=self.Dt)
             self.Q = self._compute_all()
+
+    def _assert_validity_of_inputs(self):
+        for item in ['frequency', 'Dt']:
+            item_value = self.__getattribute__(item)
+            if not isinstance(item_value, (int, float)) or isinstance(item_value, bool):
+                raise TypeError(f"{item} must be float or integer. Got {type(item_value)} instead.")
+            if item_value <= 0:
+                raise ValueError(f"{item} must be positive. Got {item_value} instead.")
+        _assert_numerical_iterable(self.q0, 'initial quaternion')
+        self.q0 = np.copy(self.q0)
+        if self.q0.shape != (4,):
+            raise ValueError(f"Parameter 'q0' must be an array of shape (4,). It is {self.q0.shape}.")
+        if not np.allclose(np.linalg.norm(self.q0), 1.0):
+            raise ValueError(f"Parameter 'q0' must be a versor (norm equal to 1.0). Its norm is equal to {np.linalg.norm(self.q0)}.")
 
     def _compute_all(self):
         """Estimate all quaternions with given sensor values."""
@@ -391,7 +407,7 @@ class AngularRate:
         self.gyr = np.copy(self.gyr)
         if self.gyr.ndim < 2:
             return self.update(self.q0, self.gyr)
-        num_samples = len(self.gyr)
+        num_samples = self.gyr.shape[0]
         Q = np.zeros((num_samples, 4))
         Q[0] = self.q0
         for t in range(1, num_samples):
