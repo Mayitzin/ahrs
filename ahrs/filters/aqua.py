@@ -695,17 +695,17 @@ def adaptive_gain(a_local: np.ndarray, alpha_bar: float = 0.1, t1: float = 0.1, 
     >>> from ahrs.filters.aqua import adaptive_gain
     >>> alpha_bar = 0.01    # Best gain in static conditions
     >>> acc = np.array([0.0699, 9.7688, -0.2589])   # Measured acceleration. Quasi-static state.
-    >>> adaptive_gain(alpha_bar, acc)
+    >>> adaptive_gain(acc, alpha_bar)
     0.01
     >>> acc = np.array([0.8868, 10.8803, -0.4562])  # New measured acceleration. Slightly above first threshold.
-    >>> adaptive_gain(alpha_bar, acc)
+    >>> adaptive_gain(acc, alpha_bar)
     0.008615664547367627
     >>> acc = np.array([4.0892, 12.7667, -2.6047])  # New measured acceleration. Above second threshold.
-    >>> adaptive_gain(alpha_bar, acc)
+    >>> adaptive_gain(acc, alpha_bar)
     0.0
-    >>> adaptive_gain(alpha_bar, acc, t1=0.2, t2=0.5)   # Same acceleration. New thresholds.
+    >>> adaptive_gain(acc, alpha_bar, t1=0.2, t2=0.5)   # Same acceleration. New thresholds.
     0.005390131074499384
-    >>> adaptive_gain(alpha_bar, acc, t1=0.2, t2=0.5, g=9.82)   # Same acceleration and thresholds. New reference gravity.
+    >>> adaptive_gain(acc, alpha_bar, t1=0.2, t2=0.5, g=9.82)   # Same acceleration and thresholds. New reference gravity.
     0.005466716107480152
 
     """
