@@ -469,12 +469,14 @@ This delta quaternion is affected by the noise of the magnetometer, which is
 also filtered like the :math:`\\Delta\\mathbf{q}_\\mathrm{acc}` switching
 between LERP and SLERP according to the same criterion.
 
-Because each delta quaternion is affected independently with different noises,
-two different thresholds can be used: :math:`\\alpha` for the accelerometer and
-:math:`\\beta` for the magnetometer to obtain :math:`\\widehat{\\Delta\\mathbf{q}}_\\mathrm{mag}`.
+Because :math:`\\Delta\\mathbf{q}_\\mathrm{acc}` and
+:math:`\\Delta\\mathbf{q}_\\mathrm{mag}` are affected independently with
+different noises, two different thresholds can be used: :math:`\\alpha` for the
+accelerometer and :math:`\\beta` for the magnetometer.
 
-Finally, the delta quaternion is multiplied with :math:`^L_G\\mathbf{q}'` to
-obtain the orientation of the global frame with respect to the local frame:
+Finally, :math:`\\widehat{\\Delta\\mathbf{q}}_\\mathrm{mag}` is multiplied with
+:math:`^L_G\\mathbf{q}'` to obtain the orientation of the global frame with
+respect to the local frame:
 
 .. math::
     ^L_G\\mathbf{q} = \\,^L_G\\mathbf{q}' \\, \\widehat{\\Delta\\mathbf{q}}_\\mathrm{mag}
@@ -484,25 +486,35 @@ Adaptive Gain
 
 When the vehicle moves with high acceleration, the magnitude and direction of
 the total measured acceleration vector are different from gravity, and the
-attitude is evaluated using a false reference.
+attitude is estimated using a false reference.
 
 However, the gyroscope readings are not affected by linear acceleration, thus
 they can still be used to compute a relatively accurate orientation estimation.
 
-A constant gain fusion algorithm cannot overcome the aforementioned problem if
-the optimal gain has been evaluated for static conditions. An adaptive gain can
-bw used to tackle this problem.
+A fusion algorithm using a constant gain to decide between LERP and SLERP
+cannot overcome the aforementioned problem if such gain has been defined for
+static conditions.
 
-First a magnitude error :math:`e_m` is defined:
+An adaptive gain dependant on a dynamic state can be used to tackle this
+problem.
+
+First, a **magnitude error** :math:`e_m` is defined:
 
 .. math::
-    e_m = \\frac{|\\|\\,^L\\tilde{a}\\|-g|}{g}
+    e_m = \\frac{|\\|\\,^L\\tilde{\\mathbf{a}}\\|-g|}{g}
 
-where :math:`\\|\\,^L\\hat{a}\\|` is the norm of the measured local frame
-acceleration vector before normalization and :math:`g=9.81 \\, \\frac{m}{s^2}`.
+where :math:`\\|\\,^L\\tilde{\\mathbf{a}}\\|` is the norm of the measured local
+frame acceleration vector before normalization, and :math:`g=9.81 \\, \\frac{m}{s^2}`.
 
-From the LERP and SLERP definitions, we make the filtering gain :math:`\\alpha`
-dependent on the magnitude error :math:`e_m` through the gain factor :math:`f`:
+The magnitude error tells us how different the measured acceleration from the
+gravitational acceleration is. When the magnitude error is zero, the
+acceleration is only due to gravity and no extra acceleration force is present.
+
+If the magnitude error is greater than zero, the acceleration is due to the
+gravity PLUS an extra acceleration force.
+
+We make the filtering gain :math:`\\alpha` dependent on the magnitude error
+:math:`e_m` through the gain factor :math:`f`:
 
 .. math::
     \\alpha = \\overline{\\alpha}f(e_m)
@@ -512,13 +524,10 @@ filtering result in static conditions and :math:`f(e_m)` is what is called the
 **gain factor**, which is a piecewise continuous function of the magnitude
 error.
 
-This gain factor is equal to :math:`1` when the magnitude of the
+The gain factor is equal to :math:`1` when the magnitude of the
 non-gravitational acceleration is not high enough to overcome the acceleration
 gravity and the value of the error magnitude does not reach the first threshold
-:math:`t_1`. If the nongravitational acceleration rises and the error magnitude
-exceeds that first threshold, the gain factor decreases linearly with the
-increase of the magnitude error until reaching zero for error magnitude equal
-to the second threshold :math:`t_2` and over.
+:math:`t_1`.
 
 .. math::
     f(e_m) =
@@ -530,8 +539,21 @@ to the second threshold :math:`t_2` and over.
     \\end{array}
     \\right.
 
-Empirically, the threshold values giving the best results are :math:`0.1` and
-:math:`0.2`.
+If the non-gravitational acceleration rises and the error magnitude
+exceeds that first threshold, the gain factor decreases linearly with the
+increase of the magnitude error until reaching zero for error magnitude equal
+to the second threshold :math:`t_2` and over.
+
+Empirically, the authors found that the threshold values giving the best
+results are :math:`0.1` and :math:`0.2`.
+
+.. image:: ../images/adaptive_gain.png
+
+In summary:
+
+- If the system is static: :math:`e_m < t_1 \\rightarrow f(e_m)=1` and :math:`\\alpha = \\overline{\\alpha}`
+- If the system is in motion: :math:`t_1 < e_m < t_2 \\rightarrow f(e_m) \\in (0, 1)` and :math:`\\alpha = \\overline{\\alpha}f(e_m)`
+- If the system is in high acceleration: :math:`e_m > t_2 \\rightarrow f(e_m)=0` and :math:`\\alpha = 0`
 
 Filter Initialization
 ---------------------
@@ -568,7 +590,7 @@ from ..utils.core import _assert_same_shapes
 
 # Reference Observations in Munich, Germany
 from ..utils.wgs84 import WGS
-GRAVITY = WGS().normal_gravity(MUNICH_LATITUDE, MUNICH_HEIGHT)
+GRAVITY = WGS().normal_gravity(MUNICH_LATITUDE, MUNICH_HEIGHT*1000)
 
 def slerp_I(q: np.ndarray, ratio: float, t: float) -> np.ndarray:
     """
@@ -605,8 +627,8 @@ def slerp_I(q: np.ndarray, ratio: float, t: float) -> np.ndarray:
     .. math::
         \\hat{\\mathbf{q}} = \\frac{\\sin([1-\\alpha]\\Omega)}{\\sin\\Omega} \\mathbf{q}_I + \\frac{\\sin(\\alpha\\Omega)}{\\sin\\Omega} \\mathbf{q}
 
-    where :math:`\\Omega=\\arccos(q_w)` is the subtended arc between the
-    quaternions.
+    where :math:`\\Omega=\\arccos(q_w)` is the `subtended angle
+    <https://en.wikipedia.org/wiki/Subtended_angle>`_ between the quaternions.
 
     Parameters
     ----------
@@ -647,7 +669,7 @@ def adaptive_gain(a_local: np.ndarray, alpha_bar: float = 0.1, t1: float = 0.1, 
     :math:`g\\approx 9.809196 \\, \\frac{m}{s^2}`:
 
     .. math::
-        e_m = \\frac{|\\|\\mathbf{a}\\|-g|}{g}
+        e_m = \\frac{|\\|\\,^L\\tilde{\\mathbf{a}}\\|-g|}{g}
 
     The gain factor is constant and equal to 1 when the magnitude of the
     nongravitational acceleration is not high enough to overcome gravity.
@@ -668,14 +690,14 @@ def adaptive_gain(a_local: np.ndarray, alpha_bar: float = 0.1, t1: float = 0.1, 
         \\right.
 
     Empirically, both thresholds have been defined at ``0.1`` and ``0.2``,
-    respectively. They can be, however, changed by setting the values of
-    input parameters ``t1`` and ``t2``.
+    respectively. They can be changed by setting the values of input parameters
+    ``t1`` and ``t2``.
 
     Parameters
     ----------
     a_local : numpy.ndarray
         Measured local acceleration vector.
-    alpha_bar : float
+    alpha_bar : float, default: 0.1
         Gain yielding best results in static conditions.
     t1 : float, default: 0.1
         First threshold.
