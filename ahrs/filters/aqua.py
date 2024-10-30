@@ -551,9 +551,9 @@ results are :math:`0.1` and :math:`0.2`.
 
 In summary:
 
-- If the system is static: :math:`e_m < t_1 \\rightarrow f(e_m)=1` and :math:`\\alpha = \\overline{\\alpha}`
-- If the system is in motion: :math:`t_1 < e_m < t_2 \\rightarrow f(e_m) \\in (0, 1)` and :math:`\\alpha = \\overline{\\alpha}f(e_m)`
-- If the system is in high acceleration: :math:`e_m > t_2 \\rightarrow f(e_m)=0` and :math:`\\alpha = 0`
+- If the system is static (:math:`e_m < t_1`) : :math:`f(e_m)=1` and :math:`\\alpha = \\overline{\\alpha}`
+- If the system is in motion (:math:`t_1 < e_m < t_2`) : :math:`f(e_m) \\in (0, 1)` and :math:`\\alpha = \\overline{\\alpha}f(e_m)`
+- If the system is in high acceleration (:math:`e_m > t_2`) : :math:`f(e_m)=0` and :math:`\\alpha = 0`
 
 Filter Initialization
 ---------------------
@@ -715,20 +715,19 @@ def adaptive_gain(a_local: np.ndarray, alpha_bar: float = 0.1, t1: float = 0.1, 
     Examples
     --------
     >>> from ahrs.filters.aqua import adaptive_gain
-    >>> alpha_bar = 0.01    # Best gain in static conditions
     >>> acc = np.array([0.0699, 9.7688, -0.2589])   # Measured acceleration. Quasi-static state.
-    >>> adaptive_gain(acc, alpha_bar)
-    0.01
+    >>> adaptive_gain(acc)
+    0.1
     >>> acc = np.array([0.8868, 10.8803, -0.4562])  # New measured acceleration. Slightly above first threshold.
-    >>> adaptive_gain(acc, alpha_bar)
-    0.008615664547367627
+    >>> adaptive_gain(acc)
+    0.08615664547367627
     >>> acc = np.array([4.0892, 12.7667, -2.6047])  # New measured acceleration. Above second threshold.
-    >>> adaptive_gain(acc, alpha_bar)
+    >>> adaptive_gain(acc)
     0.0
-    >>> adaptive_gain(acc, alpha_bar, t1=0.2, t2=0.5)   # Same acceleration. New thresholds.
-    0.005390131074499384
-    >>> adaptive_gain(acc, alpha_bar, t1=0.2, t2=0.5, g=9.82)   # Same acceleration and thresholds. New reference gravity.
-    0.005466716107480152
+    >>> adaptive_gain(acc, alpha_bar=0.01, t1=0.2, t2=0.5)   # Same acceleration. New thresholds.
+    0.005377771414416655
+    >>> adaptive_gain(acc, alpha_bar=0.01, t1=0.2, t2=0.5, g=9.82)   # Same acceleration and thresholds. New reference gravity.
+    0.0054668822923283475
 
     """
     if t1 > t2:
