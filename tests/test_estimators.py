@@ -316,6 +316,22 @@ class TestAQUA(unittest.TestCase):
         expected_quaternion /= np.linalg.norm(expected_quaternion)
         np.testing.assert_almost_equal(interpolated_quaternion, expected_quaternion)
 
+    def test_adaptive_gain(self):
+        acc = np.copy(SENSOR_DATA.reference_gravitational_vector)
+        self.assertEqual(ahrs.filters.aqua.adaptive_gain(acc), 0.1)
+        acc = np.copy(SENSOR_DATA.reference_gravitational_vector) + [1., 1., 1.]
+        self.assertAlmostEqual(ahrs.filters.aqua.adaptive_gain(acc), 0.08864197335120784)
+        acc = np.copy(SENSOR_DATA.reference_gravitational_vector) + [2., 2., 2.]
+        self.assertEqual(ahrs.filters.aqua.adaptive_gain(acc), 0.0)
+        acc = np.copy(SENSOR_DATA.reference_gravitational_vector)
+        new_alpha_bar = 1.0
+        self.assertEqual(ahrs.filters.aqua.adaptive_gain(acc, alpha_bar=new_alpha_bar), 1.0)
+        acc = np.copy(SENSOR_DATA.reference_gravitational_vector) + [2., 2., 2.]
+        self.assertEqual(ahrs.filters.aqua.adaptive_gain(acc, alpha_bar=new_alpha_bar), 0.0)
+
+    def test_wrong_value_for_adaptive_gain(self):
+        self.assertRaises(ValueError, ahrs.filters.aqua.adaptive_gain, SENSOR_DATA.reference_gravitational_vector, t1=1.0, t2=0.5)
+
     def test_wrong_input_vectors(self):
         self.assertRaises(TypeError, ahrs.filters.AQUA, acc=1.0, mag=2.0)
         self.assertRaises(TypeError, ahrs.filters.AQUA, acc=self.accelerometers, mag=2.0)
