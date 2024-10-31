@@ -275,13 +275,42 @@ class TestDavenport(unittest.TestCase):
 
 class TestAQUA(unittest.TestCase):
     def setUp(self) -> None:
+        self.gyroscopes = np.copy(SENSOR_DATA.gyroscopes)
         self.accelerometers = np.copy(SENSOR_DATA.accelerometers)
         self.magnetometers = np.copy(SENSOR_DATA.magnetometers)
+
+    def test_acc(self):
+        my_sensors = ahrs.Sensors(num_samples=1000, yaw=0.0, span=(0, np.pi/2))
+        aqua_quaternions = ahrs.QuaternionArray(ahrs.filters.AQUA(acc=my_sensors.accelerometers).Q)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(my_sensors.quaternions, aqua_quaternions.conjugate())), THRESHOLD)
+
+    def test_gyr_acc(self):
+        aqua = ahrs.filters.AQUA(gyr=self.gyroscopes, acc=self.accelerometers)
+        aqua_quaternions = ahrs.QuaternionArray(aqua.Q)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS, aqua_quaternions.conjugate())), THRESHOLD)
+
+    def test_gyr_acc_mag(self):
+        aqua = ahrs.filters.AQUA(gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers)
+        aqua_quaternions = ahrs.QuaternionArray(aqua.Q)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS, aqua_quaternions.conjugate())), THRESHOLD)
 
     def test_acc_mag(self):
         aqua = ahrs.filters.AQUA(acc=self.accelerometers, mag=self.magnetometers)
         aqua_quaternions = ahrs.QuaternionArray(aqua.Q)
         self.assertLess(np.nanmean(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS, aqua_quaternions.conjugate())), THRESHOLD)
+
+    def test_single_sample(self):
+        aqua = ahrs.filters.AQUA(acc=self.accelerometers[0], mag=self.magnetometers[0])
+        self.assertLess(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS[0], ahrs.Quaternion(aqua.Q).conjugate), THRESHOLD)
+        aqua = ahrs.filters.AQUA(gyr=self.gyroscopes[0], acc=self.accelerometers[0])
+        self.assertLess(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS[0], ahrs.Quaternion(aqua.Q).conjugate), THRESHOLD)
+        aqua = ahrs.filters.AQUA(gyr=self.gyroscopes[0], acc=self.accelerometers[0], mag=self.magnetometers[0])
+        self.assertLess(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS[0], ahrs.Quaternion(aqua.Q).conjugate), THRESHOLD)
+
+    def test_method_estimate(self):
+        aqua = ahrs.filters.AQUA()
+        quaternion = ahrs.Quaternion(aqua.estimate(acc=self.accelerometers[0], mag=self.magnetometers[0]))
+        self.assertLess(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS[0], quaternion.conjugate), THRESHOLD)
 
     def test_slerp_I(self):
         # Interpolation between given quaternions and identity quaternion.
@@ -345,6 +374,25 @@ class TestAQUA(unittest.TestCase):
         self.assertRaises(TypeError, ahrs.filters.AQUA, acc=self.accelerometers, mag='self.magnetometers')
         self.assertRaises(ValueError, ahrs.filters.AQUA, acc=[[1., 2., 3.]], mag=self.magnetometers)
         self.assertRaises(ValueError, ahrs.filters.AQUA, acc=self.accelerometers, mag=[[1., 2., 3.]])
+
+    def test_wrong_input_vectors_in_method_estimate(self):
+        aqua = ahrs.filters.AQUA()
+        self.assertRaises(TypeError, aqua.estimate, acc=1.0, mag=2.0)
+        self.assertRaises(TypeError, aqua.estimate, acc=self.accelerometers[0], mag=2.0)
+        self.assertRaises(TypeError, aqua.estimate, acc=1.0, mag=self.magnetometers[0])
+        self.assertRaises(TypeError, aqua.estimate, acc="self.accelerometers", mag="self.magnetometers")
+        self.assertRaises(TypeError, aqua.estimate, acc=[1.0, 2.0, 3.0], mag=True)
+        self.assertRaises(TypeError, aqua.estimate, acc=True, mag=[1.0, 2.0, 3.0])
+        self.assertRaises(TypeError, aqua.estimate, acc='self.accelerometers', mag=self.magnetometers)
+        self.assertRaises(TypeError, aqua.estimate, acc=self.accelerometers[0], mag='self.magnetometers')
+        self.assertRaises(ValueError, aqua.estimate, acc=self.accelerometers, mag=self.magnetometers[0])
+        self.assertRaises(ValueError, aqua.estimate, acc=[0., 0., 0.], mag=self.magnetometers[0])
+        self.assertRaises(ValueError, aqua.estimate, acc=self.accelerometers[0], mag=self.magnetometers)
+        self.assertRaises(ValueError, aqua.estimate, acc=self.accelerometers[0], mag=[0., 0., 0.])
+        self.assertRaises(ValueError, aqua.estimate, acc=[1.0, 2.0], mag=[2.0, 3.0, 4.0])
+        self.assertRaises(ValueError, aqua.estimate, acc=[1.0, 2.0, 3.0, 4.0], mag=[2.0, 3.0, 4.0, 5.0])
+        self.assertRaises(ValueError, aqua.estimate, acc=[[1., 2., 3.]], mag=self.magnetometers[0])
+        self.assertRaises(ValueError, aqua.estimate, acc=self.accelerometers[0], mag=[[1., 2., 3.]])
 
     def test_wrong_input_vector_types(self):
         self.assertRaises(TypeError, ahrs.filters.AQUA, acc=['1.0', 2.0, 3.0], mag=[2.0, 3.0, 4.0])
