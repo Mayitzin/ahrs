@@ -820,6 +820,15 @@ class AQUA:
         if self.frame.upper() not in ['NED', 'ENU']:
             raise ValueError(f"Frame '{self.frame}' is not valid. Try 'NED' or 'ENU'.")
 
+    def _assert_triaxial_sample_vector(self, input_vector: np.ndarray, name: str):
+        """Asserts the input vector is a tri-axial sample."""
+        _assert_numerical_iterable(input_vector, name)
+        input_vector = np.copy(input_vector)
+        if input_vector.ndim > 1:
+            raise ValueError(f"Sample of {name} must be one tri-axial sample.")
+        if input_vector.size != 3:
+            raise ValueError(f"Sample of {name} must be a tri-axial sample.")
+
     def _compute_all(self):
         """Estimate all quaternions with given sensor values."""
         _assert_numerical_iterable(self.acc, 'Accelerometer data')
@@ -929,8 +938,11 @@ class AQUA:
         q : numpy.ndarray
             Estimated quaternion.
         """
-        _assert_numerical_iterable(acc, 'Accelerometer data')
-        ax, ay, az = acc/np.linalg.norm(acc)
+        self._assert_triaxial_sample_vector(acc, 'accelerometer')
+        a_norm = np.linalg.norm(acc)
+        if a_norm == 0:
+            raise ValueError("Invalid acceleration data. It must contain at least one non-zero value.")
+        ax, ay, az = acc/a_norm
         # Quaternion from Accelerometer Readings (eq. 25)
         if az >= 0:
             q_acc = np.array([np.sqrt((az+1)/2), -ay/np.sqrt(2*(az+1)), ax/np.sqrt(2*(az+1)), 0.0])
@@ -938,10 +950,10 @@ class AQUA:
             q_acc = np.array([-ay/np.sqrt(2*(1-az)), np.sqrt((1-az)/2.0), 0.0, ax/np.sqrt(2*(1-az))])
         q_acc /= np.linalg.norm(q_acc)
         if mag is not None:
-            _assert_numerical_iterable(mag, 'Magnetometer data')
+            self._assert_triaxial_sample_vector(mag, 'magnetometer')
             m_norm = np.linalg.norm(mag)
             if m_norm == 0:
-                raise ValueError("Invalid geomagnetic field. Its must contain non-zero values.")
+                raise ValueError("Invalid geomagnetic field. Its must contain at least one non-zero value.")
             lx, ly, _ = q2R(q_acc).T @ (mag/m_norm)     # (eq. 26)
             Gamma = lx**2 + ly**2                       # (eq. 28)
             # Quaternion from Magnetometer Readings (eq. 35)
