@@ -355,6 +355,12 @@ def slerp(q0: np.ndarray, q1: np.ndarray, t_array: np.ndarray, threshold: float 
         New array of quaternions representing the interpolated rotations.
 
     """
+    _assert_iterables(q0, 'q0')
+    _assert_iterables(q1, 'q1')
+    _assert_iterables(t_array, 't_array')
+    q0 = np.copy(q0)
+    q1 = np.copy(q1)
+    t_array = np.copy(t_array)
     qdot = np.dot(q0, q1)
     # Ensure SLERP takes the shortest path
     if qdot < 0.0:
