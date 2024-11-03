@@ -192,6 +192,8 @@ class TestSLERP(unittest.TestCase):
     def setUp(self) -> None:
         self.q1 = ahrs.Quaternion([1.0, 0.0, 0.0, 0.0])
         self.q2 = ahrs.Quaternion([0.0, 0.0, 0.0, 1.0])
+        self.q3 = ahrs.Quaternion([1.0, 0.0, 0.0, 1.0])
+        self.q4 = ahrs.Quaternion([1.0, 0.0, 0.0, 0.95])
 
     def test_slerp_interpolations(self):
         sq22 = np.sqrt(2)/2
@@ -199,6 +201,13 @@ class TestSLERP(unittest.TestCase):
         expected_interpolation = np.array([[1, 0, 0, 0],
                                            [sq22, 0, 0, sq22],
                                            [0, 0, 0, 1]])
+        np.testing.assert_almost_equal(q_slerp, expected_interpolation)
+
+    def test_lerp_interpolations(self):
+        q_slerp = ahrs.common.quaternion.slerp(self.q3, self.q4, [0, 0.5, 1])
+        midq = np.array([(self.q3[0]+self.q4[0])/2, 0., 0., (self.q3[3]+self.q4[3])/2])
+        midq /= np.linalg.norm(midq)
+        expected_interpolation = np.vstack((self.q3, midq, self.q4))
         np.testing.assert_almost_equal(q_slerp, expected_interpolation)
 
 if __name__ == "__main__":
