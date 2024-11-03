@@ -584,6 +584,12 @@ class Quaternion(np.ndarray):
         obj.scalar_vector = False if kwargs.get('order', 'H') == 'S' else True
         return obj
 
+    def __array_finalize__(self, obj):
+        if obj is None:
+            return
+        self.A = getattr(obj, 'A', np.array([1.0, 0.0, 0.0, 0.0]))
+        self.scalar_vector = getattr(obj, 'scalar_vector', True)
+
     @property
     def w(self) -> float:
         """
