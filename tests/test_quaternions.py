@@ -178,5 +178,28 @@ class TestQuaternionArray(unittest.TestCase):
         np.testing.assert_equal(R[2], np.diag([-1., 1., -1.]))
         np.testing.assert_equal(R[3], np.diag([-1., -1., 1.]))
 
+    def test_slerp_nan(self):
+        sq22 = np.sqrt(2)/2
+        Q = ahrs.QuaternionArray([[1., 0., 0., 0.], [1., 0., 0., 0.], [0., 0., 0., 1.]])
+        Q[1] = np.nan
+        Q_slerp = Q.slerp_nan(inplace=False)
+        expected_interpolation = np.array([[1, 0, 0, 0],
+                                           [sq22, 0, 0, sq22],
+                                           [0, 0, 0, 1]])
+        np.testing.assert_almost_equal(Q_slerp, expected_interpolation)
+
+class TestSLERP(unittest.TestCase):
+    def setUp(self) -> None:
+        self.q1 = ahrs.Quaternion([1.0, 0.0, 0.0, 0.0])
+        self.q2 = ahrs.Quaternion([0.0, 0.0, 0.0, 1.0])
+
+    def test_slerp_interpolations(self):
+        sq22 = np.sqrt(2)/2
+        q_slerp = ahrs.common.quaternion.slerp(self.q1, self.q2, [0, 0.5, 1])
+        expected_interpolation = np.array([[1, 0, 0, 0],
+                                           [sq22, 0, 0, sq22],
+                                           [0, 0, 0, 1]])
+        np.testing.assert_almost_equal(q_slerp, expected_interpolation)
+
 if __name__ == "__main__":
     unittest.main()
