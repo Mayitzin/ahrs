@@ -216,5 +216,41 @@ class TestSLERP(unittest.TestCase):
         expected_interpolation = np.vstack((self.q3, midq, self.q5))
         np.testing.assert_almost_equal(q_slerp, expected_interpolation)
 
+class TestRandomAttitudes(unittest.TestCase):
+    def setUp(self) -> None:
+        self.num_attitudes = 10
+
+    def test_one_random_attitude(self):
+        q = ahrs.common.quaternion.random_attitudes(1)
+        self.assertEqual(q.shape, (4,))
+        rotmat = ahrs.common.quaternion.random_attitudes(1, representation="rotmat")
+        self.assertEqual(rotmat.shape, (3, 3))
+        self.assertTrue(np.allclose(np.linalg.det(rotmat), 1))
+        self.assertTrue(np.allclose(rotmat@rotmat.T, np.identity(3)))
+
+    def test_many_random_attitudes(self):
+        q = ahrs.common.quaternion.random_attitudes(self.num_attitudes)
+        self.assertEqual(q.shape, (self.num_attitudes, 4))
+        self.assertTrue(np.all(np.abs(np.linalg.norm(q, axis=1)-1) < 1e-15))
+        rotmats = ahrs.common.quaternion.random_attitudes(self.num_attitudes, representation="rotmat")
+        self.assertEqual(rotmats.shape, (self.num_attitudes, 3, 3))
+        self.assertTrue(np.allclose(np.linalg.det(rotmats), np.ones(self.num_attitudes)))
+        self.assertTrue(np.allclose([x@x.T for x in rotmats], np.identity(3)))
+
+    def test_wrong_input(self):
+        self.assertRaises(ValueError, ahrs.common.quaternion.random_attitudes, 0)
+        self.assertRaises(ValueError, ahrs.common.quaternion.random_attitudes, -1)
+        self.assertRaises(TypeError, ahrs.common.quaternion.random_attitudes, [10])
+        self.assertRaises(TypeError, ahrs.common.quaternion.random_attitudes, (10,))
+        self.assertRaises(TypeError, ahrs.common.quaternion.random_attitudes, np.array([10]))
+        self.assertRaises(TypeError, ahrs.common.quaternion.random_attitudes, 1.0)
+        self.assertRaises(TypeError, ahrs.common.quaternion.random_attitudes, "10")
+        self.assertRaises(ValueError, ahrs.common.quaternion.random_attitudes, 10, representation="euler")
+        self.assertRaises(ValueError, ahrs.common.quaternion.random_attitudes, 10, representation="dcm")
+        self.assertRaises(TypeError, ahrs.common.quaternion.random_attitudes, 10, representation=0)
+        self.assertRaises(TypeError, ahrs.common.quaternion.random_attitudes, 10, representation=1.0)
+        self.assertRaises(TypeError, ahrs.common.quaternion.random_attitudes, 10, representation=["quaternion"])
+        self.assertRaises(TypeError, ahrs.common.quaternion.random_attitudes, 10, representation=("quaternion",))
+
 if __name__ == "__main__":
     unittest.main()
