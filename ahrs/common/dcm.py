@@ -158,7 +158,6 @@ def rotation(ax: str | int = None, ang: float = 0.0, degrees: bool = False) -> n
 
     Examples
     --------
-    >>> from ahrs import rotation
     >>> rotation()
     array([[1. 0. 0.],
            [0. 1. 0.],
@@ -256,7 +255,7 @@ def rot_seq(axes: list | str = None, angles: list | float = None, degrees: bool 
     >>> angles
     array([-139.24498146,  99.8691407, -171.30712526, -60.57132043,
              17.4475838 ])
-    >>> R = rot_seq(axis_order, angles)
+    >>> R = rot_seq(axis_order, angles, degrees=True)
     >>> R   # R = R_z(-139.24) R_z(99.87) R_x(-171.31) R_z(-60.57) R_y(17.45)
     array([[ 0.85465231  0.3651317   0.36911822]
            [ 0.3025091  -0.92798938  0.21754072]
