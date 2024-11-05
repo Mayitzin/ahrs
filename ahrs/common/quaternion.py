@@ -571,8 +571,8 @@ class Quaternion(np.ndarray):
                 q = Quaternion.from_DCM(Quaternion, kwargs.pop("dcm"), **kwargs)
             if 'rpy' in kwargs:
                 q = Quaternion.from_rpy(Quaternion, kwargs.pop("rpy"))
-            if 'angles' in kwargs:  # Older call to rpy
-                q = Quaternion.from_angles(Quaternion, kwargs.pop("angles"))
+            if 'angles' in kwargs:  # Older call. Discontinued.
+                q = Quaternion.from_rpy(Quaternion, kwargs.pop("angles"))
         _assert_iterables(q, 'q')
         q = np.array(q, dtype=float)
         if q.ndim != 1 or q.shape[-1] not in [3, 4]:
