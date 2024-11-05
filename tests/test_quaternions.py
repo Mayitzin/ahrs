@@ -188,6 +188,11 @@ class TestQuaternionArray(unittest.TestCase):
                                            [0, 0, 0, 1]])
         np.testing.assert_almost_equal(Q_slerp, expected_interpolation)
 
+    def test_random_attitudes(self):
+        q = ahrs.Quaternion(random=True)
+        self.assertEqual(q.shape, (4,))
+        self.assertTrue(np.all(np.abs(np.linalg.norm(q)-1) < 1e-15))
+
 class TestSLERP(unittest.TestCase):
     def setUp(self) -> None:
         self.q1 = ahrs.Quaternion([1.0, 0.0, 0.0, 0.0])
