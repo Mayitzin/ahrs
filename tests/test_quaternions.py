@@ -107,6 +107,24 @@ class TestQuaternion(unittest.TestCase):
         self.assertRaises(ValueError, ahrs.Quaternion, dcm=np.random.random((3, 3)))
         self.assertRaises(ValueError, ahrs.Quaternion, dcm=-np.identity(3))
 
+    def test_random_attitudes(self):
+        q = ahrs.Quaternion(random=True)
+        self.assertEqual(q.shape, (4,))
+        self.assertTrue(np.all(np.abs(np.linalg.norm(q)-1) < 1e-15))
+
+    def test_rpy(self):
+        sq22 = np.sqrt(2)/2
+        np.testing.assert_almost_equal(ahrs.Quaternion(rpy=[np.pi, 0, 0]).to_array(), [0.0, 1.0, 0.0, 0.0], decimal=self.decimal_precision)
+        np.testing.assert_almost_equal(ahrs.Quaternion(rpy=[0, np.pi, 0]).to_array(), [0.0, 0.0, 1.0, 0.0], decimal=self.decimal_precision)
+        np.testing.assert_almost_equal(ahrs.Quaternion(rpy=[0, 0, np.pi]).to_array(), [0.0, 0.0, 0.0, 1.0], decimal=self.decimal_precision)
+        np.testing.assert_almost_equal(ahrs.Quaternion(rpy=[np.pi/2, 0, 0]).to_array(), [sq22, sq22, 0.0, 0.0], decimal=self.decimal_precision)
+        np.testing.assert_almost_equal(ahrs.Quaternion(rpy=[0, np.pi/2, 0]).to_array(), [sq22, 0.0, sq22, 0.0], decimal=self.decimal_precision)
+        np.testing.assert_almost_equal(ahrs.Quaternion(rpy=[0, 0, np.pi/2]).to_array(), [sq22, 0.0, 0.0, sq22], decimal=self.decimal_precision)
+        # Older calls using 'angles' instead of 'rpy'. Just for compatibility
+        np.testing.assert_almost_equal(ahrs.Quaternion(angles=[np.pi/2, 0, 0]).to_array(), [sq22, sq22, 0.0, 0.0], decimal=self.decimal_precision)
+        np.testing.assert_almost_equal(ahrs.Quaternion(angles=[0, np.pi/2, 0]).to_array(), [sq22, 0.0, sq22, 0.0], decimal=self.decimal_precision)
+        np.testing.assert_almost_equal(ahrs.Quaternion(angles=[0, 0, np.pi/2]).to_array(), [sq22, 0.0, 0.0, sq22], decimal=self.decimal_precision)
+
 class TestQuaternionArray(unittest.TestCase):
     def setUp(self) -> None:
         self.Q0 = ahrs.QuaternionArray()
@@ -130,7 +148,8 @@ class TestQuaternionArray(unittest.TestCase):
     def test_quaternion_average(self):
         # Create 10 continuous quaternions representing rotations around the
         # Z-axis between 0 and 90 degrees and average them. The mean quaternion
-        # must be, naturally, equal to the 45 degree quaternion.
+        # must be equal to the quaternion representing a rotation of 45 degrees
+        # around the Z-axis.
         Q = ahrs.QuaternionArray([ahrs.Quaternion(rpy=np.array([0.0, 0.0, x])*ahrs.DEG2RAD) for x in range(0, 100, 10)])
         np.testing.assert_almost_equal(Q.average(), ahrs.Quaternion(rpy=np.array([0.0, 0.0, 45.0])*ahrs.DEG2RAD), decimal=self.decimal_precision)
 
@@ -187,11 +206,6 @@ class TestQuaternionArray(unittest.TestCase):
                                            [sq22, 0, 0, sq22],
                                            [0, 0, 0, 1]])
         np.testing.assert_almost_equal(Q_slerp, expected_interpolation)
-
-    def test_random_attitudes(self):
-        q = ahrs.Quaternion(random=True)
-        self.assertEqual(q.shape, (4,))
-        self.assertTrue(np.all(np.abs(np.linalg.norm(q)-1) < 1e-15))
 
 class TestSLERP(unittest.TestCase):
     def setUp(self) -> None:
