@@ -5,7 +5,7 @@
 ![PyPI - License](https://img.shields.io/pypi/l/ahrs)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/ahrs)
 ![PyPI](https://img.shields.io/pypi/v/ahrs)
-![Codacy Badge](https://api.codacy.com/project/badge/Grade/bc366c601ed44e12b233218dd37cd32c)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/bc366c601ed44e12b233218dd37cd32c)](https://app.codacy.com/gh/Mayitzin/ahrs/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 ![PyPI Downloads](https://pepy.tech/badge/ahrs)
 
 AHRS is a collection of functions and algorithms in pure Python used to estimate the orientation of mobile systems.
