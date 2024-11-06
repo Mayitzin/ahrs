@@ -135,6 +135,18 @@ class TestQuaternion(unittest.TestCase):
         np.testing.assert_almost_equal(ahrs.Quaternion(angles=[0, np.pi/2, 0]).to_array(), [SQ22, 0.0, SQ22, 0.0], decimal=self.decimal_precision)
         np.testing.assert_almost_equal(ahrs.Quaternion(angles=[0, 0, np.pi/2]).to_array(), [SQ22, 0.0, 0.0, SQ22], decimal=self.decimal_precision)
 
+    def test_exponential(self):
+        np.testing.assert_allclose(ahrs.Quaternion([1, 0, 0, 0]).exponential, [1, 0, 0, 0])
+        np.testing.assert_allclose(ahrs.Quaternion([0, 1, 0, 0]).exponential, [np.cos(1), np.sin(1), 0, 0])
+        np.testing.assert_allclose(ahrs.Quaternion([0, 0, 1, 0]).exponential, [np.cos(1), 0, np.sin(1), 0])
+        np.testing.assert_allclose(ahrs.Quaternion([0, 0, 0, 1]).exponential, [np.cos(1), 0, 0, np.sin(1)])
+
+    def test_exp(self):
+        np.testing.assert_allclose(ahrs.Quaternion([1, 0, 0, 0]).exp, [1, 0, 0, 0])
+        np.testing.assert_allclose(ahrs.Quaternion([0, 1, 0, 0]).exp, [np.cos(1), np.sin(1), 0, 0])
+        np.testing.assert_allclose(ahrs.Quaternion([0, 0, 1, 0]).exp, [np.cos(1), 0, np.sin(1), 0])
+        np.testing.assert_allclose(ahrs.Quaternion([0, 0, 0, 1]).exp, [np.cos(1), 0, 0, np.sin(1)])
+
 class TestQuaternionArray(unittest.TestCase):
     def setUp(self) -> None:
         self.Q0 = ahrs.QuaternionArray()
