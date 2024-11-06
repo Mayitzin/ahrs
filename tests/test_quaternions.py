@@ -3,6 +3,9 @@ import unittest
 import numpy as np
 import ahrs
 
+# Often used constants
+SQ22 = np.sqrt(2)/2
+
 class TestQuaternion(unittest.TestCase):
     def setUp(self) -> None:
         # Identity Quaternion
@@ -47,6 +50,10 @@ class TestQuaternion(unittest.TestCase):
         self.assertAlmostEqual(qi[2], -self.q4.y, places=self.decimal_precision)
         self.assertAlmostEqual(qi[3], -self.q4.z, places=self.decimal_precision)
         np.testing.assert_almost_equal(qi[1:], -self.q4.v, decimal=self.decimal_precision)
+        # Not versor
+        qn = ahrs.Quaternion([1.0, 2.0, 3.0, 4.0], versor=False)
+        expected_inverse = np.array([1.0, -2.0, -3.0, -4.0])/np.linalg.norm([1.0, 2.0, 3.0, 4.0])
+        np.testing.assert_almost_equal(qn.inverse, expected_inverse, decimal=self.decimal_precision)
 
     def test_inv(self):
         qi = self.q4.inv
@@ -55,6 +62,10 @@ class TestQuaternion(unittest.TestCase):
         self.assertAlmostEqual(qi[2], -self.q4.y, places=self.decimal_precision)
         self.assertAlmostEqual(qi[3], -self.q4.z, places=self.decimal_precision)
         np.testing.assert_almost_equal(qi[1:], -self.q4.v, decimal=self.decimal_precision)
+        # Not versor
+        qn = ahrs.Quaternion([1.0, 2.0, 3.0, 4.0], versor=False)
+        expected_inverse = np.array([1.0, -2.0, -3.0, -4.0])/np.linalg.norm([1.0, 2.0, 3.0, 4.0])
+        np.testing.assert_almost_equal(qn.inv, expected_inverse, decimal=self.decimal_precision)
 
     def test_is_pure(self):
         self.assertFalse(self.q0.is_pure())
@@ -113,17 +124,16 @@ class TestQuaternion(unittest.TestCase):
         self.assertTrue(np.all(np.abs(np.linalg.norm(q)-1) < 1e-15))
 
     def test_rpy(self):
-        sq22 = np.sqrt(2)/2
         np.testing.assert_almost_equal(ahrs.Quaternion(rpy=[np.pi, 0, 0]).to_array(), [0.0, 1.0, 0.0, 0.0], decimal=self.decimal_precision)
         np.testing.assert_almost_equal(ahrs.Quaternion(rpy=[0, np.pi, 0]).to_array(), [0.0, 0.0, 1.0, 0.0], decimal=self.decimal_precision)
         np.testing.assert_almost_equal(ahrs.Quaternion(rpy=[0, 0, np.pi]).to_array(), [0.0, 0.0, 0.0, 1.0], decimal=self.decimal_precision)
-        np.testing.assert_almost_equal(ahrs.Quaternion(rpy=[np.pi/2, 0, 0]).to_array(), [sq22, sq22, 0.0, 0.0], decimal=self.decimal_precision)
-        np.testing.assert_almost_equal(ahrs.Quaternion(rpy=[0, np.pi/2, 0]).to_array(), [sq22, 0.0, sq22, 0.0], decimal=self.decimal_precision)
-        np.testing.assert_almost_equal(ahrs.Quaternion(rpy=[0, 0, np.pi/2]).to_array(), [sq22, 0.0, 0.0, sq22], decimal=self.decimal_precision)
+        np.testing.assert_almost_equal(ahrs.Quaternion(rpy=[np.pi/2, 0, 0]).to_array(), [SQ22, SQ22, 0.0, 0.0], decimal=self.decimal_precision)
+        np.testing.assert_almost_equal(ahrs.Quaternion(rpy=[0, np.pi/2, 0]).to_array(), [SQ22, 0.0, SQ22, 0.0], decimal=self.decimal_precision)
+        np.testing.assert_almost_equal(ahrs.Quaternion(rpy=[0, 0, np.pi/2]).to_array(), [SQ22, 0.0, 0.0, SQ22], decimal=self.decimal_precision)
         # Older calls using 'angles' instead of 'rpy'. Just for compatibility
-        np.testing.assert_almost_equal(ahrs.Quaternion(angles=[np.pi/2, 0, 0]).to_array(), [sq22, sq22, 0.0, 0.0], decimal=self.decimal_precision)
-        np.testing.assert_almost_equal(ahrs.Quaternion(angles=[0, np.pi/2, 0]).to_array(), [sq22, 0.0, sq22, 0.0], decimal=self.decimal_precision)
-        np.testing.assert_almost_equal(ahrs.Quaternion(angles=[0, 0, np.pi/2]).to_array(), [sq22, 0.0, 0.0, sq22], decimal=self.decimal_precision)
+        np.testing.assert_almost_equal(ahrs.Quaternion(angles=[np.pi/2, 0, 0]).to_array(), [SQ22, SQ22, 0.0, 0.0], decimal=self.decimal_precision)
+        np.testing.assert_almost_equal(ahrs.Quaternion(angles=[0, np.pi/2, 0]).to_array(), [SQ22, 0.0, SQ22, 0.0], decimal=self.decimal_precision)
+        np.testing.assert_almost_equal(ahrs.Quaternion(angles=[0, 0, np.pi/2]).to_array(), [SQ22, 0.0, 0.0, SQ22], decimal=self.decimal_precision)
 
 class TestQuaternionArray(unittest.TestCase):
     def setUp(self) -> None:
@@ -198,12 +208,11 @@ class TestQuaternionArray(unittest.TestCase):
         np.testing.assert_equal(R[3], np.diag([-1., -1., 1.]))
 
     def test_slerp_nan(self):
-        sq22 = np.sqrt(2)/2
         Q = ahrs.QuaternionArray([[1., 0., 0., 0.], [1., 0., 0., 0.], [0., 0., 0., 1.]])
         Q[1] = np.nan
         Q_slerp = Q.slerp_nan(inplace=False)
         expected_interpolation = np.array([[1, 0, 0, 0],
-                                           [sq22, 0, 0, sq22],
+                                           [SQ22, 0, 0, SQ22],
                                            [0, 0, 0, 1]])
         np.testing.assert_almost_equal(Q_slerp, expected_interpolation)
 
@@ -216,16 +225,15 @@ class TestSLERP(unittest.TestCase):
         self.q5 = ahrs.Quaternion([1.0, 0.0, 0.0, 0.95])
 
     def test_slerp_interpolations(self):
-        sq22 = np.sqrt(2)/2
         q_slerp = ahrs.common.quaternion.slerp(self.q1, self.q2, [0, 0.5, 1])
         expected_interpolation = np.array([[1, 0, 0, 0],
-                                           [sq22, 0, 0, sq22],
+                                           [SQ22, 0, 0, SQ22],
                                            [0, 0, 0, 1]])
         np.testing.assert_almost_equal(q_slerp, expected_interpolation)
         q_slerp = ahrs.common.quaternion.slerp(self.q3, -self.q4, [0, 0.5, 1])
-        expected_interpolation = np.array([[sq22, 0, 0, sq22],
+        expected_interpolation = np.array([[SQ22, 0, 0, SQ22],
                                            [1/np.sqrt(1.5), 0, 0.5/np.sqrt(1.5), 0.5/np.sqrt(1.5)],
-                                           [sq22, 0, sq22, 0]])
+                                           [SQ22, 0, SQ22, 0]])
         np.testing.assert_almost_equal(q_slerp, expected_interpolation)
 
     def test_lerp_interpolations(self):
