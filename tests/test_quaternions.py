@@ -165,6 +165,11 @@ class TestQuaternion(unittest.TestCase):
         np.testing.assert_allclose(ahrs.Quaternion([1, 0, 1, 0]).log, [0, 0, np.pi/4, 0])
         np.testing.assert_allclose(ahrs.Quaternion([1, 0, 0, 1]).log, [0, 0, 0, np.pi/4])
 
+    def test_str(self):
+        self.assertEqual(str(self.q0), "(1.0000 +0.0000i +0.0000j +0.0000k)")
+        self.assertEqual(str(self.q3), f"(0.0000 {self.vector3[0]:+.4f}i {self.vector3[1]:+.4f}j {self.vector3[2]:+.4f}k)")
+        self.assertEqual(str(self.q4), f"({self.vector4[0]:-.4f} {self.vector4[1]:+.4f}i {self.vector4[2]:+.4f}j {self.vector4[3]:+.4f}k)")
+
 class TestQuaternionArray(unittest.TestCase):
     def setUp(self) -> None:
         self.Q0 = ahrs.QuaternionArray()
