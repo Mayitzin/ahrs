@@ -147,6 +147,24 @@ class TestQuaternion(unittest.TestCase):
         np.testing.assert_allclose(ahrs.Quaternion([0, 0, 1, 0]).exp, [np.cos(1), 0, np.sin(1), 0])
         np.testing.assert_allclose(ahrs.Quaternion([0, 0, 0, 1]).exp, [np.cos(1), 0, 0, np.sin(1)])
 
+    def test_logarithm(self):
+        np.testing.assert_allclose(ahrs.Quaternion([1, 0, 0, 0]).logarithm, [0, 0, 0, 0])
+        np.testing.assert_allclose(ahrs.Quaternion([0, 1, 0, 0]).logarithm, [0, np.pi/2, 0, 0])
+        np.testing.assert_allclose(ahrs.Quaternion([0, 0, 1, 0]).logarithm, [0, 0, np.pi/2, 0])
+        np.testing.assert_allclose(ahrs.Quaternion([0, 0, 0, 1]).logarithm, [0, 0, 0, np.pi/2])
+        np.testing.assert_allclose(ahrs.Quaternion([1, 1, 0, 0]).logarithm, [0, np.pi/4, 0, 0])
+        np.testing.assert_allclose(ahrs.Quaternion([1, 0, 1, 0]).logarithm, [0, 0, np.pi/4, 0])
+        np.testing.assert_allclose(ahrs.Quaternion([1, 0, 0, 1]).logarithm, [0, 0, 0, np.pi/4])
+
+    def test_log(self):
+        np.testing.assert_allclose(ahrs.Quaternion([1, 0, 0, 0]).log, [0, 0, 0, 0])
+        np.testing.assert_allclose(ahrs.Quaternion([0, 1, 0, 0]).log, [0, np.pi/2, 0, 0])
+        np.testing.assert_allclose(ahrs.Quaternion([0, 0, 1, 0]).log, [0, 0, np.pi/2, 0])
+        np.testing.assert_allclose(ahrs.Quaternion([0, 0, 0, 1]).log, [0, 0, 0, np.pi/2])
+        np.testing.assert_allclose(ahrs.Quaternion([1, 1, 0, 0]).log, [0, np.pi/4, 0, 0])
+        np.testing.assert_allclose(ahrs.Quaternion([1, 0, 1, 0]).log, [0, 0, np.pi/4, 0])
+        np.testing.assert_allclose(ahrs.Quaternion([1, 0, 0, 1]).log, [0, 0, 0, np.pi/4])
+
 class TestQuaternionArray(unittest.TestCase):
     def setUp(self) -> None:
         self.Q0 = ahrs.QuaternionArray()
