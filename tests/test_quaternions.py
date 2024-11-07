@@ -170,6 +170,23 @@ class TestQuaternion(unittest.TestCase):
         self.assertEqual(str(self.q3), f"(0.0000 {self.vector3[0]:+.4f}i {self.vector3[1]:+.4f}j {self.vector3[2]:+.4f}k)")
         self.assertEqual(str(self.q4), f"({self.vector4[0]:-.4f} {self.vector4[1]:+.4f}i {self.vector4[2]:+.4f}j {self.vector4[3]:+.4f}k)")
 
+    def test_addition(self):
+        p = ahrs.Quaternion([0.0, 1.0, 0.0, 0.0])
+        q = ahrs.Quaternion([0.0, 0.0, 1.0, 0.0])
+        r = ahrs.Quaternion([0.0, 0.0, 0.0, 1.0])
+        np.testing.assert_allclose((p+p).to_array(), [0.0, 1.0, 0.0, 0.0])
+        np.testing.assert_allclose((p+q).to_array(), [0.0, SQ22, SQ22, 0.0])
+        np.testing.assert_allclose((q+r).to_array(), [0.0, 0.0, SQ22, SQ22])
+        np.testing.assert_allclose((r+p).to_array(), [0.0, SQ22, 0.0, SQ22])
+
+    def test_subtraction(self):
+        p = ahrs.Quaternion([0.0, 1.0, 0.0, 0.0])
+        q = ahrs.Quaternion([0.0, 0.0, 1.0, 0.0])
+        r = ahrs.Quaternion([0.0, 0.0, 0.0, 1.0])
+        np.testing.assert_allclose((p-q).to_array(), [0.0, SQ22, -SQ22, 0.0])
+        np.testing.assert_allclose((q-r).to_array(), [0.0, 0.0, SQ22, -SQ22])
+        np.testing.assert_allclose((r-p).to_array(), [0.0, -SQ22, 0.0, SQ22])
+
 class TestQuaternionArray(unittest.TestCase):
     def setUp(self) -> None:
         self.Q0 = ahrs.QuaternionArray()
