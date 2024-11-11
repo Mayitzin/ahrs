@@ -249,6 +249,34 @@ class TestQuaternion(unittest.TestCase):
         np.testing.assert_allclose(q.mult_R(), SQ22 * (skewed_matrix + np.identity(4)))
         np.testing.assert_allclose(r.mult_R(), skewed_matrix)
 
+    def test_rotate(self):
+        q = ahrs.Quaternion([1., 0., 0., 0.])
+        np.testing.assert_allclose(q.rotate([1., 0., 0.]), [1., 0., 0.])
+        np.testing.assert_allclose(q.rotate([0., 1., 0.]), [0., 1., 0.])
+        np.testing.assert_allclose(q.rotate([1., 2., 3.]), [1., 2., 3.])
+        q = ahrs.Quaternion([1., 0., 1., 0.])
+        np.testing.assert_allclose(q.rotate([1., 0., 0.]), [0., 0., -1.], atol=self.decimal_precision)
+        np.testing.assert_allclose(q.rotate([0., 1., 0.]), [0., 1., 0.])
+        np.testing.assert_allclose(q.rotate([1., 2., 3.]), [3., 2., -1.])
+        q = ahrs.Quaternion([0., 0., 1., 0.])
+        np.testing.assert_allclose(q.rotate([1., 0., 0.]), [-1., 0., 0.])
+        np.testing.assert_allclose(q.rotate([0., 1., 0.]), [0., 1., 0.])
+        np.testing.assert_allclose(q.rotate([1., 2., 3.]), [-1., 2., -3.])
+
+    def test_rotate_2d_array(self):
+        q = ahrs.Quaternion([1., 0., 0., 0.])
+        np.testing.assert_allclose(q.rotate([[1., 2.], [3., 4.], [5., 6.]]), np.array([[1., 2.], [3., 4.], [5., 6.]]))
+        q = ahrs.Quaternion([1., 0., 1., 0.])
+        np.testing.assert_allclose(q.rotate([[1., 2.], [3., 4.], [5., 6.]]), np.array([[5., 6.], [3., 4.], [-1., -2.]]))
+        q = ahrs.Quaternion([0., 0., 1., 0.])
+        np.testing.assert_allclose(q.rotate([[1., 2.], [3., 4.], [5., 6.]]), np.array([[-1., -2.], [3., 4.], [-5., -6.]]))
+
+    def test_wrong_input_rotate(self):
+        q = ahrs.Quaternion([1., 0., 0., 0.])
+        self.assertRaises(ValueError, q.rotate, [1., 2.])
+        self.assertRaises(ValueError, q.rotate, [1., 2., 3., 4.])
+        self.assertRaises(ValueError, q.rotate, [[1., 2.], [3., 4.]])
+
 class TestQuaternionArray(unittest.TestCase):
     def setUp(self) -> None:
         self.Q0 = ahrs.QuaternionArray()
