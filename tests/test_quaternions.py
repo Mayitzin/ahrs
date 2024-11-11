@@ -178,6 +178,8 @@ class TestQuaternion(unittest.TestCase):
         self.assertEqual(str(self.q0), "(1.0000 +0.0000i +0.0000j +0.0000k)")
         self.assertEqual(str(self.q3), f"(0.0000 {self.vector3[0]:+.4f}i {self.vector3[1]:+.4f}j {self.vector3[2]:+.4f}k)")
         self.assertEqual(str(self.q4), f"({self.vector4[0]:-.4f} {self.vector4[1]:+.4f}i {self.vector4[2]:+.4f}j {self.vector4[3]:+.4f}k)")
+        self.assertEqual(str(ahrs.Quaternion([0, 0, 0, 1], order='S')), "(0.0000i +0.0000j +0.0000k +1.0000)")
+        self.assertEqual(str(ahrs.Quaternion([1, 0, 0, 1], order='S')), "(0.7071i +0.0000j +0.0000k +0.7071)")
 
     def test_addition(self):
         p = ahrs.Quaternion([0.0, 1.0, 0.0, 0.0])
@@ -195,6 +197,20 @@ class TestQuaternion(unittest.TestCase):
         np.testing.assert_allclose((p-q).to_array(), [0.0, SQ22, -SQ22, 0.0])
         np.testing.assert_allclose((q-r).to_array(), [0.0, 0.0, SQ22, -SQ22])
         np.testing.assert_allclose((r-p).to_array(), [0.0, -SQ22, 0.0, SQ22])
+
+    def test_multiplication(self):
+        p = ahrs.Quaternion([1., 0., 0., 0.])
+        q = ahrs.Quaternion([1., 0., 1., 0.])
+        r = ahrs.Quaternion([0., 0., 1., 0.])
+        np.testing.assert_allclose(p @ q, np.array([SQ22, 0, SQ22, 0]))
+        np.testing.assert_allclose(p @ r, np.array([0, 0, 1, 0]))
+        np.testing.assert_allclose(q @ r, np.array([-SQ22, 0, SQ22, 0]))
+        np.testing.assert_allclose(p @ np.array([0., 0., 1., 0.]), np.array([0, 0, 1, 0]))
+        np.testing.assert_allclose(q @ np.array([0., 0., 1., 0.]), np.array([-SQ22, 0, SQ22, 0]))
+        # Non-unitary vector (non-versor)
+        np.testing.assert_allclose(p @ np.array([1., 0., 1., 0.]), np.array([1, 0, 1, 0]))
+        np.testing.assert_allclose(q @ np.array([1., 0., 1., 0.]), np.array([0, 0, np.sqrt(2), 0]))
+        np.testing.assert_allclose(r @ np.array([1., 0., 1., 0.]), np.array([-1, 0, 1, 0]))
 
 class TestQuaternionArray(unittest.TestCase):
     def setUp(self) -> None:
