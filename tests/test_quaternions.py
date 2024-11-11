@@ -226,6 +226,20 @@ class TestQuaternion(unittest.TestCase):
         np.testing.assert_allclose(q @ np.array([1., 0., 1., 0.]), np.array([0, 0, np.sqrt(2), 0]))
         np.testing.assert_allclose(r @ np.array([1., 0., 1., 0.]), np.array([-1, 0, 1, 0]))
 
+    def test_normalize(self):
+        q = ahrs.Quaternion([1., 0., 1., 0.], versor=False)
+        q.normalize()
+        np.testing.assert_allclose(q.to_array(), [SQ22, 0, SQ22, 0])
+
+    def test_mult_L(self):
+        p = ahrs.Quaternion([1., 0., 0., 0.])
+        q = ahrs.Quaternion([1., 0., 1., 0.])
+        r = ahrs.Quaternion([0., 0., 1., 0.])
+        skewed_matrix = np.array([[0, 0, -1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, -1, 0, 0]])
+        np.testing.assert_allclose(p.mult_L(), np.identity(4))
+        np.testing.assert_allclose(q.mult_L(), SQ22 * (skewed_matrix + np.identity(4)))
+        np.testing.assert_allclose(r.mult_L(), skewed_matrix)
+
 class TestQuaternionArray(unittest.TestCase):
     def setUp(self) -> None:
         self.Q0 = ahrs.QuaternionArray()
