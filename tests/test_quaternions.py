@@ -140,12 +140,18 @@ class TestQuaternion(unittest.TestCase):
         np.testing.assert_allclose(ahrs.Quaternion([0, 1, 0, 0]).exponential, [np.cos(1), np.sin(1), 0, 0])
         np.testing.assert_allclose(ahrs.Quaternion([0, 0, 1, 0]).exponential, [np.cos(1), 0, np.sin(1), 0])
         np.testing.assert_allclose(ahrs.Quaternion([0, 0, 0, 1]).exponential, [np.cos(1), 0, 0, np.sin(1)])
+        np.testing.assert_allclose(ahrs.Quaternion([1, 1, 0, 0]).exponential, np.array([np.cos(SQ22), np.sin(SQ22), 0, 0])*np.exp(SQ22))
+        np.testing.assert_allclose(ahrs.Quaternion([1, 0, 1, 0]).exponential, np.array([np.cos(SQ22), 0, np.sin(SQ22), 0])*np.exp(SQ22))
+        np.testing.assert_allclose(ahrs.Quaternion([1, 0, 0, 1]).exponential, np.array([np.cos(SQ22), 0, 0, np.sin(SQ22)])*np.exp(SQ22))
 
     def test_exp(self):
         np.testing.assert_allclose(ahrs.Quaternion([1, 0, 0, 0]).exp, [1, 0, 0, 0])
         np.testing.assert_allclose(ahrs.Quaternion([0, 1, 0, 0]).exp, [np.cos(1), np.sin(1), 0, 0])
         np.testing.assert_allclose(ahrs.Quaternion([0, 0, 1, 0]).exp, [np.cos(1), 0, np.sin(1), 0])
         np.testing.assert_allclose(ahrs.Quaternion([0, 0, 0, 1]).exp, [np.cos(1), 0, 0, np.sin(1)])
+        np.testing.assert_allclose(ahrs.Quaternion([1, 1, 0, 0]).exp, np.array([np.cos(SQ22), np.sin(SQ22), 0, 0])*np.exp(SQ22))
+        np.testing.assert_allclose(ahrs.Quaternion([1, 0, 1, 0]).exp, np.array([np.cos(SQ22), 0, np.sin(SQ22), 0])*np.exp(SQ22))
+        np.testing.assert_allclose(ahrs.Quaternion([1, 0, 0, 1]).exp, np.array([np.cos(SQ22), 0, 0, np.sin(SQ22)])*np.exp(SQ22))
 
     def test_logarithm(self):
         np.testing.assert_allclose(ahrs.Quaternion([1, 0, 0, 0]).logarithm, [0, 0, 0, 0])
