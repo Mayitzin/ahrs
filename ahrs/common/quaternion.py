@@ -1160,9 +1160,7 @@ class Quaternion(np.ndarray):
         >>> str(q3)
         '(-0.3635 +0.3896i +0.3419j +0.7740k)'
         """
-        if not hasattr(q, 'A'):
-            q = Quaternion(q)
-        return self.product(q.A)
+        return self.product(q)
 
     def __matmul__(self, q: np.ndarray) -> np.ndarray:
         """
