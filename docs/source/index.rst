@@ -86,6 +86,7 @@ Loading and visualizing the data is left to the preference of the user.
    filters
    world_models
    metrics
+   frames
    sensors
    constants
    nomenclature

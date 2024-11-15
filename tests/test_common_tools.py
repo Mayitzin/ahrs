@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import unittest
+import numpy as np
 import ahrs
 
 class TestGeometry(unittest.TestCase):
@@ -38,6 +39,15 @@ class TestGeometry(unittest.TestCase):
         self.assertEqual(ellipse.shape, (11, 2))
         self.assertAlmostEqual(ellipse[:-1, 0].mean(), 1.0)
         self.assertAlmostEqual(ellipse[:-1, 1].mean(), 1.0)
+
+class TestFrames(unittest.TestCase):
+    def setUp(self):
+        self.equator_radius = ahrs.EARTH_EQUATOR_RADIUS
+
+    def test_geo2rect(self):
+        rect = ahrs.common.frames.geo2rect(0.0, 0.0, 0.0, self.equator_radius)
+        self.assertEqual(rect.shape, (3,))
+        np.testing.assert_allclose(rect, [self.equator_radius, 0.0, 0.0])
 
 if __name__ == "__main__":
     unittest.main()
