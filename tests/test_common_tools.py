@@ -49,5 +49,22 @@ class TestFrames(unittest.TestCase):
         self.assertEqual(rect.shape, (3,))
         np.testing.assert_allclose(rect, [self.equator_radius, 0.0, 0.0])
 
+class TestMathFuncs(unittest.TestCase):
+    def test_sind(self):
+        self.assertEqual(ahrs.common.mathfuncs.sind(0.0), 0.0)
+        self.assertEqual(ahrs.common.mathfuncs.sind(90.0), 1.0)
+        self.assertAlmostEqual(ahrs.common.mathfuncs.sind(-120.0), -0.86602540378)
+
+    def test_cosd(self):
+        self.assertEqual(ahrs.common.mathfuncs.cosd(0.0), 1.0)
+        self.assertAlmostEqual(ahrs.common.mathfuncs.cosd(90.0), 0.0)
+        self.assertAlmostEqual(ahrs.common.mathfuncs.cosd(-120.0), -0.5)
+
+    def test_skew(self):
+        a = [1, 2, 3]
+        skew = ahrs.common.mathfuncs.skew(a)
+        self.assertEqual(skew.shape, (3, 3))
+        np.testing.assert_allclose(skew, [[0., -3., 2.], [3., 0., -1.], [-2., 1., 0.]])
+
 if __name__ == "__main__":
     unittest.main()
