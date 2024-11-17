@@ -3,7 +3,16 @@
 Reference Frames
 ================
 
-Coordinate frames express the position of an object in relation to a reference.
+A frame of reference specifies the position of an object in relation to a
+reference within a coordinate system.
+
+In the context of global navigation, the reference frame is used to define the
+position of an object in relation to the Earth. The Earth is a non-inertial
+frame, and the object is usually a sensor or a vehicle.
+
+In this case, the sensor frame is usually attached to the object, and the
+navigation frame is attached to the Earth.
+
 There are 4 main frames:
 
 - **Earth-Centered Inertial Frame** (ECI), also noted as **i-frame**, has its
