@@ -48,16 +48,16 @@ from .constants import EARTH_POLAR_RADIUS
 from .constants import EARTH_FLATTENING
 from .constants import RAD2DEG
 
-def geo2rect(lon: float, lat: float, h: float, r: float, ecc: float = EARTH_SECOND_ECCENTRICITY_2) -> np.ndarray:
+def geo2rect(lat: float, lon: float, h: float, r: float, ecc: float = EARTH_SECOND_ECCENTRICITY_2) -> np.ndarray:
     """
     Geodetic to Rectangular Coordinates conversion in the e-frame.
 
     Parameters
     ----------
-    lon : float
-        Longitude
     lat : float
         Latitude
+    lon : float
+        Longitude
     h : float
         Height above ellipsoidal surface
     r : float
