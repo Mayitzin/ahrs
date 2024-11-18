@@ -3,6 +3,9 @@ import unittest
 import numpy as np
 import ahrs
 
+# Often used constants
+SQ22 = np.sqrt(2)/2
+
 class TestGeometry(unittest.TestCase):
     def test_geometry_circle_default(self):
         circle = ahrs.common.geometry.circle([0, 0])
@@ -41,24 +44,26 @@ class TestGeometry(unittest.TestCase):
         self.assertAlmostEqual(ellipse[:-1, 1].mean(), 1.0)
 
 class TestFrames(unittest.TestCase):
-    def setUp(self):
-        self.equator_radius = ahrs.EARTH_EQUATOR_RADIUS
-
     def test_geo2rect(self):
-        rect = ahrs.common.frames.geo2rect(0.0, 0.0, 0.0, self.equator_radius)
-        self.assertEqual(rect.shape, (3,))
-        np.testing.assert_allclose(rect, [self.equator_radius, 0.0, 0.0])
+        np.testing.assert_allclose(ahrs.common.frames.geo2rect(0.0, 0.0, 0.0), [ahrs.EARTH_EQUATOR_RADIUS, 0.0, 0.0])
+        np.testing.assert_array_almost_equal(ahrs.common.frames.geo2rect(90.0, 0.0, 0.0), [0.0, 0.0, ahrs.EARTH_POLAR_RADIUS], decimal=4)
+
+    def test_geo2rect_wrong_inputs(self):
+        self.assertRaises(ValueError, ahrs.common.frames.geo2rect, 91.0, 0.0, 0.0, 0.0)
+        self.assertRaises(ValueError, ahrs.common.frames.geo2rect, 0.0, 181.0, 0.0, 0.0)
 
 class TestMathFuncs(unittest.TestCase):
     def test_sind(self):
         self.assertEqual(ahrs.common.mathfuncs.sind(0.0), 0.0)
         self.assertEqual(ahrs.common.mathfuncs.sind(90.0), 1.0)
         self.assertAlmostEqual(ahrs.common.mathfuncs.sind(-120.0), -0.86602540378)
+        np.testing.assert_array_almost_equal(ahrs.common.mathfuncs.sind([0, 45, 90, 180, 270, 360]), [0.0, SQ22, 1.0, 0.0, -1.0, 0.0])
 
     def test_cosd(self):
         self.assertEqual(ahrs.common.mathfuncs.cosd(0.0), 1.0)
         self.assertAlmostEqual(ahrs.common.mathfuncs.cosd(90.0), 0.0)
         self.assertAlmostEqual(ahrs.common.mathfuncs.cosd(-120.0), -0.5)
+        np.testing.assert_array_almost_equal(ahrs.common.mathfuncs.cosd([0, 45, 90, 180, 270, 360]), [1.0, SQ22, 0.0, -1.0, 0.0, 1.0])
 
     def test_skew(self):
         a = [1, 2, 3]
