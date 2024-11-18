@@ -26,23 +26,10 @@ There are 4 main frames:
 - **Local-Level Frame** (LLF), also noted as **l-frame**, is the local
   navigation frame, whose origin coincides with the sensor frame.
 
-References
-----------
-.. [Noureldin] Aboelmagd Noureldin, Tashfeen B. Karamat, Jacques Georgy.
-    Fundamentals of Inertial Navigation, Satellite-based Position and their
-    Integration. Springer-Verlag Berlin Heidelberg. 2013.
-.. [WGS84] World Geodetic System 1984. Its Definition and Relationships with
-    Local Geodetic Systems. National Geospatial-Intelligence Agency (NGA)
-    Standarization Document. 2014.
-    (ftp://ftp.nga.mil/pub2/gandg/website/wgs84/NGA.STND.0036_1.0.0_WGS84.pdf)
-.. [Laundal2016] Laundal, K.M., Richmond, A.D. Magnetic Coordinate Systems.
-    Space Sci Rev 206, 27-59 (2017). (https://doi.org/10.1007/s11214-016-0275-y)
-
 """
 
 import numpy as np
 from .constants import EARTH_FIRST_ECCENTRICITY
-from .constants import EARTH_FIRST_ECCENTRICITY_2
 from .constants import EARTH_SECOND_ECCENTRICITY_2
 from .constants import EARTH_EQUATOR_RADIUS
 from .constants import EARTH_POLAR_RADIUS
@@ -50,10 +37,42 @@ from .constants import EARTH_FLATTENING
 from .constants import RAD2DEG
 from .constants import DEG2RAD
 
-def geo2rect(lat: float, lon: float, h: float, r: float, ecc: float = EARTH_FIRST_ECCENTRICITY_2) -> np.ndarray:
+def geo2rect(lat: float, lon: float, h: float, a: float = EARTH_EQUATOR_RADIUS, ecc: float = EARTH_FIRST_ECCENTRICITY) -> np.ndarray:
     """
     Transform geodetic coordinates to Rectangular (Cartesian) Coordinates in
     the Earth-Centered Earth-Fixed frame.
+
+    The cartesian coordinates of a point :math:`\\begin{pmatrix}x & y & z\\end{pmatrix}`
+    can be calculated from the geodetic coordinates
+    :math:`\\begin{pmatrix}\\phi & \\lambda & h\\end{pmatrix}` using the
+    following equations :cite:p:`Wiki_GCC_geo2rect` :cite:p:`ESA_Coord_Conv`
+    :cite:p:`noureldin2013`:
+
+    .. math::
+
+        \\begin{array}{rcl}
+        x & = & (N + h) \\cos\\phi \\cos\\lambda \\\\
+        y & = & (N + h) \\cos\\phi \\sin\\lambda \\\\
+        z & = & \\big(\\left(1 - e^2\\right)N + h\\big) \\sin\\phi
+        \\end{array}
+
+    where :math:`\\phi` is the latitude, :math:`\\lambda` is the longitude, and
+    :math:`N` is the radius of curvature in the prime vertical at the given
+    latitude :math:`\\phi`:
+
+    .. math::
+
+        r = \\frac{a}{\\sqrt{1 - e^2 \\sin^2\\phi}}
+
+    The first eccentricity of the ellipsoid **squared**, :math:`e^2`, is
+    defined using the equatorial radius of the ellipsoid :math:`a`, and the
+    polar radius of the ellipsoid :math:`b`:
+
+    .. math::
+
+        e^2 = \\frac{a^2-b^2}{a^2}
+
+    These values default to Earth's ellipsoid.
 
     Parameters
     ----------
@@ -63,10 +82,11 @@ def geo2rect(lat: float, lon: float, h: float, r: float, ecc: float = EARTH_FIRS
         Longitude, in degrees.
     h : float
         Height above ellipsoidal surface, in meters.
-    r : float
-        Normal radius
-    ecc : float, default: 6.6943799901414e-3
-        Ellipsoid's first eccentricity squared. Defaults to Earth's.
+    a : float, default: 6378137.0
+        Ellipsoid's equatorial radius (semi-major axis), in meters. Defaults to
+        Earth's.
+    ecc : float, default: 8.1819190842622e-2
+        Ellipsoid's first eccentricity. Defaults to Earth's.
 
     Returns
     -------
@@ -79,10 +99,11 @@ def geo2rect(lat: float, lon: float, h: float, r: float, ecc: float = EARTH_FIRS
         raise ValueError(f"Longitude must be between -180 and 180 degrees. Got {lon}")
     lat *= DEG2RAD
     lon *= DEG2RAD
+    N = a/np.sqrt(1 - ecc**2 *np.sin(lat)**2)
     X = np.zeros(3)
-    X[0] = (r+h)*np.cos(lat)*np.cos(lon)
-    X[1] = (r+h)*np.cos(lat)*np.sin(lon)
-    X[2] = (r*(1.0-ecc)+h)*np.sin(lat)
+    X[0] = (N+h)*np.cos(lat)*np.cos(lon)
+    X[1] = (N+h)*np.cos(lat)*np.sin(lon)
+    X[2] = (N*(1.0-ecc**2)+h)*np.sin(lat)
     return X
 
 def rec2geo(X: np.ndarray, a: float = EARTH_EQUATOR_RADIUS, b: float = EARTH_POLAR_RADIUS, e: float = EARTH_FIRST_ECCENTRICITY, ecc: float = EARTH_SECOND_ECCENTRICITY_2) -> np.ndarray:
@@ -159,7 +180,8 @@ def ecef2lla(ecef : np.ndarray, f: float = EARTH_FLATTENING, a: float = EARTH_EQ
     ellipsoid from a given Earth-centered Earth-fixed (ECEF) position, using
     Bowring's method.
 
-    It defaults to WGS84 ellipsoid parameters.
+    It defaults to `WGS84 <https://ahrs.readthedocs.io/en/latest/wgs84.html>`_
+    ellipsoid parameters.
 
     Parameters
     ----------
