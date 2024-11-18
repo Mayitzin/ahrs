@@ -48,11 +48,12 @@ from .constants import EARTH_EQUATOR_RADIUS
 from .constants import EARTH_POLAR_RADIUS
 from .constants import EARTH_FLATTENING
 from .constants import RAD2DEG
+from .constants import DEG2RAD
 
 def geo2rect(lat: float, lon: float, h: float, r: float, ecc: float = EARTH_FIRST_ECCENTRICITY_2) -> np.ndarray:
     """
-    Transform geodetic coordinates to Rectangular Coordinates in the
-    Earth-Centered Earth-Fixed frame.
+    Transform geodetic coordinates to Rectangular (Cartesian) Coordinates in
+    the Earth-Centered Earth-Fixed frame.
 
     Parameters
     ----------
@@ -64,7 +65,7 @@ def geo2rect(lat: float, lon: float, h: float, r: float, ecc: float = EARTH_FIRS
         Height above ellipsoidal surface, in meters.
     r : float
         Normal radius
-    ecc : float, default: 6.739496742276486e-3
+    ecc : float, default: 6.6943799901414e-3
         Ellipsoid's first eccentricity squared. Defaults to Earth's.
 
     Returns
@@ -72,6 +73,12 @@ def geo2rect(lat: float, lon: float, h: float, r: float, ecc: float = EARTH_FIRS
     X : numpy.ndarray
         ECEF rectangular coordinates
     """
+    if abs(lat) > 90.0:
+        raise ValueError(f"Latitude must be between -90 and 90 degrees. Got {lat}")
+    if abs(lon) > 180.0:
+        raise ValueError(f"Longitude must be between -180 and 180 degrees. Got {lon}")
+    lat *= DEG2RAD
+    lon *= DEG2RAD
     X = np.zeros(3)
     X[0] = (r+h)*np.cos(lat)*np.cos(lon)
     X[1] = (r+h)*np.cos(lat)*np.sin(lon)
