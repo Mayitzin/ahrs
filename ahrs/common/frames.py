@@ -106,9 +106,46 @@ def geo2rect(lat: float, lon: float, h: float, a: float = EARTH_EQUATOR_RADIUS, 
     X[2] = (N*(1.0-ecc**2)+h)*np.sin(lat)
     return X
 
-def rec2geo(X: np.ndarray, a: float = EARTH_EQUATOR_RADIUS, b: float = EARTH_POLAR_RADIUS, e: float = EARTH_FIRST_ECCENTRICITY, ecc: float = EARTH_SECOND_ECCENTRICITY_2) -> np.ndarray:
+def rec2geo(X: np.ndarray, a: float = EARTH_EQUATOR_RADIUS, b: float = EARTH_POLAR_RADIUS) -> np.ndarray:
     """
-    Rectangular to Geodetic Coordinates conversion in the e-frame.
+    Transform Rectangular (Cartesian) coordinates in the e-frame to Geodetic
+    Coordinates :cite:p:`ESA_Coord_Conv`.
+
+    First, the easiest is to compute the geodetic longitude :math:`\\lambda`:
+
+    .. math::
+
+        \\lambda = \\mathrm{arctan2}\\left(x, \\,y\\right)
+
+    Then, we can iteratively compute the geodetic latitude :math:`\\phi`, and
+    height :math:`h`. We start with an initial estimation of the latitude:
+
+    .. math::
+
+        \\phi_0 = \\mathrm{arctan}\\Bigg(\\frac{z}{(1-e^2)p}\\Bigg)
+
+    with :math:`p = \\sqrt{x^2 + y^2}`.
+
+    Then, we iterate until the change between two consecutive latitudes
+    (:math:`\\phi_i` and :math:`\\phi_{i-1}`) is smaller than a given threshold
+    :math:`\\delta`:
+
+    .. math::
+
+        \\begin{array}{rcl}
+        N & = & \\frac{a}{\\sqrt{1 - e^2 \\sin^2(\\phi_{i-1})}} \\\\
+        h & = & \\frac{p}{\\cos\\phi_{i-1}} - N \\\\
+        \\phi_i & = & \\mathrm{arctan}\\Bigg(\\frac{z}{(1-e^2\\frac{N}{N+h})p}\\Bigg)
+        \\end{array}
+
+    where :math:`N` is the radius of curvature in the vertical prime, and
+    :math:`e^2` is the square of the first eccentricity of the ellipsoid.
+
+    The value of :math:`\\delta` is empirically found to perform well when set
+    to :math:`10^{-8}` in this implementation.
+
+    The final latitude and longitude are converted to degrees. The height is
+    returned in meters.
 
     Parameters
     ----------
@@ -118,19 +155,29 @@ def rec2geo(X: np.ndarray, a: float = EARTH_EQUATOR_RADIUS, b: float = EARTH_POL
         Ellipsoid's equatorial radius, in meters. Defaults to Earth's.
     b : float, default: 6356752.3142
         Ellipsoid's polar radius, in meters. Defaults to Earth's.
-    e : float, default: 0.081819190842622
-        Ellipsoid's first eccentricity. Defaults to Earth's.
-    ecc : float, default: 6.739496742276486e-3
-        Ellipsoid's second eccentricity squared. Defaults to Earth's.
+
+    Returns
+    -------
+    lla : numpy.ndarray
+        Geodetic coordinates [latitude, longitude, altitude].
     """
     x, y, z = X
-    p = np.linalg.norm([x, y])
-    theta = np.arctan(z*a/(p*b))
-    lon = 2*np.arctan(y / (x + p))
-    lat = np.arctan((z + ecc*b*np.sin(theta)**3) / (p - e*a*np.cos(theta)**3))
-    N = a**2/np.sqrt(a**2*np.cos(lat)**2 + b**2*np.sin(lat)**2)
-    h = p/np.cos(lat) - N
-    return np.array([lon, lat, h])
+    e2 = (a**2 - b**2)/a**2   # Square of the first eccentricity: f * (2 - f) = e^2
+    p = np.sqrt(x**2 + y**2)
+    lon = np.arctan2(y, x)
+    # Iteratively compute latitude and height
+    delta = 1e-8
+    h = lat_old = 0
+    lat = np.arctan(z / ((1-e2)*p))
+    while abs(lat_old - lat) > delta:
+        sin_lat = np.sin(lat)
+        N = a / np.sqrt(1 - e2 * sin_lat**2)    # Radius of curvature in the vertical prime
+        h = p / np.cos(lat) - N
+        lat_old = lat
+        lat = np.arctan(z / ((1-e2*N/(N+h))*p))
+    lat *= RAD2DEG
+    lon *= RAD2DEG
+    return np.array([lat, lon, h])
 
 def llf2ecef(lat: float, lon: float) -> np.ndarray:
     """
