@@ -56,9 +56,9 @@ def geo2rect(lat: float, lon: float, h: float, a: float = EARTH_EQUATOR_RADIUS, 
         z & = & \\big(\\left(1 - e^2\\right)N + h\\big) \\sin\\phi
         \\end{array}
 
-    where :math:`\\phi` is the latitude, :math:`\\lambda` is the longitude, and
-    :math:`N` is the radius of curvature in the prime vertical at the given
-    latitude :math:`\\phi`:
+    where :math:`\\phi` is the latitude, :math:`\\lambda` is the longitude,
+    :math:`h` is the height, and :math:`N` is the radius of curvature in the
+    prime vertical at the given latitude :math:`\\phi`:
 
     .. math::
 
