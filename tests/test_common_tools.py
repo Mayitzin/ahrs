@@ -49,13 +49,13 @@ class TestFrames(unittest.TestCase):
         self.ecef_coords = [4201000, 172460, 4780100]
         self.ecef_decimal_tol = 1   # 1 decimal place = tolerance of 10 cm
 
-    def test_geo2rect(self):
-        np.testing.assert_allclose(ahrs.common.frames.geo2rect(0.0, 0.0, 0.0), [ahrs.EARTH_EQUATOR_RADIUS, 0.0, 0.0])
-        np.testing.assert_array_almost_equal(ahrs.common.frames.geo2rect(90.0, 0.0, 0.0), [0.0, 0.0, ahrs.EARTH_POLAR_RADIUS], decimal=4)
+    def test_geodetic2ecef(self):
+        np.testing.assert_allclose(ahrs.common.frames.geodetic2ecef(0.0, 0.0, 0.0), [ahrs.EARTH_EQUATOR_RADIUS, 0.0, 0.0])
+        np.testing.assert_array_almost_equal(ahrs.common.frames.geodetic2ecef(90.0, 0.0, 0.0), [0.0, 0.0, ahrs.EARTH_POLAR_RADIUS], decimal=4)
 
-    def test_geo2rect_wrong_inputs(self):
-        self.assertRaises(ValueError, ahrs.common.frames.geo2rect, 91.0, 0.0, 0.0, 0.0)
-        self.assertRaises(ValueError, ahrs.common.frames.geo2rect, 0.0, 181.0, 0.0, 0.0)
+    def test_geodetic2ecef_wrong_inputs(self):
+        self.assertRaises(ValueError, ahrs.common.frames.geodetic2ecef, 91.0, 0.0, 0.0, 0.0)
+        self.assertRaises(ValueError, ahrs.common.frames.geodetic2ecef, 0.0, 181.0, 0.0, 0.0)
 
     def test_ecef2geodetic(self):
         np.testing.assert_array_almost_equal(ahrs.common.frames.ecef2geodetic(*self.ecef_coords), self.lla_coords, decimal=self.ecef_decimal_tol)
