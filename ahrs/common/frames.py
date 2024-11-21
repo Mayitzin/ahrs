@@ -30,7 +30,6 @@ There are 4 main frames:
 
 import numpy as np
 from .constants import EARTH_FIRST_ECCENTRICITY
-from .constants import EARTH_SECOND_ECCENTRICITY_2
 from .constants import EARTH_EQUATOR_RADIUS
 from .constants import EARTH_POLAR_RADIUS
 from .constants import EARTH_FLATTENING
@@ -106,10 +105,10 @@ def geo2rect(lat: float, lon: float, h: float, a: float = EARTH_EQUATOR_RADIUS, 
     X[2] = (N*(1.0-ecc**2)+h)*np.sin(lat)
     return X
 
-def rec2geo(X: np.ndarray, a: float = EARTH_EQUATOR_RADIUS, b: float = EARTH_POLAR_RADIUS) -> np.ndarray:
+def ecef2geodetic(x: float, y: float, z: float, a: float = EARTH_EQUATOR_RADIUS, b: float = EARTH_POLAR_RADIUS) -> np.ndarray:
     """
-    Transform Rectangular (Cartesian) coordinates in the e-frame to Geodetic
-    Coordinates :cite:p:`ESA_Coord_Conv`.
+    Transform cartesian coordinates in ECEF-frame to Geodetic Coordinates
+    :cite:p:`ESA_Coord_Conv`.
 
     First, the easiest is to compute the geodetic longitude :math:`\\lambda`:
 
@@ -149,8 +148,12 @@ def rec2geo(X: np.ndarray, a: float = EARTH_EQUATOR_RADIUS, b: float = EARTH_POL
 
     Parameters
     ----------
-    X : numpy.ndarray
-        Rectangular coordinates in the e-frame.
+    x : float
+        ECEF x-coordinate, in meters.
+    y : float
+        ECEF y-coordinate, in meters.
+    z : float
+        ECEF z-coordinate, in meters.
     a : float, default: 6378137.0
         Ellipsoid's equatorial radius, in meters. Defaults to Earth's.
     b : float, default: 6356752.3142
@@ -161,8 +164,7 @@ def rec2geo(X: np.ndarray, a: float = EARTH_EQUATOR_RADIUS, b: float = EARTH_POL
     lla : numpy.ndarray
         Geodetic coordinates [latitude, longitude, altitude].
     """
-    x, y, z = X
-    e2 = (a**2 - b**2)/a**2   # Square of the first eccentricity: f * (2 - f) = e^2
+    e2 = (a**2 - b**2)/a**2  # Square of the first eccentricity: 2*f - f^2 = e^2
     p = np.sqrt(x**2 + y**2)
     lon = np.arctan2(y, x)
     # Iteratively compute latitude and height
@@ -170,11 +172,11 @@ def rec2geo(X: np.ndarray, a: float = EARTH_EQUATOR_RADIUS, b: float = EARTH_POL
     h = lat_old = 0
     lat = np.arctan(z / ((1-e2)*p))
     while abs(lat_old - lat) > delta:
-        sin_lat = np.sin(lat)
-        N = a / np.sqrt(1 - e2 * sin_lat**2)    # Radius of curvature in the vertical prime
+        N = a / np.sqrt(1 - e2 * np.sin(lat)**2)    # Radius of curvature in the vertical prime
         h = p / np.cos(lat) - N
         lat_old = lat
         lat = np.arctan(z / ((1-e2*N/(N+h))*p))
+    # Convert to degrees
     lat *= RAD2DEG
     lon *= RAD2DEG
     return np.array([lat, lon, h])
@@ -198,7 +200,7 @@ def llf2ecef(lat: float, lon: float) -> np.ndarray:
     return np.array([
         [-np.sin(lat), -np.sin(lon)*np.cos(lat), np.cos(lon)*np.cos(lat)],
         [ np.cos(lat), -np.sin(lon)*np.sin(lat), np.cos(lon)*np.sin(lat)],
-        [0.0, np.cos(lon), np.sin(lon)]])
+        [         0.0,              np.cos(lon),             np.sin(lon)]])
 
 def ecef2llf(lat: float, lon: float) -> np.ndarray:
     """
@@ -217,9 +219,9 @@ def ecef2llf(lat: float, lon: float) -> np.ndarray:
         Rotation Matrix.
     """
     return np.array([
-        [-np.sin(lat), np.cos(lat), 0.0],
+        [            -np.sin(lat),              np.cos(lat),         0.0],
         [-np.sin(lon)*np.cos(lat), -np.sin(lon)*np.sin(lat), np.cos(lon)],
-        [np.cos(lon)*np.cos(lat), np.cos(lon)*np.sin(lat), np.sin(lon)]])
+        [ np.cos(lon)*np.cos(lat),  np.cos(lon)*np.sin(lat), np.sin(lon)]])
 
 def ecef2lla(ecef : np.ndarray, f: float = EARTH_FLATTENING, a: float = EARTH_EQUATOR_RADIUS) -> np.ndarray:
     """
@@ -259,14 +261,11 @@ def ecef2lla(ecef : np.ndarray, f: float = EARTH_FLATTENING, a: float = EARTH_EQ
         sin_lat = np.sin(lat)
         N = a / np.sqrt(1 - e2 * sin_lat**2)    # Radius of curvature in the vertical prime
         lat = np.arctan2(z + e2 * N * sin_lat, p)
-
     # Compute altitude
     alt = p / np.cos(lat) - N
-
     # Convert radians to degrees for latitude and longitude
     lat *= RAD2DEG
     lon *= RAD2DEG
-
     return np.array([lat, lon, alt])
 
 def eci2ecef(w: float, t: float = 0) -> np.ndarray:
