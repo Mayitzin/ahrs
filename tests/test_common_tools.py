@@ -44,6 +44,11 @@ class TestGeometry(unittest.TestCase):
         self.assertAlmostEqual(ellipse[:-1, 1].mean(), 1.0)
 
 class TestFrames(unittest.TestCase):
+    def setUp(self):
+        self.lla_coords = [48.8562, 2.3508, 67.4]
+        self.ecef_coords = [4201000, 172460, 4780100]
+        self.ecef_decimal_tol = 1   # 1 decimal place = tolerance of 10 cm
+
     def test_geo2rect(self):
         np.testing.assert_allclose(ahrs.common.frames.geo2rect(0.0, 0.0, 0.0), [ahrs.EARTH_EQUATOR_RADIUS, 0.0, 0.0])
         np.testing.assert_array_almost_equal(ahrs.common.frames.geo2rect(90.0, 0.0, 0.0), [0.0, 0.0, ahrs.EARTH_POLAR_RADIUS], decimal=4)
@@ -51,6 +56,12 @@ class TestFrames(unittest.TestCase):
     def test_geo2rect_wrong_inputs(self):
         self.assertRaises(ValueError, ahrs.common.frames.geo2rect, 91.0, 0.0, 0.0, 0.0)
         self.assertRaises(ValueError, ahrs.common.frames.geo2rect, 0.0, 181.0, 0.0, 0.0)
+
+    def test_ecef2geodetic(self):
+        np.testing.assert_array_almost_equal(ahrs.common.frames.ecef2geodetic(*self.ecef_coords), self.lla_coords, decimal=self.ecef_decimal_tol)
+
+    def test_ecef2lla(self):
+        np.testing.assert_array_almost_equal(ahrs.common.frames.ecef2lla(*self.ecef_coords), self.lla_coords, decimal=self.ecef_decimal_tol)
 
 class TestMathFuncs(unittest.TestCase):
     def test_sind(self):
