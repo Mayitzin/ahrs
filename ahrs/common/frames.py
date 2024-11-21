@@ -110,40 +110,56 @@ def ecef2geodetic(x: float, y: float, z: float, a: float = EARTH_EQUATOR_RADIUS,
     Transform cartesian coordinates in ECEF-frame to Geodetic Coordinates
     :cite:p:`ESA_Coord_Conv`.
 
-    First, the easiest is to compute the geodetic longitude :math:`\\lambda`:
+    Given the Cartesian coordinates :math:`\\begin{pmatrix}x & y & z\\end{pmatrix}`
+    in the Earth-Centered Earth-Fixed (ECEF) frame, we can start by computing
+    the geodetic longitude :math:`\\lambda`:
 
     .. math::
 
         \\lambda = \\mathrm{arctan2}\\left(x, \\,y\\right)
 
-    Then, we can iteratively compute the geodetic latitude :math:`\\phi`, and
-    height :math:`h`. We start with an initial estimation of the latitude:
+    Then, we iteratively compute the geodetic latitude :math:`\\phi` using the
+    initial estimation:
 
     .. math::
 
-        \\phi_0 = \\mathrm{arctan}\\Bigg(\\frac{z}{(1-e^2)p}\\Bigg)
+        \\phi_0 = \\mathrm{arctan2}\\big(z, \\,(1-e^2)p \\big)
 
     with :math:`p = \\sqrt{x^2 + y^2}`.
 
-    Then, we iterate until the change between two consecutive latitudes
+    Now we iterate until the difference between two consecutive latitudes
     (:math:`\\phi_i` and :math:`\\phi_{i-1}`) is smaller than a given threshold
-    :math:`\\delta`:
+    :math:`\\delta`. Each iteration updates the values as follows:
 
     .. math::
 
         \\begin{array}{rcl}
-        N & = & \\frac{a}{\\sqrt{1 - e^2 \\sin^2(\\phi_{i-1})}} \\\\
-        h & = & \\frac{p}{\\cos\\phi_{i-1}} - N \\\\
-        \\phi_i & = & \\mathrm{arctan}\\Bigg(\\frac{z}{(1-e^2\\frac{N}{N+h})p}\\Bigg)
+        N & \\leftarrow & \\frac{a}{\\sqrt{1 - e^2 \\sin^2(\\phi_{i-1})}} \\\\
+        \\phi_i & \\leftarrow & \\mathrm{arctan2}\\big(z+e^2N\\sin(\\phi_{i-1}), \\,p\\big)
         \\end{array}
 
     where :math:`N` is the radius of curvature in the vertical prime, and
     :math:`e^2` is the square of the first eccentricity of the ellipsoid.
 
+    .. math::
+
+        e^2 = \\frac{a^2-b^2}{a^2}
+
     The value of :math:`\\delta` is empirically found to perform well when set
     to :math:`10^{-8}` in this implementation.
 
-    The final latitude and longitude are converted to degrees. The height is
+    The altitude (height) :math:`h` is computed as:
+
+    .. math::
+
+            h = \\frac{p}{\\cos\\phi} - N
+
+    .. note::
+
+        The altitude :math:`h` has an accuracy up to 0.1 m (10 cm), which is
+        enough for most applications.
+
+    The latitude and longitude are returned in degrees. The altitude is
     returned in meters.
 
     Parameters
@@ -163,18 +179,28 @@ def ecef2geodetic(x: float, y: float, z: float, a: float = EARTH_EQUATOR_RADIUS,
     -------
     lla : numpy.ndarray
         Geodetic coordinates [latitude, longitude, altitude].
+
+    Examples
+    --------
+    >>> from ahrs.common.frames import ecef2geodetic
+    >>> x = 4_201_000
+    >>> y = 172_460
+    >>> z = 4_780_100
+    >>> ecef2geodetic(x, y, z)
+    array([48.85616162,  2.35079383, 67.37006803])
     """
-    e2 = (a**2 - b**2)/a**2  # Square of the first eccentricity: 2*f - f^2 = e^2
+    e2 = (a**2 - b**2)/a**2  # Square of the first eccentricity: 2*f - f^2 = e^2 = (a^2 - b^2)/a^2
     p = np.sqrt(x**2 + y**2)
     lon = np.arctan2(y, x)
-    # Iteratively compute latitude and height
+    # Iteratively compute latitude
     delta = 1e-8
-    h = lat_old = 0
+    lat_old = 0
     lat = np.arctan2(z, (1-e2)*p)
     while abs(lat_old - lat) > delta:
-        N = a / np.sqrt(1 - e2 * np.sin(lat)**2)    # Radius of curvature in the vertical prime
+        sin_lat = np.sin(lat)
+        N = a / np.sqrt(1 - e2 * sin_lat**2)    # Radius of curvature in the vertical prime
         lat_old = lat
-        lat = np.arctan2(z + e2 * N * np.sin(lat), p)
+        lat = np.arctan2(z + e2 * N * sin_lat, p)
     h = p / np.cos(lat) - N
     # Convert to degrees
     lat *= RAD2DEG
@@ -223,50 +249,9 @@ def ecef2llf(lat: float, lon: float) -> np.ndarray:
         [-np.sin(lon)*np.cos(lat), -np.sin(lon)*np.sin(lat), np.cos(lon)],
         [ np.cos(lon)*np.cos(lat),  np.cos(lon)*np.sin(lat), np.sin(lon)]])
 
-def ecef2lla(ecef : np.ndarray, f: float = EARTH_FLATTENING, a: float = EARTH_EQUATOR_RADIUS) -> np.ndarray:
-    """
-    Calculate geodetic latitude, longitude, and altitude above planetary
-    ellipsoid from a given Earth-centered Earth-fixed (ECEF) position, using
-    Bowring's method.
-
-    It defaults to `WGS84 <https://ahrs.readthedocs.io/en/latest/wgs84.html>`_
-    ellipsoid parameters.
-
-    Parameters
-    ----------
-    ecef : numpy.ndarray
-        ECEF coordinates.
-    f : float, default: 1/298.257223563
-        Flattening of the ellipsoid.
-    a : float, default: 6378137.0
-        Equatorial radius of the ellipsoid.
-
-    Returns
-    -------
-    lla : np.ndarray
-        Geodetic coordinates [longitude, latitude, altitude].
-    """
-    e2 = f * (2 - f)  # Square of the first eccentricity: f * (2 - f) = e^2
-    x, y, z = ecef
-
-    # Compute longitude
-    lon = np.arctan2(y, x)
-
-    # Compute initial latitude approximation
-    p = np.sqrt(x**2 + y**2)
-    beta = np.arctan2(z, (1 - f) * p)
-    lat = np.arctan2(z + e2 * (1 - f) * a * np.sin(beta)**3, p - e2 * a * np.cos(beta)**3)
-    # Iteratively improve latitude
-    for _ in range(5):  # Usually converges in a few iterations
-        sin_lat = np.sin(lat)
-        N = a / np.sqrt(1 - e2 * sin_lat**2)    # Radius of curvature in the vertical prime
-        lat = np.arctan2(z + e2 * N * sin_lat, p)
-    # Compute altitude
-    alt = p / np.cos(lat) - N
-    # Convert radians to degrees for latitude and longitude
-    lat *= RAD2DEG
-    lon *= RAD2DEG
-    return np.array([lat, lon, alt])
+def ecef2lla(x: float, y: float, z: float, a: float = EARTH_EQUATOR_RADIUS, b: float = EARTH_POLAR_RADIUS) -> np.ndarray:
+    """Synonym of :func:`ecef2geodetic`."""
+    return ecef2geodetic(x, y, z, a, b)
 
 def eci2ecef(w: float, t: float = 0) -> np.ndarray:
     """
