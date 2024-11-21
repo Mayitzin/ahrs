@@ -170,12 +170,12 @@ def ecef2geodetic(x: float, y: float, z: float, a: float = EARTH_EQUATOR_RADIUS,
     # Iteratively compute latitude and height
     delta = 1e-8
     h = lat_old = 0
-    lat = np.arctan(z / ((1-e2)*p))
+    lat = np.arctan2(z, (1-e2)*p)
     while abs(lat_old - lat) > delta:
         N = a / np.sqrt(1 - e2 * np.sin(lat)**2)    # Radius of curvature in the vertical prime
-        h = p / np.cos(lat) - N
         lat_old = lat
-        lat = np.arctan(z / ((1-e2*N/(N+h))*p))
+        lat = np.arctan2(z + e2 * N * np.sin(lat), p)
+    h = p / np.cos(lat) - N
     # Convert to degrees
     lat *= RAD2DEG
     lon *= RAD2DEG
