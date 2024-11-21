@@ -268,26 +268,67 @@ def eci2ecef(w: float, t: float = 0) -> np.ndarray:
         [-np.sin(w)*t, np.cos(w)*t, 0.0],
         [         0.0,         0.0, 1.0]])
 
-def ecef2enu(lat: float, lon: float) -> np.ndarray:
+def ecef2enu(x: float, y: float, z: float, lat: float, lon: float, h: float, a: float = EARTH_EQUATOR_RADIUS, ecc: float = EARTH_FIRST_ECCENTRICITY) -> np.ndarray:
+    """
+    Transform geocentric XYZ coordinates in ECEF-frame to Local East-North-Up
+    (ENU) cartesian coordinates :cite:p:`noureldin2013`.
+
+    Parameters
+    ----------
+    x : float
+        ECEF x-coordinate, in meters.
+    y : float
+        ECEF y-coordinate, in meters.
+    z : float
+        ECEF z-coordinate, in meters.
+    lat : float
+        Latitude, in degrees.
+    lon : float
+        Longitude, in degrees.
+    a : float, default: 6378137.0
+        Ellipsoid's equatorial radius (semi-major axis), in meters. Defaults to
+        Earth's.
+    ecc : float, default: 8.1819190842622e-2
+        Ellipsoid's first eccentricity. Defaults to Earth's.
+
+    Returns
+    -------
+    enu : numpy.ndarray
+        ENU cartesian coordinates [east, north, up].
+    """
+    ecef = geodetic2ecef(lat, lon, h, a, ecc)
+    x0, y0, z0 = ecef
+    return ecef2enuv(x-x0, y-y0, z-z0, lat, lon)
+
+def ecef2enuv(u: float, v: float, w: float, lat: float, lon: float) -> np.ndarray:
     """
     Transform coordinates from ECEF to ENU
 
     Parameters
     ----------
+    u : float
+        U component in geocentric ECEF frame.
+    v : float
+        V component in geocentric ECEF frame.
+    w : float
+        W component in geocentric ECEF frame.
     lat : float
-        Latitude.
+        Latitude, in degrees.
     lon : float
-        Longitude.
+        Longitude, in degrees.
 
     Returns
     -------
-    R : np.ndarray
-        Rotation Matrix.
+    enu : numpy.ndarray
+        ENU cartesian coordinates [east, north, up].
     """
-    return np.array([
-        [-np.sin(lon), np.cos(lon), 0.0],
-        [-np.cos(lat)*np.cos(lon), -np.cos(lat)*np.sin(lon), np.sin(lat)],
-        [np.sin(lat)*np.cos(lon), np.sin(lat)*np.sin(lon), np.cos(lat)]])
+    lat *= DEG2RAD
+    lon *= DEG2RAD
+    t     =  np.cos(lon)*u + np.sin(lon)*v
+    east  = -np.sin(lon)*u + np.cos(lon)*v
+    up    =  np.cos(lat)*t + np.sin(lat)*w
+    north = -np.sin(lat)*t + np.cos(lat)*w
+    return np.array([east, north, up])
 
 def enu2ecef(lat: float, lon: float) -> np.ndarray:
     """
