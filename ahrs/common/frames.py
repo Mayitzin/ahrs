@@ -35,7 +35,7 @@ from .constants import EARTH_POLAR_RADIUS
 from .constants import RAD2DEG
 from .constants import DEG2RAD
 
-def geo2rect(lat: float, lon: float, h: float, a: float = EARTH_EQUATOR_RADIUS, ecc: float = EARTH_FIRST_ECCENTRICITY) -> np.ndarray:
+def geodetic2ecef(lat: float, lon: float, h: float, a: float = EARTH_EQUATOR_RADIUS, ecc: float = EARTH_FIRST_ECCENTRICITY) -> np.ndarray:
     """
     Transform geodetic coordinates to Rectangular (Cartesian) Coordinates in
     the Earth-Centered Earth-Fixed frame.
@@ -89,7 +89,7 @@ def geo2rect(lat: float, lon: float, h: float, a: float = EARTH_EQUATOR_RADIUS, 
     Returns
     -------
     X : numpy.ndarray
-        ECEF rectangular coordinates
+        ECEF cartesian coordinates.
     """
     if abs(lat) > 90.0:
         raise ValueError(f"Latitude must be between -90 and 90 degrees. Got {lat}")
