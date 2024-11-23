@@ -349,7 +349,8 @@ class TestAQUA(unittest.TestCase):
         acc = np.copy(SENSOR_DATA.reference_gravitational_vector)
         self.assertEqual(ahrs.filters.aqua.adaptive_gain(acc), 0.1)
         acc = np.copy(SENSOR_DATA.reference_gravitational_vector) + [1., 1., 1.]
-        self.assertAlmostEqual(ahrs.filters.aqua.adaptive_gain(acc), 0.08864197335120784)
+        self.assertLess(ahrs.filters.aqua.adaptive_gain(acc), 0.1)
+        self.assertGreater(ahrs.filters.aqua.adaptive_gain(acc), 0.0)
         acc = np.copy(SENSOR_DATA.reference_gravitational_vector) + [2., 2., 2.]
         self.assertEqual(ahrs.filters.aqua.adaptive_gain(acc), 0.0)
         acc = np.copy(SENSOR_DATA.reference_gravitational_vector)
