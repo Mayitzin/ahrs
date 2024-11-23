@@ -15,7 +15,76 @@ DEFAULT_MASS = 1.0  # 1 kg
 DEFAULT_STANDARD_GRAVITATIONAL_PARAMETER = UNIVERSAL_GRAVITATION_CODATA2018 * DEFAULT_MASS  # GM
 
 class referenceEllipsoid:
-    def __init__(self, a: float = 1.0, f: float = 1.0, GM: float = DEFAULT_STANDARD_GRAVITATIONAL_PARAMETER, w: float = EARTH_ROTATION):
+    """
+    Reference Ellipsoid
+    -------------------
+
+    The `reference ellipsoid <https://en.wikipedia.org/wiki/Earth_ellipsoid#Reference_ellipsoid>`_
+    is a mathematical description of a surface **approximating** the `Geoid
+    <https://en.wikipedia.org/wiki/Geoid>`_, which is the truer, imperfect
+    figure of a planetary body.
+
+    When describing Earth, for example, the reference ellipsoid would represent
+    the shape that the ocean surface would take under the influence of Earth's
+    gravity and rotation, ignoring the effects of winds and tides.
+
+    This implementation is based on the World Geodetic System (WGS) reference
+    ellipsoid cite:p:`wgs84-2014`, which is the most widely used reference
+    ellipsoid for the Global Positioning System (GPS).
+
+    The WGS84 uses four elemental parameters to describe a reference ellipsoid:
+
+    - Semi-major axis, :math:`a`, in meters.
+    - Flattening ratio, :math:`f`.
+    - Standard Gravitational Parameter, :math:`GM`, in m^3/s^2.
+    - Angular velocity, :math:`\\omega`, in rad/s.
+
+    The semi-major axis, :math:`a`, is the radius of the ellipsoid at the
+    equator, while the flattening ratio, :math:`f`, is the ratio of the
+    difference between the semi-major and semi-minor axes to the semi-major
+    axis:
+
+    .. math::
+
+        f = \\frac{a-b}{a}
+
+    where :math:`b` is the semi-minor axis of the ellipsoid. When :math:`f = 0`
+    the ellipsoid is a perfect sphere. When :math:`f = 1` the ellipsoid is a
+    flat disc.
+
+    The `standard gravitational parameter
+    <https://en.wikipedia.org/wiki/Standard_gravitational_parameter>`_,
+    :math:`GM`, is the product of the **gravitational constant** and the
+    **mass** of the planetary body:
+
+    .. math::
+
+        GM = G \\cdot M
+
+    where :math:`G = 6.67430 \\times 10^{-11} \\frac{\\mathrm{m}^3}{\\mathrm{kg}
+    \\mathrm{s}^2}` is the `universal constant of gravitation
+    <https://en.wikipedia.org/wiki/Gravitational_constant#Value_and_uncertainty>`_,
+    and :math:`M` is the mass of the planetary body, in kg.
+
+    From these four parameters we can derive all other properties of the
+    ellipsoid.
+
+    The default values describe a **perfect sphere** with a radius of 1 meter,
+    whose gravitational constant is equal the universal constant of gravitation,
+    and rotates at 1 rad/s.
+
+    Parameters
+    ----------
+    a : float, default: 1.0
+        Semi-major axis of the ellipsoid, in meters.
+    f : float, default: 0.0
+        Flattening of the ellipsoid, unitless.
+    GM : float, default: 6.6743e-11
+        Standard Gravitational Parameter of the ellipsoid, in m^3/s^2.
+    w : float, default: 1.0
+        Angular velocity of the ellipsoid, in rad/s.
+    """
+    def __init__(self, a: float = 1.0, f: float = 0.0, GM: float = DEFAULT_STANDARD_GRAVITATIONAL_PARAMETER, w: float = 1.0):
         self.a = a
         self.f = f
         self.gm = GM
@@ -60,10 +129,10 @@ class referenceEllipsoid:
 
         Examples
         --------
-        >>> wgs = ahrs.utils.WGS()
-        >>> wgs.normal_gravity(50.0)
+        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref.normal_gravity(50.0)
         9.810702135603085
-        >>> wgs.normal_gravity(50.0, 100.0)
+        >>> ref.normal_gravity(50.0, 100.0)
         9.810393625316983
 
         """
@@ -76,7 +145,7 @@ class referenceEllipsoid:
         k = (self.b*gp)/(self.a*ge)-1
         sin2 = np.sin(lat)**2
         g = ge*(1+k*sin2)/np.sqrt(1-e2*sin2)                        # Gravity on Ellipsoid Surface (eq. 4-1)
-        if h==0.0:
+        if h == 0.0:
             return g
         # Normal gravity above surface
         m = self.w**2*self.a**2*self.b/self.gm                      # Gravity constant (eq. B-20)
@@ -125,9 +194,9 @@ class referenceEllipsoid:
 
         Example
         -------
-        >>> wgs = ahrs.utils.WGS()
+        >>> wgs = ahrs.utils.referenceEllipsoid()
         >>> wgs.first_eccentricity_squared
-        0.0066943799901413165
+        0.0
         """
         return 2*self.f - self.f**2
 
@@ -141,9 +210,9 @@ class referenceEllipsoid:
 
         Example
         -------
-        >>> wgs = ahrs.utils.WGS()
-        >>> wgs.second_eccentricity_squared
-        0.006739496742276434
+        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref.second_eccentricity_squared
+        0.0
         """
         return (self.a**2-self.b**2)/self.b**2
 
@@ -157,9 +226,9 @@ class referenceEllipsoid:
 
         Example
         -------
-        >>> wgs = ahrs.utils.WGS()
-        >>> wgs.linear_eccentricity
-        521854.00842338527
+        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref.linear_eccentricity
+        0.0
         """
         return np.sqrt(self.a**2-self.b**2)
 
@@ -173,9 +242,9 @@ class referenceEllipsoid:
 
         Example
         -------
-        >>> wgs = ahrs.utils.WGS()
-        >>> wgs.aspect_ratio
-        0.9966471893352525
+        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref.aspect_ratio
+        1.0
         """
         return self.b/self.a
 
@@ -192,9 +261,9 @@ class referenceEllipsoid:
 
         Example
         -------
-        >>> wgs = ahrs.utils.WGS()
-        >>> wgs.curvature_polar_radius
-        6399593.625758493
+        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref.curvature_polar_radius
+        1.0
         """
         return self.a/(1-self.f)
 
@@ -208,9 +277,9 @@ class referenceEllipsoid:
 
         Example
         -------
-        >>> wgs = ahrs.utils.WGS()
-        >>> wgs.arithmetic_mean_radius
-        6371008.771415059
+        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref.arithmetic_mean_radius
+        1.0
         """
         return self.a*(1-self.f/3)
 
@@ -224,9 +293,9 @@ class referenceEllipsoid:
 
         Example
         -------
-        >>> wgs = ahrs.utils.WGS()
-        >>> wgs.authalic_sphere_radius
-        6371007.1809182055
+        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref.authalic_sphere_radius
+        1.0
         """
         r = self.curvature_polar_radius
         es = np.sqrt(self.second_eccentricity_squared)
@@ -245,9 +314,9 @@ class referenceEllipsoid:
 
         Example
         -------
-        >>> wgs = ahrs.utils.WGS()
-        >>> wgs.equivolumetric_sphere_radius
-        6371000.790009159
+        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref.equivolumetric_sphere_radius
+        1.0
         """
         return self.a*np.cbrt(1-self.f)
 
@@ -261,9 +330,9 @@ class referenceEllipsoid:
 
         Example
         -------
-        >>> wgs = ahrs.utils.WGS()
-        >>> wgs.normal_gravity_constant
-        0.0034497865068408447
+        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref.normal_gravity_constant
+        14982844642.8839
         """
         return self.w**2*self.a**2*self.b/self.gm
 
@@ -282,13 +351,15 @@ class referenceEllipsoid:
 
         Example
         -------
-        >>> wgs = ahrs.utils.WGS()
-        >>> wgs.dynamical_form_factor
-        0.0010826298213129219
+        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref.dynamical_form_factor
+        0.0
         """
         m = self.normal_gravity_constant
         e2 = self.first_eccentricity_squared
         es = np.sqrt(self.second_eccentricity_squared)
+        if es == 0:
+            return 0.0
         q0 = 0.5*((1+3/es**2)*np.arctan(es) - 3/es)
         return e2*(1-2*m*es/(15*q0))/3
 
@@ -302,9 +373,9 @@ class referenceEllipsoid:
 
         Example
         -------
-        >>> wgs = ahrs.utils.WGS()
-        >>> wgs.second_degree_zonal_harmonic
-        -0.00048416677498482876
+        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref.second_degree_zonal_harmonic
+        0.0
         """
         return -self.dynamical_form_factor/np.sqrt(5.0)
 
@@ -319,11 +390,13 @@ class referenceEllipsoid:
 
         Example
         -------
-        >>> wgs = ahrs.utils.WGS()
-        >>> wgs.normal_gravity_potential
-        62636851.71456948
+        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref.normal_gravity_potential
+        6.6743e-11
         """
         es = np.sqrt(self.second_eccentricity_squared)
+        if es == 0:
+            return self.gm
         return self.gm*np.arctan(es)/self.linear_eccentricity + self.w**2*self.a**2/3
 
     @property
@@ -345,12 +418,14 @@ class referenceEllipsoid:
 
         Example
         -------
-        >>> wgs = ahrs.utils.WGS()
-        >>> wgs.equatorial_normal_gravity
-        9.78032533590406
+        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref.equatorial_normal_gravity
+        14982844642.8839
         """
         m = self.normal_gravity_constant
         es = np.sqrt(self.second_eccentricity_squared)
+        if es == 0:
+            return m
         q0 = 0.5*((1 + 3/es**2)*np.arctan(es) - 3/es)
         q0s = 3*((1 + 1/es**2)*(1 - np.arctan(es)/es)) - 1
         return self.gm * (1 - m - m*es*q0s/(6*q0))/(self.a*self.b)
@@ -374,12 +449,14 @@ class referenceEllipsoid:
 
         Example
         -------
-        >>> wgs = ahrs.utils.WGS()
-        >>> wgs.polar_normal_gravity
-        9.832184937863065
+        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref.polar_normal_gravity
+        14982844642.8839
         """
         m = self.normal_gravity_constant
         es = np.sqrt(self.second_eccentricity_squared)
+        if es == 0:
+            return m
         q0 = 0.5*((1 + 3/es**2)*np.arctan(es) - 3/es)
         q0s = 3*((1 + 1/es**2)*(1 - np.arctan(es)/es)) - 1
         return self.gm * (1 + m*es*q0s/(3*q0))/self.a**2
@@ -400,9 +477,9 @@ class referenceEllipsoid:
 
         Example
         -------
-        >>> wgs = ahrs.utils.WGS()
-        >>> wgs.mean_normal_gravity
-        9.797643222256516
+        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref.mean_normal_gravity
+        14982844642.8839
         """
         e = np.sqrt(self.first_eccentricity_squared)
         gp = self.polar_normal_gravity
@@ -414,7 +491,7 @@ class referenceEllipsoid:
     @property
     def mass(self) -> float:
         """
-        The Mass :math:`M` of the Earth, in kg, computed as:
+        The Mass :math:`M` of the ellipsoid, in kg, computed as:
 
         .. math::
             M = \\frac{GM}{G}
@@ -424,9 +501,9 @@ class referenceEllipsoid:
 
         Example
         -------
-        >>> wgs = ahrs.utils.WGS()
-        >>> wgs.mass
-        5.972186390142457e+24
+        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref.mass
+        1.0
         """
         return self.gm/UNIVERSAL_GRAVITATION_CODATA2018
 
@@ -437,11 +514,8 @@ class referenceEllipsoid:
 
         Example
         -------
-        >>> wgs = ahrs.utils.WGS()
-        >>> wgs.is_geodetic
-        True
-        >>> wgs = ahrs.utils.WGS(a=6_500_000)
-        >>> wgs.is_geodetic
+        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref.is_geodetic
         False
         """
         is_geodetic = np.isclose(self.a, EARTH_EQUATOR_RADIUS)
@@ -460,8 +534,8 @@ class referenceEllipsoid:
 
         Example
         -------
-        >>> wgs = ahrs.utils.WGS()
-        >>> wgs.sidereal_day
-        86164.090530833
+        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref.sidereal_day
+        6.283185307179586
         """
         return 2*np.pi/self.w
