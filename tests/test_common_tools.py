@@ -63,6 +63,10 @@ class TestFrames(unittest.TestCase):
     def test_ecef2lla(self):
         np.testing.assert_array_almost_equal(ahrs.common.frames.ecef2lla(*self.ecef_coords), self.lla_coords, decimal=self.ecef_decimal_tol)
 
+    def test_ecef2enu(self):
+        np.testing.assert_array_almost_equal(ahrs.common.frames.ecef2enu(660930.192761082, -4701424.222957011, 4246579.604632881, 42, -82, 200), [186.27752, 286.84222, 939.69262], decimal=5)
+        np.testing.assert_array_almost_equal(ahrs.common.frames.ecef2enu(5507528.9, 4556224.1, 6012820.8, 45.9132, 36.7484, 1877753.2), [355601.2616, -923083.1558, 1041016.4238], decimal=4)
+
 class TestMathFuncs(unittest.TestCase):
     def test_sind(self):
         self.assertEqual(ahrs.common.mathfuncs.sind(0.0), 0.0)
