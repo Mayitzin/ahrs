@@ -14,7 +14,7 @@ from ..common.constants import UNIVERSAL_GRAVITATION_CODATA2018
 DEFAULT_MASS = 1.0  # 1 kg
 DEFAULT_STANDARD_GRAVITATIONAL_PARAMETER = UNIVERSAL_GRAVITATION_CODATA2018 * DEFAULT_MASS  # GM
 
-class referenceEllipsoid:
+class ReferenceEllipsoid:
     """
     Reference Ellipsoid
     -------------------

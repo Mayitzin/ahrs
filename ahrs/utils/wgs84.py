@@ -294,7 +294,7 @@ Footnotes
 
 import numpy as np
 from ..common import DEG2RAD
-from .geodesy import referenceEllipsoid
+from .geodesy import ReferenceEllipsoid
 from ..common.constants import EARTH_EQUATOR_RADIUS
 from ..common.constants import EARTH_FLATTENING
 from ..common.constants import EARTH_GM
@@ -444,7 +444,7 @@ def welmec_gravity(lat: float, h: float = 0.0) -> float:
     lat *= DEG2RAD
     return 9.780318*(1.0 + 0.0053024*np.sin(lat)**2 - 0.0000058*np.sin(2.0*lat)**2) - 0.000003085*h
 
-class WGS(referenceEllipsoid):
+class WGS(ReferenceEllipsoid):
     """
     World Geodetic System 1984
 
