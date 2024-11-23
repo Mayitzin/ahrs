@@ -257,6 +257,10 @@ PLUTO_MASS = 1.303e22
 PLUTO_GM = PLUTO_MASS*UNIVERSAL_GRAVITATION_CODATA2018
 
 ##### Local information
-MUNICH_LATITUDE = 48.137154
-MUNICH_LONGITUDE = 11.576124
-MUNICH_HEIGHT = 0.519
+# Munich, Germany location of km 0 (Mariensäule)
+MUNICH_LATITUDE = 48.137230
+MUNICH_LONGITUDE = 11.575508
+# Munich, Germany orthometric height (above sea level) in meters
+MUNICH_HEIGHT = 521.0 # (https://whatismyelevation.com/map?lat=48.13723&lng=11.57551)
+MUNICH_ELEVATION = MUNICH_HEIGHT
+MUNICH_ALTITUDE = MUNICH_HEIGHT
