@@ -68,6 +68,11 @@ class TestFrames(unittest.TestCase):
         np.testing.assert_array_almost_equal(ahrs.common.frames.ecef2enu(660930.192761082, -4701424.222957011, 4246579.604632881, 42, -82, 200), [186.27752, 286.84222, 939.69262], decimal=5)
         np.testing.assert_array_almost_equal(ahrs.common.frames.ecef2enu(5507528.9, 4556224.1, 6012820.8, 45.9132, 36.7484, 1877753.2), [355601.2616, -923083.1558, 1041016.4238], decimal=4)
 
+    def test_geodetic2enu(self):
+        lat0, lon0, h0 = 46.017, 7.750, 1673
+        lat, lon, h = 45.976, 7.658, 4531
+        np.testing.assert_array_almost_equal(ahrs.common.frames.geodetic2enu(lat, lon, h, lat0, lon0, h0), [-7134.8, -4556.3, 2852.4], decimal=1)
+
 class TestMathFuncs(unittest.TestCase):
     def test_sind(self):
         self.assertEqual(ahrs.common.mathfuncs.sind(0.0), 0.0)
