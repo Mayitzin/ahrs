@@ -104,6 +104,83 @@ def geodetic2ecef(lat: float, lon: float, h: float, a: float = EARTH_EQUATOR_RAD
     X[2] = (N*(1.0-ecc**2)+h)*np.sin(lat)
     return X
 
+def geodetic2enu(lat: float, lon: float, h: float, lat0: float, lon0: float, h0: float, a: float = EARTH_EQUATOR_RADIUS, ecc: float = EARTH_FIRST_ECCENTRICITY) -> np.ndarray:
+    """
+    Transform geodetic coordinates to east-north-up (ENU) coordinates
+    :cite:p:`noureldin2013`.
+
+    Transform local geodetic coordinates :math:`\\begin{pmatrix}\\phi &
+    \\lambda & h\\end{pmatrix}` to local East-North-Up (ENU) coordinates
+    :math:`\\begin{pmatrix}x & y & z\\end{pmatrix}`.
+
+    The transformation is performed in two steps:
+
+    1. Convert both geodetic coordinates to ECEF coordinates.
+
+    .. math::
+
+        \\begin{array}{rcl}
+        x_1 & = & (N_1 + h_1) \\cos\\phi_1 \\cos\\lambda_1 \\\\
+        y_1 & = & (N_1 + h_1) \\cos\\phi_1 \\sin\\lambda_1 \\\\
+        z_1 & = & \\big(\\left(1 - e^2\\right)N_1 + h_1\\big) \\sin\\phi_1
+        \\end{array}
+
+    .. math::
+
+        \\begin{array}{rcl}
+        x_2 & = & (N_2 + h_2) \\cos\\phi_2 \\cos\\lambda_2 \\\\
+        y_2 & = & (N_2 + h_2) \\cos\\phi_2 \\sin\\lambda_2 \\\\
+        z_2 & = & \\big(\\left(1 - e^2\\right)N_2 + h_2\\big) \\sin\\phi_2
+        \\end{array}
+
+    2. Convert the difference between the two ECEF coordinates to ENU.
+
+    where :math:`N_1` and :math:`N_2` are the radius of curvature in the prime
+    vertical at the given latitude :math:`\\phi_1` and :math:`\\phi_2`,
+    respectively, and :math:`e^2` is the square of the first eccentricity of
+    the ellipsoid.
+
+    The ENU coordinates are computed as follows:
+
+    .. math::
+
+        \\begin{array}{rcl}
+        x_{\\mathrm{ENU}} & = & -\\sin\\lambda_2 \\, (x_2 - x_1) + \\cos\\lambda_2 \\, (y_2 - y_1) \\\\
+        y_{\\mathrm{ENU}} & = & -\\sin\\phi_2 \\, \\cos\\lambda_2 \\, (x_2 - x_1) - \\sin\\phi_2 \\, \\sin\\lambda_2 \\, (y_2 - y_1) + \\cos\\phi_2 \\, (z_2 - z_1) \\\\
+        z_{\\mathrm{ENU}} & = & \\cos\\phi_2 \\, \\cos\\lambda_2 \\, (x_2 - x_1) + \\cos\\phi_2 \\, \\sin\\lambda_2 \\, (y_2 - y_1) + \\sin\\phi_2 \\, (z_2 - z_1)
+        \\end{array}
+
+    Parameters
+    ----------
+    lat : float
+        Latitude of local origin, in degrees.
+    lon : float
+        Longitude of local origin, in degrees.
+    h : float
+        Height above ellipsoidal surface of local origin, in meters.
+    lat0 : float
+        Latitude of point of interesr, in degrees.
+    lon0 : float
+        Longitude of point of interest, in degrees.
+    h0 : float
+        Height above ellipsoidal surface of point of interest, in meters.
+    a : float, default: 6378137.0
+        Ellipsoid's equatorial radius (semi-major axis), in meters. Defaults to
+        Earth's.
+    ecc : float, default: 8.1819190842622e-2
+        Ellipsoid's first eccentricity. Defaults to Earth's.
+
+    Returns
+    -------
+    enu : numpy.ndarray
+        ENU cartesian coordinates [east, north, up].
+
+    The ENU coordinates are computed as follows:
+    """
+    x1, y1, z1 = geodetic2ecef(lat, lon, h, a, ecc)
+    x2, y2, z2 = geodetic2ecef(lat0, lon0, h0, a, ecc)
+    return ecef2enuv(x1, y1, z1, x2, y2, z2, lat0, lon0)
+
 def ecef2geodetic(x: float, y: float, z: float, a: float = EARTH_EQUATOR_RADIUS, b: float = EARTH_POLAR_RADIUS) -> np.ndarray:
     """
     Transform cartesian coordinates in ECEF-frame to Geodetic Coordinates
@@ -298,20 +375,72 @@ def ecef2enu(x: float, y: float, z: float, lat: float, lon: float, h: float, a: 
     """
     ecef = geodetic2ecef(lat, lon, h, a, ecc)
     x0, y0, z0 = ecef
-    return ecef2enuv(x-x0, y-y0, z-z0, lat, lon)
+    return ecef2enuv(x, y, z, x0, y0, z0, lat, lon)
 
-def ecef2enuv(u: float, v: float, w: float, lat: float, lon: float) -> np.ndarray:
+def ecef2enuv(x: float, y: float, z: float, x0: float, y0: float, z0: float, lat: float, lon: float) -> np.ndarray:
     """
     Transform coordinates from ECEF to ENU
 
+    To carry a transformation from the Earth-Centered Earth-Fixed (ECEF) frame
+    to local coordinates we define a reference point :math:`\\mathbf{x}_r=
+    \\begin{pmatrix}x_r & y_r & z_r\\end{pmatrix}`, and a point of interest
+    :math:`\\mathbf{x}_p=\\begin{pmatrix}x_p & y_p & z_p\\end{pmatrix}`.
+
+    We then transform from ECEF coordinates to the local navigation frame (LLF)
+    using the rotation matrix :math:`R_{LLF}` :cite:p:`noureldin2013`
+    :cite:p:`Wiki_Geographic_Conversions`:
+
+    .. math::
+
+        R_{LLF} = \\begin{bmatrix}
+        -\\sin\\lambda_r & \\cos\\lambda_r & 0 \\\\
+        -\\sin\\phi_r\\cos\\lambda_r & -\\sin\\phi_r\\sin\\lambda_r & \\cos\\phi_r \\\\
+        \\cos\\phi_r\\cos\\lambda_r & \\cos\\phi_r\\sin\\lambda_r & \\sin\\phi_r
+        \\end{bmatrix}
+
+    The LLF-frame is referred to as **ENU** since its axes are aligned with the
+    East, North and Up directions.
+
+    The vector pointing from the reference point to the point of interest in
+    the ENU frame is given by:
+
+    .. math::
+
+        \\begin{array}{rcl}
+        \\mathbf{x}_{\\mathrm{ENU}} & = & R_{LLF} \\, \\mathbf{x}_{\\mathrm{ECEF}} \\\\
+        \\begin{bmatrix}x \\\\ y \\\\ z\\end{bmatrix}_{\\mathrm{ENU}}
+        & = &
+        \\begin{bmatrix} -\\sin\\lambda_r & \\cos\\lambda_r & 0 \\\\
+        -\\sin\\phi_r\\cos\\lambda_r & -\\sin\\phi_r\\sin\\lambda_r & \\cos\\phi_r \\\\
+        \\cos\\phi_r\\cos\\lambda_r & \\cos\\phi_r\\sin\\lambda_r & \\sin\\phi_r
+        \\end{bmatrix}
+        \\begin{bmatrix}x_p - x_r \\\\ y_p - y_r \\\\ z_p - z_r\\end{bmatrix}
+        \\end{array}
+
+    The final ENU coordinates are:
+
+    .. math::
+
+        \\begin{array}{rcl}
+        x_{\\mathrm{ENU}} & = & -\\sin\\lambda_r \\, (x_p - x_r) + \\cos\\lambda_r \\, (y_p - y_r) \\\\
+        y_{\\mathrm{ENU}} & = & -\\sin\\phi_r \\, \\cos\\lambda_r \\, (x_p - x_r) - \\sin\\phi_r \\, \\sin\\lambda_r \\, (y_p - y_r) + \\cos\\phi_r \\, (z_p - z_r) \\\\
+        z_{\\mathrm{ENU}} & = & \\cos\\phi_r \\, \\cos\\lambda_r \\, (x_p - x_r) + \\cos\\phi_r \\, \\sin\\lambda_r \\, (y_p - y_r) + \\sin\\phi_r \\, (z_p - z_r)
+        \\end{array}
+
     Parameters
     ----------
-    u : float
-        U component in geocentric ECEF frame.
-    v : float
-        V component in geocentric ECEF frame.
-    w : float
-        W component in geocentric ECEF frame.
+    x : float
+        ECEF x-coordinate, in meters.
+    y : float
+        ECEF y-coordinate, in meters.
+    z : float
+        ECEF z-coordinate, in meters.
+    x0 : float
+        ECEF x-coordinate of reference point, in meters.
+    y0 : float
+        ECEF y-coordinate of reference point, in meters.
+    z0 : float
+        ECEF z-coordinate of reference point, in meters.
     lat : float
         Latitude, in degrees.
     lon : float
@@ -324,6 +453,9 @@ def ecef2enuv(u: float, v: float, w: float, lat: float, lon: float) -> np.ndarra
     """
     lat *= DEG2RAD
     lon *= DEG2RAD
+    u = x - x0
+    v = y - y0
+    w = z - z0
     t     =  np.cos(lon)*u + np.sin(lon)*v
     east  = -np.sin(lon)*u + np.cos(lon)*v
     up    =  np.cos(lat)*t + np.sin(lat)*w
