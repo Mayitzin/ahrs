@@ -524,7 +524,7 @@ class FLAE:
             # Parameters (eq. 53)
             T0 = 2*t1**3 + 27*t2**2 - 72*t1*t3
             T1 = np.cbrt(T0 + np.emath.sqrt(-4*(t1**2 + 12*t3)**3 + T0**2).real)
-            T2 = np.sqrt(-4*t1 + np.cbrt(16)*(t1**2 + 12*t3)/T1 + np.cbrt(4)*T1)
+            T2 = np.sqrt(abs(-4*t1 + np.cbrt(16)*(t1**2 + 12*t3)/T1 + np.cbrt(4)*T1))
             # Solutions to polynomial (eq. 52)
             L = np.zeros(4)
             L[0] =   T2 - np.sqrt(-T2**2 - 12*t1 - 12*np.sqrt(6)*t2/T2)
