@@ -218,7 +218,7 @@ from typing import Union
 import numpy as np
 from ..common.orientation import q_prod
 from ..common.orientation import q_conj
-from ..common.orientation import am2q
+from ..common.orientation import ecompass
 from ..common.constants import MUNICH_LONGITUDE
 from ..common.constants import MUNICH_LATITUDE
 from ..common.constants import MUNICH_HEIGHT
@@ -315,7 +315,7 @@ class Fourati:
         self.mag: np.ndarray = mag
         self.frequency: float = kwargs.get('frequency', 100.0)
         self.Dt: float = kwargs.get('Dt', 1.0/self.frequency if self.frequency else 0.01)
-        self.gain: float = kwargs.get('gain', 0.01)
+        self.gain: float = kwargs.get('gain', 0.1)
         self.q0: np.ndarray = kwargs.get('q0')
         # Reference vectors
         self.m_q: np.ndarray = _set_magnetic_field_vector(kwargs.get('magnetic_dip'))
@@ -370,7 +370,7 @@ class Fourati:
             raise ValueError("mag and gyr are not the same size")
         num_samples = len(self.gyr)
         Q = np.zeros((num_samples, 4))
-        Q[0] = am2q(self.acc[0], self.mag[0]) if self.q0 is None else self.q0/np.linalg.norm(self.q0)
+        Q[0] = ecompass(self.acc[0], self.mag[0], frame='NED', representation='quaternion')
         for t in range(1, num_samples):
             Q[t] = self.update(Q[t-1], self.gyr[t], self.acc[t], self.mag[t])
         return Q
@@ -406,9 +406,13 @@ class Fourati:
         if gyr is None or not np.linalg.norm(gyr) > 0:
             return q
         qDot = 0.5 * q_prod(q, [0, *gyr])                           # (eq. 5)
-        a_norm = np.linalg.norm(acc)
-        m_norm = np.linalg.norm(mag)
-        if a_norm > 0 and m_norm > 0 and self.gain > 0:
+        if self.gain > 0:
+            a_norm = np.linalg.norm(acc)
+            if a_norm == 0:
+                raise ValueError("Accelerometer data is null. Cannot estimate quaternion.")
+            m_norm = np.linalg.norm(mag)
+            if m_norm == 0:
+                raise ValueError("Magnetometer data is null. Cannot estimate quaternion.")
             # Levenberg Marquardt Algorithm
             fhat = q_prod(q_conj(q), q_prod(self.g_q, q))           # (eq. 21)
             hhat = q_prod(q_conj(q), q_prod(self.m_q, q))           # (eq. 22)
@@ -416,9 +420,10 @@ class Fourati:
             yhat = np.r_[fhat[1:], hhat[1:]]                        # Estimated values (eq. 8)
             dq = y - yhat                                           # Modeling Error
             X = -2*np.c_[skew(fhat[1:]), skew(hhat[1:])].T          # Jacobian Matrix (eq. 23)
-            lam = 1e-8                                              # Deviation to guarantee inversion
-            K = self.gain*np.linalg.inv(X.T@X + lam*np.eye(3))@X.T  # Filter gain (eq. 24)
-            Delta = [1, *K@dq]                                      # Correction term (eq. 25)
+            lam = 1e-5                                              # Deviation to guarantee inversion
+            K = self.gain*np.linalg.inv(X.T@X + lam*np.eye(3))@X.T  # Gain (eq. 24)
+            eta = K @ dq                                            # Unique minimum (eq. 10)
+            Delta = [1, *eta]                                       # Correction term (eq. 25)
             qDot = q_prod(qDot, Delta)                              # Corrected quaternion rate (eq. 7)
         q += qDot*dt
         return q/np.linalg.norm(q)
