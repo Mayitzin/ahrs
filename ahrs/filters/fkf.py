@@ -12,6 +12,7 @@ from typing import Tuple
 from typing import Optional
 import numpy as np
 from ..utils.core import _assert_numerical_iterable
+from ..common.orientation import ecompass
 
 class FKF:
     """
@@ -210,7 +211,7 @@ class FKF:
         Sigma_am = np.diag([self.sigma_a]*3 + [self.sigma_m]*3)     # (eq. 28)
         Q = np.zeros((num_samples, 4))
         # Initial quaternion from the accelerometer and magnetometer
-        Q[0], _ = self.measurement_quaternion_acc_mag(np.array([1.0, 0.0, 0.0, 0.0]), acc[0], mag[0])
+        Q[0] = ecompass(acc[0], mag[0], frame='NED', representation='quaternion')
         for i in range(1, num_samples):
             q_ = Q[i-1]                                             # Previous quaternion
             # PROCESS MODEL
