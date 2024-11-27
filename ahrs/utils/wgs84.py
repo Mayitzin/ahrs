@@ -448,6 +448,21 @@ class WGS(ReferenceEllipsoid):
     """
     World Geodetic System 1984
 
+    This class is a subclass of the :class:`ReferenceEllipsoid` and sets the
+    default values for the WGS 84 model:
+
+    +-----------------------+---------------------------------------+---------------------+---------+
+    | Symbol                | Definition                            | Value               | Unit    |
+    +=======================+=======================================+=====================+=========+
+    | :math:`a`             | Semi-major Axis                       | 6378137.0           | m       |
+    +-----------------------+---------------------------------------+---------------------+---------+
+    | :math:`1/f`           | Flattening Factor of the Earth        | 298.257223563       |         |
+    +-----------------------+---------------------------------------+---------------------+---------+
+    | :math:`GM`            | Geocentric Gravitational Constant     | 3.986004418 x 10^14 | m^3/s^2 |
+    +-----------------------+---------------------------------------+---------------------+---------+
+    | :math:`\\omega`        | Earth's Nominal Mean Angular Velocity | 7.292115 x 10^-5    | rad/s   |
+    +-----------------------+---------------------------------------+---------------------+---------+
+
     Parameters
     ----------
     a : float, default: 6378137.0
@@ -460,6 +475,29 @@ class WGS(ReferenceEllipsoid):
     w : float, default: 0.00007292115
         Ellipsoid's rotation rate in rad/s
 
+    Examples
+    --------
+    >>> wgs = ahrs.utils.WGS()
+    >>> wgs.a
+    6378137.0
+    >>> wgs.f
+    0.0033528106647474805
+    >>> wgs.gm
+    398600441800000.0
+    >>> wgs.w
+    7.292115e-05
+
+    It inherits methods and properties from the :class:`ReferenceEllipsoid`
+    class, and adds some specific methods for the WGS 84 model.
+
+    >>> wgs.mass
+    5.972186390142457e+24
+    >>> wgs.sidereal_day
+    86164.09053083288
+    >>> wgs.normal_gravity(0.0)     # Normal gravity at Equator (latitude = 0.0 °)
+    9.78032533590406
+    >>> wgs.normal_gravity(50.0)    # Normal gravity at latitude = 50.0 °
+    9.810702135603085
     """
     def __init__(self, a: float = EARTH_EQUATOR_RADIUS, f: float = EARTH_FLATTENING, GM: float = EARTH_GM, w: float = EARTH_ROTATION):
         super().__init__(a, f, GM, w)
