@@ -569,6 +569,13 @@ class WGS(ReferenceEllipsoid):
         where :math:`G` is the universal constant of gravitation equal to
         :math:`6.67428\\times 10^{-11} \\frac{\\mathrm{m}^3}{\\mathrm{kg} \\mathrm{s}^2}`
 
+        .. note::
+
+            The universal constant of gravitation for WGS84 is not the same as
+            the one defined by CODATA :cite:p:`codata2018`
+            (:math:`6.67430\\times 10^{-11}`), which is the default value in
+            the :class:`ReferenceEllipsoid` class.
+
         Example
         -------
         >>> wgs = ahrs.utils.WGS()
