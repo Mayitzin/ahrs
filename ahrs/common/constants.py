@@ -23,7 +23,7 @@ The following constants are set as defined in the latest report of the World
 Geodetic System 1984 :cite:p:`wgs84-2014` and can be compared against
 :cite:p:`chambat2001`. The CODATA constants :cite:p:`mohr2016` and
 :cite:p:`tiesinga2021` are differentiated with an ending indicating their epoch
-as ``CODATA2014`` and ``CODATA2018`` respectively.
+as ``CODATA2014`` and ``CODATA2018`` :cite:p:`codata2018` respectively.
 
 ====================================  ==============================================  =============
 Name                                  Description                                     Value
