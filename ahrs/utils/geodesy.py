@@ -1,5 +1,43 @@
 """
-Geodesy-related functions
+A `reference ellipsoid <https://en.wikipedia.org/wiki/Earth_ellipsoid#Reference_ellipsoid>`_
+is a simple, smooth shape used to approximate the Earth's true form (or that of
+another planet). It is basically a mathematical definition of a planet's
+surface defined as an `oblate spheroid <https://en.wikipedia.org/wiki/Spheroid#Oblate_spheroids>`_,
+ignoring the bumps and dips caused by mountains, valleys, and other features.
+
+The actual shape, called `geoid <https://en.wikipedia.org/wiki/Geoid>`_, is
+uneven because of differences in the planet's gravity caused by variations in
+its interior composition and density.
+
+The geoid is like an imaginary version of Earth's shape, smoothed out and
+stripped of mountains, valleys, and other surface features. It represents the
+average sea level if the oceans were calm, with no tides, currents, or air
+pressure changes.
+
+The geoid's surface sits higher than the reference ellipsoid in areas where
+there's extra mass, causing stronger gravity (a positive gravity anomaly).
+
+On the other hand, it dips below the reference ellipsoid in places where
+there's less mass, leading to weaker gravity (a negative gravity anomaly).
+
+This happens, because gravity potential is inversely proportional to distance
+from the body. So, while a mass excess will strengthen the gravity acceleration,
+it will decrease the gravity potential.
+
+Since reference ellipsoids are easier to work with than the irregular geoid,
+they are used for mapping and calculations. They provide the surface on which
+coordinates like latitude, longitude, and elevation are defined.
+
+In this library we focus on the reference ellipsoid used to model the Earth's
+shape. The most popular reference ellipsoid is the `World Geodetic System
+(WGS) 84 <https://en.wikipedia.org/wiki/World_Geodetic_System>`_, which is the
+basis for the Global Positioning System (GPS).
+
+This model is enough for most applications including the navigation of aircraft,
+ships, and cars, as well as for surveying and mapping. Therefore, we will use
+the WGS84 as the default reference ellipsoid throughout this library for all
+our implementations.
+
 """
 
 import numpy as np
