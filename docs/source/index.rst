@@ -82,9 +82,9 @@ Loading and visualizing the data is left to the preference of the user.
    :hidden:
 
    installation
+   geodesy
    attitude_representations
    filters
-   world_models
    metrics
    frames
    sensors
