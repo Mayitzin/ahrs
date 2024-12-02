@@ -54,20 +54,8 @@ DEFAULT_STANDARD_GRAVITATIONAL_PARAMETER = UNIVERSAL_GRAVITATION_CODATA2018 * DE
 
 class ReferenceEllipsoid:
     """
-    Reference Ellipsoid
-    -------------------
-
-    The `reference ellipsoid <https://en.wikipedia.org/wiki/Earth_ellipsoid#Reference_ellipsoid>`_
-    is a mathematical description of a surface **approximating** the `Geoid
-    <https://en.wikipedia.org/wiki/Geoid>`_, which is the truer, imperfect
-    figure of a planetary body.
-
-    When describing Earth, for example, the reference ellipsoid would represent
-    the shape that the ocean surface would take under the influence of Earth's
-    gravity and rotation, ignoring the effects of winds and tides.
-
     This implementation is based on the World Geodetic System (WGS) reference
-    ellipsoid cite:p:`wgs84-2014`, which is the most widely used reference
+    ellipsoid :cite:p:`wgs84-2014`, which is the most widely used reference
     ellipsoid for the Global Positioning System (GPS).
 
     The WGS84 uses four elemental parameters to describe a reference ellipsoid:
@@ -232,8 +220,8 @@ class ReferenceEllipsoid:
 
         Example
         -------
-        >>> wgs = ahrs.utils.referenceEllipsoid()
-        >>> wgs.first_eccentricity_squared
+        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref.first_eccentricity_squared
         0.0
         """
         return 2*self.f - self.f**2
