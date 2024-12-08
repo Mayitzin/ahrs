@@ -6,12 +6,9 @@ focusing on the validation and comparison of rotation matrices and quaternions.
 They include guard clauses to raise appropriate errors if the inputs do not
 meet the required criteria, ensuring robust and error-free computations.
 
-Additionally, the submodule implements the euclidean error function, to
-calculate the Euclidean distance between two arrays, and accepts parameters
-similar to those of `numpy.linalg.norm()`.
-
-Also provided are functions to calculate the RMS error between two matrices or
-between an array of matrices, either element-wise or as a whole.
+Additionally, the submodule implements a euclidean error estimation function,
+and functions to calculate the RMS error between two matrices or between an
+array of matrices, either element-wise or as a whole.
 
 """
 
