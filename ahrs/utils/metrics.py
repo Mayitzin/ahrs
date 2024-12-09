@@ -63,9 +63,6 @@ def _quaternions_guard_clauses(q1: Union[list, np.ndarray], q2: Union[list, np.n
 
 def euclidean(x: np.ndarray, y: np.ndarray, **kwargs) -> float:
     """
-    Euclidean Distance
-    ------------------
-
     Euclidean distance between two arrays as described in :cite:p:`huynh2009`:
 
     .. math::
@@ -111,9 +108,6 @@ def euclidean(x: np.ndarray, y: np.ndarray, **kwargs) -> float:
 
 def chordal(R1: np.ndarray, R2: np.ndarray) -> Union[float, np.ndarray]:
     """
-    Chordal Distance
-    ----------------
-
     The chordal distance between two rotations :math:`\\mathbf{R}_1` and
     :math:`\\mathbf{R}_2` in SO(3) is the Euclidean distance between them in
     the embedding space :math:`\\mathbb{R}^{3\\times 3}=\\mathbb{R}^9`
@@ -167,9 +161,6 @@ def chordal(R1: np.ndarray, R2: np.ndarray) -> Union[float, np.ndarray]:
 
 def identity_deviation(R1: np.ndarray, R2: np.ndarray) -> float:
     """
-    Deviation from Identity Matrix
-    ------------------------------
-
     The deviation from the identity matrix between two rotations :math:`\\mathbf{R}_1`
     and :math:`\\mathbf{R}_2` in SO(3) is defined in :cite:p:`huynh2009` as:
 
@@ -222,9 +213,6 @@ def identity_deviation(R1: np.ndarray, R2: np.ndarray) -> float:
 
 def angular_distance(R1: np.ndarray, R2: np.ndarray) -> float:
     """
-    Angular distance
-    ----------------
-
     The angular distance between two rotations :math:`\\mathbf{R}_1` and
     :math:`\\mathbf{R}_2` in SO(3), as defined in :cite:p:`hartley2013`:
 
@@ -266,9 +254,6 @@ def angular_distance(R1: np.ndarray, R2: np.ndarray) -> float:
 
 def qdist(q1: np.ndarray, q2: np.ndarray) -> float:
     """
-    Quaternion Euclidean Distance
-    -----------------------------
-
     Euclidean distance between two unit quaternions as defined in :cite:p:`huynh2009` and
     :cite:p:`hartley2013`:
 
@@ -323,9 +308,6 @@ def qdist(q1: np.ndarray, q2: np.ndarray) -> float:
 
 def qeip(q1: np.ndarray, q2: np.ndarray) -> float:
     """
-    Quaternion distance of inner products
-    -------------------------------------
-
     Euclidean distance of inner products between two unit quaternions
     :math:`\\mathbf{q}_1` and :mathbf{q}_2` as defined in :cite:p:`huynh2009`
     and :cite:p:`kuffner2004`:
@@ -381,9 +363,6 @@ def qeip(q1: np.ndarray, q2: np.ndarray) -> float:
 
 def qcip(q1: np.ndarray, q2: np.ndarray) -> float:
     """
-    Cosine of inner products
-    ------------------------
-
     The cosine of inner products between two unit quaternions
     :math:`\\mathbf{q}_1` and :mathbf{q}_2` as defined in :cite:p:`huynh2009`:
 
@@ -438,9 +417,6 @@ def qcip(q1: np.ndarray, q2: np.ndarray) -> float:
 
 def qad(q1: np.ndarray, q2: np.ndarray) -> float:
     """
-    Quaternion Angle Difference
-    ---------------------------
-
     The quaternion angular difference between two unit quaternions
     :math:`\\mathbf{q}_1` and :mathbf{q}_2` as defined in :cite:p:`thibaud2017`:
 
@@ -497,9 +473,6 @@ def qad(q1: np.ndarray, q2: np.ndarray) -> float:
 
 def rmse(x: np.ndarray, y: np.ndarray):
     """
-    Root Mean Squared Error
-    -----------------------
-
     The `RMSE <https://en.wikipedia.org/wiki/Root_mean_square_deviation>`_ is
     computed as:
 
@@ -533,9 +506,6 @@ def rmse(x: np.ndarray, y: np.ndarray):
 
 def rmse_matrices(A: np.ndarray, B: np.ndarray, element_wise: bool = False) -> np.ndarray:
     """
-    Root Mean Square Error between two arrays of matrices
-    -----------------------------------------------------
-
     The Root Mean Square Error (RMSE) between two arrays of matrices :math:`A`
     and :math:`B` is calculated as the square root of the mean of the squared
     differences between the elements of the two arrays.
