@@ -299,11 +299,11 @@ class WMM:
     ----------
     date : datetime.date, int or float, default: current day
         Date of desired magnetic field estimation.
-    latitude : float, default: None
+    latitude : float, default: 48.137230
         Latitude, in decimal degrees, in geodetic coordinates.
-    longitude : float, default: None
+    longitude : float, default: 11.575508
         Longitude, in decimal degrees, in geodetic coordinates.
-    height : float, default: 0.0
+    height : float, default: 0.521
         Mean Sea Level Height, in kilometers.
     frame : str, default: 'NED'
         Local tangent plane coordinate frame. Valid options are right-handed
@@ -364,7 +364,7 @@ class WMM:
                  date: Union[datetime.date, int, float] = None,
                  latitude: float = MUNICH_LATITUDE,
                  longitude: float = MUNICH_LONGITUDE,
-                 height: float = MUNICH_HEIGHT,
+                 height: float = MUNICH_HEIGHT/1000,
                  frame: str = 'NED') -> None:
         self.epoch: float = 2015
         self.reset_coefficients(date)
