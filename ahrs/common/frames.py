@@ -296,7 +296,7 @@ def llf2ecef(lat: float, lon: float) -> np.ndarray:
 
     Returns
     -------
-    R : np.ndarray
+    R : numpy.ndarray
         Rotation Matrix.
     """
     return np.array([
@@ -317,7 +317,7 @@ def ecef2llf(lat: float, lon: float) -> np.ndarray:
 
     Returns
     -------
-    R : np.ndarray
+    R : numpy.ndarray
         Rotation Matrix.
     """
     return np.array([
@@ -475,7 +475,7 @@ def enu2ecef(lat: float, lon: float) -> np.ndarray:
 
     Returns
     -------
-    R : np.ndarray
+    R : numpy.ndarray
         Rotation Matrix.
     """
     return np.array([
@@ -501,12 +501,12 @@ def ned2enu(x: np.ndarray) -> np.ndarray:
 
     Parameters
     ----------
-    x : np.ndarray
+    x : numpy.ndarray
         3D coordinates of point(s) to project.
 
     Returns
     -------
-    x' : np.ndarray
+    x' : numpy.ndarray
         Transformed coordinates.
     """
     return _ltp_transformation(x)
@@ -517,12 +517,12 @@ def enu2ned(x: np.ndarray) -> np.ndarray:
 
     Parameters
     ----------
-    x : np.ndarray
+    x : numpy.ndarray
         3D coordinates of point(s) to project.
 
     Returns
     -------
-    x' : np.ndarray
+    x' : numpy.ndarray
         Transformed coordinates.
     """
     return _ltp_transformation(x)
