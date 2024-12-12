@@ -13,18 +13,21 @@ frame, and the object is usually a sensor or a vehicle.
 In this case, the sensor frame is usually attached to the object, and the
 navigation frame is attached to the Earth.
 
-There are 4 main frames:
+There main frames are:
 
 - **Earth-Centered Inertial Frame** (ECI), also noted as **i-frame**, has its
   origin at the center of mass of the Earth. The X-axis points towards the
   `vernal equinox <https://en.wikipedia.org/wiki/March_equinox>`_ in the
   equatorial plane. The Z-axis is along the rotation axis of the Earth. The
-  Y-axis completes with a right-hand system.
+  Y-axis completes with a right-hand system. This is also sometimes known as
+  the `Celestial Reference System <https://gssc.esa.int/navipedia/index.php/Conventional_Celestial_Reference_System)>`_
+  (CRS.)
 - **Earth-Centered Earth-Fixed Frame** (ECEF), also noted as **e-frame**, has
   its origin and Z-axis aligned to the i-frame, but rotates along with the
   Earth. Therefore, is Earth-Fixed.
-- **Local-Level Frame** (LLF), also noted as **l-frame**, is the local
-  navigation frame, whose origin coincides with the sensor frame.
+- The **North-East-Down** (NED) system has its origin fixed at the center of
+  gravity of the aircraft. It is defined relative to a specific location on
+  Earth, described by latitude, longitude and altitude.
 
 """
 
