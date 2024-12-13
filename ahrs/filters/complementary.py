@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Complementary Filter
-====================
-
 Attitude obtained with gyroscope and accelerometer-magnetometer measurements,
 via complementary filter.
 

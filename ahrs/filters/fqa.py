@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Factored Quaternion Algorithm
-=============================
-
 The factored quaternion algorithm (FQA) produces a quaternion output to
 represent the orientation, restricting the use of magnetic data to the
 determination of the rotation about the vertical axis :cite:p:`yun2008`.

@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Madgwick Orientation Filter
-===========================
-
 .. contents:: Table of Contents
     :local:
     :depth: 2

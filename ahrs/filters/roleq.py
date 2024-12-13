@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Recursive Optimal Linear Estimator of Quaternion
-================================================
-
 This is a modified `OLEQ <./oleq.html>`_, where a recursive estimation of the
 attitude is made with the measured angular velocity :cite:p:`zhou2018`. This
 estimation is set as the initial value for the OLEQ estimation, simplyfing the

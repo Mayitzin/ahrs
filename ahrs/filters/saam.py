@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Super-fast Attitude from Accelerometer and Magnetometer
-=======================================================
-
 This novel estimator proposed by :cite:p:`wu2018-2`, offers an extremely
 simplified computation of `Davenport's <../davenport.html>`_ solution to
 `Wahba's problem <https://en.wikipedia.org/wiki/Wahba%27s_problem>`_, where the

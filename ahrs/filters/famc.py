@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-
-Fast Accelerometer-Magnetometer Combination
-===========================================
-
 The most typical low-cost sensor system is the Accelerometer-Magnetometer
 combination (AMC). It integrates the local gravity and the Earth's magnetic
 field together, forming a full-attitude estimation system.

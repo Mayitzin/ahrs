@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Optimal Linear Estimator of Quaternion
-======================================
-
 Considering an attitude determination model from a pair of vector observations:
 
 .. math::

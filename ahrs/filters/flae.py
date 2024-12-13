@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Fast Linear Attitude Estimator
-==============================
-
 The Fast Linear Attitude Estimator (FLAE) obtains the attitude quaternion with
 an eigenvalue-based solution as proposed by :cite:p:`wu2018`.
 

@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Attitude from gravity (Tilt)
-============================
-
 Attitude estimation via gravity acceleration measurements.
 
 The simplest way to estimate the attitude from the gravitational acceleration

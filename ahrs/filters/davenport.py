@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Davenport's q-Method
-====================
-
 In 1965 `Grace Wahba <https://en.wikipedia.org/wiki/Grace_Wahba>`_ came up with
 a simple, yet very intuitive, way to describe the problem of finding a rotation
 between two coordinate systems.

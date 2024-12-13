@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Attitude from angular rate
-==========================
-
 Unitary quaternions [#]_ are used when representing an attitude. They can be
 updated via integration of angular rate measurements of a gyroscope.
 

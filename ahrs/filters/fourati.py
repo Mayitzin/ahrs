@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Fourati's nonlinear attitude estimation
-=======================================
-
 Attitude estimation algorithm as proposed in :cite:p:`fourati2011`, whose
 approach combines a quaternion-based nonlinear filter with the
 `Levenberg-Marquardt Algorithm (LMA.)

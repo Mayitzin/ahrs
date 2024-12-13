@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-TRIAD
-=====
-
 The Tri-Axial Attitude Determination (`TRIAD
 <https://en.wikipedia.org/wiki/Triad_method>`_) was first described by Harold
 Black in :cite:p:`black1964` to algebraically estimate an attitude represented

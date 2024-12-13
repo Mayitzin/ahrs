@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Algebraic Quaternion Algorithm
-==============================
-
 Roberto Valenti's Algebraic Quaterion Algorithm (AQUA) :cite:p:`valenti2015`
 estimates a quaternion with the algebraic solution of a system from
 inertial+magnetic observations, solving `Wahba's Problem

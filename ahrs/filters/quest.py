@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-QUEST
-=====
-
 QUaternion ESTimator as described by Shuster in :cite:p:`shuster1981` and
 :cite:p:`shuster1978`.
 

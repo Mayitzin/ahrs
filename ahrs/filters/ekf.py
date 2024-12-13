@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Extended Kalman Filter
-======================
-
 The Extended Kalman Filter is one of the most used algorithms in the world, and
 this module will use it to compute the attitude as a quaternion with the
 observations of tri-axial gyroscopes, accelerometers and magnetometers.

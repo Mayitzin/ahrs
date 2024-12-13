@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Mahony Orientation Filter
-=========================
-
 This estimator proposed by Robert Mahony et al. :cite:p:`mahony2008` is formulated
 as a deterministic kinematic observer on the Special Orthogonal group SO(3)
 driven by an instantaneous attitude and angular velocity measurements
