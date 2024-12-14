@@ -323,28 +323,45 @@ def _assert_iterables(item, item_name: str = 'iterable'):
     if not isinstance(item, (list, tuple, np.ndarray)):
         raise TypeError(f"{item_name} must be given as an array, got {type(item)}")
 
-def slerp(q0: np.ndarray, q1: np.ndarray, t_array: np.ndarray, threshold: float = 0.9995) -> np.ndarray:
+def slerp(p: np.ndarray, q: np.ndarray, t_array: np.ndarray, threshold: float = 0.9995) -> np.ndarray:
     """
     Spherical Linear Interpolation between two quaternions.
 
-    Return a valid quaternion rotation at a specified distance along the minor
-    arc of a great circle passing through any two existing quaternion endpoints
-    lying on the unit radius hypersphere.
+    A SLERP to find a single quaternion :math:`\\mathbf{r}` between two
+    quaternions :math:`\\mathbf{p}` and :math:`\\mathbf{q}` is defined as:
 
-    It returns as many rotations between ``q0`` and ``q1`` as elements in
-    ``t_array``.
+    .. math::
+        \\mathbf{r} = \\frac{\\sin([1-\\alpha]\\Omega)}{\\sin\\Omega}\\mathbf{p} +
+        \\frac{\\sin(\\alpha\\Omega)}{\\sin\\Omega}\\mathbf{q}
+
+    where :math:`\\alpha` is a weight in the interval [0, 1] and :math:`\\Omega`
+    is the angle between the two quaternions. This is a `great circle
+    <https://en.wikipedia.org/wiki/Great_circle>`_ interpolation, where the
+    shortest path between two points on a sphere is followed.
+
+    This function returns an **array of quaternion orientations** along the
+    minor arc of the great circle passing through quaternion endpoints
+    :math:`\\mathbf{p}` and :math:`\\mathbf{q}` lying on the unit radius
+    hypersphere.
+
+    It returns as many orientations between ``p`` and ``q`` as elements in
+    ``t_array``, which must be an array of weights in the interval [0, 1].
 
     Based on the method detailed in :cite:p:`Wiki_SLERP`.
 
+    If the dot product between the two quaternions is greater than the
+    ``threshold``, the interpolation is done linearly (LERP). Otherwise, the
+    interpolation is done spherically (SLERP).
+
     Parameters
     ----------
-    q0 : numpy.ndarray
+    p : numpy.ndarray
         First endpoint quaternion.
-    q1 : numpy.ndarray
+    q : numpy.ndarray
         Second endpoint quaternion.
     t_array : numpy.ndarray
-        Array of weights to interpolate to. Values closer to 0.0 are closer to
-        first quaternion, and values closer to 1.0 are closer to second
+        Array of weights to interpolate to. Values closer to ``0`` are closer
+        to first quaternion, and values closer to ``1`` are closer to second
         quaternion.
     threshold : float, default: 0.9995
         Threshold to closeness of interpolation.
@@ -352,23 +369,43 @@ def slerp(q0: np.ndarray, q1: np.ndarray, t_array: np.ndarray, threshold: float 
     Returns
     -------
     q : numpy.ndarray
-        New array of quaternions representing the interpolated rotations.
+        New array of quaternions representing the interpolated orientations.
 
+    Example
+    -------
+    Create a single quaternion exactly in the middle of the two quaternions:
+
+    >>> slerp(p, q, [0.5])
+    array([[0.70710678, 0.70710678, 0.        , 0.        ]])
+
+    Create 5 equidistant orientations between quaternions :math:`\\mathbf{p}
+    = \\begin{bmatrix}1 & 0 & 0 & 0\\end{bmatrix}` and :math:`\\mathbf{q} =
+    \\begin{bmatrix}0 & 1 & 0 & 0\\end{bmatrix}`:
+
+    >>> p = [1.0, 0.0, 0.0, 0.0]
+    >>> q = [0.0, 1.0, 0.0, 0.0]
+    >>> slerp(p, q, [0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+    array([[1.00000000e+00, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00],
+           [9.51056516e-01, 3.09016994e-01, 0.00000000e+00, 0.00000000e+00],
+           [8.09016994e-01, 5.87785252e-01, 0.00000000e+00, 0.00000000e+00],
+           [5.87785252e-01, 8.09016994e-01, 0.00000000e+00, 0.00000000e+00],
+           [3.09016994e-01, 9.51056516e-01, 0.00000000e+00, 0.00000000e+00],
+           [6.12323400e-17, 1.00000000e+00, 0.00000000e+00, 0.00000000e+00]])
     """
-    _assert_iterables(q0, 'q0')
-    _assert_iterables(q1, 'q1')
+    _assert_iterables(p, 'p')
+    _assert_iterables(q, 'q')
     _assert_iterables(t_array, 't_array')
-    q0 = np.copy(q0)
-    q1 = np.copy(q1)
+    p = np.copy(p)
+    q = np.copy(q)
     t_array = np.copy(t_array)
-    qdot = np.dot(q0, q1)
+    qdot = np.dot(p, q)
     # Ensure SLERP takes the shortest path
     if qdot < 0.0:
-        q1 *= -1.0
+        q *= -1.0
         qdot *= -1.0
     # Interpolate linearly (LERP)
     if qdot > threshold:
-        result = q0[np.newaxis, :] + t_array[:, np.newaxis]*(q1 - q0)[np.newaxis, :]
+        result = p[np.newaxis, :] + t_array[:, np.newaxis]*(q - p)[np.newaxis, :]
         return (result.T / np.linalg.norm(result, axis=1)).T
     # Angle between vectors
     theta_0 = np.arccos(qdot)
@@ -377,7 +414,7 @@ def slerp(q0: np.ndarray, q1: np.ndarray, t_array: np.ndarray, threshold: float 
     sin_theta = np.sin(theta)
     s0 = np.cos(theta) - qdot*sin_theta/sin_theta_0
     s1 = sin_theta/sin_theta_0
-    return s0[:, np.newaxis]*q0[np.newaxis, :] + s1[:, np.newaxis]*q1[np.newaxis, :]
+    return s0[:, np.newaxis]*p[np.newaxis, :] + s1[:, np.newaxis]*q[np.newaxis, :]
 
 def random_attitudes(n: int = 1, representation: str = 'quaternion') -> np.ndarray:
     """
