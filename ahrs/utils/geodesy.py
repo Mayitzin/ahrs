@@ -155,7 +155,7 @@ class ReferenceEllipsoid:
 
         Examples
         --------
-        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref = ahrs.utils.ReferenceEllipsoid()
         >>> ref.normal_gravity(50.0)
         9.810702135603085
         >>> ref.normal_gravity(50.0, 100.0)
@@ -220,7 +220,7 @@ class ReferenceEllipsoid:
 
         Example
         -------
-        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref = ahrs.utils.ReferenceEllipsoid()
         >>> ref.first_eccentricity_squared
         0.0
         """
@@ -236,7 +236,7 @@ class ReferenceEllipsoid:
 
         Example
         -------
-        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref = ahrs.utils.ReferenceEllipsoid()
         >>> ref.second_eccentricity_squared
         0.0
         """
@@ -252,7 +252,7 @@ class ReferenceEllipsoid:
 
         Example
         -------
-        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref = ahrs.utils.ReferenceEllipsoid()
         >>> ref.linear_eccentricity
         0.0
         """
@@ -268,7 +268,7 @@ class ReferenceEllipsoid:
 
         Example
         -------
-        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref = ahrs.utils.ReferenceEllipsoid()
         >>> ref.aspect_ratio
         1.0
         """
@@ -287,7 +287,7 @@ class ReferenceEllipsoid:
 
         Example
         -------
-        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref = ahrs.utils.ReferenceEllipsoid()
         >>> ref.curvature_polar_radius
         1.0
         """
@@ -303,7 +303,7 @@ class ReferenceEllipsoid:
 
         Example
         -------
-        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref = ahrs.utils.ReferenceEllipsoid()
         >>> ref.arithmetic_mean_radius
         1.0
         """
@@ -319,7 +319,7 @@ class ReferenceEllipsoid:
 
         Example
         -------
-        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref = ahrs.utils.ReferenceEllipsoid()
         >>> ref.authalic_sphere_radius
         1.0
         """
@@ -340,7 +340,7 @@ class ReferenceEllipsoid:
 
         Example
         -------
-        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref = ahrs.utils.ReferenceEllipsoid()
         >>> ref.equivolumetric_sphere_radius
         1.0
         """
@@ -356,7 +356,7 @@ class ReferenceEllipsoid:
 
         Example
         -------
-        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref = ahrs.utils.ReferenceEllipsoid()
         >>> ref.normal_gravity_constant
         14982844642.8839
         """
@@ -377,7 +377,7 @@ class ReferenceEllipsoid:
 
         Example
         -------
-        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref = ahrs.utils.ReferenceEllipsoid()
         >>> ref.dynamical_form_factor
         0.0
         """
@@ -399,7 +399,7 @@ class ReferenceEllipsoid:
 
         Example
         -------
-        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref = ahrs.utils.ReferenceEllipsoid()
         >>> ref.second_degree_zonal_harmonic
         0.0
         """
@@ -416,7 +416,7 @@ class ReferenceEllipsoid:
 
         Example
         -------
-        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref = ahrs.utils.ReferenceEllipsoid()
         >>> ref.normal_gravity_potential
         6.6743e-11
         """
@@ -444,7 +444,7 @@ class ReferenceEllipsoid:
 
         Example
         -------
-        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref = ahrs.utils.ReferenceEllipsoid()
         >>> ref.equatorial_normal_gravity
         14982844642.8839
         """
@@ -475,7 +475,7 @@ class ReferenceEllipsoid:
 
         Example
         -------
-        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref = ahrs.utils.ReferenceEllipsoid()
         >>> ref.polar_normal_gravity
         14982844642.8839
         """
@@ -503,7 +503,7 @@ class ReferenceEllipsoid:
 
         Example
         -------
-        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref = ahrs.utils.ReferenceEllipsoid()
         >>> ref.mean_normal_gravity
         14982844642.8839
         """
@@ -527,7 +527,7 @@ class ReferenceEllipsoid:
 
         Example
         -------
-        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref = ahrs.utils.ReferenceEllipsoid()
         >>> ref.mass
         1.0
         """
@@ -540,7 +540,7 @@ class ReferenceEllipsoid:
 
         Example
         -------
-        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref = ahrs.utils.ReferenceEllipsoid()
         >>> ref.is_geodetic
         False
         """
@@ -560,7 +560,7 @@ class ReferenceEllipsoid:
 
         Example
         -------
-        >>> ref = ahrs.utils.referenceEllipsoid()
+        >>> ref = ahrs.utils.ReferenceEllipsoid()
         >>> ref.sidereal_day
         6.283185307179586
         """
