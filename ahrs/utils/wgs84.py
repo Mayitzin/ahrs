@@ -351,7 +351,7 @@ def international_gravity(lat: float, epoch: str = '1980') -> float:
     .. math::
         \\mathrm{g} = 9.78049 \\big(1 + 0.0052884 \\sin^2\\phi - 0.0000059 \\sin^2(2\\phi)\\big)
 
-    Originally, the definitions of the elementary properties (:math:`a`,
+    Back in 1930 the definitions of the elementary properties (:math:`a`,
     :math:`\\mathrm{g}_e`, etc.) weren't as accurate as now. At different
     moments in history, the values were updated to improve the accuracy of the
     formula. Those different moments are named **epochs** and are labeled
@@ -363,10 +363,16 @@ def international_gravity(lat: float, epoch: str = '1980') -> float:
     1930   9.78049               5.2884 x 10^-3   5.9 x 10^-6
     1948   9.780373              5.2891 x 10^-3   5.9 x 10^-6
     1967   9.780318              5.3024 x 10^-3   5.9 x 10^-6
-    1980   9.780327              5.3024 x 10^-3   5.8 x 10^-6
+    1980   9.780367715           5.3024 x 10^-3   5.8 x 10^-6
+    1984   9.7803253359          5.3024 x 10^-3   5.8 x 10^-6
     =====  ====================  ===============  ===========
 
-    The latest epoch, 1980, is used here by default.
+    The epoch 1980, which is the most commonly used, is implemented here by
+    default.
+
+    The epoch 1984 was updated with the WGS84 ellipsoid model, but it does not
+    offer a significant improvement in accuracy :cite:p:`moritz1980`
+    :cite:p:`hinze2013`.
 
     Parameters
     ----------
@@ -394,13 +400,15 @@ def international_gravity(lat: float, epoch: str = '1980') -> float:
     if epoch not in ['1930', '1948', '1967', '1980']:
         raise ValueError("Invalid epoch. Try '1930', '1948', '1967' or '1980'.")
     # Note: From Python 3.10 it is possible to use Structural Pattern Matching.
-    g_e, b1, b2 = 9.780327, 5.3024e-3, 5.8e-6
+    g_e, b1, b2 = 9.780367715, 5.302440112e-3, 5.8e-6
     if epoch == '1930':
         g_e, b1, b2 = 9.78049, 5.2884e-3, 5.9e-6
     if epoch == '1948':
         g_e, b1, b2 = 9.780373, 5.2891e-3, 5.9e-6
     if epoch == '1967':
         g_e, b1, b2 = 9.780318, 5.3024e-3, 5.9e-6
+    if epoch == '1984':
+        g_e, b1, b2 = 9.7803253359, 5.302440112e-3, 5.8e-6
     lat *= DEG2RAD
     return g_e*(1.0 + b1*np.sin(lat)**2 - b2*np.sin(2.0*lat)**2)
 
