@@ -42,9 +42,24 @@ account for changes in the Earth's magnetic field.
 These three systems (WMM, reference ellipsoid, and WGS84) are implemented in
 this library.
 
+Classes
+-------
+
 .. toctree::
    :titlesonly:
 
-   refEllipsoid
-   wmm
-   wgs84
+   geodesy/refEllipsoid
+   geodesy/wmm
+   geodesy/wgs84
+
+Functions
+---------
+
+Additionally, the library provides a set of functions that have been used
+historically in geodesy.
+
+.. toctree::
+   :maxdepth: 1
+
+   geodesy/igf
+   geodesy/welmec

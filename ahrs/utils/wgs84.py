@@ -308,8 +308,6 @@ from ..common.constants import EARTH_C22_DYN
 
 def international_gravity(lat: float, epoch: str = '1980') -> float:
     """
-    International Gravity Formula
-
     Compute the normal gravity, :math:`\\mathrm{g}`, using the International
     Gravity Formula :cite:p:`lambert1945`, adapted from Stokes' formula, and
     adopted by the `International Association of Geodesy <https://www.iag-aig.org/>`_
