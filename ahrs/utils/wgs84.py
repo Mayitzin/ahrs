@@ -395,8 +395,8 @@ def international_gravity(lat: float, epoch: str = '1980') -> float:
     """
     if abs(lat) > 90.0:
         raise ValueError("Latitude must be between -90.0 and 90.0 degrees.")
-    if epoch not in ['1930', '1948', '1967', '1980']:
-        raise ValueError("Invalid epoch. Try '1930', '1948', '1967' or '1980'.")
+    if epoch not in ['1930', '1948', '1967', '1980', '1984']:
+        raise ValueError("Invalid epoch. Try '1930', '1948', '1967', '1980' or '1984'.")
     # Note: From Python 3.10 it is possible to use Structural Pattern Matching.
     g_e, b1, b2 = 9.780367715, 5.302440112e-3, 5.8e-6
     if epoch == '1930':
