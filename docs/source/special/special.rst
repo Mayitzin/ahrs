@@ -13,7 +13,7 @@ re-define, or otherwise modify the attitude representations.
    funSLERP
 
 .. toctree::
-   :caption: Attitude transformations
+   :caption: Methods to obtain Quaternions from Direction Cosine Matrices
    :titlesonly:
    :maxdepth: 1
 
