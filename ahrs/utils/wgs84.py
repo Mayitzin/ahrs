@@ -240,36 +240,6 @@ where :math:`h` is the height, in meters, above the ellipsoid's surface.
     >>> wgs.normal_gravity(50.0, 1000.0)    # Gravity at latitude = 50.0 °, 1000 m above surface
     9.807617683884756
 
-Other Gravitational Methods
----------------------------
-
-The well known **International Gravity Formula** :cite:p:`lambert1945` as
-described by Helmut Moritz in 1984 :cite:p:`moritz1984` for the `Geodetic
-Reference System 1980 <https://en.wikipedia.org/wiki/Geodetic_Reference_System_1980>`_
-is implemented in ``ahrs``:
-
-.. math::
-    \\mathrm{g}(\\phi) = 9.780327 (1 + 0.0053024 \\sin^2\\phi - 0.0000058 \\sin^2(2\\phi))
-
-.. code:: python
-
-    >>> ahrs.utils.international_gravity(10.0)
-    9.781884110728155
-
-Additionally, the **normal gravity estimation** of the European Cooperation on
-Legal Metrology (`WELMEC <https://en.wikipedia.org/wiki/WELMEC>`_) is also
-included here:
-
-.. math::
-    \\mathrm{g}(\\phi, h) = 9.780318(1 + 0.0053024\\sin^2(\\phi) - 0.0000058\\sin^2(2\\phi)) - 0.000003085h
-
-.. code:: python
-
-    >>> ahrs.utils.welmec_gravity(50.0, 1000.0)     # 50.0° N, 1000 m above sea level
-    9.807610187885896
-
-Although this is thought and mainly used for European latitudes.
-
 Advanced Gravitational Methods
 ------------------------------
 
