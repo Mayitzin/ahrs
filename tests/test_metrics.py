@@ -91,5 +91,24 @@ class TestQdist(unittest.TestCase):
         self.assertRaises(ValueError, ahrs.utils.qdist, ahrs.Quaternion(), np.identity(2))
         self.assertRaises(ValueError, ahrs.utils.qdist, np.zeros(4), np.zeros(3))
 
+class TestQeip(unittest.TestCase):
+    def setUp(self):
+        self.q1 = ahrs.Quaternion([0., 1., 0., 1.])
+        self.q2 = ahrs.Quaternion([1., 0., 1., 0.])
+
+    def test_correct_values(self):
+        self.assertEqual(ahrs.utils.qeip(ahrs.Quaternion(), [1., 0., 0., 0.]), 0.0)
+        self.assertEqual(ahrs.utils.qeip(self.q1, [0., 1., 0., 1.]), 0.0)
+        self.assertEqual(ahrs.utils.qeip(self.q1, [0., 0.7071, 0., 0.7071]), 0.0)
+        self.assertAlmostEqual(ahrs.utils.qeip(self.q1, self.q2), 1.0)
+
+    def test_guard_clauses(self):
+        self.assertRaises(TypeError, ahrs.utils.qeip, ahrs.Quaternion(), 3.0)
+        self.assertRaises(TypeError, ahrs.utils.qeip, 3.0, ahrs.Quaternion())
+        self.assertRaises(TypeError, ahrs.utils.qeip, "ahrs.Quaternion()", ahrs.Quaternion())
+        self.assertRaises(TypeError, ahrs.utils.qeip, ahrs.Quaternion(), "ahrs.Quaternion()")
+        self.assertRaises(ValueError, ahrs.utils.qeip, ahrs.Quaternion(), np.identity(2))
+        self.assertRaises(ValueError, ahrs.utils.qeip, np.zeros(4), np.zeros(3))
+
 if __name__ == "__main__":
     unittest.main()
