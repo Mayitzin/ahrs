@@ -72,5 +72,24 @@ class TestAngularDistance(unittest.TestCase):
         self.assertRaises(ValueError, ahrs.utils.angular_distance, np.identity(3), np.identity(2))
         self.assertRaises(ValueError, ahrs.utils.angular_distance, np.zeros((3, 3)), np.zeros((2, 2)))
 
+class TestQdist(unittest.TestCase):
+    def setUp(self):
+        self.q1 = ahrs.Quaternion([0., 1., 0., 1.])
+        self.q2 = ahrs.Quaternion([1., 0., 1., 0.])
+
+    def test_correct_values(self):
+        self.assertEqual(ahrs.utils.qdist(ahrs.Quaternion(), [1., 0., 0., 0.]), 0.0)
+        self.assertEqual(ahrs.utils.qdist(self.q1, [0., 1., 0., 1.]), 0.0)
+        self.assertEqual(ahrs.utils.qdist(self.q1, [0., 0.7071, 0., 0.7071]), 0.0)
+        self.assertAlmostEqual(ahrs.utils.qdist(self.q1, self.q2), np.sqrt(2))
+
+    def test_guard_clauses(self):
+        self.assertRaises(TypeError, ahrs.utils.qdist, ahrs.Quaternion(), 3.0)
+        self.assertRaises(TypeError, ahrs.utils.qdist, 3.0, ahrs.Quaternion())
+        self.assertRaises(TypeError, ahrs.utils.qdist, "ahrs.Quaternion()", ahrs.Quaternion())
+        self.assertRaises(TypeError, ahrs.utils.qdist, ahrs.Quaternion(), "ahrs.Quaternion()")
+        self.assertRaises(ValueError, ahrs.utils.qdist, ahrs.Quaternion(), np.identity(2))
+        self.assertRaises(ValueError, ahrs.utils.qdist, np.zeros(4), np.zeros(3))
+
 if __name__ == "__main__":
     unittest.main()
