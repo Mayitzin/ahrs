@@ -263,8 +263,8 @@ def qdist(q1: np.ndarray, q2: np.ndarray) -> float:
     Both quaternions will be normalized before they are compared.
 
     The error lies within [0, :math:`\\sqrt{2}`], where :math:`d` is equal to
-    zero if the quaternions are equal, and :math:`\\sqrt{2}` if they are
-    opposite.
+    zero if the quaternions represent the same attitude, and :math:`\\sqrt{2}`
+    if they are completely divergent.
 
     Parameters
     ----------
@@ -281,9 +281,9 @@ def qdist(q1: np.ndarray, q2: np.ndarray) -> float:
     Raises
     ------
     ValueError
-        If the quaternions are not of the same shape.
+        If given quaternions do not have the same shape.
     TypeError
-        If the quaternions are not of type list or numpy.ndarray.
+        If given quaternions are not of type list or numpy.ndarray.
 
     Examples
     --------
