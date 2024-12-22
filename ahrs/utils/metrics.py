@@ -254,13 +254,17 @@ def angular_distance(R1: np.ndarray, R2: np.ndarray) -> float:
 
 def qdist(q1: np.ndarray, q2: np.ndarray) -> float:
     """
-    Euclidean distance between two unit quaternions as defined in :cite:p:`huynh2009` and
-    :cite:p:`hartley2013`:
+    Euclidean distance between two unit quaternions as defined in
+    :cite:p:`huynh2009` and :cite:p:`hartley2013`:
 
     .. math::
-        d(\\mathbf{q}_1, \\mathbf{q}_2) = \\mathrm{min} \\{ \\|\\mathbf{q}_1-\\mathbf{q}_2\\|, \\|\\mathbf{q}_1-\\mathbf{q}_2\\|\\}
+        d(\\mathbf{q}_1, \\mathbf{q}_2) = \\mathrm{min} \\{ \\|\\mathbf{q}_1-\\mathbf{q}_2\\|, \\|\\mathbf{q}_1+\\mathbf{q}_2\\|\\}
 
-    The error lies within [0, :math:`\\sqrt{2}`]
+    Both quaternions will be normalized before they are compared.
+
+    The error lies within [0, :math:`\\sqrt{2}`], where :math:`d` is equal to
+    zero if the quaternions are equal, and :math:`\\sqrt{2}` if they are
+    opposite.
 
     Parameters
     ----------
