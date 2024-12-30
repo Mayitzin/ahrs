@@ -319,7 +319,9 @@ def qeip(q1: np.ndarray, q2: np.ndarray) -> float:
     .. math::
         d(\\mathbf{q}_1, \\mathbf{q}_2) = 1 - |\\mathbf{q}_1\\cdot\\mathbf{q}_2|
 
-    The error lies within: [0, 1]
+    The error lies within [0, 1], where :math:`d` is equal to zero if the
+    quaternions represent the same attitude, and to one if they are completely
+    divergent.
 
     Parameters
     ----------
