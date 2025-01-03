@@ -348,7 +348,7 @@ def international_gravity(lat: float, epoch: str = '1980') -> float:
         Geographical Latitude, in decimal degrees.
     epoch : str, default: '1980'
         Epoch of the Geodetic Reference System. Options are ``'1930'``,
-        ``'1948'``, ``'1967'`` and ``'1980'``.
+        ``'1948'``, ``'1967'``, ``'1980'``, and ``'1984'``.
 
     Return
     ------
