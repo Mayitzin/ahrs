@@ -465,12 +465,51 @@ def ecef2enuv(x: float, y: float, z: float, x0: float, y0: float, z0: float, lat
     north = -np.sin(lat)*t + np.cos(lat)*w
     return np.array([east, north, up])
 
-def enu2ecef(lat: float, lon: float) -> np.ndarray:
+def enu2uvw(east: float, north: float, up: float, lat: float, lon: float, angle_unit: str = 'deg') -> np.ndarray:
     """
-    Transform coordinates from ENU to ECEF
+    UVW Mapping for ENU coordinates
 
     Parameters
     ----------
+    east : float
+        East.
+    north : float
+        North.
+    up : float
+        Up.
+    lat : float
+        Latitude.
+    lon : float
+        Longitude.
+    angle_unit : str, default: 'deg'
+        Unit of angles. Can be 'rad' or 'deg'.
+
+    Returns
+    -------
+    uvw : numpy.ndarray
+        UVW cartesian coordinates.
+    """
+    if angle_unit == 'deg':
+        lat *= DEG2RAD
+        lon *= DEG2RAD
+    t = np.cos(lat) * up - np.sin(lat) * north
+    w = np.sin(lat) * up + np.cos(lat) * north
+    u = np.cos(lon) * t - np.sin(lon) * east
+    v = np.sin(lon) * t + np.cos(lon) * east
+    return np.array([u, v, w])
+
+def enu2ecef(east: float, north: float, up: float, lat: float, lon: float, h: float, a: float = EARTH_EQUATOR_RADIUS, ecc: float = EARTH_FIRST_ECCENTRICITY) -> np.ndarray:
+    """
+    transforms the local east-north-up (ENU) Cartesian coordinates specified by xEast, yNorth, and zUp to the geocentric Earth-centered Earth-fixed (ECEF) Cartesian coordinates specified by X, Y, and Z.
+
+    Parameters
+    ----------
+    east : float
+        East.
+    north : float
+        North.
+    up : float
+        Up.
     lat : float
         Latitude.
     lon : float
@@ -478,13 +517,14 @@ def enu2ecef(lat: float, lon: float) -> np.ndarray:
 
     Returns
     -------
-    R : numpy.ndarray
-        Rotation Matrix.
+    ecef : numpy.ndarray
+        ECEF cartesian coordinates.
     """
-    return np.array([
-        [-np.sin(lon), -np.cos(lat)*np.cos(lon), np.sin(lat)*np.cos(lon)],
-        [np.cos(lon), -np.cos(lat)*np.sin(lon), np.sin(lat)*np.sin(lon)],
-        [0.0, np.sin(lat), np.cos(lat)]])
+    ecef = geodetic2ecef(lat, lon, h, a, ecc)
+    ## Rotating ENU to ECEF
+    uvw = enu2uvw(east, north, up, lat, lon, 'deg')
+    ## Origin + offset from origin equals position in ECEF
+    return ecef + uvw
 
 def _ltp_transformation(x: np.ndarray) -> np.ndarray:
     """
