@@ -234,7 +234,7 @@ def ecef2geodetic(x: float, y: float, z: float, a: float = EARTH_EQUATOR_RADIUS,
 
     .. math::
 
-            h = \\frac{p}{\\cos\\phi} - N
+        h = \\frac{p}{\\cos\\phi} - N
 
     .. note::
 
