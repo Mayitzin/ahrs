@@ -365,6 +365,8 @@ def ecef2enu(x: float, y: float, z: float, lat: float, lon: float, h: float, a: 
         Latitude, in degrees.
     lon : float
         Longitude, in degrees.
+    h : float
+        Height above ellipsoidal surface, in kilometers.
     a : float, default: 6378137.0
         Ellipsoid's equatorial radius (semi-major axis), in meters. Defaults to
         Earth's.
@@ -375,6 +377,18 @@ def ecef2enu(x: float, y: float, z: float, lat: float, lon: float, h: float, a: 
     -------
     enu : numpy.ndarray
         ENU cartesian coordinates [east, north, up].
+
+    Examples
+    --------
+    >>> from ahrs.common.frames import ecef2enu
+    >>> x = 660_930.19276
+    >>> y = -4_701_424.22296
+    >>> z = 4_246_579.60463
+    >>> lat = 42.0
+    >>> lon = -82.0
+    >>> h = 200.0
+    >>> ecef2enu(x, y, z, lat, lon, h)
+    array([186.27751933, 286.84222383, 939.69262095])
     """
     ecef = geodetic2ecef(lat, lon, h, a, ecc)
     x0, y0, z0 = ecef
@@ -500,7 +514,9 @@ def enu2uvw(east: float, north: float, up: float, lat: float, lon: float, angle_
 
 def enu2ecef(east: float, north: float, up: float, lat: float, lon: float, h: float, a: float = EARTH_EQUATOR_RADIUS, ecc: float = EARTH_FIRST_ECCENTRICITY) -> np.ndarray:
     """
-    transforms the local east-north-up (ENU) Cartesian coordinates specified by xEast, yNorth, and zUp to the geocentric Earth-centered Earth-fixed (ECEF) Cartesian coordinates specified by X, Y, and Z.
+    Transforms the local east-north-up (ENU) Cartesian coordinates specified by
+    east, north, and up to the geocentric Earth-centered Earth-fixed (ECEF)
+    Cartesian coordinates.
 
     Parameters
     ----------
@@ -514,6 +530,13 @@ def enu2ecef(east: float, north: float, up: float, lat: float, lon: float, h: fl
         Latitude.
     lon : float
         Longitude.
+    h : float
+        Height above ellipsoidal surface, in kilometers.
+    a : float, default: 6378137.0
+        Ellipsoid's equatorial radius (semi-major axis), in meters. Defaults to
+        Earth's.
+    ecc : float, default: 8.1819190842622e-2
+        Ellipsoid's first eccentricity. Defaults to Earth's.
 
     Returns
     -------
