@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Reference Frames
-================
-
 A frame of reference specifies the position of an object in relation to a
 reference within a coordinate system.
 
@@ -119,6 +116,9 @@ def geodetic2enu(lat: float, lon: float, h: float, lat0: float, lon0: float, h0:
     \\lambda & h\\end{pmatrix}` to local East-North-Up (ENU) coordinates
     :math:`\\begin{pmatrix}x & y & z\\end{pmatrix}`.
 
+    The origin of the local ENU frame has to be defined by the geodetic
+    coordinates :math:`\\begin{pmatrix}\\phi_0 & \\lambda_0 & h_0\\end{pmatrix}`.
+
     The transformation is performed in two steps:
 
     1. Convert both geodetic coordinates to ECEF coordinates.
@@ -126,17 +126,17 @@ def geodetic2enu(lat: float, lon: float, h: float, lat0: float, lon0: float, h0:
     .. math::
 
         \\begin{array}{rcl}
-        x_1 & = & (N_1 + h_1) \\cos\\phi_1 \\cos\\lambda_1 \\\\
-        y_1 & = & (N_1 + h_1) \\cos\\phi_1 \\sin\\lambda_1 \\\\
-        z_1 & = & \\big(\\left(1 - e^2\\right)N_1 + h_1\\big) \\sin\\phi_1
+        x & = & (N + h) \\cos\\phi \\cos\\lambda \\\\
+        y & = & (N + h) \\cos\\phi \\sin\\lambda \\\\
+        z & = & \\big(\\left(1 - e^2\\right)N + h\\big) \\sin\\phi
         \\end{array}
 
     .. math::
 
         \\begin{array}{rcl}
-        x_2 & = & (N_2 + h_2) \\cos\\phi_2 \\cos\\lambda_2 \\\\
-        y_2 & = & (N_2 + h_2) \\cos\\phi_2 \\sin\\lambda_2 \\\\
-        z_2 & = & \\big(\\left(1 - e^2\\right)N_2 + h_2\\big) \\sin\\phi_2
+        x_0 & = & (N_0 + h_0) \\cos\\phi_0 \\cos\\lambda_0 \\\\
+        y_0 & = & (N_0 + h_0) \\cos\\phi_0 \\sin\\lambda_0 \\\\
+        z_0 & = & \\big(\\left(1 - e^2\\right)N_0 + h_0\\big) \\sin\\phi_0
         \\end{array}
 
     2. Convert the difference between the two ECEF coordinates to ENU.
@@ -151,9 +151,9 @@ def geodetic2enu(lat: float, lon: float, h: float, lat0: float, lon0: float, h0:
     .. math::
 
         \\begin{array}{rcl}
-        x_{\\mathrm{ENU}} & = & -\\sin\\lambda_2 \\, (x_2 - x_1) + \\cos\\lambda_2 \\, (y_2 - y_1) \\\\
-        y_{\\mathrm{ENU}} & = & -\\sin\\phi_2 \\, \\cos\\lambda_2 \\, (x_2 - x_1) - \\sin\\phi_2 \\, \\sin\\lambda_2 \\, (y_2 - y_1) + \\cos\\phi_2 \\, (z_2 - z_1) \\\\
-        z_{\\mathrm{ENU}} & = & \\cos\\phi_2 \\, \\cos\\lambda_2 \\, (x_2 - x_1) + \\cos\\phi_2 \\, \\sin\\lambda_2 \\, (y_2 - y_1) + \\sin\\phi_2 \\, (z_2 - z_1)
+        x_{\\mathrm{ENU}} & = & -\\sin\\lambda_0 \\, (x_0 - x) + \\cos\\lambda_0 \\, (y_0 - y) \\\\
+        y_{\\mathrm{ENU}} & = & -\\sin\\phi_0 \\, \\cos\\lambda_0 \\, (x_0 - x) - \\sin\\phi_0 \\, \\sin\\lambda_0 \\, (y_0 - y) + \\cos\\phi_0 \\, (z_0 - z) \\\\
+        z_{\\mathrm{ENU}} & = & \\cos\\phi_0 \\, \\cos\\lambda_0 \\, (x_0 - x) + \\cos\\phi_0 \\, \\sin\\lambda_0 \\, (y_0 - y) + \\sin\\phi_0 \\, (z_0 - z)
         \\end{array}
 
     Parameters
