@@ -28,7 +28,10 @@ There main frames are:
 - The **North-East-Down** (NED) system has its origin fixed at the center of
   gravity of the aircraft. It is defined relative to a specific location on
   Earth, described by latitude, longitude and altitude.
-
+- The local **East-North-Up** (ENU) coordinates are formed from a plane tangent
+  to the Earth's surface fixed to a specific location and hence it is sometimes
+  known as a `Local Tangent <https://en.wikipedia.org/wiki/Local_tangent_plane_coordinates>`_
+  or "Local Geodetic" plane.
 """
 
 import numpy as np
