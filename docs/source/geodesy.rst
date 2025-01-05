@@ -4,7 +4,7 @@ Geodesy
 .. automodule:: ahrs.utils.geodesy
 
 Classes and Functions
-^^^^^^^^^^^^^^^^^^^^^
+---------------------
 
 .. toctree::
    :titlesonly:
@@ -21,6 +21,9 @@ historically in geodesy, but are not part of the above impllementations.
 
    geodesy/igf
    geodesy/welmec
+
+Reference Frames
+----------------
 
 .. automodule:: ahrs.common.frames
 
