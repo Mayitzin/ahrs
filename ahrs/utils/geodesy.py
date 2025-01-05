@@ -1,42 +1,72 @@
 """
+`Geodesy <https://en.wikipedia.org/wiki/Geodesy>`_ is the science of measuring
+and understanding Earth's shape, size, orientation in space, and gravity field.
+
 A `reference ellipsoid <https://en.wikipedia.org/wiki/Earth_ellipsoid#Reference_ellipsoid>`_
 is a simple, smooth shape used to approximate the Earth's true form (or that of
 another planet). It is basically a mathematical definition of a planet's
 surface defined as an `oblate spheroid <https://en.wikipedia.org/wiki/Spheroid#Oblate_spheroids>`_,
 ignoring the bumps and dips caused by mountains, valleys, and other features.
 
-The actual shape, called `geoid <https://en.wikipedia.org/wiki/Geoid>`_, is
-uneven because of differences in the planet's gravity caused by variations in
-its interior composition and density.
+The `geoid <https://en.wikipedia.org/wiki/Geoid>`_ is a version of Earth's
+shape, smoothed out and stripped of mountains, valleys, and other surface
+features. It represents the average sea level if the oceans were calm, with no
+tides, currents, or air pressure changes.
 
-The geoid is like an imaginary version of Earth's shape, smoothed out and
-stripped of mountains, valleys, and other surface features. It represents the
-average sea level if the oceans were calm, with no tides, currents, or air
-pressure changes.
+The geoid is uneven because of differences in the planet's gravity caused by
+variations in its interior composition and density.
 
-The geoid's surface sits higher than the reference ellipsoid in areas where
-there's extra mass, causing stronger gravity (a positive gravity anomaly).
+For example, its surface sits higher than the reference ellipsoid in areas
+where there's extra mass, causing stronger gravity (a positive gravity anomaly.)
 
 On the other hand, it dips below the reference ellipsoid in places where
-there's less mass, leading to weaker gravity (a negative gravity anomaly).
+there's less mass, leading to weaker gravity (a negative gravity anomaly.)
 
-This happens, because gravity potential is inversely proportional to distance
-from the body. So, while a mass excess will strengthen the gravity acceleration,
-it will decrease the gravity potential.
+Such changes are, however, very small and are usually measured in `milligals
+<https://en.wikipedia.org/wiki/Gal_(unit)>`_. Thus, they are not considered in
+the reference ellipsoid, and neither in this package.
 
 Since reference ellipsoids are easier to work with than the irregular geoid,
 they are used for mapping and calculations. They provide the surface on which
 coordinates like latitude, longitude, and elevation are defined.
 
-In this library we focus on the reference ellipsoid used to model the Earth's
-shape. The most popular reference ellipsoid is the `World Geodetic System
-(WGS) 84 <https://en.wikipedia.org/wiki/World_Geodetic_System>`_, which is the
-basis for the Global Positioning System (GPS).
+World Models
+------------
 
-This model is enough for most applications including the navigation of aircraft,
-ships, and cars, as well as for surveying and mapping. Therefore, we will use
-the WGS84 as the default reference ellipsoid throughout this library for all
-our implementations.
+The two most important geospatial systems used in mapping, navigation, and
+Earth science applications are the `World Geodetic System (WGS84)
+<https://en.wikipedia.org/wiki/World_Geodetic_System>`_ and the `World Magnetic
+Model <https://en.wikipedia.org/wiki/World_Magnetic_Model>`_.
+
+These systems often work together in navigation devices to provide both
+positional (WGS84) and directional (WMM) information.
+
+The **WGS84** is a standard reference coordinate system for Earth widely used
+for global positioning systems (GPS) and serves as the underlying geodetic
+system for latitude, longitude, and altitude coordinates.
+
+WGS84 approximates Earth's shape using a **Reference Ellipsoid** model to
+simplify the calculation of other geodetic parameters, such as the Earth's
+radius, circumference, and surface area.
+
+The **WMM (World Magnetic Model)** is a mathematical model that represents the
+Earth's magnetic field. It is used to calculate magnetic declination (the angle
+difference between `true north <https://en.wikipedia.org/wiki/True_north>`_ and
+`magnetic north <https://en.wikipedia.org/wiki/North_magnetic_pole>`_.)
+
+It provides magnetic field data for navigation systems, including compasses,
+aircraft, and smartphones.
+
+This model is updated every 5 years (e.g., 2020-2025 is the current model) to
+account for changes in the Earth's magnetic field.
+
+These three systems (reference ellipsoid, WGS84, and WMM) are implemented in
+this package.
+
+The WGS84 model is enough for most applications including the navigation of
+aircraft, ships, and cars, as well as for surveying and mapping on Earth.
+Therefore, we will use the WGS84 as the default reference ellipsoid throughout
+this library for all our implementations.
 
 """
 
