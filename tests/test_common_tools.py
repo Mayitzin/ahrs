@@ -81,9 +81,9 @@ class TestFrames(unittest.TestCase):
                                              decimal=4)
 
     def test_geodetic2enu(self):
-        lat0, lon0, h0 = 46.017, 7.750, 1673
-        lat, lon, h = 45.976, 7.658, 4531
-        np.testing.assert_array_almost_equal(ahrs.common.frames.geodetic2enu(lat, lon, h, lat0, lon0, h0), [-7134.8, -4556.3, 2852.4], decimal=1)
+        np.testing.assert_array_almost_equal(ahrs.common.frames.geodetic2enu(45.976, 7.658, 4531, 46.017, 7.750, 1673),
+                                             [-7134.8, -4556.3, 2852.4],
+                                             decimal=1)
 
 class TestMathFuncs(unittest.TestCase):
     def test_sind(self):
