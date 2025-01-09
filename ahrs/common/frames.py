@@ -595,3 +595,31 @@ def enu2ned(x: np.ndarray) -> np.ndarray:
         Transformed coordinates.
     """
     return _ltp_transformation(x)
+
+def aer2enu(az: float, elev: float, slant_range: float, deg: bool = True) -> tuple:
+    """
+    Transform local azimuth-elevation-range (AER) spherical coordinates
+    specified by az, elev, and slantRange to the local east-north-up (ENU)
+    Cartesian coordinates specified by xEast, yNorth, and zUp.
+
+    Parameters
+    ----------
+    az : float
+        Azimuth clockwise from north (degrees)
+    elev : float
+        Elevation angle above horizon, neglecting aberrations (degrees)
+    slant_range : float
+        slant range [meters]
+    deg : bool, optional
+        Degrees input/output (False: radians in/out)
+
+    Returns
+    --------
+    enu : numpy.ndarray
+        ENU cartesian coordinates [east, north, up].
+    """
+    if deg:
+        elev *= DEG2RAD
+        az *= DEG2RAD
+    r = slant_range*np.cos(elev)
+    return [r*np.sin(az), r*np.cos(az), slant_range*np.sin(elev)]
