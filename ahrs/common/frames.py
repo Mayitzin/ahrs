@@ -602,7 +602,7 @@ def enu2ned(x: np.ndarray) -> np.ndarray:
     """
     return _ltp_transformation(x)
 
-def aer2enu(az: float, elev: float, slant_range: float, deg: bool = True) -> tuple:
+def aer2enu(az: float, elev: float, slant_range: float, deg: bool = True) -> np.ndarray:
     """
     Transform local azimuth-elevation-range (AER) spherical coordinates
     specified by ``az``, ``elev``, and ``slant_range`` to the local
@@ -628,4 +628,4 @@ def aer2enu(az: float, elev: float, slant_range: float, deg: bool = True) -> tup
         elev *= DEG2RAD
         az *= DEG2RAD
     r = slant_range*np.cos(elev)
-    return [r*np.sin(az), r*np.cos(az), slant_range*np.sin(elev)]
+    return np.array([r*np.sin(az), r*np.cos(az), slant_range*np.sin(elev)])
