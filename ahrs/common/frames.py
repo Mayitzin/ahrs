@@ -29,6 +29,12 @@ There main frames are:
   to the Earth's surface fixed to a specific location and hence it is sometimes
   known as a `Local Tangent <https://en.wikipedia.org/wiki/Local_tangent_plane_coordinates>`_
   or "Local Geodetic" plane.
+- An **Azimuth-Elevation-Range** (AER) system uses the `spherical coordinates
+  <https://en.wikipedia.org/wiki/Spherical_coordinate_system>`_ (az, elev,
+  range) to represent position relative to a local origin. The local origin is
+  described by the geodetic coordinates (latitude, longitude, height). Azimuth,
+  elevation, and slant range are dependent on a local Cartesian system, for
+  example, an ENU system.
 """
 
 import numpy as np
@@ -599,19 +605,19 @@ def enu2ned(x: np.ndarray) -> np.ndarray:
 def aer2enu(az: float, elev: float, slant_range: float, deg: bool = True) -> tuple:
     """
     Transform local azimuth-elevation-range (AER) spherical coordinates
-    specified by az, elev, and slantRange to the local east-north-up (ENU)
-    Cartesian coordinates specified by xEast, yNorth, and zUp.
+    specified by ``az``, ``elev``, and ``slant_range`` to the local
+    East-North-Up (ENU) Cartesian coordinates.
 
     Parameters
     ----------
     az : float
-        Azimuth clockwise from north (degrees)
+        Azimuth measured clockwise from North.
     elev : float
-        Elevation angle above horizon, neglecting aberrations (degrees)
+        Elevation  with respect to the xEast-yNorth plane.
     slant_range : float
-        slant range [meters]
-    deg : bool, optional
-        Degrees input/output (False: radians in/out)
+        Distance from local origin.
+    deg : bool, defaullt: True
+        If True, angles are given in degrees. Otherwise, they are in radians.
 
     Returns
     --------
