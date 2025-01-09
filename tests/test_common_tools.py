@@ -85,6 +85,11 @@ class TestFrames(unittest.TestCase):
                                              [-7134.8, -4556.3, 2852.4],
                                              decimal=1)
 
+    def test_aer2enu(self):
+        np.testing.assert_array_almost_equal(ahrs.common.frames.aer2enu(34.1160, 4.1931, 15.1070),
+                                             [8.4504, 12.4737, 1.1046],
+                                             decimal=4)
+
 class TestMathFuncs(unittest.TestCase):
     def test_sind(self):
         self.assertEqual(ahrs.common.mathfuncs.sind(0.0), 0.0)
