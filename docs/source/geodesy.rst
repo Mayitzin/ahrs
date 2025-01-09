@@ -38,3 +38,4 @@ implemented in the library.
    frames/ecef2geodetic
    frames/geodetic2ecef
    frames/geodetic2enu
+   frames/aer2enu
