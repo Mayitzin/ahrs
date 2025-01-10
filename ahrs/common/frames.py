@@ -606,7 +606,7 @@ def aer2enu(az: float, elev: float, slant_range: float, deg: bool = True) -> np.
     """
     Transform local azimuth-elevation-range (AER) spherical coordinates
     specified by ``az``, ``elev``, and ``slant_range`` to the local
-    East-North-Up (ENU) Cartesian coordinates.
+    East-North-Up (ENU) Cartesian coordinates :cite:p:`strickland2020`.
 
     Parameters
     ----------
