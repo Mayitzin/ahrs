@@ -613,10 +613,10 @@ def aer2enu(az: float, elev: float, slant_range: float, deg: bool = True) -> np.
     az : float
         Azimuth measured clockwise from North.
     elev : float
-        Elevation  with respect to the xEast-yNorth plane.
+        Elevation with respect to the local East-North plane.
     slant_range : float
         Distance from local origin.
-    deg : bool, defaullt: True
+    deg : bool, default: True
         If True, angles are given in degrees. Otherwise, they are in radians.
 
     Returns
@@ -625,7 +625,38 @@ def aer2enu(az: float, elev: float, slant_range: float, deg: bool = True) -> np.
         ENU cartesian coordinates [east, north, up].
     """
     if deg:
-        elev *= DEG2RAD
         az *= DEG2RAD
+        elev *= DEG2RAD
     r = slant_range*np.cos(elev)
     return np.array([r*np.sin(az), r*np.cos(az), slant_range*np.sin(elev)])
+
+def enu2aer(east: float, north: float, up: float, deg: bool = True) -> np.ndarray:
+    """
+    Transform the local east-north-up (ENU) Cartesian coordinates specified by
+    ``east``, ``north``, and ``up`` to the local azimuth-elevation-range (AER)
+    Spherical coordinates :cite:p:`strickland2020`.
+
+    Parameters
+    ----------
+    east : float
+        X-coordinate of a point in the local ENU system.
+    north : float
+        Y-coordinate of a point in the local ENU system.
+    up : float
+        Z-coordinate of a point in the local ENU system.
+    deg : bool, default: True
+        If True, angles are returned in degrees. Otherwise, they are in radians.
+
+    Returns
+    -------
+    aer : numpy.ndarray
+        AER spherical coordinates [azimuth, elevation, slant_range].
+    """
+    r = np.linalg.norm([east, north])
+    slant_range = np.linalg.norm([r, up])
+    elev = np.arctan2(up, r)
+    az = np.arctan2(east, north) % (2*np.pi)
+    if deg:
+        az *= RAD2DEG
+        elev *= RAD2DEG
+    return np.array([az, elev, slant_range])
