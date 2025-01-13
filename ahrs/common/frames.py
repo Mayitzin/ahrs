@@ -703,3 +703,46 @@ def enu2dca(east: float, north: float, up: float, angle: float, deg: bool = True
     d = np.sin(angle)*east + np.cos(angle)*north
     c = -np.cos(angle)*east + np.sin(angle)*north
     return np.array([d, c, up])
+
+def dca2enu(down: float, cross: float, above: float, angle: float, deg: bool = True) -> np.ndarray:
+    """
+    Transform the down-cross-above (DCA) Cartesian coordinates specified by
+    ``down``, ``cross``, and ``above`` to the local east-north-up (ENU) system
+    :cite:p:`strickland2020`.
+
+    The conversion is given by:
+
+    .. math::
+
+        \\begin{array}{rcl}
+        \\begin{bmatrix}e \\\\ n \\\\ u\\end{bmatrix} & = &
+        \\begin{bmatrix}
+        \\sin\\theta & -\\cos\\theta & 0 \\\\
+        \\cos\\theta & \\sin\\theta & 0 \\\\
+        0 & 0 & 1
+        \\end{bmatrix}
+        \\begin{bmatrix}d \\\\ c \\\\ a\\end{bmatrix}
+
+    Parameters
+    ----------
+    down : float
+        X-coordinate of a point in the DCA system.
+    cross : float
+        Y-coordinate of a point in the DCA system.
+    above : float
+        Z-coordinate of a point in the DCA system.
+    angle : float
+        Angle measured clockwise from North.
+    deg : bool, default: True
+        If True, angles are given in degrees. Otherwise, they are in radians.
+
+    Returns
+    -------
+    enu : numpy.ndarray
+        ENU Cartesian coordinates [east, north, up].
+    """
+    if deg:
+        angle *= DEG2RAD
+    east = np.sin(angle)*down - np.cos(angle)*cross
+    north = np.cos(angle)*down + np.sin(angle)*cross
+    return np.array([east, north, above])
