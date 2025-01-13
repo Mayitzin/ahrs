@@ -40,3 +40,5 @@ implemented in the library.
    frames/geodetic2enu
    frames/aer2enu
    frames/enu2aer
+   frames/enu2dca
+   frames/dca2enu
