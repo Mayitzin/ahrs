@@ -671,8 +671,7 @@ def enu2dca(east: float, north: float, up: float, angle: float, deg: bool = True
 
     .. math::
 
-        \\begin{array}{rcl}
-        \\begin{bmatrix}d \\\\ c \\\\ a\\end{bmatrix} & = &
+        \\begin{bmatrix}d \\\\ c \\\\ a\\end{bmatrix} =
         \\begin{bmatrix}
         \\sin\\theta & \\cos\\theta & 0 \\\\
         -\\cos\\theta & \\sin\\theta & 0 \\\\
@@ -714,8 +713,7 @@ def dca2enu(down: float, cross: float, above: float, angle: float, deg: bool = T
 
     .. math::
 
-        \\begin{array}{rcl}
-        \\begin{bmatrix}e \\\\ n \\\\ u\\end{bmatrix} & = &
+        \\begin{bmatrix}e \\\\ n \\\\ u\\end{bmatrix} =
         \\begin{bmatrix}
         \\sin\\theta & -\\cos\\theta & 0 \\\\
         \\cos\\theta & \\sin\\theta & 0 \\\\
