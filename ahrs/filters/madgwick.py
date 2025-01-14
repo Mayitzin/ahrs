@@ -24,7 +24,7 @@ Innovative aspects of this filter include:
 - Gyroscope bias drift compensation.
 
 Rewritten in Python from the `original implementation <https://x-io.co.uk/open-source-imu-and-ahrs-algorithms/>`_
-conceived by Sebastian Madgwick.
+conceived by `Sebastian Madgwick <https://scholar.google.co.uk/citations?user=pVoC0_cAAAAJ>`_.
 
 Orientation from angular rate
 -----------------------------
