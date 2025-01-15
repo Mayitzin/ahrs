@@ -44,7 +44,7 @@ from .constants import EARTH_POLAR_RADIUS
 from .constants import RAD2DEG
 from .constants import DEG2RAD
 
-def geodetic2ecef(lat: float, lon: float, h: float, a: float = EARTH_EQUATOR_RADIUS, ecc: float = EARTH_FIRST_ECCENTRICITY) -> np.ndarray:
+def geodetic2ecef(lat: float, lon: float, h: float, a: float = EARTH_EQUATOR_RADIUS, b: float = EARTH_POLAR_RADIUS) -> np.ndarray:
     """
     Transform geodetic coordinates to Rectangular (Cartesian) Coordinates in
     the Earth-Centered Earth-Fixed frame.
@@ -106,14 +106,15 @@ def geodetic2ecef(lat: float, lon: float, h: float, a: float = EARTH_EQUATOR_RAD
         raise ValueError(f"Longitude must be between -180 and 180 degrees. Got {lon}")
     lat *= DEG2RAD
     lon *= DEG2RAD
-    N = a/np.sqrt(1 - ecc**2 *np.sin(lat)**2)
+    ecc2 = (a**2 - b**2)/a**2
+    N = a/np.sqrt(1 - ecc2 *np.sin(lat)**2)
     X = np.zeros(3)
     X[0] = (N+h)*np.cos(lat)*np.cos(lon)
     X[1] = (N+h)*np.cos(lat)*np.sin(lon)
-    X[2] = (N*(1.0-ecc**2)+h)*np.sin(lat)
+    X[2] = (N*(1.0-ecc2)+h)*np.sin(lat)
     return X
 
-def geodetic2enu(lat: float, lon: float, h: float, lat0: float, lon0: float, h0: float, a: float = EARTH_EQUATOR_RADIUS, ecc: float = EARTH_FIRST_ECCENTRICITY) -> np.ndarray:
+def geodetic2enu(lat: float, lon: float, h: float, lat0: float, lon0: float, h0: float, a: float = EARTH_EQUATOR_RADIUS, b: float = EARTH_POLAR_RADIUS) -> np.ndarray:
     """
     Transform geodetic coordinates to east-north-up (ENU) coordinates
     :cite:p:`noureldin2013`.
@@ -189,8 +190,8 @@ def geodetic2enu(lat: float, lon: float, h: float, lat0: float, lon0: float, h0:
 
     The ENU coordinates are computed as follows:
     """
-    x1, y1, z1 = geodetic2ecef(lat, lon, h, a, ecc)
-    x2, y2, z2 = geodetic2ecef(lat0, lon0, h0, a, ecc)
+    x1, y1, z1 = geodetic2ecef(lat, lon, h, a, b)
+    x2, y2, z2 = geodetic2ecef(lat0, lon0, h0, a, b)
     return ecef2enuv(x1, y1, z1, x2, y2, z2, lat0, lon0)
 
 def ecef2geodetic(x: float, y: float, z: float, a: float = EARTH_EQUATOR_RADIUS, b: float = EARTH_POLAR_RADIUS) -> np.ndarray:
@@ -357,7 +358,7 @@ def eci2ecef(w: float, t: float = 0) -> np.ndarray:
         [-np.sin(w)*t, np.cos(w)*t, 0.0],
         [         0.0,         0.0, 1.0]])
 
-def ecef2enu(x: float, y: float, z: float, lat: float, lon: float, h: float, a: float = EARTH_EQUATOR_RADIUS, ecc: float = EARTH_FIRST_ECCENTRICITY) -> np.ndarray:
+def ecef2enu(x: float, y: float, z: float, lat: float, lon: float, h: float, a: float = EARTH_EQUATOR_RADIUS, b: float = EARTH_POLAR_RADIUS) -> np.ndarray:
     """
     Transform geocentric XYZ coordinates in ECEF-frame to Local East-North-Up
     (ENU) cartesian coordinates :cite:p:`noureldin2013`.
@@ -399,7 +400,7 @@ def ecef2enu(x: float, y: float, z: float, lat: float, lon: float, h: float, a: 
     >>> ecef2enu(x, y, z, lat, lon, h)
     array([186.27751933, 286.84222383, 939.69262095])
     """
-    ecef = geodetic2ecef(lat, lon, h, a, ecc)
+    ecef = geodetic2ecef(lat, lon, h, a, b)
     x0, y0, z0 = ecef
     return ecef2enuv(x, y, z, x0, y0, z0, lat, lon)
 
@@ -521,7 +522,7 @@ def enu2uvw(east: float, north: float, up: float, lat: float, lon: float, angle_
     v = np.sin(lon) * t + np.cos(lon) * east
     return np.array([u, v, w])
 
-def enu2ecef(east: float, north: float, up: float, lat: float, lon: float, h: float, a: float = EARTH_EQUATOR_RADIUS, ecc: float = EARTH_FIRST_ECCENTRICITY) -> np.ndarray:
+def enu2ecef(east: float, north: float, up: float, lat: float, lon: float, h: float, a: float = EARTH_EQUATOR_RADIUS, b: float = EARTH_POLAR_RADIUS) -> np.ndarray:
     """
     Transforms the local east-north-up (ENU) Cartesian coordinates specified by
     east, north, and up to the geocentric Earth-centered Earth-fixed (ECEF)
@@ -552,7 +553,7 @@ def enu2ecef(east: float, north: float, up: float, lat: float, lon: float, h: fl
     ecef : numpy.ndarray
         ECEF cartesian coordinates.
     """
-    ecef = geodetic2ecef(lat, lon, h, a, ecc)
+    ecef = geodetic2ecef(lat, lon, h, a, b)
     ## Rotating ENU to ECEF
     uvw = enu2uvw(east, north, up, lat, lon, 'deg')
     ## Origin + offset from origin equals position in ECEF
