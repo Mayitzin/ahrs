@@ -2,13 +2,8 @@
 """
 Routines for orientation estimation.
 
-Further description will follow.
-
-Notes
------
-- The functions involving quaternions are now better implemented, controlled
-  and documented in the class Quaternion.
-
+Some functions involving quaternionds and DCM will be eventually removed, as
+better implementations are available in their corresponding classes.
 """
 
 from typing import Tuple, Union
