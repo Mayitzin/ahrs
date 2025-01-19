@@ -38,7 +38,6 @@ There main frames are:
 """
 
 import numpy as np
-from .constants import EARTH_FIRST_ECCENTRICITY
 from .constants import EARTH_EQUATOR_RADIUS
 from .constants import EARTH_POLAR_RADIUS
 from .constants import RAD2DEG
