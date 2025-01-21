@@ -1301,5 +1301,28 @@ class TestAngular(unittest.TestCase):
         self.assertRaises(ValueError, ahrs.filters.AngularRate, gyr=self.gyroscopes, q0=[1.0, 0.0, 0.0])
         self.assertRaises(ValueError, ahrs.filters.AngularRate, gyr=self.gyroscopes, q0=np.zeros(4))
 
+class TestEcompass(unittest.TestCase):
+    def setUp(self) -> None:
+        # Synthetic sensor data
+        self.accelerometers = np.copy(SENSOR_DATA.accelerometers)
+        self.magnetometers = np.copy(SENSOR_DATA.magnetometers)
+
+    def test_estimation(self):
+        orientation = ahrs.common.orientation.ecompass(a=self.accelerometers[0], m=self.magnetometers[0], frame='NED')
+        self.assertLess(np.nanmean(ahrs.utils.metrics.chordal(REFERENCE_ROTATIONS[0], orientation)), THRESHOLD)
+
+    def test_wrong_input_vectors(self):
+        self.assertRaises(TypeError, ahrs.common.orientation.ecompass, a=1.0, m=self.magnetometers)
+        self.assertRaises(TypeError, ahrs.common.orientation.ecompass, a="self.accelerometers", m=self.magnetometers)
+        self.assertRaises(TypeError, ahrs.common.orientation.ecompass, a=True, m=self.magnetometers)
+        self.assertRaises(TypeError, ahrs.common.orientation.ecompass, a=self.accelerometers, m=2.0)
+        self.assertRaises(TypeError, ahrs.common.orientation.ecompass, a=self.accelerometers, m="self.magnetometers")
+        self.assertRaises(TypeError, ahrs.common.orientation.ecompass, a=self.accelerometers[0], m=True)
+        self.assertRaises(TypeError, ahrs.common.orientation.ecompass, a=True, m=[1.0, 2.0, 3.0])
+        self.assertRaises(ValueError, ahrs.common.orientation.ecompass, a=[1.0, 2.0], m=self.magnetometers)
+        self.assertRaises(ValueError, ahrs.common.orientation.ecompass, a=[1.0, 2.0, 3.0, 4.0], m=self.magnetometers)
+        self.assertRaises(ValueError, ahrs.common.orientation.ecompass, a=self.accelerometers, m=[2.0, 3.0, 4.0])
+        self.assertRaises(ValueError, ahrs.common.orientation.ecompass, a=self.accelerometers, m=[2.0, 3.0])
+
 if __name__ == '__main__':
     unittest.main()
