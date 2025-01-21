@@ -655,9 +655,14 @@ def ecompass(a: np.ndarray, m: np.ndarray, frame: str = 'ENU', representation: s
         raise ValueError("Wrong local tangent plane coordinate frame. Try 'ENU' or 'NED'")
     if representation.lower() not in ['rotmat', 'quaternion', 'rpy', 'axisangle']:
         raise ValueError("Wrong representation type. Try 'rotmat', 'quaternion', 'rpy', or 'axisangle'")
+    for item in [a, m]:
+        if not isinstance(item, (np.ndarray, list, tuple)):
+            raise TypeError("Both inputs a and m must be arrays.")
     a = np.copy(a)
     m = np.copy(m)
-    if a.shape[-1] != 3 or m.shape[-1] != 3:
+    if a.shape != m.shape:
+        raise ValueError("Both vectors must have the same shape.")
+    if len(a) != 3:
         raise ValueError("Input vectors must have exactly 3 elements.")
     m /= np.linalg.norm(m)
     Rz = a/np.linalg.norm(a)
