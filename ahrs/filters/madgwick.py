@@ -368,8 +368,7 @@ Footnotes
 """
 
 import numpy as np
-from ..common.orientation import q_prod
-from ..common.orientation import q_conj
+from ..common.quaternion import Quaternion
 from ..common.orientation import acc2q
 from ..common.orientation import ecompass
 from ..utils.core import _assert_numerical_iterable
@@ -624,10 +623,11 @@ class Madgwick:
         _assert_numerical_iterable(q, 'Quaternion')
         _assert_numerical_iterable(gyr, 'Tri-axial gyroscope sample')
         _assert_numerical_iterable(acc, 'Tri-axial accelerometer sample')
+        q = Quaternion(q)
         dt = self.Dt if dt is None else dt
         if np.linalg.norm(gyr) == 0:
-            return q
-        qDot = 0.5 * q_prod(q, [0, *gyr])                           # (eq. 12)
+            return q.to_array()
+        qDot = 0.5 * q.product([0, *gyr])                           # (eq. 12)
         a_norm = np.linalg.norm(acc)
         if a_norm > 0:
             a = acc/a_norm
@@ -699,18 +699,20 @@ class Madgwick:
         _assert_numerical_iterable(gyr, 'Tri-axial gyroscope sample')
         _assert_numerical_iterable(acc, 'Tri-axial accelerometer sample')
         _assert_numerical_iterable(mag, 'Tri-axial magnetometer sample')
+        q = Quaternion(q)
         dt = self.Dt if dt is None else dt
         if np.linalg.norm(gyr) == 0:
-            return q
+            return q.to_array()
         if np.linalg.norm(mag) == 0:
             return self.updateIMU(q, gyr, acc)
-        qDot = 0.5 * q_prod(q, [0, *gyr])                           # (eq. 12)
+        qDot = 0.5 * q.product([0, *gyr])                           # (eq. 12)
         a_norm = np.linalg.norm(acc)
         if a_norm > 0:
             a = acc/a_norm
             m = mag/np.linalg.norm(mag)
             # Rotate normalized magnetometer measurements
-            h = q_prod(q, q_prod([0, *m], q_conj(q)))               # (eq. 45)
+            q_m = Quaternion([0, *m])
+            h = q.product(q_m.product(q.conj))               # (eq. 45)
             bx = np.linalg.norm([h[1], h[2]])                       # (eq. 46)
             bz = h[3]
             qw, qx, qy, qz = q/np.linalg.norm(q)
