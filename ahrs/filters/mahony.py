@@ -553,7 +553,7 @@ class Mahony:
         a_norm = np.linalg.norm(acc)
         if a_norm > 0:
             m_norm = np.linalg.norm(mag)
-            if not m_norm>0:
+            if m_norm == 0:
                 return self.updateIMU(q, gyr, acc)
             a = np.copy(acc)/a_norm
             m = np.copy(mag)/m_norm
