@@ -377,15 +377,15 @@ class Mahony:
 
     """
     def __init__(self,
-        gyr: np.ndarray = None,
-        acc: np.ndarray = None,
-        mag: np.ndarray = None,
-        frequency: float = 100.0,
-        k_P: float = 1.0,
-        k_I: float = 0.3,
-        q0: np.ndarray = None,
-        b0: np.ndarray = None,
-        **kwargs):
+            gyr: np.ndarray = None,
+            acc: np.ndarray = None,
+            mag: np.ndarray = None,
+            frequency: float = 100.0,
+            k_P: float = 1.0,
+            k_I: float = 0.3,
+            q0: np.ndarray = None,
+            b0: np.ndarray = None,
+            **kwargs) -> None:
         self.gyr: np.ndarray = gyr
         self.acc: np.ndarray = acc
         self.mag: np.ndarray = mag
@@ -403,7 +403,7 @@ class Mahony:
         if self.gyr is not None and self.acc is not None:
             self.Q = self._compute_all()
 
-    def _assert_validity_of_inputs(self):
+    def _assert_validity_of_inputs(self) -> None:
         """Asserts the validity of the inputs."""
         for item in ["frequency", "Dt", "k_P", "k_I"]:
             if isinstance(self.__getattribute__(item), bool):
@@ -430,7 +430,7 @@ class Mahony:
             if self.b.shape != (3,):
                 raise ValueError("Parameter 'b' must be an array with 3 elements.")
 
-    def _compute_all(self):
+    def _compute_all(self) -> np.ndarray:
         """
         Estimate the quaternions given all data
 
