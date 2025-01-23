@@ -247,7 +247,6 @@ import numpy as np
 from ..common.quaternion import Quaternion
 from ..common.orientation import acc2q
 from ..common.orientation import am2q
-from ..common.orientation import q2R
 from ..utils.core import _assert_numerical_iterable
 
 class Mahony:
