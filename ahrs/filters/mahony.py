@@ -497,7 +497,7 @@ class Mahony:
         """
         q = Quaternion(q)
         dt = self.Dt if dt is None else dt
-        if gyr is None or not np.linalg.norm(gyr) > 0:
+        if gyr is None or np.linalg.norm(gyr) == 0:
             return q.to_array()
         Omega = np.copy(gyr)
         a_norm = np.linalg.norm(acc)
@@ -547,7 +547,7 @@ class Mahony:
         """
         q = Quaternion(q)
         dt = self.Dt if dt is None else dt
-        if gyr is None or not np.linalg.norm(gyr) > 0:
+        if gyr is None or np.linalg.norm(gyr) == 0:
             return q.to_array()
         Omega = np.copy(gyr)
         a_norm = np.linalg.norm(acc)
