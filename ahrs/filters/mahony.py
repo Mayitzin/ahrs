@@ -244,7 +244,7 @@ newest estimated attitude.
 """
 
 import numpy as np
-from ..common.orientation import q_prod
+from ..common.quaternion import Quaternion
 from ..common.orientation import acc2q
 from ..common.orientation import am2q
 from ..common.orientation import q2R
@@ -496,13 +496,14 @@ class Mahony:
         ...     Q[t] = orientation.updateIMU(Q[t-1], gyr=gyro_data[t], acc=acc_data[t])
 
         """
+        q = Quaternion(q)
         dt = self.Dt if dt is None else dt
         if gyr is None or not np.linalg.norm(gyr) > 0:
-            return q
+            return q.to_array()
         Omega = np.copy(gyr)
         a_norm = np.linalg.norm(acc)
         if a_norm > 0:
-            R = q2R(q)
+            R = q.to_DCM()
             v_a = R.T@np.array([0.0, 0.0, 1.0])     # Expected Earth's gravity
             # ECF
             omega_mes = np.cross(acc/a_norm, v_a)   # Cost function (eqs. 32c and 48a)
@@ -510,7 +511,7 @@ class Mahony:
             self.b += bDot * dt                          # Estimated Gyro bias
             Omega = Omega - self.b + self.k_P*omega_mes  # Gyro correction
         p = np.array([0.0, *Omega])
-        qDot = 0.5*q_prod(q, p)                     # Rate of change of quaternion (eqs. 45 and 48b)
+        qDot = 0.5*q.product(p)                     # Rate of change of quaternion (eqs. 45 and 48b)
         q += qDot*dt                                # Update orientation
         q /= np.linalg.norm(q)                      # Normalize Quaternion (Versor)
         return q
@@ -545,9 +546,10 @@ class Mahony:
         ...     Q[t] = orientation.updateMARG(Q[t-1], gyr=gyro_data[t], acc=acc_data[t], mag=mag_data[t])
 
         """
+        q = Quaternion(q)
         dt = self.Dt if dt is None else dt
         if gyr is None or not np.linalg.norm(gyr) > 0:
-            return q
+            return q.to_array()
         Omega = np.copy(gyr)
         a_norm = np.linalg.norm(acc)
         if a_norm > 0:
@@ -556,7 +558,7 @@ class Mahony:
                 return self.updateIMU(q, gyr, acc)
             a = np.copy(acc)/a_norm
             m = np.copy(mag)/m_norm
-            R = q2R(q)
+            R = q.to_DCM()
             v_a = R.T@np.array([0.0, 0.0, 1.0])     # Expected Earth's gravity
             # Rotate magnetic field to inertial frame
             h = R@m
@@ -568,7 +570,7 @@ class Mahony:
             self.b += bDot * dt                          # Estimated Gyro bias
             Omega = Omega - self.b + self.k_P*omega_mes  # Gyro correction (eq. 48b)
         p = np.array([0.0, *Omega])
-        qDot = 0.5*q_prod(q, p)                     # Rate of change of quaternion (eqs. 45 and 48b)
+        qDot = 0.5*q.product(p)                     # Rate of change of quaternion (eqs. 45 and 48b)
         q += qDot*dt                                # Update orientation
         q /= np.linalg.norm(q)                      # Normalize Quaternion (Versor)
         return q
