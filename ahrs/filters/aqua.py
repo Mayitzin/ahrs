@@ -1065,7 +1065,7 @@ class AQUA:
         # CORRECTION
         a_norm = np.linalg.norm(acc)
         if a_norm == 0:
-            return qInt
+            return qInt.to_array()
         a = acc/a_norm
         gx, gy, gz = qInt.to_DCM().T @ a                    # Predicted gravity (eq. 44)
         # Accelerometer-Based Quaternion
@@ -1077,7 +1077,7 @@ class AQUA:
         # Magnetometer-Based Quaternion
         m_norm = np.linalg.norm(mag)
         if m_norm == 0:
-            return q_prime
+            return q_prime.to_array()
         lx, ly, _ = q_prime.to_DCM().T @ (mag/m_norm)       # World frame magnetic vector (eq. 54)
         Gamma = lx**2 + ly**2                               # (eq. 28)
         q_mag = np.array([np.sqrt(Gamma+lx*np.sqrt(Gamma))/np.sqrt(2*Gamma), 0.0, 0.0, ly/np.sqrt(2*(Gamma+lx*np.sqrt(Gamma)))])    # (eq. 58)
