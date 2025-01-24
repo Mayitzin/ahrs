@@ -580,7 +580,7 @@ Footnotes
 """
 
 import numpy as np
-from ..common.orientation import q_prod, q2R
+from ..common.quaternion import Quaternion
 from ..common.constants import MUNICH_LATITUDE, MUNICH_HEIGHT
 from ..utils.core import _assert_numerical_iterable
 from ..utils.core import _assert_same_shapes
@@ -945,13 +945,13 @@ class AQUA:
             q_acc = np.array([np.sqrt((az+1)/2), -ay/np.sqrt(2*(az+1)), ax/np.sqrt(2*(az+1)), 0.0])
         else:
             q_acc = np.array([-ay/np.sqrt(2*(1-az)), np.sqrt((1-az)/2.0), 0.0, ax/np.sqrt(2*(1-az))])
-        q_acc /= np.linalg.norm(q_acc)
+        q_acc = Quaternion(q_acc)
         if mag is not None:
             self._assert_triaxial_sample_vector(mag, 'magnetometer')
             m_norm = np.linalg.norm(mag)
             if m_norm == 0:
                 raise ValueError("Invalid geomagnetic field. Its must contain at least one non-zero value.")
-            lx, ly, _ = q2R(q_acc).T @ (mag/m_norm)     # (eq. 26)
+            lx, ly, _ = q_acc.to_DCM().T @ (mag/m_norm) # (eq. 26)
             Gamma = lx**2 + ly**2                       # (eq. 28)
             # Quaternion from Magnetometer Readings (eq. 35)
             if lx >= 0:
@@ -967,7 +967,7 @@ class AQUA:
                                   np.sqrt(Gamma-lx*np.sqrt(Gamma))/np.sqrt(2*Gamma)
                                   ])
             # Generalized Quaternion Orientation (eq. 36)
-            q = q_prod(q_acc, q_mag)
+            q = q_acc.product(q_mag)
             return q/np.linalg.norm(q)
         return q_acc
 
@@ -1007,20 +1007,19 @@ class AQUA:
             return q
         # PREDICTION
         qDot = self.Omega(gyr) @ q                          # Quaternion derivative (eq. 39)
-        qInt = q + qDot*dt                                  # Quaternion integration (eq. 42)
-        qInt /= np.linalg.norm(qInt)
+        qInt = Quaternion(q + qDot*dt)                      # Quaternion integration (eq. 42)
         # CORRECTION
         a_norm = np.linalg.norm(acc)
         if a_norm == 0:
-            return qInt
+            return qInt.to_array()
         a = acc/a_norm
-        gx, gy, gz = q2R(qInt).T @ a                          # Predicted gravity (eq. 44)
+        gx, gy, gz = qInt.to_DCM().T @ a                    # Predicted gravity (eq. 44)
         q_acc = np.array([np.sqrt((gz+1.0)/2.0), -gy/np.sqrt(2.0*(gz+1.0)), gx/np.sqrt(2.0*(gz+1.0)), 0.0])     # Delta Quaternion (eq. 47)
         if self.adaptive:
             self.alpha = adaptive_gain(acc)
         q_acc = slerp_I(q_acc, self.alpha, self.threshold)
-        q_prime = q_prod(qInt, q_acc)                       # (eq. 53)
-        return q_prime / np.linalg.norm(q_prime)
+        q_prime = qInt.product(q_acc)                       # (eq. 53)
+        return q_prime/np.linalg.norm(q_prime)
 
     def updateMARG(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, mag: np.ndarray, dt: float = None) -> np.ndarray:
         """
@@ -1062,31 +1061,29 @@ class AQUA:
             return q
         # PREDICTION
         qDot = self.Omega(gyr) @ q                          # Quaternion derivative (eq. 39)
-        qInt = q + qDot*dt                                  # Quaternion integration (eq. 42)
-        qInt /= np.linalg.norm(qInt)
+        qInt = Quaternion(q + qDot*dt)                      # Quaternion integration (eq. 42)
         # CORRECTION
         a_norm = np.linalg.norm(acc)
         if a_norm == 0:
             return qInt
         a = acc/a_norm
-        gx, gy, gz = q2R(qInt).T @ a                        # Predicted gravity (eq. 44)
+        gx, gy, gz = qInt.to_DCM().T @ a                    # Predicted gravity (eq. 44)
         # Accelerometer-Based Quaternion
         q_acc = np.array([np.sqrt((gz+1.0)/2.0), -gy/np.sqrt(2.0*(gz+1.0)), gx/np.sqrt(2.0*(gz+1.0)), 0.0])     # Delta Quaternion (eq. 47)
         if self.adaptive:
             self.alpha = adaptive_gain(acc)
         q_acc = slerp_I(q_acc, self.alpha, self.threshold)
-        q_prime = q_prod(qInt, q_acc)                       # (eq. 53)
-        q_prime /= np.linalg.norm(q_prime)
+        q_prime = Quaternion(qInt.product(q_acc))           # (eq. 53)
         # Magnetometer-Based Quaternion
         m_norm = np.linalg.norm(mag)
         if m_norm == 0:
             return q_prime
-        lx, ly, _ = q2R(q_prime).T @ (mag/m_norm)           # World frame magnetic vector (eq. 54)
+        lx, ly, _ = q_prime.to_DCM().T @ (mag/m_norm)       # World frame magnetic vector (eq. 54)
         Gamma = lx**2 + ly**2                               # (eq. 28)
         q_mag = np.array([np.sqrt(Gamma+lx*np.sqrt(Gamma))/np.sqrt(2*Gamma), 0.0, 0.0, ly/np.sqrt(2*(Gamma+lx*np.sqrt(Gamma)))])    # (eq. 58)
         q_mag = slerp_I(q_mag, self.beta, self.threshold)
         # Generalized Quaternion
-        q = q_prod(q_prime, q_mag)                          # (eq. 59)
+        q = q_prime.product(q_mag)                          # (eq. 59)
         return q/np.linalg.norm(q)
 
     def init_q(self, acc: np.ndarray, mag: np.ndarray = None) -> np.ndarray:
