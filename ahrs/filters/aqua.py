@@ -1087,5 +1087,5 @@ class AQUA:
         return q/np.linalg.norm(q)
 
     def init_q(self, acc: np.ndarray, mag: np.ndarray = None) -> np.ndarray:
-        """Synonym of method `estimate`."""
+        """Synonym of :meth:`estimate`"""
         return self.estimate(acc, mag)
