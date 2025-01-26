@@ -863,7 +863,7 @@ Footnotes
 """
 
 import numpy as np
-from ..common.orientation import q2R
+from ..common.quaternion import Quaternion
 from ..common.orientation import ecompass
 from ..common.orientation import acc2q
 from ..common.mathfuncs import cosd
@@ -1249,7 +1249,7 @@ class EKF:
         numpy.ndarray
             Expected Measurements.
         """
-        C = q2R(q, version=2).T
+        C = Quaternion(q).to_DCM().T
         if len(self.z) < 4:
             return C @ self.a_ref
         return np.r_[C @ self.a_ref, C @ self.m_ref]
