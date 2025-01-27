@@ -223,6 +223,7 @@ Footnotes
 """
 
 import numpy as np
+from ..common.quaternion import Quaternion
 from ..common.constants import MUNICH_LATITUDE
 from ..common.constants import MUNICH_LONGITUDE
 from ..common.constants import MUNICH_HEIGHT
@@ -354,8 +355,7 @@ class FQA:
         c_theta = np.sqrt(1.0-s_theta**2)                           # (eq. 22)
         s_theta_2 = np.sign(s_theta)*np.sqrt((1.0-c_theta)/2.0)     # (eq. 23)
         c_theta_2 = np.sqrt((1.0+c_theta)/2.0)                      # (eq. 24)
-        q_e = np.array([c_theta_2, 0.0, s_theta_2, 0.0])            # (eq. 25)
-        q_e /= np.linalg.norm(q_e)
+        q_e = Quaternion([c_theta_2, 0.0, s_theta_2, 0.0])          # (eq. 25)
         # Roll Quaternion
         is_singular = c_theta == 0.0        # X-axis is vertically oriented
         s_phi = 0.0 if is_singular else -a_y/c_theta                # (eq. 30)
@@ -366,19 +366,17 @@ class FQA:
             sign_s_phi = 1
         s_phi_2 = sign_s_phi*np.sqrt((1.0-c_phi)/2.0)
         c_phi_2 = np.sqrt((1.0+c_phi)/2.0)
-        q_r = np.array([c_phi_2, s_phi_2, 0.0, 0.0])                # (eq. 32)
-        q_r /= np.linalg.norm(q_r)
-        q_er = q_prod(q_e, q_r)
-        q_er /= np.linalg.norm(q_er)
+        q_r = Quaternion([c_phi_2, s_phi_2, 0.0, 0.0])              # (eq. 32)
+        q_er = Quaternion(q_e*q_r)
         if mag is None:
-            return q_er
+            return q_er.to_array()
         # Azimuth Quaternion
         m_norm = np.linalg.norm(mag)
-        if not m_norm > 0:
-            return q_er
+        if m_norm == 0:
+            return q_er.to_array()
         mag /= np.linalg.norm(mag)
-        bm = np.array([0.0, *mag])
-        em = q_prod(q_e, q_prod(q_r, q_prod(bm, q_prod(q_conj(q_r), q_conj(q_e)))))     # (eq. 34)
+        bm = Quaternion([0.0, *mag])
+        em = q_e.product(q_r.product(bm.product(Quaternion(q_r.conj).product(q_e.conj))))   # (eq. 34)
         nx, ny, _ = self.m_ref
         N = np.array([nx, ny])/np.linalg.norm([nx, ny])             # (eq. 36)
         Mx, My = em[1:-1] / np.linalg.norm(em[1:-1])                # (eq. 37)
@@ -386,8 +384,7 @@ class FQA:
         c_psi = np.clip(c_psi, -1.0, 1.0)
         s_psi_2 = np.sign(s_psi)*np.sqrt((1.0-c_psi)/2.0)
         c_psi_2 = np.sqrt((1.0+c_psi)/2.0)
-        q_a = np.array([c_psi_2, 0.0, 0.0, s_psi_2])                # (eq. 40)
-        q_a /= np.linalg.norm(q_a)
+        q_a = Quaternion([c_psi_2, 0.0, 0.0, s_psi_2])              # (eq. 40)
         # Final Quaternion (eq. 41)
-        q = q_prod(q_a, q_er)
-        return q/np.linalg.norm(q)
+        q = Quaternion(q_a*q_er)
+        return q.to_array()
