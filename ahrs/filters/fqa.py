@@ -374,7 +374,7 @@ class FQA:
         m_norm = np.linalg.norm(mag)
         if m_norm == 0:
             return q_er.to_array()
-        mag /= np.linalg.norm(mag)
+        mag /= m_norm
         bm = Quaternion([0.0, *mag])
         em = q_e.product(q_r.product(bm.product(Quaternion(q_r.conj).product(q_e.conj))))   # (eq. 34)
         nx, ny, _ = self.m_ref
