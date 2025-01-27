@@ -213,8 +213,7 @@ to obtain the new attitude :math:`\\mathbf{q}_t`:
 
 from typing import Union
 import numpy as np
-from ..common.orientation import q_prod
-from ..common.orientation import q_conj
+from ..common.quaternion import Quaternion
 from ..common.orientation import ecompass
 from ..common.constants import MUNICH_LONGITUDE
 from ..common.constants import MUNICH_LATITUDE
@@ -315,8 +314,8 @@ class Fourati:
         self.gain: float = kwargs.get('gain', 0.1)
         self.q0: np.ndarray = kwargs.get('q0')
         # Reference vectors
-        self.m_q: np.ndarray = _set_magnetic_field_vector(kwargs.get('magnetic_dip'))
-        self.g_q: np.ndarray = np.array([0.0, 0.0, 0.0, 1.0])     # Normalized Gravity vector as pure quaternion
+        self.m_q: Quaternion = Quaternion(_set_magnetic_field_vector(kwargs.get('magnetic_dip')))   # Gravity vector as pure quaternion
+        self.g_q: Quaternion = Quaternion([0.0, 0.0, 0.0, 1.0])                                     # Magnetic field vector as pure quaternion
         # Process of given data
         self._assert_validity_of_inputs()
         if self.acc is not None and self.gyr is not None and self.mag is not None:
@@ -400,9 +399,10 @@ class Fourati:
         _assert_numerical_iterable(acc, 'Tri-axial accelerometer sample')
         _assert_numerical_iterable(mag, 'Tri-axial magnetometer sample')
         dt = self.Dt if dt is None else dt
-        if gyr is None or not np.linalg.norm(gyr) > 0:
+        if gyr is None or np.linalg.norm(gyr) == 0:
             return q
-        qDot = 0.5 * q_prod(q, [0, *gyr])                           # (eq. 5)
+        q = Quaternion(q)
+        qDot = 0.5 * q.product([0, *gyr])                           # (eq. 5)
         if self.gain > 0:
             a_norm = np.linalg.norm(acc)
             if a_norm == 0:
@@ -411,8 +411,8 @@ class Fourati:
             if m_norm == 0:
                 raise ValueError("Magnetometer data is null. Cannot estimate quaternion.")
             # Levenberg Marquardt Algorithm
-            fhat = q_prod(q_conj(q), q_prod(self.g_q, q))           # (eq. 21)
-            hhat = q_prod(q_conj(q), q_prod(self.m_q, q))           # (eq. 22)
+            fhat = Quaternion(q.conj).product(self.g_q.product(q))  # (eq. 21)
+            hhat = Quaternion(q.conj).product(self.m_q.product(q))  # (eq. 22)
             y = np.r_[acc/a_norm, mag/m_norm]                       # Measurements (eq. 6)
             yhat = np.r_[fhat[1:], hhat[1:]]                        # Estimated values (eq. 8)
             dq = y - yhat                                           # Modeling Error
@@ -421,6 +421,6 @@ class Fourati:
             K = self.gain*np.linalg.inv(X.T@X + lam*np.eye(3))@X.T  # Gain (eq. 24)
             eta = K @ dq                                            # Unique minimum (eq. 10)
             Delta = [1, *eta]                                       # Correction term (eq. 25)
-            qDot = q_prod(qDot, Delta)                              # Corrected quaternion rate (eq. 7)
+            qDot = Quaternion(qDot, versor=False).product(Delta)    # Corrected quaternion rate (eq. 7)
         q += qDot*dt
         return q/np.linalg.norm(q)
