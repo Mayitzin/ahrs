@@ -91,7 +91,8 @@ returning the attitude as angles.
 """
 
 import numpy as np
-from ..common.orientation import q2R
+from ..common.quaternion import Quaternion
+from ..common.quaternion import QuaternionArray
 from ..utils.core import _assert_numerical_iterable
 
 def _assert_representation(representation: str):
@@ -263,8 +264,9 @@ class Tilt:
         Q[:, 2] = sy*cp*sr + cy*sp*cr
         Q[:, 3] = sy*cp*cr - cy*sp*sr
         if self.representation == 'quaternion':
-            return Q/np.linalg.norm(Q, axis=1)[:, None]
-        return q2R(Q)
+            return Q
+        Q = QuaternionArray(Q)
+        return Q.to_DCM()
 
     def estimate(self, acc: np.ndarray, mag: np.ndarray = None, representation: str = 'quaternion') -> np.ndarray:
         """
@@ -339,5 +341,6 @@ class Tilt:
         q[2] = sy*cp*sr + cy*sp*cr
         q[3] = sy*cp*cr - cy*sp*sr
         if representation == 'quaternion':
-            return q/np.linalg.norm(q)
-        return q2R(q)
+            return q
+        q = Quaternion(q)
+        return q.to_DCM()
