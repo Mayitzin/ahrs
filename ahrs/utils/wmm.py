@@ -59,7 +59,7 @@ expands to *degree* and *order* 12.
 The secular variation (SV) is the yearly change of the core field, which is
 also accounted in the WMM by a linear model. Due to unpredictable changes in
 the core field, the values of the WMM coefficients are updated every five
-years (a lustrum). The most recent version is valid from 2020 to 2024.
+years (a lustrum). The most recent version is valid from 2020 to 2029.
 
 The geomagnetic field vector B is described by 7 elements:
 
@@ -159,7 +159,7 @@ or in a dictionary
 
 .. note::
     The model in this package includes coefficients for dates between **2015**
-    and **2024** only. Models out of this timespan cannot be built.
+    and **2029** only. Models out of this timespan cannot be built.
 
 The WMM was developed jointly by the National Centers for Environmental
 Information (NCEI, Boulder CO, USA) (formerly National Geophysical Data Center
@@ -291,9 +291,9 @@ class WMM:
 
     Every WMM object is created with a set of coefficients read from a COF
     file, defined by the desired working date of the model. The latest
-    model available is WMM2020 corresponding to the lustrum 2020-2024.
+    model available is WMM2025 corresponding to the lustrum 2025-2029.
 
-    This class can create models with dates between 2015 and 2024.
+    This class can create models with dates between 2015 and 2029.
 
     Parameters
     ----------
@@ -534,7 +534,13 @@ class WMM:
             raise TypeError(f"Date must be an instance of datetime.date or a decimalized year. Got {type(date)}")
         if self.date.year < 2015:
             raise ValueError("No available coefficients for dates before 2015.")
-        self.wmm_filename = 'WMM2015/WMM.COF' if self.date_dec < 2020.0 else 'WMM2020/WMM.COF'
+        if self.date_dec < 2020.0:
+            self.wmm_filename = 'WMM2015/WMM.COF'
+            return
+        if self.date_dec < 2025.0:
+            self.wmm_filename = 'WMM2020/WMM.COF'
+            return
+        self.wmm_filename = 'WMM2025/WMM.COF'
 
     def denormalize_coefficients(self, latitude: float) -> None:
         """
