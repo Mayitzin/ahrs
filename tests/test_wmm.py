@@ -12,29 +12,29 @@ class TestWMM(unittest.TestCase):
     the WMM 2020 uses a TXT file with values split with spaces. The position of
     their values is different. The following table shows their differences:
 
-    =====  =================  =================
-    Index  CSV File (WM2015)  TXT File (WM2020)
-    =====  =================  =================
-    0      date               date
-    1      height (km)        height (km)
-    2      latitude (deg)     latitude (deg)
-    3      longitude (deg)    longitude (deg)
-    4      X (nT)             D (deg)
-    5      Y (nT)             I (deg)
-    6      Z (nT)             H (nT)
-    7      H (nT)             X (nT)
-    8      F (nT)             Y (nT)
-    9      I (deg)            Z (nT)
-    10     D (deg)            F (nT)
-    11     GV (deg)           dD/dt (deg/year)
-    12     Xdot (nT/yr)       dI/dt (deg/year)
-    13     Ydot (nT/yr)       dH/dt (nT/year)
-    14     Zdot (nT/yr)       dX/dt (nT/year)
-    15     Hdot (nT/yr)       dY/dt (nT/year)
-    16     Fdot (nT/yr)       dZ/dt (nT/year)
-    17     dI/dt (deg/year)   dF/dt (nT/year)
-    18     dD/dt (deg/year)
-    =====  =================  =================
+    =====  =================  =================  =================
+    Index  CSV File (WM2015)  TXT File (WM2020)  TXT File (WM2025)
+    =====  =================  =================  =================
+    0      date               date               date
+    1      height (km)        height (km)        height (km)
+    2      latitude (deg)     latitude (deg)     latitude (deg)
+    3      longitude (deg)    longitude (deg)    longitude (deg)
+    4      X (nT)             D (deg)            X (nT)
+    5      Y (nT)             I (deg)            Y (nT)
+    6      Z (nT)             H (nT)             Z (nT)
+    7      H (nT)             X (nT)             H (nT)
+    8      F (nT)             Y (nT)             F (nT)
+    9      I (deg)            Z (nT)             Inclination (deg)
+    10     D (deg)            F (nT)             Declination (deg)
+    11     GV (deg)           dD/dt (deg/year)   GV (deg)
+    12     Xdot (nT/yr)       dI/dt (deg/year)   Xdot (nT/yr)
+    13     Ydot (nT/yr)       dH/dt (nT/year)    Ydot (nT/yr)
+    14     Zdot (nT/yr)       dX/dt (nT/year)    Zdot (nT/yr)
+    15     Hdot (nT/yr)       dY/dt (nT/year)    Hdot (nT/yr)
+    16     Fdot (nT/yr)       dZ/dt (nT/year)    Fdot (nT/yr)
+    17     dI/dt (deg/year)   dF/dt (nT/year)    Idot (deg/year)
+    18     dD/dt (deg/year)   -/-                Ddot (deg/year)
+    =====  =================  =================  =================
 
     """
     def _load_test_values(self, filename: str) -> np.ndarray:
