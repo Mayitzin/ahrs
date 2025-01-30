@@ -723,16 +723,17 @@ class Madgwick:
                           2.0*bx*(0.5 - qy**2 - qz**2) + 2.0*bz*(qx*qz - qw*qy)       - m[0],
                           2.0*bx*(qx*qy - qw*qz)       + 2.0*bz*(qw*qx + qy*qz)       - m[1],
                           2.0*bx*(qw*qy + qx*qz)       + 2.0*bz*(0.5 - qx**2 - qy**2) - m[2]])
-            # Jacobian (eq. 32)
-            J = np.array([[-2.0*qy,               2.0*qz,              -2.0*qw,               2.0*qx             ],
-                          [ 2.0*qx,               2.0*qw,               2.0*qz,               2.0*qy             ],
-                          [ 0.0,                 -4.0*qx,              -4.0*qy,               0.0                ],
-                          [-2.0*bz*qy,            2.0*bz*qz,           -4.0*bx*qy-2.0*bz*qw, -4.0*bx*qz+2.0*bz*qx],
-                          [-2.0*bx*qz+2.0*bz*qx,  2.0*bx*qy+2.0*bz*qw,  2.0*bx*qx+2.0*bz*qz, -2.0*bx*qw+2.0*bz*qy],
-                          [ 2.0*bx*qy,            2.0*bx*qz-4.0*bz*qx,  2.0*bx*qw-4.0*bz*qy,  2.0*bx*qx          ]])
-            gradient = J.T@f                                        # (eq. 34)
-            gradient /= np.linalg.norm(gradient)
-            qDot -= self.gain*gradient                              # (eq. 33)
+            if np.linalg.norm(f) > 0:
+                # Jacobian (eq. 32)
+                J = np.array([[-2.0*qy,               2.0*qz,              -2.0*qw,               2.0*qx             ],
+                            [ 2.0*qx,               2.0*qw,               2.0*qz,               2.0*qy             ],
+                            [ 0.0,                 -4.0*qx,              -4.0*qy,               0.0                ],
+                            [-2.0*bz*qy,            2.0*bz*qz,           -4.0*bx*qy-2.0*bz*qw, -4.0*bx*qz+2.0*bz*qx],
+                            [-2.0*bx*qz+2.0*bz*qx,  2.0*bx*qy+2.0*bz*qw,  2.0*bx*qx+2.0*bz*qz, -2.0*bx*qw+2.0*bz*qy],
+                            [ 2.0*bx*qy,            2.0*bx*qz-4.0*bz*qx,  2.0*bx*qw-4.0*bz*qy,  2.0*bx*qx          ]])
+                gradient = J.T@f                                        # (eq. 34)
+                gradient /= np.linalg.norm(gradient)
+                qDot -= self.gain*gradient                              # (eq. 33)
         q_new = q + qDot*dt                                         # (eq. 13)
         q_new /= np.linalg.norm(q_new)
         return q_new
