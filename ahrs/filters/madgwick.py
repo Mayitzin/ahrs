@@ -712,7 +712,7 @@ class Madgwick:
             m = mag/np.linalg.norm(mag)
             # Rotate normalized magnetometer measurements
             q_m = Quaternion([0, *m])
-            h = q.product(q_m.product(q.conj))               # (eq. 45)
+            h = q.product(q_m.product(q.conj))                      # (eq. 45)
             bx = np.linalg.norm([h[1], h[2]])                       # (eq. 46)
             bz = h[3]
             qw, qx, qy, qz = q/np.linalg.norm(q)
@@ -734,6 +734,6 @@ class Madgwick:
                 gradient = J.T@f                                        # (eq. 34)
                 gradient /= np.linalg.norm(gradient)
                 qDot -= self.gain*gradient                              # (eq. 33)
-        q_new = q + qDot*dt                                         # (eq. 13)
+        q_new = q + qDot*dt                                             # (eq. 13)
         q_new /= np.linalg.norm(q_new)
         return q_new
