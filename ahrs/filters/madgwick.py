@@ -726,14 +726,14 @@ class Madgwick:
             if np.linalg.norm(f) > 0:
                 # Jacobian (eq. 32)
                 J = np.array([[-2.0*qy,               2.0*qz,              -2.0*qw,               2.0*qx             ],
-                            [ 2.0*qx,               2.0*qw,               2.0*qz,               2.0*qy             ],
-                            [ 0.0,                 -4.0*qx,              -4.0*qy,               0.0                ],
-                            [-2.0*bz*qy,            2.0*bz*qz,           -4.0*bx*qy-2.0*bz*qw, -4.0*bx*qz+2.0*bz*qx],
-                            [-2.0*bx*qz+2.0*bz*qx,  2.0*bx*qy+2.0*bz*qw,  2.0*bx*qx+2.0*bz*qz, -2.0*bx*qw+2.0*bz*qy],
-                            [ 2.0*bx*qy,            2.0*bx*qz-4.0*bz*qx,  2.0*bx*qw-4.0*bz*qy,  2.0*bx*qx          ]])
-                gradient = J.T@f                                        # (eq. 34)
+                              [ 2.0*qx,               2.0*qw,               2.0*qz,               2.0*qy             ],
+                              [ 0.0,                 -4.0*qx,              -4.0*qy,               0.0                ],
+                              [-2.0*bz*qy,            2.0*bz*qz,           -4.0*bx*qy-2.0*bz*qw, -4.0*bx*qz+2.0*bz*qx],
+                              [-2.0*bx*qz+2.0*bz*qx,  2.0*bx*qy+2.0*bz*qw,  2.0*bx*qx+2.0*bz*qz, -2.0*bx*qw+2.0*bz*qy],
+                              [ 2.0*bx*qy,            2.0*bx*qz-4.0*bz*qx,  2.0*bx*qw-4.0*bz*qy,  2.0*bx*qx          ]])
+                gradient = J.T@f                                    # (eq. 34)
                 gradient /= np.linalg.norm(gradient)
-                qDot -= self.gain*gradient                              # (eq. 33)
-        q_new = q + qDot*dt                                             # (eq. 13)
+                qDot -= self.gain*gradient                          # (eq. 33)
+        q_new = q + qDot*dt                                         # (eq. 13)
         q_new /= np.linalg.norm(q_new)
         return q_new
