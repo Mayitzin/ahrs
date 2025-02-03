@@ -248,6 +248,7 @@ from ..common.quaternion import Quaternion
 from ..common.orientation import acc2q
 from ..common.orientation import am2q
 from ..utils.core import _assert_numerical_iterable
+from ..utils.core import _assert_numerical_positive_variable
 
 class Mahony:
     """
@@ -406,12 +407,7 @@ class Mahony:
     def _assert_validity_of_inputs(self) -> None:
         """Asserts the validity of the inputs."""
         for item in ["frequency", "Dt", "k_P", "k_I"]:
-            if isinstance(self.__getattribute__(item), bool):
-                raise TypeError(f"Parameter '{item}' must be numeric.")
-            if not isinstance(self.__getattribute__(item), (int, float)):
-                raise TypeError(f"Parameter '{item}' is not a non-zero number.")
-            if self.__getattribute__(item) <= 0.0:
-                raise ValueError(f"Parameter '{item}' must be a non-zero number.")
+            _assert_numerical_positive_variable(getattr(self, item), item)
         for item in ['q0', 'b']:
             if self.__getattribute__(item) is not None:
                 if isinstance(self.__getattribute__(item), bool):
