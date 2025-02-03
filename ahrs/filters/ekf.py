@@ -871,6 +871,7 @@ from ..common.mathfuncs import sind
 from ..common.mathfuncs import skew
 
 from ..utils.core import _assert_numerical_iterable
+from ..utils.core import _assert_numerical_positive_variable
 
 class EKF:
     """
@@ -1044,12 +1045,7 @@ class EKF:
     def _assert_validity_of_inputs(self):
         """Asserts the validity of the inputs."""
         for item in ["frequency", "Dt"]:
-            if isinstance(self.__getattribute__(item), bool):
-                raise TypeError(f"Parameter '{item}' must be numeric.")
-            if not isinstance(self.__getattribute__(item), (int, float)):
-                raise TypeError(f"Parameter '{item}' is not a non-zero number.")
-            if self.__getattribute__(item) <= 0.0:
-                raise ValueError(f"Parameter '{item}' must be a non-zero number.")
+            _assert_numerical_positive_variable(getattr(self, item), item)
         for item in ['q0', 'P', 'R']:
             if self.__getattribute__(item) is not None:
                 if isinstance(self.__getattribute__(item), bool):
