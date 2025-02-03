@@ -525,7 +525,7 @@ class Madgwick:
     def _assert_validity_of_inputs(self):
         """Asserts the validity of the inputs."""
         for item in ["frequency", "Dt", "gain", "gain_imu", "gain_marg"]:
-            _assert_numerical_positive_variable(self.__getattribute__(item), item)
+            _assert_numerical_positive_variable(getattr(self, item), item)
         if self.q0 is not None:
             if not isinstance(self.q0, (list, tuple, np.ndarray)):
                 raise TypeError(f"Parameter 'q0' must be an array. Got {type(self.q0)}.")
