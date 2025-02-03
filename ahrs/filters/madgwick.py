@@ -372,6 +372,7 @@ from ..common.quaternion import Quaternion
 from ..common.orientation import acc2q
 from ..common.orientation import ecompass
 from ..utils.core import _assert_numerical_iterable
+from ..utils.core import _assert_numerical_positive_variable
 
 class Madgwick:
     """
@@ -524,12 +525,7 @@ class Madgwick:
     def _assert_validity_of_inputs(self):
         """Asserts the validity of the inputs."""
         for item in ["frequency", "Dt", "gain", "gain_imu", "gain_marg"]:
-            if isinstance(self.__getattribute__(item), bool):
-                raise TypeError(f"Parameter '{item}' must be numeric.")
-            if not isinstance(self.__getattribute__(item), (int, float)):
-                raise TypeError(f"Parameter '{item}' is not a non-zero number.")
-            if self.__getattribute__(item) <= 0.0:
-                raise ValueError(f"Parameter '{item}' must be a non-zero number.")
+            _assert_numerical_positive_variable(self.__getattribute__(item), item)
         if self.q0 is not None:
             if not isinstance(self.q0, (list, tuple, np.ndarray)):
                 raise TypeError(f"Parameter 'q0' must be an array. Got {type(self.q0)}.")
