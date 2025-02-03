@@ -74,6 +74,7 @@ from . import OLEQ
 from ..common.mathfuncs import cosd
 from ..common.mathfuncs import sind
 from ..utils.core import _assert_numerical_iterable
+from ..utils.core import _assert_numerical_positive_variable
 
 class ROLEQ:
     """
@@ -182,12 +183,7 @@ class ROLEQ:
         """Asserts the validity of the inputs."""
         # Assert floats
         for item in ["frequency", "Dt"]:
-            if isinstance(self.__getattribute__(item), bool):
-                raise TypeError(f"Parameter '{item}' must be numeric.")
-            if not isinstance(self.__getattribute__(item), (int, float)):
-                raise TypeError(f"Parameter '{item}' is not a non-zero number.")
-            if self.__getattribute__(item) <= 0.0:
-                raise ValueError(f"Parameter '{item}' must be a non-zero number.")
+            _assert_numerical_positive_variable(getattr(self, item), item)
         # Assert arrays
         for item in ['gyr', 'acc', 'mag', 'a', 'm_ref', 'a_ref', 'q0']:
             if self.__getattribute__(item) is not None:
