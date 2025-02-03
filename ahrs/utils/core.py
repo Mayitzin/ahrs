@@ -27,7 +27,7 @@ def _assert_numerical_positive_variable(item, item_name: str = 'input'):
     if isinstance(item, bool):
         raise TypeError(f"Value '{item_name}' must be numeric.")
     if not isinstance(item, (int, float)):
-        raise TypeError(f"Value '{item_name}' is not a non-zero number.")
+        raise TypeError(f"Value '{item_name}' must be int or float.")
     if item <= 0.0:
         raise ValueError(f"Value '{item_name}' must be a non-zero number.")
 
