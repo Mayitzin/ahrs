@@ -23,6 +23,14 @@ def _assert_valid_array_type(item, item_name: str = 'iterable'):
     if not isinstance(item, (list, tuple, np.ndarray)):
         raise TypeError(f"{item_name} must be given as an array. Got {type(item)}")
 
+def _assert_numerical_positive_variable(item, item_name: str = 'input'):
+    if isinstance(item, bool):
+        raise TypeError(f"Value '{item_name}' must be numeric.")
+    if not isinstance(item, (int, float)):
+        raise TypeError(f"Value '{item_name}' is not a non-zero number.")
+    if item <= 0.0:
+        raise ValueError(f"Value '{item_name}' must be a non-zero number.")
+
 def _assert_numerical_iterable(item, item_name: str = 'iterable'):
     """Assert it is a list, tuple, or numpy array, and that it has numerical values"""
     _assert_valid_array_type(item, item_name)
