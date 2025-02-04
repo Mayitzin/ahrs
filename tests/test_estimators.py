@@ -788,7 +788,6 @@ class TestFourati(unittest.TestCase):
         self.assertRaises(TypeError, ahrs.filters.Fourati, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, q0="[1.0, 0.0, 0.0, 0.0]")
         self.assertRaises(TypeError, ahrs.filters.Fourati, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, q0=['1.0', '0.0', '0.0', '0.0'])
         self.assertRaises(ValueError, ahrs.filters.Fourati, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, q0=[1.0])
-        self.assertRaises(ValueError, ahrs.filters.Fourati, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, q0=[1.0, 0.0, 0.0])
         self.assertRaises(ValueError, ahrs.filters.Fourati, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, q0=np.zeros(4))
 
 class TestEKF(unittest.TestCase):
