@@ -633,7 +633,7 @@ class Quaternion(np.ndarray):
                 q = Quaternion.from_rpy(Quaternion, kwargs.pop("rpy"))
             if 'angles' in kwargs:  # Older call. Discontinued.
                 q = Quaternion.from_rpy(Quaternion, kwargs.pop("angles"))
-        _assert_iterables(q, 'q')
+        _assert_numerical_iterable(q, 'q')
         q = np.array(q, dtype=float)
         if q.ndim != 1 or q.shape[-1] not in [3, 4]:
             raise ValueError(f"Expected `q` to have shape (4,) or (3,), got {q.shape}.")
