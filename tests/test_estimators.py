@@ -1296,7 +1296,7 @@ class TestAngular(unittest.TestCase):
         self.assertRaises(TypeError, ahrs.filters.AngularRate, gyr=self.gyroscopes, q0=True)
         self.assertRaises(TypeError, ahrs.filters.AngularRate, gyr=self.gyroscopes, q0="[1.0, 0.0, 0.0, 0.0]")
         self.assertRaises(ValueError, ahrs.filters.AngularRate, gyr=self.gyroscopes, q0=[1.0])
-        self.assertRaises(ValueError, ahrs.filters.AngularRate, gyr=self.gyroscopes, q0=[1.0, 0.0, 0.0])
+        self.assertRaises(ValueError, ahrs.filters.AngularRate, gyr=self.gyroscopes, q0=[0.0, 0.0, 0.0])
         self.assertRaises(ValueError, ahrs.filters.AngularRate, gyr=self.gyroscopes, q0=np.zeros(4))
 
 class TestEcompass(unittest.TestCase):
