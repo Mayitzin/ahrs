@@ -527,13 +527,7 @@ class Madgwick:
         for item in ["frequency", "Dt", "gain", "gain_imu", "gain_marg"]:
             _assert_numerical_positive_variable(getattr(self, item), item)
         if self.q0 is not None:
-            if not isinstance(self.q0, (list, tuple, np.ndarray)):
-                raise TypeError(f"Parameter 'q0' must be an array. Got {type(self.q0)}.")
-            self.q0 = np.copy(self.q0)
-            if self.q0.shape != (4,):
-                raise ValueError(f"Parameter 'q0' must be an array of shape (4,). It is {self.q0.shape}.")
-            if not np.allclose(np.linalg.norm(self.q0), 1.0):
-                raise ValueError(f"Parameter 'q0' must be a versor (norm equal to 1.0). Its norm is equal to {np.linalg.norm(self.q0)}.")
+            self.q0 = Quaternion(self.q0).to_array()
 
     def _compute_all(self) -> np.ndarray:
         """
