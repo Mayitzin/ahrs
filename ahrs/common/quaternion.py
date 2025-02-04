@@ -2746,6 +2746,33 @@ class QuaternionArray(np.ndarray):
             return None
         return quaternion_array
 
+    def to_array(self) -> np.ndarray:
+        """
+        Return the quaternion array as a numpy.ndarray.
+
+        Returns
+        -------
+        array : numpy.ndarray
+            Quaternion array.
+
+        Examples
+        --------
+        >>> Q = QuaternionArray(np.random.random((5, 4))-0.5)   # Five random Quaternions
+        >>> Q.view()
+        QuaternionArray([[-0.5874517 , -0.2181631 , -0.25175194,  0.73751361],
+                         [ 0.64812786,  0.18534342,  0.73606315, -0.06155591],
+                         [-0.0014204 ,  0.8146498 ,  0.26040532,  0.51820146],
+                         [ 0.55231315, -0.6287687 , -0.02216051,  0.5469086 ],
+                         [ 0.08694828, -0.96884826,  0.05115712, -0.22617689]])
+        >>> Q.to_array()    # Returns the same array, but as a numpy.ndarray
+        array([[-0.5874517 , -0.2181631 , -0.25175194,  0.73751361],
+               [ 0.64812786,  0.18534342,  0.73606315, -0.06155591],
+               [-0.0014204 ,  0.8146498 ,  0.26040532,  0.51820146],
+               [ 0.55231315, -0.6287687 , -0.02216051,  0.5469086 ],
+               [ 0.08694828, -0.96884826,  0.05115712, -0.22617689]])
+        """
+        return self.array
+
     def to_angles(self) -> np.ndarray:
         """
         Return corresponding roll-pitch-yaw angles of quaternion.
