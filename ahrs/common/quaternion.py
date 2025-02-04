@@ -638,11 +638,12 @@ class Quaternion(np.ndarray):
         if q.ndim != 1 or q.shape[-1] not in [3, 4]:
             raise ValueError(f"Expected `q` to have shape (4,) or (3,), got {q.shape}.")
         if q.shape[-1] == 3:
-            if not np.any(q):
-                raise ValueError("Expected `q` to be a non-zero vector.")
             q = np.array([0.0, *q])
+        q_norm = np.linalg.norm(q)
+        if q_norm == 0.0:
+            raise ValueError("Quaternion cannot be a zero vector.")
         if versor:
-            q /= np.linalg.norm(q)
+            q /= q_norm
         # Create the ndarray instance of type Quaternion. This will call the
         # standard ndarray constructor, but return an object of type Quaternion.
         obj = super(Quaternion, subtype).__new__(subtype, q.shape, float, q)
