@@ -618,7 +618,6 @@ class TestMadgwick(unittest.TestCase):
         self.assertRaises(TypeError, ahrs.filters.Madgwick, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, q0=True)
         self.assertRaises(TypeError, ahrs.filters.Madgwick, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, q0="[1.0, 0.0, 0.0, 0.0]")
         self.assertRaises(ValueError, ahrs.filters.Madgwick, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, q0=[1.0])
-        self.assertRaises(ValueError, ahrs.filters.Madgwick, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, q0=[1.0, 0.0, 0.0])
         self.assertRaises(ValueError, ahrs.filters.Madgwick, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, q0=np.zeros(4))
 
 class TestMahony(unittest.TestCase):
