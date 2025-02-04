@@ -280,6 +280,8 @@ Footnotes
 
 import numpy as np
 from ..utils.core import _assert_numerical_iterable
+from ..utils.core import _assert_numerical_positive_variable
+from ..common.quaternion import Quaternion
 from ..common.quaternion import QuaternionArray
 from ..common.dcm import DCM
 
@@ -385,17 +387,9 @@ class AngularRate:
 
     def _assert_validity_of_inputs(self):
         for item in ['frequency', 'Dt']:
-            item_value = self.__getattribute__(item)
-            if not isinstance(item_value, (int, float)) or isinstance(item_value, bool):
-                raise TypeError(f"{item} must be float or integer. Got {type(item_value)} instead.")
-            if item_value <= 0:
-                raise ValueError(f"{item} must be positive. Got {item_value} instead.")
-        _assert_numerical_iterable(self.q0, 'initial quaternion')
-        self.q0 = np.copy(self.q0)
-        if self.q0.shape != (4,):
-            raise ValueError(f"Parameter 'q0' must be an array of shape (4,). It is {self.q0.shape}.")
-        if not np.allclose(np.linalg.norm(self.q0), 1.0):
-            raise ValueError(f"Parameter 'q0' must be a versor (norm equal to 1.0). Its norm is equal to {np.linalg.norm(self.q0)}.")
+            _assert_numerical_positive_variable(getattr(self, item), item)
+        if self.q0 is not None:
+            self.q0 = Quaternion(self.q0).to_array()
 
     def _compute_all(self):
         """Estimate all quaternions with given sensor values."""
