@@ -71,7 +71,18 @@ def euclidean(x: np.ndarray, y: np.ndarray, **kwargs) -> float:
     .. math::
         \\Phi(\\mathbf{x}, \\mathbf{y}) = \\sqrt{d(x_0, y_0)^2 + d(x_2, y_1)^2 + d(x_2, y_2)^2}
 
-    Accepts the same parameters as the function ``numpy.linalg.norm()``.
+    where the function :math:`d(\\mathbf{x}, \\mathbf{y})` is the normalized
+    difference between the two angles so that :math:`0 \\leq d(\\cdot, \\cdot) \\leq \\pi`.
+
+    .. math::
+
+        d(\\mathbf{x}, \\mathbf{y}) = \\min \\{ |\\mathbf{x}-\\mathbf{y}|, 2\\pi - |\\mathbf{x}-\\mathbf{y}| \\}
+
+    .. warning::
+
+        This metric is only valid for Euler angles in the range :math:`[0, 2\\pi]`
+        and is not in SO(3), since it depends on a representation that is not
+        unique.
 
     This metric gives values in the range [0, :math:`\\pi\\sqrt{3}`]
 
@@ -107,10 +118,10 @@ def euclidean(x: np.ndarray, y: np.ndarray, **kwargs) -> float:
     x, y = np.copy(x), np.copy(y)
     if x.shape != y.shape:
         raise ValueError("Both arrays must have the same shape.")
-    if x.ndim == 1:
-        return np.linalg.norm(x - y)
     a_b = abs(x - y)
     d = np.minimum(a_b, 2*np.pi - a_b)
+    if x.ndim == 1:
+        return np.linalg.norm(d)
     return np.linalg.norm(d, axis=1)
 
 def chordal(R1: np.ndarray, R2: np.ndarray) -> Union[float, np.ndarray]:
