@@ -63,10 +63,13 @@ def _quaternions_guard_clauses(q1: Union[list, np.ndarray], q2: Union[list, np.n
 
 def euclidean(x: np.ndarray, y: np.ndarray, **kwargs) -> float:
     """
-    Euclidean distance between two arrays as described in :cite:p:`huynh2009`:
+    Euclidean distance between Euler angles as described in :cite:p:`huynh2009`.
+
+    Given two sets of Euler angles :math:`\\mathbf{x}` and :math:`\\mathbf{y}`,
+    the Euclidean distance between them is computed as:
 
     .. math::
-        d(\\mathbf{x}, \\mathbf{y}) = \\sqrt{(x_0-y_0)^2 + \\dots + (x_n-y_n)^2}
+        \\Phi(\\mathbf{x}, \\mathbf{y}) = \\sqrt{d(x_0, y_0)^2 + d(x_2, y_1)^2 + d(x_2, y_2)^2}
 
     Accepts the same parameters as the function ``numpy.linalg.norm()``.
 
@@ -103,8 +106,12 @@ def euclidean(x: np.ndarray, y: np.ndarray, **kwargs) -> float:
     """
     x, y = np.copy(x), np.copy(y)
     if x.shape != y.shape:
-        raise ValueError(f"Cannot compare x of shape {x.shape} and y of shape {y.shape}")
-    return np.linalg.norm(x-y, **kwargs)
+        raise ValueError("Both arrays must have the same shape.")
+    if x.ndim == 1:
+        return np.linalg.norm(x - y)
+    a_b = abs(x - y)
+    d = np.minimum(a_b, 2*np.pi - a_b)
+    return np.linalg.norm(d, axis=1)
 
 def chordal(R1: np.ndarray, R2: np.ndarray) -> Union[float, np.ndarray]:
     """
