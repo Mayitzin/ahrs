@@ -22,7 +22,7 @@ class TestChordal(unittest.TestCase):
     def test_correct_values(self):
         self.assertEqual(ahrs.utils.chordal(np.identity(3), np.identity(3)), 0.0)
         self.assertEqual(ahrs.utils.chordal(np.identity(3), -np.identity(3)), 2.0*np.sqrt(3))
-        self.assertGreaterEqual(ahrs.utils.euclidean(np.random.random((3, 3))-0.5, np.random.random((3, 3))-0.5), 0.0)
+        self.assertGreaterEqual(ahrs.utils.chordal(np.random.random((3, 3))-0.5, np.random.random((3, 3))-0.5), 0.0)
         self.assertEqual(ahrs.utils.chordal(self.R1, self.R2), 1.6916338074634352)
         self.assertEqual(ahrs.utils.chordal(self.R1.tolist(), self.R2.tolist()), 1.6916338074634352)
 
