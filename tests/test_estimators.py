@@ -1258,11 +1258,14 @@ class TestFKF(unittest.TestCase):
 class TestAngular(unittest.TestCase):
     def setUp(self) -> None:
         # Synthetic sensor data
+        self.reference_angular_positions = ahrs.QuaternionArray(SENSOR_DATA.quaternions).to_angles()
         self.gyroscopes = np.copy(SENSOR_DATA.gyroscopes)
 
     def test_estimation(self):
         orientation = ahrs.QuaternionArray(ahrs.filters.AngularRate(gyr=self.gyroscopes).Q)
         self.assertLess(np.nanmean(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS, orientation)), THRESHOLD)
+        orientation = ahrs.filters.AngularRate(gyr=self.gyroscopes, representation='angles').W
+        self.assertLess(np.nanmean(ahrs.utils.metrics.euclidean(self.reference_angular_positions, orientation)), THRESHOLD)
 
     def test_wrong_input_gyroscope_types(self):
         self.assertRaises(TypeError, ahrs.filters.AngularRate, gyr=1.0)
