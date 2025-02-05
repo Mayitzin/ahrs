@@ -1266,6 +1266,8 @@ class TestAngular(unittest.TestCase):
         self.assertLess(np.nanmean(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS, orientation)), THRESHOLD)
         orientation = ahrs.filters.AngularRate(gyr=self.gyroscopes, representation='angles').W
         self.assertLess(np.nanmean(ahrs.utils.metrics.euclidean(self.reference_angular_positions, orientation)), THRESHOLD)
+        orientation = ahrs.filters.AngularRate(gyr=self.gyroscopes, representation='rotmat').R
+        self.assertLess(np.nanmean(ahrs.utils.metrics.chordal(REFERENCE_ROTATIONS, orientation)), THRESHOLD)
 
     def test_wrong_input_gyroscope_types(self):
         self.assertRaises(TypeError, ahrs.filters.AngularRate, gyr=1.0)
