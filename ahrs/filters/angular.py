@@ -424,13 +424,13 @@ class AngularRate:
         .. math::
             \\mathbf{\\theta}_{t+1} = \\mathbf{\\theta}_t + \\mathbf{\\omega}_t \\Delta t
 
-        Given the three main roll-pitch-yaw angles, it simply integrates them
-        with a cumulative sum, and returns the tri-axial angular positions.
+        Given the three main roll-pitch-yaw anglular velocities, it integrates
+        them with a cumulative sum, and returns the tri-axial angular positions.
 
         This method does not play a central role in this estimator, but can be
         used to obtain another reference to compare the results to.
 
-        Calling this method is equivalent to calling::
+        Calling this method is equivalent to::
 
             >>> angular_positions = numpy.cumsum(gyr * dt, axis=0)
 
@@ -454,13 +454,13 @@ class AngularRate:
         _assert_numerical_positive_variable(dt, 'dt')
         # Angular velocity integration --> Angular position
         angular_positions = np.cumsum(gyr * dt, axis=0)
-        if self.representation.lower() == 'angles':
+        if representation.lower() == 'angles':
             return angular_positions
         # Return angular positions in the desired representation
         quaternions = QuaternionArray(rpy=angular_positions)
-        if self.representation.lower() == 'quaternion':
+        if representation.lower() == 'quaternion':
             return quaternions.to_array()
-        if self.representation.lower() == 'rotmat':
+        if representation.lower() == 'rotmat':
             return quaternions.to_DCM()
 
     def update(self, q: np.ndarray, gyr: np.ndarray, method: str = 'closed', order: int = 1, dt: float = None) -> np.ndarray:
