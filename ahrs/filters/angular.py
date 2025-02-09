@@ -283,7 +283,6 @@ from ..utils.core import _assert_numerical_iterable
 from ..utils.core import _assert_numerical_positive_variable
 from ..common.quaternion import Quaternion
 from ..common.quaternion import QuaternionArray
-from ..common.dcm import DCM
 
 class AngularRate:
     """
