@@ -283,6 +283,8 @@ from ..utils.core import _assert_numerical_iterable
 from ..utils.core import _assert_numerical_positive_variable
 from ..common.quaternion import Quaternion
 from ..common.quaternion import QuaternionArray
+from ..common.dcm import DCM
+from ..common.mathfuncs import skew
 
 class AngularRate:
     """
@@ -341,7 +343,7 @@ class AngularRate:
     We can use the class :class:`.Tilt` to estimate the initial attitude with a
     simple measurement of a tri-axial accelerometer:
 
-    >>> from ahrs.filter import Tilt
+    >>> from ahrs.filters import Tilt
     >>> tilt = Tilt()
     >>> q_initial = tilt.estimate(acc=acc_sample)  # One tridimensional sample suffices
     >>> angular_rate = AngularRate(gyr=gyro_data, q0=q_initial)
@@ -424,14 +426,16 @@ class AngularRate:
             \\mathbf{\\theta}_{t+1} = \\mathbf{\\theta}_t + \\mathbf{\\omega}_t \\Delta t
 
         Given the three main roll-pitch-yaw anglular velocities, it integrates
-        them with a cumulative sum, and returns the tri-axial angular positions.
-
-        This method does not play a central role in this estimator, but can be
-        used to obtain another reference to compare the results to.
+        them numerically with a simple `Riemann sum
+        <https://en.wikipedia.org/wiki/Riemann_sum>`_, and returns the
+        tri-axial angular positions.
 
         Calling this method is equivalent to::
 
             >>> angular_positions = numpy.cumsum(gyr * dt, axis=0)
+
+        This method does not play a central role in this estimator, but can be
+        used to obtain another reference to compare the results to.
 
         Parameters
         ----------
@@ -441,6 +445,9 @@ class AngularRate:
             Time step, in seconds. If not given, the time step is set to
             :math:`1/f_s`, where :math:`f_s` is the sampling frequency, which
             is defined as ``100`` Hz by default.
+        representation : str, default: ``'angles'``
+            Representation of the angular positions. Options are:
+            ``'quaternion'``, ``'angles'`` or ``'rotmat'``.
 
         Returns
         -------
@@ -470,7 +477,7 @@ class AngularRate:
         quaternion :math:`\\mathbf{q}_t` with a measured instantaneous angular
         rate :math:`\\mathbf{\\omega}`.
 
-        If ``method='closed'``, the new orienation is computed with the
+        If ``method`` is ``'closed'``, the new orientation is computed with the
         closed-form solution:
 
         .. math::
@@ -480,14 +487,14 @@ class AngularRate:
             \\frac{1}{\\|\\boldsymbol\\omega\\|}\\sin\\Big(\\frac{\\|\\boldsymbol\\omega\\|\\Delta t}{2}\\Big)\\boldsymbol\\Omega(\\boldsymbol\\omega)
             \\Bigg]\\mathbf{q}_t
 
-        If ``method='series'``, it is computed with a series of the form:
+        If ``method`` is ``'series'``, it is computed with a series of the form:
 
         .. math::
             \\mathbf{q}_{t+1} =
             \\Bigg[\\sum_{k=0}^\\infty \\frac{1}{k!} \\Big(\\frac{\\Delta t}{2}\\boldsymbol\\Omega(\\boldsymbol\\omega)\\Big)^k\\Bigg]\\mathbf{q}_t
 
-        where the order :math:`k` in the series has to be set as non-negative
-        integer in the parameter ``order``. By default it is set equal to 1.
+        where the order :math:`k` in the series must be a non-negative integer.
+        By default ``order`` is set to ``1``.
 
         Parameters
         ----------
