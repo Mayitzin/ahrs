@@ -278,13 +278,12 @@ Footnotes
 
 """
 
+from math import factorial
 import numpy as np
 from ..utils.core import _assert_numerical_iterable
 from ..utils.core import _assert_numerical_positive_variable
 from ..common.quaternion import Quaternion
 from ..common.quaternion import QuaternionArray
-from ..common.dcm import DCM
-from ..common.mathfuncs import skew
 
 class AngularRate:
     """
@@ -560,6 +559,6 @@ class AngularRate:
             S = 0.5 * dt * Omega
             A = np.identity(4)
             for i in range(1, order+1):
-                A += S**i / np.math.factorial(i)
+                A += S**i / factorial(i)
         q = A @ q
         return q / np.linalg.norm(q)
