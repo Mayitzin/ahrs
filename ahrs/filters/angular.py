@@ -167,11 +167,11 @@ and the exponential map from above we find a **closed-form solution**
 :cite:p:`spence1978`:
 
 .. math::
-    \\mathbf{q}_{t+1} =
+    \\boxed{\\mathbf{q}_{t+1} =
     \\Bigg[
     \\cos\\Big(\\frac{\\|\\boldsymbol\\omega\\|\\Delta t}{2}\\Big)\\mathbf{I}_4 +
     \\frac{1}{\\|\\boldsymbol\\omega\\|}\\sin\\Big(\\frac{\\|\\boldsymbol\\omega\\|\\Delta t}{2}\\Big)\\boldsymbol\\Omega(\\boldsymbol\\omega)
-    \\Bigg]\\mathbf{q}_t
+    \\Bigg]\\mathbf{q}_t}
 
 where :math:`\\mathbf{I}_4` is a :math:`4\\times 4` Identity matrix. The large
 term inside the brackets, multiplying :math:`\\mathbf{q}_t`, is an orthogonal
@@ -224,8 +224,8 @@ Notice the series for :math:`\\mathbf{q}_{t+1}` also follows the form of the
 matrix exponential:
 
 .. math::
-    e^{\\frac{\\Delta t}{2}\\boldsymbol\\Omega(\\boldsymbol\\omega)} =
-    \\sum_{k=0}^\\infty \\frac{1}{k!} \\Big(\\frac{\\Delta t}{2}\\boldsymbol\\Omega(\\boldsymbol\\omega)\\Big)^k
+    e^{\\frac{1}{2}\\boldsymbol\\Omega(\\boldsymbol\\omega)\\Delta t} =
+    \\sum_{k=0}^\\infty \\frac{1}{k!} \\Big(\\frac{1}{2}\\boldsymbol\\Omega(\\boldsymbol\\omega)\\Delta t\\Big)^k
 
 The error of the approximation vanishes rapidly at higher orders (:math:`k \\to
 0`), or when the time step :math:`\\Delta t \\to 0`. The more terms we have,
@@ -236,7 +236,7 @@ For our purpose a truncation up to the second term, making it of first order
 (:math:`k=1`), is implemented.
 
 .. math::
-    \\mathbf{q}_{t+1} = \\Bigg[\\mathbf{I}_4 + \\frac{1}{2}\\boldsymbol\\Omega(\\boldsymbol\\omega)\\Delta t\\Bigg]\\mathbf{q}_t
+    \\boxed{\\mathbf{q}_{t+1} = \\Bigg[\\mathbf{I}_4 + \\frac{1}{2}\\boldsymbol\\Omega(\\boldsymbol\\omega)\\Delta t\\Bigg]\\mathbf{q}_t}
 
 Two good reasons for this truncation are:
 
