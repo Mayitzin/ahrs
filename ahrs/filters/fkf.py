@@ -3,7 +3,8 @@
 Fast Kalman Filter
 ==================
 
-Quaternion-based Fast Kalman Filter algorithm for orientation estimation
+Implementation of the Fast Kalman Filter algorithm for orientation estimation
+described in "Novel MARG-Sensor Orientation Algorithm Using  Fast KalmanFilter"
 :cite:p:`guo2017`.
 
 """
