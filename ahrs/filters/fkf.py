@@ -4,7 +4,7 @@ Fast Kalman Filter
 ==================
 
 Implementation of the Fast Kalman Filter algorithm for orientation estimation
-described in "Novel MARG-Sensor Orientation Algorithm Using  Fast KalmanFilter"
+described in "Novel MARG-Sensor Orientation Algorithm Using Fast Kalman Filter"
 :cite:p:`guo2017`.
 
 """
@@ -90,23 +90,23 @@ class FKF:
             [x[1], -x[2],   0.0,  x[0]],
             [x[2],  x[1], -x[0],   0.0]])
 
-    def kalman_update(self, xk_1: np.ndarray, yk: np.ndarray, Pk_1: np.ndarray, Phi_k: np.ndarray, Xi_k: np.ndarray, Eps_k: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def kalman_update(self, q_1: np.ndarray, q_am: np.ndarray, Pk_1: np.ndarray, Phi: np.ndarray, Sigma_eps: np.ndarray, Sigma_v: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
         Kalman update step.
 
         Parameters
         ----------
-        xk_1 : numpy.ndarray
+        q_1 : numpy.ndarray
             Previous state vector.
-        yk : numpy.ndarray
+        q_am : numpy.ndarray
             Measurement vector.
         Pk_1 : numpy.ndarray
             Previous covariance matrix.
-        Phi_k : numpy.ndarray
+        Phi : numpy.ndarray
             State transition matrix.
-        Xi_k : numpy.ndarray
+        Sigma_eps : numpy.ndarray
             Process noise covariance matrix.
-        Eps_k : numpy.ndarray
+        Sigma_v : numpy.ndarray
             Measurement noise covariance matrix.
 
         Returns
@@ -117,12 +117,14 @@ class FKF:
             Updated covariance matrix.
 
         """
-        x_ = Phi_k @ xk_1
-        Pk_ = Phi_k @ (Pk_1 @ Phi_k.transpose()) + Xi_k
-        Gk = Pk_ @ (np.linalg.inv(Pk_ + Eps_k))
-        Pk = (np.identity(4) - Gk) @ Pk_
-        xk = x_ + Gk @ (yk - x_)
-        return xk, Pk
+        # Prediction
+        q_ = Phi @ q_1                                          # Predicted State
+        Sigma_q_ = Phi @ (Pk_1 @ Phi.transpose()) + Sigma_eps   # Predicted Covariance
+        # Update
+        Gk = Sigma_q_ @ (np.linalg.inv(Sigma_q_ + Sigma_v))     # Kalman Gain
+        Sigma_q = (np.identity(4) - Gk) @ Sigma_q_              # Updated Covariance
+        q = q_ + Gk @ (q_am - q_)                               # Updated State
+        return q, Sigma_q
 
     def measurement_quaternion_acc_mag(self, q: np.ndarray, acc: np.ndarray, mag: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
@@ -159,7 +161,7 @@ class FKF:
         q_new[1] =     ((mD - az*mD - ax*mN)*my             + ay*(1 + mN*mx + mD*mz))*qw + (ay*mD*my - (-1 + az)*(1 + mN*mx - mD*mz) + ax*(mD*mx + mN*mz))*qx                  + ((ax*mD + mN - az*mN)*my + ay*(-(mD*mx) + mN*mz))*qy + (-(ay*mN*my) + ax*(1 - mN*mx + mD*mz) - (-1 + az)*(mD*mx + mN*mz))*qz
         q_new[2] = (-(ay*mN*my) - ax*(1 + mN*mx + mD*mz) + (-1 + az)*(mD*mx - mN*mz))*qw               + ((-(ax*mD) + mN - az*mN)*my + ay*(mD*mx + mN*mz))*qx   + (ay*mD*my + (-1 + az)*(-1 + mN*mx + mD*mz) + ax*(mD*mx - mN*mz))*qy                 + ((mD - az*mD + ax*mN)*my + ay*(1 - mN*mx + mD*mz))*qz
         q_new[3] = ax*(qx + mN*mx*qx + mN*my*qy + mN*mz*qz + mD*(my*qw - mz*qx + mx*qz)) + (1 + az)*(mD*mx*qx + mD*my*qy + qz + mD*mz*qz - mN*(my*qw - mz*qx + mx*qz)) + ay*(mN*mz*qw + mN*my*qx + qy - mN*mx*qy - mD*(mx*qw + mz*qy - my*qz))
-        q_new = q_new / np.linalg.norm(q_new)
+        q_new = 0.25 * q_new / np.linalg.norm(q_new)
         # Build Jacobian matrix (eq. 27)
         J = np.zeros((4, 6))
         J[0, 0]= -qy - mN*(mz*qw + my*qx - mx*qy) + mD*(mx*qw + mz*qy - my*qz)
@@ -186,7 +188,7 @@ class FKF:
         J[3, 3]= -(ay*(mD*qw + mN*qy)) + ax*(mN*qx + mD*qz) + (1 + az)*(mD*qx - mN*qz)
         J[3, 4]= (1 + az)*(-(mN*qw) + mD*qy) + ax*(mD*qw + mN*qy) + ay*(mN*qx + mD*qz)
         J[3, 5]= ay*(mN*qw - mD*qy) + (1 + az)*(mN*qx + mD*qz) + ax*(-(mD*qx) + mN*qz)
-        J = 0.25 * J
+        # J = 0.25 * J
         return q_new, J
 
     def _compute_all(self) -> np.ndarray:
@@ -213,19 +215,20 @@ class FKF:
         Q = np.zeros((num_samples, 4))
         # Initial quaternion from the accelerometer and magnetometer
         Q[0] = ecompass(acc[0], mag[0], frame='NED', representation='quaternion')
-        for i in range(1, num_samples):
-            q_ = Q[i-1]                                             # Previous quaternion
+        for t in range(1, num_samples):
+            q_ = Q[t-1]                                             # Previous quaternion
             # PROCESS MODEL
-            omega4 = self.Omega4(gyr[i])                            # Skew symmetric matrix (eq. 20)
-            Phi = np.identity(4) + 0.5 * self.Dt * omega4           # State transition matrix (eq. 15)
-            Dk = np.array([[ q_[1],  q_[2],  q_[3]],
+            omega4 = self.Omega4(gyr[t])                            # Skew symmetric matrix (eq. 20)
+            Phi = np.identity(4) + 0.5 * self.Dt * omega4           # State transition matrix (eq. 21)
+            Xi = np.array([[ q_[1],  q_[2],  q_[3]],
                            [-q_[0], -q_[3], -q_[2]],
                            [ q_[2], -q_[0], -q_[1]],
                            [-q_[2],  q_[1], -q_[0]]])               # (eq. 24)
-            Xi = self.Dt**2 * 0.25 * Dk @ Sigma_g @ Dk.transpose()  # Process noise covariance (eq. 23)
+            Sigma_eps = (self.Dt/2.0)**2 * Xi @ Sigma_g @ Xi.transpose()   # Process noise covariance (eq. 23)
             # MEASUREMENT MODEL
-            qy, J = self.measurement_quaternion_acc_mag(q_, acc[i], mag[i])
-            Eps = J @ Sigma_am @ J.transpose()                      # Measurement quaternion's covariance (eq. 26)
-            q, self.Pk = self.kalman_update(q_, qy, self.Pk, Phi, Xi, Eps)
-            Q[i] = q
+            qy, J = self.measurement_quaternion_acc_mag(q_, acc[t], mag[t])
+            Sigma_v = J @ Sigma_am @ J.transpose()                  # Measurement quaternion's covariance (eq. 26)
+            # Kalman Update
+            q, self.Pk = self.kalman_update(q_, qy, self.Pk, Phi, Sigma_eps, Sigma_v)
+            Q[t] = q
         return Q
