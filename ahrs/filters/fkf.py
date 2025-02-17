@@ -7,6 +7,47 @@ Implementation of the Fast Kalman Filter algorithm for orientation estimation
 described in "Novel MARG-Sensor Orientation Algorithm Using Fast Kalman Filter"
 :cite:p:`guo2017`.
 
+The Fast Kalman Filter (FKF) is a quaternion-based orientation estimation
+algorithm that focuses on the fusion of accelerometer and magnetometer
+measurements.
+
+In the FKF, the quaternion kinematic equation is the process model, similar to
+the EKF. Likewise, the measurement model is based on the accelerometer and
+magnetometer readings.
+
+The FKF algorithm is computationally efficient, because it symbolically solves
+the linear system of equations of the observation model.
+
+The steps of the KF are summarized as:
+
+1. **State Prediction**
+
+.. math::
+    \\mathbf{q}_t^- = \\Phi_k \\mathbf{q}_{k-1}
+
+2. **Covariance Prediction**
+
+.. math::
+    \\mathbf{\\Sigma}_k = \\Phi_k \\mathbf{P}_{k-1} \\Phi_k^T + \\Xi_k
+
+3. **Kalman Gain**
+
+.. math::
+    \\mathbf{G}_k = \\mathbf{P}_k (\\mathbf{P}_k + \\boldsymbol\\varepsilon_k)^{-1}
+
+4. **State Update**
+
+.. math::
+    \\mathbf{q}_k = \\mathbf{q}_k + \\mathbf{G}_k (\\mathbf{y}_k - \\mathbf{q}_k)
+
+5. **Covariance Update**
+
+.. math::
+    \\mathbf{P}_k = (\\mathbf{I} - \\mathbf{G}_k) \\mathbf{P}_k
+
+As we can see, the date vector is defined merely as the quaternion itself,
+without considering biases over the sensors.
+
 """
 
 from typing import Tuple
