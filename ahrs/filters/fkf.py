@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Fast Kalman Filter
-==================
-
 Implementation of the Fast Kalman Filter algorithm for orientation estimation
 described in "Novel MARG-Sensor Orientation Algorithm Using Fast Kalman Filter"
 :cite:p:`guo2017`.
@@ -23,31 +20,102 @@ The steps of the KF are summarized as:
 1. **State Prediction**
 
 .. math::
-    \\mathbf{q}_t^- = \\Phi_k \\mathbf{q}_{k-1}
+    \\mathbf{q}_t^- = \\Phi_t \\mathbf{q}_{t-1}
 
 2. **Covariance Prediction**
 
 .. math::
-    \\mathbf{\\Sigma}_k = \\Phi_k \\mathbf{P}_{k-1} \\Phi_k^T + \\Xi_k
+    \\mathbf{\\Sigma}_{\\mathbf{q}_t^-} = \\Phi_t \\mathbf{\\Sigma}_{\\mathbf{q}_{t-1}} \\Phi_t^T + \\mathbf{\\Sigma}_{\\xi_t}
 
 3. **Kalman Gain**
 
 .. math::
-    \\mathbf{G}_k = \\mathbf{P}_k (\\mathbf{P}_k + \\boldsymbol\\varepsilon_k)^{-1}
+    \\mathbf{G}_t = \\mathbf{\\Sigma}_{\\mathbf{q}_t^-} \\big [\\mathbf{\\Sigma}_{\\mathbf{q}_t^-} + \\mathbf{\\Sigma}_{v_t}\\big ]^{-1}
 
 4. **State Update**
 
 .. math::
-    \\mathbf{q}_k = \\mathbf{q}_k + \\mathbf{G}_k (\\mathbf{y}_k - \\mathbf{q}_k)
+    \\mathbf{q}_t = \\mathbf{q}_t + \\mathbf{G}_t (\\mathbf{y}_t - \\mathbf{q}_t)
 
 5. **Covariance Update**
 
 .. math::
-    \\mathbf{P}_k = (\\mathbf{I} - \\mathbf{G}_k) \\mathbf{P}_k
+    \\mathbf{\\Sigma}_{\\mathbf{q}_t} = (\\mathbf{I}_4 - \\mathbf{G}_t) \\mathbf{\\Sigma}_{\\mathbf{q}_t^-}
 
-As we can see, the date vector is defined merely as the quaternion itself,
-without considering biases over the sensors.
+We update the state, :math:`\\mathbf{q}_t`, at every time :math:`t`, with the
+predicted state :math:`\\mathbf{q}_t^-`, the measurements :math:`\\mathbf{y}_t`,
+the state transition matrix :math:`\\Phi_t`, the covariance matrix
+:math:`\\mathbf{P}_t`, the process noise covariance matrix
+:math:`\\boldsymbol\\varepsilon_t`, and the Kalman Gain :math:`\\mathbf{G}_t`.
 
+Prediction Model
+----------------
+
+The first two steps correspond to the prediction model, and are computed like
+in the common `Extended Kalman Filter <ekf.html>`_.
+
+The **state vector** is defined by the quaternion itself, without considering
+biases over the sensors.
+
+.. math::
+    \\mathbf{q}_t = \\begin{bmatrix} q_w & q_x & q_y & q_z \\end{bmatrix}^T
+
+The **state prediction** (we can call it the "predicted quaternion") is
+estimated as:
+
+.. math::
+    \\mathbf{q}_t^- = \\Phi_t \\mathbf{q}_{t-1}
+
+where the **state transition matrix** :math:`\\Phi_t` is:
+
+.. math::
+    \\Phi_t = \\mathbf{I}_4 + \\frac{\\Delta t}{2} \\boldsymbol\\Omega(\\mathbf{\\omega}_t)
+
+and the *omega operator* is defined as:
+
+.. math::
+
+    \\boldsymbol\\Omega(\\mathbf{\\omega}) =
+    \\begin{bmatrix}
+        0 & -\\mathbf{\\omega}^T \\\\
+        \\mathbf{\\omega} & \\lfloor\\mathbf{\\omega}\\rfloor_\\times
+    \\end{bmatrix} =
+    \\begin{bmatrix}
+        0 & -\\omega_x & -\\omega_y & -\\omega_z \\\\
+        \\omega_x & 0 & \\omega_z & -\\omega_y \\\\
+        \\omega_y & -\\omega_z & 0 & \\omega_x \\\\
+        \\omega_z & \\omega_y & -\\omega_x & 0
+    \\end{bmatrix}
+
+We use the measured angular rates :math:`\\mathbf{\\omega}_t` from the
+gyroscope to approximate the instantaneous change in the quaternion. Then, we
+multiply by :math:`\\frac{\\Delta t}{2}` to numerically integrate it, and get
+the predicted quaternion :math:`\\mathbf{q}_t^-`.
+
+The **Covariance Prediction** is computed as:
+
+.. math::
+
+    \\mathbf{\\Sigma}_\\xi =
+    \\Big(\\frac{\\Delta t}{2}\\Big)^2 \\mathbf{\\Xi}_t \\mathbf{\\Sigma}_{\\mathrm{gyro}} \\mathbf{\\Xi}_t^T
+
+where :math:`\\mathbf{\\Sigma}_{\\mathrm{gyro}}` is the angular rates'
+covariance, usually defined as:
+
+.. math::
+
+    \\mathbf{\\Sigma}_{\\mathrm{gyro}} =
+    \\begin{bmatrix}
+        \\sigma_{\\omega_x}^2 & 0 & 0 \\\\
+        0 & \\sigma_{\\omega_y}^2 & 0 \\\\
+        0 & 0 & \\sigma_{\\omega_z}^2
+    \\end{bmatrix}
+
+The terms :math:`\\sigma_{\\omega_x}`, :math:`\\sigma_{\\omega_y}`, and
+:math:`\\sigma_{\\omega_z}` are the standard deviations at each axis of the
+gyroscope.
+
+:math:`\\mathbf{\\Xi}_t` is the matrix:
 """
 
 from typing import Tuple
@@ -239,7 +307,7 @@ class FKF:
         Returns
         -------
         Q : numpy.ndarray
-            Copmuted quaternions.
+            Computed quaternions.
 
         """
         _assert_numerical_iterable(self.gyr, 'Angular velocity vector')
