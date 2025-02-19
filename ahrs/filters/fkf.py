@@ -92,11 +92,14 @@ gyroscope to approximate the instantaneous change in the quaternion. Then, we
 multiply by :math:`\\frac{\\Delta t}{2}` to numerically integrate it, and get
 the predicted quaternion :math:`\\mathbf{q}_t^-`.
 
-The **Covariance Prediction** is computed as:
+At step 2, the **Covariance Prediction** is computed as:
+
+.. math::
+    \\mathbf{\\Sigma}_{\\mathbf{q}_t^-} = \\Phi_t \\mathbf{\\Sigma}_{\\mathbf{q}_{t-1}} \\Phi_t^T + \\mathbf{\\Sigma}_{\\xi_t}
 
 .. math::
 
-    \\mathbf{\\Sigma}_\\xi =
+    \\mathbf{\\Sigma}_{\\xi_t} =
     \\Big(\\frac{\\Delta t}{2}\\Big)^2 \\mathbf{\\Xi}_t \\mathbf{\\Sigma}_{\\mathrm{gyro}} \\mathbf{\\Xi}_t^T
 
 where :math:`\\mathbf{\\Sigma}_{\\mathrm{gyro}}` is the angular rates'
@@ -115,7 +118,17 @@ The terms :math:`\\sigma_{\\omega_x}`, :math:`\\sigma_{\\omega_y}`, and
 :math:`\\sigma_{\\omega_z}` are the standard deviations at each axis of the
 gyroscope.
 
-:math:`\\mathbf{\\Xi}_t` is the matrix:
+:math:`\\mathbf{\\Xi}_t` is the matrix built from the quaternion's elements:
+
+.. math::
+
+    \\mathbf{\\Xi}_t =
+    \\begin{bmatrix}
+        q_x & q_y & q_z \\\\
+        -q_w & -q_z & q_y \\\\
+        q_z & -q_w & -q_x \\\\
+        -q_y & q_x & -q_w
+    \\end{bmatrix}
 """
 
 from typing import Tuple
