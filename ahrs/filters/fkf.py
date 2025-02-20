@@ -145,6 +145,81 @@ In this implementation, we assume they are equal, and we define
         -q_y & q_x & -q_w
     \\end{bmatrix}
 
+Correction Model
+----------------
+
+The last three steps are the correction model, where we update the predicted
+state :math:`\\mathbf{q}_t^-` with the measurements :math:`\\mathbf{y}_t`.
+
+The **Kalman Gain** is computed in step three as:
+
+.. math::
+    \\boxed{\\mathbf{G}_t = \\mathbf{\\Sigma}_{\\mathbf{q}_t^-} \\big [\\mathbf{\\Sigma}_{\\mathbf{q}_t^-} + \\mathbf{\\Sigma}_{v_t}\\big ]^{-1}}
+
+where :math:`\\mathbf{\\Sigma}_{v_t}` is the measurement quaternion's
+variance approximated with:
+
+.. math::
+    \\mathbf{\\Sigma}_{v_t} = \\mathbf{J} \\mathbf{\\Sigma}_{\\mathrm{am}} \\mathbf{J}^T
+
+in which :math:`\\mathbf{J}` is the Jacobian matrix of the measurement model.
+
+.. math::
+
+    \\begin{array}{rcl}
+    \\mathbf{J} &=& \\frac{\\partial \\mathbf{q}_{am}}{\\partial \\Big\\{ \\big(\\mathbf{A}^b\\big)^T \\, \\big(\\mathbf{M}^b\\big)^T\\Big\\} } \\\\
+    &=& \\begin{bmatrix}
+    \\frac{\\partial q_w}{\\partial a_x} & \\frac{\\partial q_w}{\\partial a_y} & \\frac{\\partial q_w}{\\partial a_z} &
+    \\frac{\\partial q_w}{\\partial m_x} & \\frac{\\partial q_w}{\\partial m_y} & \\frac{\\partial q_w}{\\partial m_z} \\\\
+    \\frac{\\partial q_x}{\\partial a_x} & \\frac{\\partial q_x}{\\partial a_y} & \\frac{\\partial q_x}{\\partial a_z} &
+    \\frac{\\partial q_x}{\\partial m_x} & \\frac{\\partial q_x}{\\partial m_y} & \\frac{\\partial q_x}{\\partial m_z} \\\\
+    \\frac{\\partial q_y}{\\partial a_x} & \\frac{\\partial q_y}{\\partial a_y} & \\frac{\\partial q_y}{\\partial a_z} &
+    \\frac{\\partial q_y}{\\partial m_x} & \\frac{\\partial q_y}{\\partial m_y} & \\frac{\\partial q_y}{\\partial m_z} \\\\
+    \\frac{\\partial q_z}{\\partial a_x} & \\frac{\\partial q_z}{\\partial a_y} & \\frac{\\partial q_z}{\\partial a_z} &
+    \\frac{\\partial q_z}{\\partial m_x} & \\frac{\\partial q_z}{\\partial m_y} & \\frac{\\partial q_z}{\\partial m_z}
+    \\end{bmatrix}
+    \\end{array}
+
+and the measurement quaternion :math:`\\mathbf{q}_{am}` is computed from the
+accelerometer and magnetometer readings in the body frame.
+
+.. math::
+
+    \\mathbf{q}_{am} = \\frac{1}{4} \\Big(\\mathbf{W}_a + \\mathbf{I}_4\\Big) \\Big(\\mathbf{W}_m + \\mathbf{I}_4\\Big) \\mathbf{q}_{t-1}
+
+with:
+
+.. math::
+
+    \\mathbf{W}_a = \\begin{bmatrix}
+        a_z & a_y & -a_x & 0 \\\\
+        a_y & -a_z & 0 & a_x \\\\
+        -a_x & 0 & -a_z & a_y \\\\
+        0 & a_x & a_y & a_z
+    \\end{bmatrix}
+
+and:
+
+.. math::
+
+    \\mathbf{W}_m = \\begin{bmatrix}
+        m_z & m_y & -m_x & 0 \\\\
+        m_y & -m_z & 0 & m_x \\\\
+        -m_x & 0 & -m_z & m_y \\\\
+        0 & m_x & m_y & m_z
+    \\end{bmatrix}
+
+What makes the FKF computationally efficient is that the Jacobian matrix
+:math:`\\mathbf{J}`, and the measurement quaternion :math:`\\mathbf{q}_{am}`
+are reduced symbolically, instead of numerically computing them.
+
+So, instead of performing several matrix multiplications and vector
+operations, the FKF algorithm solves the linear system of equations
+symbolically, and updates the state vector directly.
+
+In this implementation, we assume that each axis of the accelerometer and
+magnetometer have the same standard deviation :math:`\\sigma_a` and
+:math:`\\sigma_m`, respectively.
 """
 
 from typing import Tuple
