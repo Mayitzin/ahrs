@@ -20,7 +20,7 @@ The steps of the KF are summarized as:
 1. **State Prediction**
 
 .. math::
-    \\mathbf{q}_t^- = \\Phi_t \\mathbf{q}_{t-1}
+    \\mathbf{q}_t^- = \\Phi_t \\mathbf{q}_{t-1} + \\xi_t
 
 2. **Covariance Prediction**
 
@@ -64,9 +64,10 @@ The **state prediction** (we can call it the "predicted quaternion") is
 estimated as:
 
 .. math::
-    \\mathbf{q}_t^- = \\Phi_t \\mathbf{q}_{t-1}
+    \\boxed{\\mathbf{q}_t^- = \\Phi_t \\mathbf{q}_{t-1} + \\xi_t}
 
-where the **state transition matrix** :math:`\\Phi_t` is:
+where :math:`\\xi_t` is the process noise, and the **state transition matrix**
+:math:`\\Phi_t` is:
 
 .. math::
     \\Phi_t = \\mathbf{I}_4 + \\frac{\\Delta t}{2} \\boldsymbol\\Omega(\\mathbf{\\omega}_t)
@@ -97,13 +98,15 @@ At step 2, the **Covariance Prediction** is computed as:
 .. math::
     \\mathbf{\\Sigma}_{\\mathbf{q}_t^-} = \\Phi_t \\mathbf{\\Sigma}_{\\mathbf{q}_{t-1}} \\Phi_t^T + \\mathbf{\\Sigma}_{\\xi_t}
 
+where :math:`\\mathbf{\\Sigma}_{\\xi_t}` is the process noise covariance
+
 .. math::
 
     \\mathbf{\\Sigma}_{\\xi_t} =
     \\Big(\\frac{\\Delta t}{2}\\Big)^2 \\mathbf{\\Xi}_t \\mathbf{\\Sigma}_{\\mathrm{gyro}} \\mathbf{\\Xi}_t^T
 
-where :math:`\\mathbf{\\Sigma}_{\\mathrm{gyro}}` is the angular rates'
-covariance, usually defined as:
+:math:`\\mathbf{\\Sigma}_{\\mathrm{gyro}}` is the angular rates' covariance,
+usually defined as:
 
 .. math::
 
