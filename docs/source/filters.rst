@@ -83,6 +83,7 @@ TRIAD          NO         YES            YES
    filters/davenport
    filters/ekf
    filters/famc
+   filters/fkf
    filters/flae
    filters/fourati
    filters/fqa
