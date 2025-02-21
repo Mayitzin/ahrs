@@ -149,7 +149,7 @@ Correction Model
 ----------------
 
 The last three steps are the correction model, where we update the predicted
-state :math:`\\mathbf{q}_t^-` with the measurements :math:`\\mathbf{y}_t`.
+state :math:`\\mathbf{q}_t^-` with the measurements :math:`\\mathbf{q}_{am}`.
 
 The **Kalman Gain** is computed in step three as:
 
@@ -162,7 +162,27 @@ variance approximated with:
 .. math::
     \\mathbf{\\Sigma}_{v_t} = \\mathbf{J} \\mathbf{\\Sigma}_{\\mathrm{am}} \\mathbf{J}^T
 
-in which :math:`\\mathbf{J}` is the Jacobian matrix of the measurement model.
+Defining :math:`\\mathbf{\\Sigma}_a` and :math:`\\mathbf{\\Sigma}_m` as the
+covariances of accelerometer and magnetomer, respectively, we define the
+covariance matrix :math:`\\mathbf{\\Sigma}_{\\mathrm{am}}` as:
+
+.. math::
+
+    \\mathbf{\\Sigma}_{\\mathrm{am}} =
+    \\begin{bmatrix}
+        \\mathbf{\\Sigma}_{\\mathbf{a}} & \\mathbf{0} \\\\
+        \\mathbf{0} & \\mathbf{\\Sigma}_{\\mathbf{m}}
+    \\end{bmatrix} =
+    \\begin{bmatrix}
+        \\sigma_{a_x}^2 & 0 & 0 & 0 & 0 & 0 \\\\
+        0 & \\sigma_{a_y}^2 & 0 & 0 & 0 & 0 \\\\
+        0 & 0 & \\sigma_{a_z}^2 & 0 & 0 & 0 \\\\
+        0 & 0 & 0 & \\sigma_{m_x}^2 & 0 & 0 \\\\
+        0 & 0 & 0 & 0 & \\sigma_{m_y}^2 & 0 \\\\
+        0 & 0 & 0 & 0 & 0 & \\sigma_{m_z}^2
+    \\end{bmatrix}
+
+:math:`\\mathbf{J}` is the Jacobian matrix of the measurement model.
 
 .. math::
 
@@ -211,15 +231,25 @@ and:
 
 What makes the FKF computationally efficient is that the Jacobian matrix
 :math:`\\mathbf{J}`, and the measurement quaternion :math:`\\mathbf{q}_{am}`
-are reduced symbolically, instead of numerically computing them.
+are reduced symbolically, instead of numerically calculating them.
 
 So, instead of performing several matrix multiplications and vector
 operations, the FKF algorithm solves the linear system of equations
 symbolically, and updates the state vector directly.
 
-In this implementation, we assume that each axis of the accelerometer and
-magnetometer have the same standard deviation :math:`\\sigma_a` and
-:math:`\\sigma_m`, respectively.
+Then, we correct our predicted state :math:`\\mathbf{q}_t^-` with the
+measurements :math:`\\mathbf{q}_{am}` using the Kalman Gain :math:`\\mathbf{G}_t`:
+
+.. math::
+
+    \\boxed{\\mathbf{q}_t = \\mathbf{q}_t^- + \\mathbf{G}_t (\\mathbf{q}_{am} - \\mathbf{q}_t^-)}
+
+Finally, we update the covariance matrix:
+
+.. math::
+
+    \\boxed{\\mathbf{\\Sigma}_{\\mathbf{q}_t} = (\\mathbf{I}_4 - \\mathbf{G}_t) \\mathbf{\\Sigma}_{\\mathbf{q}_t^-}}
+
 """
 
 from typing import Tuple
