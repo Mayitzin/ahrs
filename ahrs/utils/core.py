@@ -48,6 +48,14 @@ def _assert_same_shapes(item1, item2, item_names: list = None):
     if item1.shape != item2.shape:
         raise ValueError(f"{item_names[0]} and {item_names[1]} must have the same shape. Got {item1.shape} and {item2.shape}")
 
+def _assert_acc_mag_inputs(acc, mag):
+    _assert_numerical_iterable(acc, 'acc')
+    _assert_numerical_iterable(mag, 'mag')
+    acc = np.copy(acc)
+    mag = np.copy(mag)
+    if acc.shape != mag.shape:
+        raise ValueError("acc and mag are not the same size")
+
 def get_nan_intervals(data: np.ndarray) -> list:
     """
     Get indices of NaN samples in data array.
