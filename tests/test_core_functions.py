@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import unittest
 import numpy as np
-from ahrs.utils import core as ahrs_core
+import ahrs.utils.core as ahrs_core
 
 class TestCoreFunctions(unittest.TestCase):
     def test_assert_same_shapes(self):
