@@ -96,7 +96,7 @@ def get_nan_intervals(data: np.ndarray) -> list:
     if data.ndim not in [1, 2]:
         raise ValueError(f"data array must be 1- or 2-dimensional. It has {data.ndim} dimensions.")
     isnan_list = np.any(np.isnan(data), axis=1) if data.ndim > 1 else np.isnan(data)
-    nan_indices = np.where(isnan_list == True)[0]
+    nan_indices = np.where(isnan_list)[0]
     intervals = np.split(nan_indices, np.where(np.diff(nan_indices) > 1)[0] + 1)
     if len(intervals) == 0:
         return []
