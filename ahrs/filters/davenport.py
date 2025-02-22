@@ -103,6 +103,7 @@ from ..common.constants import MUNICH_HEIGHT
 from ..common.mathfuncs import cosd
 from ..common.mathfuncs import sind
 from ..utils.core import _assert_numerical_iterable
+from ..utils.core import _assert_acc_mag_inputs
 from ..utils.wmm import WMM
 from ..utils.wgs84 import WGS
 
@@ -170,12 +171,9 @@ class Davenport:
             of samples.
 
         """
-        _assert_numerical_iterable(self.acc, 'Gravitational acceleration vector')
-        _assert_numerical_iterable(self.mag, 'Geomagnetic field vector')
+        _assert_acc_mag_inputs(self.acc, self.mag)
         self.acc = np.copy(self.acc)
         self.mag = np.copy(self.mag)
-        if self.acc.shape != self.mag.shape:
-            raise ValueError("acc and mag are not the same size")
         if self.acc.ndim < 2:
             return self.estimate(self.acc, self.mag)
         num_samples = len(self.acc)
