@@ -7,6 +7,12 @@ modules. They are not meant to be used by the user.
 
 This module is private. All functions and objects are available in the main
 ``ahrs`` namespace, or its corresponding submodule - use that instead.
+
+Basic requirements to build assertions:
+
+- ``assert`` functions should return either ``True`` or ``False``.
+- If the assertion fails, an exception should be raised.
+- The exception should have a meaningful message.
 """
 
 import numpy as np
