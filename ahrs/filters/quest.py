@@ -289,12 +289,11 @@ class QUEST:
 
         """
         _assert_acc_mag_inputs(self.acc, self.mag)
-        self.acc = np.copy(self.acc)
-        self.mag = np.copy(self.mag)
-        if self.acc.ndim < 2:
-            return self.estimate(self.acc, self.mag)
-        num_samples = len(self.acc)
-        return np.array([self.estimate(self.acc[t], self.mag[t]) for t in range(num_samples)])
+        acc, mag = np.copy(self.acc), np.copy(self.mag)
+        if acc.ndim < 2:
+            return self.estimate(acc, mag)
+        num_samples = len(acc)
+        return np.array([self.estimate(acc[t], mag[t]) for t in range(num_samples)])
 
     def estimate(self, acc: np.ndarray, mag: np.ndarray) -> np.ndarray:
         """

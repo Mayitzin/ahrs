@@ -417,12 +417,11 @@ class FLAE:
 
         """
         _assert_acc_mag_inputs(self.acc, self.mag)
-        self.acc = np.copy(self.acc)
-        self.mag = np.copy(self.mag)
-        if self.acc.ndim < 2:
-            return self.estimate(self.acc, self.mag)
-        num_samples = len(self.acc)
-        return np.array([self.estimate(self.acc[t], self.mag[t], method=self.method) for t in range(num_samples)])
+        acc, mag = np.copy(self.acc), np.copy(self.mag)
+        if acc.ndim < 2:
+            return self.estimate(acc, mag)
+        num_samples = len(acc)
+        return np.array([self.estimate(acc[t], mag[t], method=self.method) for t in range(num_samples)])
 
     def _P1Hx(self, Hx: np.ndarray) -> np.ndarray:
         return np.array([
