@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-These are tools to show data.
+These are tools that are not specific to AHRS algorithms, but are used by them.
 
 """
 
