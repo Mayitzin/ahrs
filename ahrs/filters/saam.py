@@ -107,7 +107,7 @@ import numpy as np
 from ..common.quaternion import Quaternion
 from ..common.quaternion import QuaternionArray
 
-from ..utils.core import _assert_numerical_iterable
+from ..utils.core import _assert_acc_mag_inputs
 
 class SAAM:
     """
@@ -175,12 +175,6 @@ class SAAM:
         if representation.lower() not in ['rotmat', 'quaternion']:
             raise ValueError(f"Given representation '{representation}' is NOT valid. Try 'quaternion', or 'rotmat'")
 
-    def _assert_observations(self, acc: np.ndarray, mag: np.ndarray) -> None:
-        if acc.shape != mag.shape:
-            raise ValueError("acc and mag are not the same size")
-        if acc.shape[-1] != 3:
-            raise ValueError(f"Sensor data must be of shape (3, ) or (N, 3). Got {acc.shape}")
-
     def _compute_all(self, acc: np.ndarray, mag: np.ndarray) -> np.ndarray:
         """
         Estimate the quaternions given all data.
@@ -206,10 +200,8 @@ class SAAM:
             of samples.
 
         """
-        _assert_numerical_iterable(acc, 'Gravitational acceleration vector')
-        _assert_numerical_iterable(mag, 'Geomagnetic field vector')
-        acc, mag = np.copy(acc), np.copy(mag)
-        self._assert_observations(acc, mag)
+        _assert_acc_mag_inputs(self.acc, self.mag)
+        acc, mag = np.copy(self.acc), np.copy(self.mag)
         if acc.ndim < 2:
             return self.estimate(acc, mag)
         # Normalize measurements (eq. 1)
