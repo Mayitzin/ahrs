@@ -1081,8 +1081,8 @@ class EKF:
         """
         _assert_numerical_iterable(self.gyr, 'Angular velocity vector')
         _assert_numerical_iterable(self.acc, 'Gravitational acceleration vector')
-        self.gyr = np.copy(self.gyr)
-        self.acc = np.copy(self.acc)
+        self.gyr = np.array(self.gyr)
+        self.acc = np.array(self.acc)
         if self.acc.shape != self.gyr.shape:
             raise ValueError("acc and gyr are not the same size")
         num_samples = len(self.acc)
@@ -1091,7 +1091,7 @@ class EKF:
         if self.mag is not None:
             ###### Compute attitude with MARG architecture ######
             _assert_numerical_iterable(self.mag, 'Geomagnetic field vector')
-            self.mag = np.copy(self.mag)
+            self.mag = np.array(self.mag)
             if self.mag.shape != self.gyr.shape:
                 raise ValueError("mag and gyr are not the same size")
             if self.q0 is None:
@@ -1361,13 +1361,13 @@ class EKF:
         if not np.isclose(np.linalg.norm(q), 1.0):
             raise ValueError("A-priori quaternion must have a norm equal to 1.")
         # Current Measurements
-        g = np.copy(gyr)                        # Gyroscope data (control vector)
-        a = np.copy(acc)
+        g = np.array(gyr)                       # Gyroscope data (control vector)
+        a = np.array(acc)
         a_norm = np.linalg.norm(a)
         if a_norm == 0:
             return q
         a /= a_norm
-        self.z = np.copy(a)
+        self.z = np.array(a)
         if mag is not None:
             m_norm = np.linalg.norm(mag)
             if m_norm == 0:
