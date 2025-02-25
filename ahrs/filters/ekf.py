@@ -1246,7 +1246,7 @@ class EKF:
             Expected Measurements.
         """
         C = Quaternion(q).to_DCM().T
-        if len(self.z) < 4:
+        if self.mag is None:
             return C @ self.a_ref
         return np.r_[C @ self.a_ref, C @ self.m_ref]
 
@@ -1313,7 +1313,7 @@ class EKF:
         if mode.lower() == 'refactored':
             t = skew(self.a_ref)@q[1:]
             H = np.c_[t, q[1:]*self.a_ref*np.identity(3) + skew(t + qw*self.a_ref) - np.outer(self.a_ref, q[1:])]
-            if len(self.z) == 6:
+            if self.mag is not None:
                 t = skew(self.m_ref)@q[1:]
                 H_2 = np.c_[t, q[1:]*self.m_ref*np.identity(3) + skew(t + qw*self.m_ref) - np.outer(self.m_ref, q[1:])]
                 H = np.vstack((H, H_2))
@@ -1322,7 +1322,7 @@ class EKF:
         H = np.array([[ v[0]*qw + v[1]*qz - v[2]*qy, v[0]*qx + v[1]*qy + v[2]*qz, -v[0]*qy + v[1]*qx - v[2]*qw, -v[0]*qz + v[1]*qw + v[2]*qx],
                       [-v[0]*qz + v[1]*qw + v[2]*qx, v[0]*qy - v[1]*qx + v[2]*qw,  v[0]*qx + v[1]*qy + v[2]*qz, -v[0]*qw - v[1]*qz + v[2]*qy],
                       [ v[0]*qy - v[1]*qx + v[2]*qw, v[0]*qz - v[1]*qw - v[2]*qx,  v[0]*qw + v[1]*qz - v[2]*qy,  v[0]*qx + v[1]*qy + v[2]*qz]])
-        if len(self.z) == 6:
+        if self.mag is not None:
             H_2 = np.array([[ v[3]*qw + v[4]*qz - v[5]*qy, v[3]*qx + v[4]*qy + v[5]*qz, -v[3]*qy + v[4]*qx - v[5]*qw, -v[3]*qz + v[4]*qw + v[5]*qx],
                             [-v[3]*qz + v[4]*qw + v[5]*qx, v[3]*qy - v[4]*qx + v[5]*qw,  v[3]*qx + v[4]*qy + v[5]*qz, -v[3]*qw - v[4]*qz + v[5]*qy],
                             [ v[3]*qy - v[4]*qx + v[5]*qw, v[3]*qz - v[4]*qw - v[5]*qx,  v[3]*qw + v[4]*qz - v[5]*qy,  v[3]*qx + v[4]*qy + v[5]*qz]])
@@ -1367,12 +1367,12 @@ class EKF:
         if a_norm == 0:
             return q
         a /= a_norm
-        self.z = np.array(a)
+        z = np.copy(a)
         if mag is not None:
             m_norm = np.linalg.norm(mag)
             if m_norm == 0:
                 raise ValueError("Invalid geomagnetic field. Its magnitude must be greater than zero.")
-            self.z = np.r_[a, mag/m_norm]
+            z = np.r_[a, mag/m_norm]
         self.R = np.diag(np.repeat(self.noises[1:] if mag is not None else self.noises[1], 3))
         # ----- Prediction -----
         q_t = self.f(q, g, dt)                  # Predicted State
@@ -1382,11 +1382,11 @@ class EKF:
         P_t = F@self.P@F.T + Q_t                # Predicted Covariance Matrix
         # ----- Correction -----
         y   = self.h(q_t)                       # Expected Measurement function
-        v   = self.z - y                        # Innovation (Measurement Residual)
+        v   = z - y                        # Innovation (Measurement Residual)
         H   = self.dhdq(q_t)                    # Linearized Measurement Matrix
         S   = H@P_t@H.T + self.R                # Measurement Prediction Covariance
         K   = P_t@H.T@np.linalg.inv(S)          # Kalman Gain
         self.P = (np.identity(4) - K@H)@P_t     # Updated Covariance Matrix
-        self.q = q_t + K@v                      # Corrected State
-        self.q /= np.linalg.norm(self.q)
-        return self.q
+        q = q_t + K@v                      # Corrected State
+        q /= np.linalg.norm(q)
+        return q
