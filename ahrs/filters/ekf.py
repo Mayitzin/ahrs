@@ -1336,7 +1336,7 @@ class EKF:
         Parameters
         ----------
         q : numpy.ndarray
-            A-priori orientation as quaternion.
+            A-priori state describing orientation as quaternion.
         gyr : numpy.ndarray
             Sample of tri-axial Gyroscope in rad/s.
         acc : numpy.ndarray
@@ -1349,7 +1349,7 @@ class EKF:
         Returns
         -------
         q : numpy.ndarray
-            Estimated a-posteriori orientation as quaternion.
+            Estimated state describing orientation as quaternion.
 
         """
         _assert_numerical_iterable(q, 'Quaternion')
@@ -1382,11 +1382,11 @@ class EKF:
         P_t = F@self.P@F.T + Q_t                # Predicted Covariance Matrix
         # ----- Correction -----
         y   = self.h(q_t)                       # Expected Measurement function
-        v   = z - y                        # Innovation (Measurement Residual)
+        v   = z - y                             # Innovation (Measurement Residual)
         H   = self.dhdq(q_t)                    # Linearized Measurement Matrix
         S   = H@P_t@H.T + self.R                # Measurement Prediction Covariance
         K   = P_t@H.T@np.linalg.inv(S)          # Kalman Gain
         self.P = (np.identity(4) - K@H)@P_t     # Updated Covariance Matrix
-        q = q_t + K@v                      # Corrected State
+        q = q_t + K@v                           # Corrected State
         q /= np.linalg.norm(q)
         return q
