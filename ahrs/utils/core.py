@@ -40,7 +40,7 @@ def _assert_numerical_positive_variable(item, item_name: str = 'input'):
 def _assert_numerical_iterable(item, item_name: str = 'iterable'):
     """Assert it is a list, tuple, or numpy array, and that it has numerical values"""
     _assert_valid_array_type(item, item_name)
-    item_copy = np.copy(item)
+    item_copy = np.array(item)
     if not(item_copy.dtype == np.dtype(int) or item_copy.dtype == np.dtype(float)):
         raise TypeError(f"{item_name} must have numerical values. Got {item_copy.dtype.name}")
 
@@ -50,15 +50,15 @@ def _assert_same_shapes(item1, item2, item_names: list = None):
             raise TypeError(f"{item} must be an array. Got {type(item)}")
     if item_names is None:
         item_names = ['item1', 'item2']
-    item1, item2 = np.copy(item1), np.copy(item2)
+    item1, item2 = np.array(item1), np.array(item2)
     if item1.shape != item2.shape:
         raise ValueError(f"{item_names[0]} and {item_names[1]} must have the same shape. Got {item1.shape} and {item2.shape}")
 
 def _assert_acc_mag_inputs(acc, mag):
     _assert_numerical_iterable(acc, 'acc')
     _assert_numerical_iterable(mag, 'mag')
-    acc = np.copy(acc)
-    mag = np.copy(mag)
+    acc = np.array(acc)
+    mag = np.array(mag)
     if acc.shape != mag.shape:
         raise ValueError("acc and mag are not the same size")
 
