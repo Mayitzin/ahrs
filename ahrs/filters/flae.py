@@ -403,6 +403,20 @@ class FLAE:
         if self.acc is not None and self.mag is not None:
             self.Q = self._compute_all()
 
+    def _validate_input(self, acc: np.ndarray, mag: np.ndarray) -> None:
+        _assert_numerical_iterable(acc, 'Gravitational acceleration vector')
+        _assert_numerical_iterable(mag, 'Geomagnetic field vector')
+        acc = np.array(acc)
+        if acc.size != 3:
+            raise ValueError(f"Accelerometer sample must be a (3,) array. Got array of shape {acc.shape}")
+        mag = np.array(mag)
+        if mag.size != 3:
+            raise ValueError(f"Magnetometer sample must be a (3,) array. Got array of shape {mag.shape}")
+        if np.linalg.norm(acc) == 0:
+            raise ValueError("Accelerometer sample is all zeros")
+        if np.linalg.norm(mag) == 0:
+            raise ValueError("Magnetometer sample is all zeros")
+
     def _compute_all(self) -> np.ndarray:
         """
         Estimate the quaternions given all data in class Data.
@@ -478,24 +492,11 @@ class FLAE:
         """
         # Check input data
         _assert_valid_method(method, ['symbolic', 'eig', 'newton'])
-        _assert_numerical_iterable(acc, 'Gravitational acceleration vector')
-        _assert_numerical_iterable(mag, 'Geomagnetic field vector')
-        acc = np.copy(acc)
-        if acc.size != 3:
-            raise ValueError(f"Accelerometer sample must be a (3,) array. Got array of shape {acc.shape}")
-        mag = np.copy(mag)
-        if mag.size != 3:
-            raise ValueError(f"Magnetometer sample must be a (3,) array. Got array of shape {mag.shape}")
-        acc_norm = np.linalg.norm(acc)
-        if acc_norm == 0:
-            raise ValueError("Accelerometer sample is all zeros")
-        mag_norm = np.linalg.norm(mag)
-        if mag_norm == 0:
-            raise ValueError("Magnetometer sample is all zeros")
+        self._validate_input(acc, mag)
         # Start Fusion
-        Db = np.r_[[acc/acc_norm], [mag/mag_norm]]                  # (eq. 19)
-        H = self.a * Db.T @ self.ref                                # (eq. 42)
-        W = self._P1Hx(H[0]) + self._P2Hy(H[1]) + self._P3Hz(H[2])  # (eq. 44)
+        Db = np.r_[[acc/np.linalg.norm(acc)], [mag/np.linalg.norm(mag)]]    # (eq. 19)
+        H = self.a * Db.T @ self.ref                                        # (eq. 42)
+        W = self._P1Hx(H[0]) + self._P2Hy(H[1]) + self._P3Hz(H[2])          # (eq. 44)
         if method.lower() == 'eig':
             V, D = np.linalg.eig(W)
             q = D[:, np.argmax(V)]
