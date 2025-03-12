@@ -10,33 +10,7 @@ Cairns, QLD, Australia, 2003, pp. 47-54, doi: 10.1109/ICIF.2003.177425.
 """
 
 import numpy as np
-
-def qprod(q1, q2):
-    """
-    Multiply two quaternions.
-
-    Args:
-        q1: First quaternion [qw, qx, qy, qz]
-        q2: Second quaternion [qw, qx, qy, qz]
-
-    Returns:
-        Quaternion product
-    """
-    w1, x1, y1, z1 = q1
-    w2, x2, y2, z2 = q2
-    return np.array([
-        w1*w2 - x1*x2 - y1*y2 - z1*z2,
-        w1*x2 + x1*w2 + y1*z2 - z1*y2,
-        w1*y2 - x1*z2 + y1*w2 + z1*x2,
-        w1*z2 + x1*y2 - y1*x2 + z1*w2
-    ])
-
-def qconj(q):
-    return np.array([q[0], -q[1], -q[2], -q[3]])
-
-def qnorm(q):
-    """Normalize a quaternion to unit magnitude."""
-    return q / np.linalg.norm(q)
+from ..common.quaternion import Quaternion
 
 def _angvel2q(omega, delta_t):
     """
@@ -121,42 +95,35 @@ class UKF:
         for i in range(self.state_dimension):
             sigma_points[i+1] = quaternion_state + sqrt_covariance[i]
             sigma_points[i+1+self.state_dimension] = quaternion_state - sqrt_covariance[i]
-
             # Normalize all quaternions
-            sigma_points[i+1] = qnorm(sigma_points[i+1])
-            sigma_points[i+1+self.state_dimension] = qnorm(sigma_points[i+1+self.state_dimension])
+            sigma_points[i+1] = Quaternion(sigma_points[i+1])
+            sigma_points[i+1+self.state_dimension] = Quaternion(sigma_points[i+1+self.state_dimension])
         return sigma_points
 
     def updateIMU(self, q, gyro, acc, dt):
-        # Store current state
-        quaternion_state = q.copy()
-
         # 1. Normalize accelerometer data
         acc_normalized = acc / np.linalg.norm(acc)
 
         # 2. Generate sigma points
-        sigma_points = self.compute_sigma_points(quaternion_state, self.P)
+        sigma_points = self.compute_sigma_points(q, self.P)
 
         # 3. Process model - propagate sigma points with gyro data (eq. 37)
         rotation_quaternion = _angvel2q(gyro, dt)
         predicted_sigma_points = np.zeros_like(sigma_points)
         for i in range(self.sigma_point_count):
-            predicted_sigma_points[i] = qprod(sigma_points[i], rotation_quaternion)
-            predicted_sigma_points[i] = qnorm(predicted_sigma_points[i])
+            predicted_sigma_points[i] = Quaternion(sigma_points[i]).product(Quaternion(rotation_quaternion))
 
         # 4. Calculate predicted state mean
         predicted_state_mean = np.zeros(self.state_dimension)
         for i in range(self.sigma_point_count):
             predicted_state_mean += self.weight_mean[i] * predicted_sigma_points[i]
-        predicted_state_mean = qnorm(predicted_state_mean)
+        predicted_state_mean = Quaternion(predicted_state_mean)
 
         # 5. Calculate predicted state covariance (using error quaternions)
         predicted_state_covariance = np.zeros((3, 3))  # 3x3 for orientation error
         for i in range(self.sigma_point_count):
             # Calculate error quaternion between sigma point and mean
-            error_quaternion = qprod(
-                predicted_sigma_points[i],
-                qconj(predicted_state_mean))
+            error_quaternion = Quaternion(predicted_sigma_points[i]).product(predicted_state_mean.conjugate)
             # Small angle approximation - use vector part scaled by 2
             orientation_error = error_quaternion[1:4] * 2.0
             # Update covariance with weighted outer product
@@ -169,12 +136,12 @@ class UKF:
         for i in range(self.sigma_point_count):
             predicted_measurements[i] = _quaternion_to_gravity(predicted_sigma_points[i])
 
-        # 7. Calculate predicted measurement mean
+        # 7. Predicted measurement mean
         predicted_measurement_mean = np.zeros(3)
         for i in range(self.sigma_point_count):
             predicted_measurement_mean += self.weight_mean[i] * predicted_measurements[i]
 
-        # 8. Calculate predicted measurement covariance
+        # 8. Predicted measurement covariance
         predicted_measurement_covariance = np.zeros((3, 3))
         for i in range(self.sigma_point_count):
             measurement_diff = predicted_measurements[i] - predicted_measurement_mean
@@ -182,14 +149,11 @@ class UKF:
         # Add measurement noise
         predicted_measurement_covariance += self.R
 
-        # 9. Calculate cross-covariance
+        # 9. Cross-covariance
         cross_covariance = np.zeros((3, 3))
         for i in range(self.sigma_point_count):
             # Error quaternion
-            error_quaternion = qprod(
-                predicted_sigma_points[i],
-                qconj(predicted_state_mean)
-            )
+            error_quaternion = Quaternion(predicted_sigma_points[i]).product(predicted_state_mean.conjugate)
             # Orientation error (vector part)
             orientation_error = error_quaternion[1:4] * 2.0
             # Measurement difference
@@ -206,16 +170,9 @@ class UKF:
         # Correction as a rotation
         correction_vector = kalman_gain @ innovation
         # Convert to quaternion (small angle approximation)
-        correction_quaternion = np.array([
-            1.0,
-            correction_vector[0] / 2.0,
-            correction_vector[1] / 2.0,
-            correction_vector[2] / 2.0
-        ])
-        correction_quaternion = qnorm(correction_quaternion)
+        correction_quaternion = Quaternion([1.0, *(correction_vector/2.0)])
         # Apply correction to predicted state
-        updated_quaternion = qprod(predicted_state_mean, correction_quaternion)
-        updated_quaternion = qnorm(updated_quaternion)
+        updated_quaternion = predicted_state_mean.product(correction_quaternion)
 
         # 12. Update covariance
         updated_covariance_orientation = predicted_state_covariance - kalman_gain @ predicted_measurement_covariance @ kalman_gain.T
