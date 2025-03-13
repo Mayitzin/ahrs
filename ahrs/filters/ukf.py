@@ -7,6 +7,11 @@ E. Kraft, "A quaternion-based unscented Kalman filter for orientation tracking,"
 Sixth International Conference of Information Fusion, 2003. Proceedings of the,
 Cairns, QLD, Australia, 2003, pp. 47-54, doi: 10.1109/ICIF.2003.177425.
 
+Wan, Eric A. and Rudolph van der Merwe. “The unscented Kalman filter for
+nonlinear estimation.” Proceedings of the IEEE 2000 Adaptive Systems for Signal
+Processing, Communications, and Control Symposium (Cat. No.00EX373) (2000):
+153-158.
+
 """
 
 import numpy as np
@@ -76,13 +81,13 @@ class UKF:
         rotation_operator = np.eye(4) + 0.5 * self.Omega(gyro) * dt
         predicted_sigma_points = [Quaternion(rotation_operator @ point) for point in sigma_points]
 
-        # 4. Calculate predicted state mean
+        # 4. Predicted state mean
         predicted_state_mean = Quaternion(np.sum(self.weight_mean[:, None] * predicted_sigma_points, axis=0))
 
-        # 5. Calculate predicted state covariance (using error quaternions)
+        # 5. Predicted state covariance (using error quaternions)
         predicted_state_covariance = np.zeros((3, 3))  # 3x3 for orientation error
         for i in range(self.sigma_point_count):
-            # Calculate error quaternion between sigma point and mean
+            # Error quaternion between sigma point and mean
             error_quaternion = predicted_sigma_points[i].product(predicted_state_mean.conjugate)
             # Small angle approximation - use vector part scaled by 2
             orientation_error = error_quaternion[1:4] * 2.0
@@ -91,13 +96,13 @@ class UKF:
         # Add process noise to orientation part
         predicted_state_covariance += self.Q[1:4, 1:4]
 
-        # 6. Transform sigma points to measurement space (predicted accelerometer readings)
+        # 6. Transform sigma points to measurement space (predicted accelerometer readings) (eq. 16)
         predicted_measurements = [point.to_DCM().T @ np.array([0, 0, 1]) for point in predicted_sigma_points]
 
-        # 7. Predicted measurement mean
+        # 7. Predicted measurement mean (eq. 17)
         predicted_measurement_mean = np.sum(self.weight_mean[:, None] * predicted_measurements, axis=0)
 
-        # 8. Predicted measurement covariance
+        # 8. Predicted measurement covariance (eq. 18)
         predicted_measurement_covariance = np.sum([self.weight_covariance[i] * np.outer(predicted_measurements[i] - predicted_measurement_mean, predicted_measurements[i] - predicted_measurement_mean) for i in range(self.sigma_point_count)], axis=0)
         # Add measurement noise
         predicted_measurement_covariance += self.R
@@ -118,7 +123,7 @@ class UKF:
         kalman_gain = cross_covariance @ np.linalg.inv(predicted_measurement_covariance)
 
         # 11. Update state with measurement
-        # Innovation (measurement residual)
+        # Innovation (measurement residual) (eq. 44)
         innovation = acc_normalized - predicted_measurement_mean
         # Correction as a rotation
         correction_vector = kalman_gain @ innovation
