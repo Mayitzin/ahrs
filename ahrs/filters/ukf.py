@@ -80,10 +80,7 @@ class UKF:
         predicted_sigma_points = [Quaternion(rotation_operator @ point) for point in sigma_points]
 
         # 4. Calculate predicted state mean
-        predicted_state_mean = np.zeros(self.state_dimension)
-        for i in range(self.sigma_point_count):
-            predicted_state_mean += self.weight_mean[i] * predicted_sigma_points[i]
-        predicted_state_mean = Quaternion(predicted_state_mean)
+        predicted_state_mean = Quaternion(np.sum(self.weight_mean[:, None] * predicted_sigma_points, axis=0))
 
         # 5. Calculate predicted state covariance (using error quaternions)
         predicted_state_covariance = np.zeros((3, 3))  # 3x3 for orientation error
@@ -101,15 +98,10 @@ class UKF:
         predicted_measurements = [point.to_DCM().T @ np.array([0, 0, 1]) for point in predicted_sigma_points]
 
         # 7. Predicted measurement mean
-        predicted_measurement_mean = np.zeros(3)
-        for i in range(self.sigma_point_count):
-            predicted_measurement_mean += self.weight_mean[i] * predicted_measurements[i]
+        predicted_measurement_mean = np.sum(self.weight_mean[:, None] * predicted_measurements, axis=0)
 
         # 8. Predicted measurement covariance
-        predicted_measurement_covariance = np.zeros((3, 3))
-        for i in range(self.sigma_point_count):
-            measurement_diff = predicted_measurements[i] - predicted_measurement_mean
-            predicted_measurement_covariance += self.weight_covariance[i] * np.outer(measurement_diff, measurement_diff)
+        predicted_measurement_covariance = np.sum([self.weight_covariance[i] * np.outer(predicted_measurements[i] - predicted_measurement_mean, predicted_measurements[i] - predicted_measurement_mean) for i in range(self.sigma_point_count)], axis=0)
         # Add measurement noise
         predicted_measurement_covariance += self.R
 
@@ -125,7 +117,7 @@ class UKF:
             # Update cross-covariance
             cross_covariance += self.weight_covariance[i] * np.outer(orientation_error, measurement_diff)
 
-        # 10. Calculate Kalman gain
+        # 10. Calculate Kalman gain (eq. 72)
         kalman_gain = cross_covariance @ np.linalg.inv(predicted_measurement_covariance)
 
         # 11. Update state with measurement
