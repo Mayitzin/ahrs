@@ -26,16 +26,21 @@ class UKF:
         self.Q = kwargs.get('process_noise_covariance', np.eye(4) * 0.0001)
         self.R = kwargs.get('measurement_noise_covariance', np.eye(3) * 0.01)
         # Weights for sigma points
-        self.weight_mean = np.zeros(self.sigma_point_count)
-        self.weight_covariance = np.zeros(self.sigma_point_count)
-        # Set weights
-        self.weight_mean[0] = self.lambda_param / (self.state_dimension + self.lambda_param)
-        self.weight_covariance[0] = self.weight_mean[0] + (1 - self.alpha**2 + self.beta)
-        for i in range(1, self.sigma_point_count):
-            self.weight_mean[i] = 1.0 / (2 * (self.state_dimension + self.lambda_param))
-            self.weight_covariance[i] = self.weight_mean[i]
+        self.weight_mean, self.weight_covariance = self.set_weights()
         # Initial state covariance
         self.P = np.eye(self.state_dimension) * 0.01
+
+    def set_weights(self):
+        # Weights for sigma points
+        weight_mean = np.zeros(self.sigma_point_count)
+        weight_covariance = np.zeros(self.sigma_point_count)
+        # Set weights
+        weight_mean[0] = self.lambda_param / (self.state_dimension + self.lambda_param)
+        weight_covariance[0] = weight_mean[0] + (1 - self.alpha**2 + self.beta)
+        for i in range(1, self.sigma_point_count):
+            weight_mean[i] = 1.0 / (2 * (self.state_dimension + self.lambda_param))
+            weight_covariance[i] = weight_mean[i]
+        return weight_mean, weight_covariance
 
     def compute_sigma_points(self, quaternion_state, state_covariance):
         # Calculate square root of scaled covariance
