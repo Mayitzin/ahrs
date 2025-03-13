@@ -50,20 +50,12 @@ class UKF:
             # Add small regularization if Cholesky decomposition fails
             regularized_covariance = state_covariance + np.eye(self.state_dimension) * 1e-8
             sqrt_covariance = np.linalg.cholesky((self.state_dimension + self.lambda_param) * regularized_covariance)
-
-        # Initialize sigma points array
-        sigma_points = np.zeros((self.sigma_point_count, self.state_dimension))
-
-        # Set mean as the first sigma point
-        sigma_points[0] = quaternion_state
-
-        # Set remaining sigma points
+        sigma_points = np.zeros((self.sigma_point_count, self.state_dimension)) # Initialize sigma points array
+        sigma_points[0] = quaternion_state                                      # Set mean as the first sigma point
+        # Set remaining sigma points as Quaternions
         for i in range(self.state_dimension):
-            sigma_points[i+1] = quaternion_state + sqrt_covariance[i]
-            sigma_points[i+1+self.state_dimension] = quaternion_state - sqrt_covariance[i]
-            # Normalize all quaternions
-            sigma_points[i+1] = Quaternion(sigma_points[i+1])
-            sigma_points[i+1+self.state_dimension] = Quaternion(sigma_points[i+1+self.state_dimension])
+            sigma_points[i+1] = Quaternion(quaternion_state + sqrt_covariance[i])
+            sigma_points[i+1+self.state_dimension] = Quaternion(quaternion_state - sqrt_covariance[i])
         return sigma_points
 
     def Omega(self, x: np.ndarray) -> np.ndarray:
