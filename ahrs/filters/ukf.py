@@ -12,24 +12,6 @@ Cairns, QLD, Australia, 2003, pp. 47-54, doi: 10.1109/ICIF.2003.177425.
 import numpy as np
 from ..common.quaternion import Quaternion
 
-def _quaternion_to_gravity(q):
-    """
-    Convert quaternion to expected gravity vector in sensor frame.
-
-    Args:
-        q: Quaternion [qw, qx, qy, qz]
-
-    Returns:
-        Expected gravity vector in sensor frame
-    """
-    qw, qx, qy, qz = q
-    # Rotation of gravity vector [0, 0, 1] by quaternion
-    # This is a simplified rotation calculation for the specific case of [0, 0, 1]
-    return np.array([
-        2 * (qx*qz - qw*qy),
-        2 * (qw*qx + qy*qz),
-        qw*qw - qx*qx - qy*qy + qz*qz])
-
 class UKF:
     def __init__(self, alpha=1e-3, beta=2, kappa=0, **kwargs):
         # UKF parameters
@@ -95,9 +77,7 @@ class UKF:
 
         # 3. Process model - propagate sigma points with gyro data (eq. 37)
         rotation_operator = np.eye(4) + 0.5 * self.Omega(gyro) * dt
-        predicted_sigma_points = np.zeros_like(sigma_points)
-        for i in range(self.sigma_point_count):
-            predicted_sigma_points[i] = Quaternion(rotation_operator @ sigma_points[i])
+        predicted_sigma_points = [Quaternion(rotation_operator @ point) for point in sigma_points]
 
         # 4. Calculate predicted state mean
         predicted_state_mean = np.zeros(self.state_dimension)
@@ -109,7 +89,7 @@ class UKF:
         predicted_state_covariance = np.zeros((3, 3))  # 3x3 for orientation error
         for i in range(self.sigma_point_count):
             # Calculate error quaternion between sigma point and mean
-            error_quaternion = Quaternion(predicted_sigma_points[i]).product(predicted_state_mean.conjugate)
+            error_quaternion = predicted_sigma_points[i].product(predicted_state_mean.conjugate)
             # Small angle approximation - use vector part scaled by 2
             orientation_error = error_quaternion[1:4] * 2.0
             # Update covariance with weighted outer product
@@ -118,9 +98,7 @@ class UKF:
         predicted_state_covariance += self.Q[1:4, 1:4]
 
         # 6. Transform sigma points to measurement space (predicted accelerometer readings)
-        predicted_measurements = np.zeros((self.sigma_point_count, 3))
-        for i in range(self.sigma_point_count):
-            predicted_measurements[i] = _quaternion_to_gravity(predicted_sigma_points[i])
+        predicted_measurements = [point.to_DCM().T @ np.array([0, 0, 1]) for point in predicted_sigma_points]
 
         # 7. Predicted measurement mean
         predicted_measurement_mean = np.zeros(3)
@@ -139,7 +117,7 @@ class UKF:
         cross_covariance = np.zeros((3, 3))
         for i in range(self.sigma_point_count):
             # Error quaternion
-            error_quaternion = Quaternion(predicted_sigma_points[i]).product(predicted_state_mean.conjugate)
+            error_quaternion = predicted_sigma_points[i].product(predicted_state_mean.conjugate)
             # Orientation error (vector part)
             orientation_error = error_quaternion[1:4] * 2.0
             # Measurement difference
