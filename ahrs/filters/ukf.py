@@ -12,26 +12,6 @@ Cairns, QLD, Australia, 2003, pp. 47-54, doi: 10.1109/ICIF.2003.177425.
 import numpy as np
 from ..common.quaternion import Quaternion
 
-def _angvel2q(omega, delta_t):
-    """
-    Convert angular velocity to quaternion.
-
-    Args:
-        omega: Angular velocity vector
-        delta_t: Time interval
-
-    Returns:
-        Quaternion
-    """
-    angle = np.linalg.norm(omega) * delta_t
-    axis = omega / np.linalg.norm(omega)
-    return np.array([
-        np.cos(angle/2),
-        axis[0] * np.sin(angle/2),
-        axis[1] * np.sin(angle/2),
-        axis[2] * np.sin(angle/2)
-    ])
-
 def _quaternion_to_gravity(q):
     """
     Convert quaternion to expected gravity vector in sensor frame.
@@ -49,7 +29,6 @@ def _quaternion_to_gravity(q):
         2 * (qx*qz - qw*qy),
         2 * (qw*qx + qy*qz),
         qw*qw - qx*qx - qy*qy + qz*qz])
-
 
 class UKF:
     def __init__(self, alpha=1e-3, beta=2, kappa=0, **kwargs):
@@ -100,6 +79,13 @@ class UKF:
             sigma_points[i+1+self.state_dimension] = Quaternion(sigma_points[i+1+self.state_dimension])
         return sigma_points
 
+    def Omega(self, x: np.ndarray) -> np.ndarray:
+        return np.array([
+            [0.0,  -x[0], -x[1], -x[2]],
+            [x[0],   0.0,  x[2], -x[1]],
+            [x[1], -x[2],   0.0,  x[0]],
+            [x[2],  x[1], -x[0],   0.0]])
+
     def updateIMU(self, q, gyro, acc, dt):
         # 1. Normalize accelerometer data
         acc_normalized = acc / np.linalg.norm(acc)
@@ -108,10 +94,10 @@ class UKF:
         sigma_points = self.compute_sigma_points(q, self.P)
 
         # 3. Process model - propagate sigma points with gyro data (eq. 37)
-        rotation_quaternion = _angvel2q(gyro, dt)
+        rotation_operator = np.eye(4) + 0.5 * self.Omega(gyro) * dt
         predicted_sigma_points = np.zeros_like(sigma_points)
         for i in range(self.sigma_point_count):
-            predicted_sigma_points[i] = Quaternion(sigma_points[i]).product(Quaternion(rotation_quaternion))
+            predicted_sigma_points[i] = Quaternion(rotation_operator @ sigma_points[i])
 
         # 4. Calculate predicted state mean
         predicted_state_mean = np.zeros(self.state_dimension)
