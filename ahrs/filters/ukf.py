@@ -1,14 +1,14 @@
 """
 Unscented Kalman Filter (UKF) for orientation estimation.
 
-This implementation is based on the following paper:
+This implementation is based on the following papers:
 
 E. Kraft, "A quaternion-based unscented Kalman filter for orientation tracking,"
 Sixth International Conference of Information Fusion, 2003. Proceedings of the,
 Cairns, QLD, Australia, 2003, pp. 47-54, doi: 10.1109/ICIF.2003.177425.
 
-Wan, Eric A. and Rudolph van der Merwe. “The unscented Kalman filter for
-nonlinear estimation.” Proceedings of the IEEE 2000 Adaptive Systems for Signal
+Wan, Eric A. and Rudolph van der Merwe. "The unscented Kalman filter for
+nonlinear estimation." Proceedings of the IEEE 2000 Adaptive Systems for Signal
 Processing, Communications, and Control Symposium (Cat. No.00EX373) (2000):
 153-158.
 
@@ -20,18 +20,18 @@ from ..common.quaternion import Quaternion
 class UKF:
     def __init__(self, alpha=1e-3, beta=2, kappa=0, **kwargs):
         # UKF parameters
-        self.state_dimension = 4  # Quaternion state dimension
-        self.sigma_point_count = 2 * self.state_dimension + 1
-        self.alpha = alpha  # Spread parameter
-        self.beta = beta    # Distribution parameter
-        self.kappa = kappa  # Secondary scaling parameter
-        # Lambda parameter for sigma point calculation
+        self.state_dimension = 4                                # L : Quaternion state dimension
+        self.sigma_point_count = 2 * self.state_dimension + 1   # 2*L+1 sigma points
+        self.alpha = alpha          # Spread parameter
+        self.beta = beta            # Distribution parameter
+        self.kappa = kappa          # Secondary scaling parameter
+        # Lambda parameter: λ = α²(L + κ) - L
         self.lambda_param = self.alpha**2 * (self.state_dimension + self.kappa) - self.state_dimension
+        # Weights for sigma points
+        self.weight_mean, self.weight_covariance = self.set_weights()
         # Process and measurement noise covariances
         self.Q = kwargs.get('process_noise_covariance', np.eye(4) * 0.0001)
         self.R = kwargs.get('measurement_noise_covariance', np.eye(3) * 0.01)
-        # Weights for sigma points
-        self.weight_mean, self.weight_covariance = self.set_weights()
         # Initial state covariance
         self.P = np.eye(self.state_dimension) * 0.01
 
@@ -48,7 +48,7 @@ class UKF:
         return weight_mean, weight_covariance
 
     def compute_sigma_points(self, quaternion_state, state_covariance):
-        # Calculate square root of scaled covariance
+        # Calculate square root of scaled covariance (eq. 36)
         try:
             sqrt_covariance = np.linalg.cholesky((self.state_dimension + self.lambda_param) * state_covariance)
         except np.linalg.LinAlgError:
@@ -57,7 +57,7 @@ class UKF:
             sqrt_covariance = np.linalg.cholesky((self.state_dimension + self.lambda_param) * regularized_covariance)
         sigma_points = np.zeros((self.sigma_point_count, self.state_dimension)) # Initialize sigma points array
         sigma_points[0] = quaternion_state                                      # Set mean as the first sigma point
-        # Set remaining sigma points as Quaternions
+        # Set remaining sigma points as Quaternions (eq. 33)
         for i in range(self.state_dimension):
             sigma_points[i+1] = Quaternion(quaternion_state + sqrt_covariance[i])
             sigma_points[i+1+self.state_dimension] = Quaternion(quaternion_state - sqrt_covariance[i])
@@ -84,15 +84,12 @@ class UKF:
         # 4. Predicted state mean
         predicted_state_mean = Quaternion(np.sum(self.weight_mean[:, None] * predicted_sigma_points, axis=0))
 
-        # 5. Predicted state covariance (using error quaternions)
+        # 5. Predicted state covariance (using error quaternions) (eq. 70)
         predicted_state_covariance = np.zeros((3, 3))  # 3x3 for orientation error
         for i in range(self.sigma_point_count):
             # Error quaternion between sigma point and mean
-            error_quaternion = predicted_sigma_points[i].product(predicted_state_mean.conjugate)
-            # Small angle approximation - use vector part scaled by 2
-            orientation_error = error_quaternion[1:4] * 2.0
-            # Update covariance with weighted outer product
-            predicted_state_covariance += self.weight_covariance[i] * np.outer(orientation_error, orientation_error)
+            error_quaternion = predicted_sigma_points[i].product(predicted_state_mean.conjugate) * 2.0
+            predicted_state_covariance += self.weight_covariance[i] * np.outer(error_quaternion[1:], error_quaternion[1:])
         # Add process noise to orientation part
         predicted_state_covariance += self.Q[1:4, 1:4]
 
@@ -103,34 +100,28 @@ class UKF:
         predicted_measurement_mean = np.sum(self.weight_mean[:, None] * predicted_measurements, axis=0)
 
         # 8. Predicted measurement covariance (eq. 18)
-        predicted_measurement_covariance = np.sum([self.weight_covariance[i] * np.outer(predicted_measurements[i] - predicted_measurement_mean, predicted_measurements[i] - predicted_measurement_mean) for i in range(self.sigma_point_count)], axis=0)
-        # Add measurement noise
-        predicted_measurement_covariance += self.R
+        # predicted_measurement_covariance = np.sum([self.weight_covariance[i] * np.outer(predicted_measurements[i] - predicted_measurement_mean, predicted_measurements[i] - predicted_measurement_mean) for i in range(self.sigma_point_count)], axis=0)
+        predicted_measurement_covariance = np.zeros((3, 3))
+        for i in range(self.sigma_point_count):
+            predicted_measurement_covariance += self.weight_covariance[i] * np.outer(predicted_measurements[i] - predicted_measurement_mean, predicted_measurements[i] - predicted_measurement_mean)
+        predicted_measurement_covariance += self.R      # Add measurement noise (eq. 45)
 
-        # 9. Cross-covariance
+        # 9. Cross-covariance (eq. 71)
         cross_covariance = np.zeros((3, 3))
         for i in range(self.sigma_point_count):
-            # Error quaternion
-            error_quaternion = predicted_sigma_points[i].product(predicted_state_mean.conjugate)
-            # Orientation error (vector part)
-            orientation_error = error_quaternion[1:4] * 2.0
-            # Measurement difference
+            # Error quaternion: Z_i - z_i
+            error_quaternion = predicted_sigma_points[i].product(predicted_state_mean.conjugate) * 2.0
             measurement_diff = predicted_measurements[i] - predicted_measurement_mean
-            # Update cross-covariance
-            cross_covariance += self.weight_covariance[i] * np.outer(orientation_error, measurement_diff)
+            cross_covariance += self.weight_covariance[i] * np.outer(error_quaternion[1:], measurement_diff) # Update cross-covariance with vector part of error quaternion
 
         # 10. Calculate Kalman gain (eq. 72)
         kalman_gain = cross_covariance @ np.linalg.inv(predicted_measurement_covariance)
 
         # 11. Update state with measurement
-        # Innovation (measurement residual) (eq. 44)
-        innovation = acc_normalized - predicted_measurement_mean
-        # Correction as a rotation
-        correction_vector = kalman_gain @ innovation
-        # Convert to quaternion (small angle approximation)
-        correction_quaternion = Quaternion([1.0, *(correction_vector/2.0)])
-        # Apply correction to predicted state
-        updated_quaternion = predicted_state_mean.product(correction_quaternion)
+        innovation = acc_normalized - predicted_measurement_mean                    # Innovation (measurement residual) (eq. 44)
+        correction_vector = kalman_gain @ innovation                                # Correction as a rotation vector
+        correction_quaternion = Quaternion([1.0, *(correction_vector/2.0)])         # Convert to quaternion (small angle approximation)
+        updated_quaternion = predicted_state_mean.product(correction_quaternion)    # Apply correction to predicted state
 
         # 12. Update covariance
         updated_covariance_orientation = predicted_state_covariance - kalman_gain @ predicted_measurement_covariance @ kalman_gain.T
