@@ -264,6 +264,23 @@ class QUEST:
     ValueError
         When dimension of input arrays ``acc`` and ``mag`` are not equal.
 
+    Examples
+    --------
+    >>> acc_data.shape, mag_data.shape      # NumPy arrays with sensor data
+    ((1000, 3), (1000, 3))
+    >>> from ahrs.filters import QUEST
+    >>> orientation = QUEST(acc=acc_data, mag=mag_data)
+    >>> orientation.Q.shape                 # Estimated attitudes as Quaternions
+    (1000, 4)
+    >>> orientation.Q
+    array([[-0.09867706, -0.33683592, -0.52706394, -0.77395607],
+           [-0.10247491, -0.33710813, -0.52117549, -0.77732433],
+           [-0.10082646, -0.33658091, -0.52082828, -0.77800078],
+           ...,
+           [-0.78760687, -0.57789515,  0.2131519,  -0.01669966],
+           [-0.78683706, -0.57879487,  0.21313092, -0.02142776],
+           [-0.77869223, -0.58616905,  0.22344478, -0.01080235]])
+
     """
     def __init__(self, acc: np.ndarray = None, mag: np.ndarray = None, **kw):
         self.acc: np.ndarray = acc
