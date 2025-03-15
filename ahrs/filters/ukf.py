@@ -100,7 +100,6 @@ class UKF:
         predicted_measurement_mean = np.sum(self.weight_mean[:, None] * predicted_measurements, axis=0)
 
         # 8. Predicted measurement covariance (eq. 18)
-        # predicted_measurement_covariance = np.sum([self.weight_covariance[i] * np.outer(predicted_measurements[i] - predicted_measurement_mean, predicted_measurements[i] - predicted_measurement_mean) for i in range(self.sigma_point_count)], axis=0)
         predicted_measurement_covariance = np.zeros((3, 3))
         for i in range(self.sigma_point_count):
             predicted_measurement_covariance += self.weight_covariance[i] * np.outer(predicted_measurements[i] - predicted_measurement_mean, predicted_measurements[i] - predicted_measurement_mean)
@@ -125,12 +124,6 @@ class UKF:
 
         # 12. Update covariance
         updated_covariance_orientation = predicted_state_covariance - kalman_gain @ predicted_measurement_covariance @ kalman_gain.T
-        # Ensure symmetry and positive definiteness
-        updated_covariance_orientation = (updated_covariance_orientation + updated_covariance_orientation.T) / 2.0
-        # Small regularization if needed
-        min_eigenvalue = np.min(np.real(np.linalg.eigvals(updated_covariance_orientation)))
-        if min_eigenvalue < 0:
-            updated_covariance_orientation += np.eye(3) * (abs(min_eigenvalue) + 1e-8)
         # Rebuild full state covariance (4x4)
         full_covariance = np.zeros((4, 4))
         full_covariance[1:4, 1:4] = updated_covariance_orientation
