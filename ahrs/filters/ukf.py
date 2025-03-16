@@ -1,16 +1,40 @@
+# -*- coding: utf-8 -*-
 """
-Unscented Kalman Filter (UKF) for orientation estimation.
+.. attention::
 
-This implementation is based on the following papers:
+    The UKF algorithm and its documentation are **under development**. The
+    current implementation is functional for IMU-architecture only, but may not
+    work as expected.
 
-E. Kraft, "A quaternion-based unscented Kalman filter for orientation tracking,"
-Sixth International Conference of Information Fusion, 2003. Proceedings of the,
-Cairns, QLD, Australia, 2003, pp. 47-54, doi: 10.1109/ICIF.2003.177425.
+    Wait until release 0.4.0 for a stable version.
 
-Wan, Eric A. and Rudolph van der Merwe. "The unscented Kalman filter for
-nonlinear estimation." Proceedings of the IEEE 2000 Adaptive Systems for Signal
-Processing, Communications, and Control Symposium (Cat. No.00EX373) (2000):
-153-158.
+The Unscented Kaman filter was first proposed by S. Julier and J. Uhlmann
+:cite:p:`julier1997` as an alternative to the Kalman Fiter for nonlinear
+systems.
+
+The UKF approximates the mean and covariance of the state distribution using a
+set of discretely sampled points, called the **sigma points**, obtained through
+a deterministic sampling technique called the `Unscented Transform
+<https://en.wikipedia.org/wiki/Unscented_transform>`_.
+
+Contrary to the EKF, the UKF does not linearize the models, but uses each of
+the sigma points as an input to the state transition and measurement functions
+to get a new set of transformed state points, thus avoiding the need for
+Jacobians, and yielding an accuracy similar to the KF for linear systems.
+
+The UKF offers significant advantages over the EKF in terms of handling
+nonlinearities, achieving higher-order accuracy, robustness to initial
+estimates, and consistent performance.
+
+However, the UKF has disadvantages related to computational complexity, memory
+requirements, and parameter tuning. These factors can make the UKF less
+suitable for certain applications, particularly those with limited
+computational resources.
+
+The implementation in this module is based on the seminal article describing
+the UKF algorithm for nonlinear estimations proposed by Wan and Rudolph van de
+Merwe :cite:p:`wan2000`, and further developed by Kraft :cite:p:`kraft2003` and
+Klingbeil :cite:p:`klingbeil2006` for orientation estimation using quaternions.
 
 """
 
@@ -81,15 +105,17 @@ class UKF:
         rotation_operator = np.eye(4) + 0.5 * self.Omega(gyro) * dt
         predicted_sigma_points = [Quaternion(rotation_operator @ point) for point in sigma_points]
 
-        # 4. Predicted state mean
+        # 4. Predicted state mean (x_i) (eq. 38)
         predicted_state_mean = Quaternion(np.sum(self.weight_mean[:, None] * predicted_sigma_points, axis=0))
 
+        # Predicted States difference: X_i - x_i
+        error_quaternion = [points.product(predicted_state_mean.conjugate) * 2.0 for points in predicted_sigma_points]
+
         # 5. Predicted state covariance (using error quaternions) (eq. 70)
-        predicted_state_covariance = np.zeros((3, 3))  # 3x3 for orientation error
+        predicted_state_covariance = np.zeros((3, 3))   # 3x3 for orientation error
         for i in range(self.sigma_point_count):
             # Error quaternion between sigma point and mean
-            error_quaternion = predicted_sigma_points[i].product(predicted_state_mean.conjugate) * 2.0
-            predicted_state_covariance += self.weight_covariance[i] * np.outer(error_quaternion[1:], error_quaternion[1:])
+            predicted_state_covariance += self.weight_covariance[i] * np.outer(error_quaternion[i][1:], error_quaternion[i][1:])
         # Add process noise to orientation part
         predicted_state_covariance += self.Q[1:4, 1:4]
 
@@ -99,19 +125,19 @@ class UKF:
         # 7. Predicted measurement mean (eq. 17)
         predicted_measurement_mean = np.sum(self.weight_mean[:, None] * predicted_measurements, axis=0)
 
-        # 8. Predicted measurement covariance (eq. 18)
+        # Predicted measurements difference: Z_i - z_i
+        predicted_measurements_diff = predicted_measurements - predicted_measurement_mean
+
+        # 8. Predicted measurement covariance (eq. 18) (eq. 68)
         predicted_measurement_covariance = np.zeros((3, 3))
         for i in range(self.sigma_point_count):
-            predicted_measurement_covariance += self.weight_covariance[i] * np.outer(predicted_measurements[i] - predicted_measurement_mean, predicted_measurements[i] - predicted_measurement_mean)
+            predicted_measurement_covariance += self.weight_covariance[i] * np.outer(predicted_measurements_diff[i], predicted_measurements_diff[i])
         predicted_measurement_covariance += self.R      # Add measurement noise (eq. 45)
 
         # 9. Cross-covariance (eq. 71)
         cross_covariance = np.zeros((3, 3))
         for i in range(self.sigma_point_count):
-            # Error quaternion: Z_i - z_i
-            error_quaternion = predicted_sigma_points[i].product(predicted_state_mean.conjugate) * 2.0
-            measurement_diff = predicted_measurements[i] - predicted_measurement_mean
-            cross_covariance += self.weight_covariance[i] * np.outer(error_quaternion[1:], measurement_diff) # Update cross-covariance with vector part of error quaternion
+            cross_covariance += self.weight_covariance[i] * np.outer(error_quaternion[i][1:], predicted_measurements_diff[i]) # Update cross-covariance with vector part of error quaternion
 
         # 10. Calculate Kalman gain (eq. 72)
         kalman_gain = cross_covariance @ np.linalg.inv(predicted_measurement_covariance)
