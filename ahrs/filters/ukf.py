@@ -71,9 +71,7 @@ class UKF:
         # Set weights
         weight_mean[0] = self.lambda_param / (self.state_dimension + self.lambda_param)
         weight_covariance[0] = weight_mean[0] + (1 - self.alpha**2 + self.beta)
-        for i in range(1, self.sigma_point_count):
-            weight_mean[i] = 1.0 / (2 * (self.state_dimension + self.lambda_param))
-            weight_covariance[i] = weight_mean[i]
+        weight_covariance[1:] = weight_mean[1:] = 1.0 / (2 * (self.state_dimension + self.lambda_param))
         return weight_mean, weight_covariance
 
     def compute_sigma_points(self, quaternion_state, state_covariance):
