@@ -13,7 +13,7 @@ The Unscented Kaman filter was first proposed by S. Julier and J. Uhlmann
 systems.
 
 The UKF approximates the mean and covariance of the state distribution using a
-set of discretely sampled points, called the **sigma points**, obtained through
+set of discretely sampled points, called the **Sigma Points**, obtained through
 a deterministic sampling technique called the `Unscented Transform
 <https://en.wikipedia.org/wiki/Unscented_transform>`_.
 
@@ -31,10 +31,15 @@ requirements, and parameter tuning. These factors can make the UKF less
 suitable for certain applications, particularly those with limited
 computational resources.
 
-The implementation in this module is based on the seminal article describing
-the UKF algorithm for nonlinear estimations proposed by Wan and Rudolph van de
-Merwe :cite:p:`wan2000`, and further developed by Kraft :cite:p:`kraft2003` and
-Klingbeil :cite:p:`klingbeil2006` for orientation estimation using quaternions.
+The implementation in this module is based on the UKF algorithm for nonlinear
+estimations proposed by Wan and Rudolph van de Merwe :cite:p:`wan2000`, and 
+urther developed by Kraft :cite:p:`kraft2003` and Klingbeil
+:cite:p:`klingbeil2006` for orientation estimation using quaternions.
+
+.. seealso::
+
+   `EKF <./ekf.html>`_ - Extended Kalman Filter for orientation
+   estimation.
 
 """
 
@@ -44,7 +49,7 @@ from ..common.quaternion import Quaternion
 class UKF:
     def __init__(self, alpha=1e-3, beta=2, kappa=0, **kwargs):
         # UKF parameters
-        self.state_dimension = 4                                # L : Quaternion state dimension
+        self.state_dimension = 4    # L : State dimension (Quaternion items)
         self.sigma_point_count = 2 * self.state_dimension + 1   # 2*L+1 sigma points
         self.alpha = alpha          # Spread parameter
         self.beta = beta            # Distribution parameter
