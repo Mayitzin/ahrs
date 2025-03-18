@@ -85,9 +85,9 @@ class UKF:
         sigma_points = np.zeros((self.sigma_point_count, self.state_dimension)) # Initialize sigma points array
         sigma_points[0] = quaternion_state                                      # Set mean as the first sigma point
         # Set remaining sigma points as Quaternions (eq. 33)
-        for i in range(self.state_dimension):
-            sigma_points[i+1] = Quaternion(quaternion_state + sqrt_covariance[i])
-            sigma_points[i+1+self.state_dimension] = Quaternion(quaternion_state - sqrt_covariance[i])
+        for i in range(1, self.state_dimension+1):
+            sigma_points[i] = Quaternion(quaternion_state + sqrt_covariance[i-1])
+            sigma_points[i+self.state_dimension] = Quaternion(quaternion_state - sqrt_covariance[i-1])
         return sigma_points
 
     def Omega(self, x: np.ndarray) -> np.ndarray:
@@ -151,12 +151,8 @@ class UKF:
         correction_quaternion = Quaternion([1.0, *(correction_vector/2.0)])         # Convert to quaternion (small angle approximation)
         updated_quaternion = predicted_state_mean.product(correction_quaternion)    # Apply correction to predicted state
 
-        # 12. Update covariance
-        updated_covariance_orientation = predicted_state_covariance - kalman_gain @ predicted_measurement_covariance @ kalman_gain.T
-        # Rebuild full state covariance (4x4)
-        full_covariance = np.zeros((4, 4))
-        full_covariance[1:4, 1:4] = updated_covariance_orientation
-        # Store updated covariance
-        self.P = full_covariance
+        # 12. Re-define state covariance
+        self.P = np.zeros((4, 4))
+        self.P[1:, 1:] = predicted_state_covariance - kalman_gain @ predicted_measurement_covariance @ kalman_gain.T
 
         return updated_quaternion
