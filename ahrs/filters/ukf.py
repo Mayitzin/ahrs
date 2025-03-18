@@ -97,7 +97,7 @@ class UKF:
             [x[1], -x[2],   0.0,  x[0]],
             [x[2],  x[1], -x[0],   0.0]])
 
-    def updateIMU(self, q, gyro, acc, dt):
+    def update(self, q, gyro, acc, dt):
         # 1. Normalize accelerometer data
         acc_normalized = acc / np.linalg.norm(acc)
 
