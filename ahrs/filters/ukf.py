@@ -3,10 +3,10 @@
 .. attention::
 
     The UKF algorithm and its documentation are **under development**. The
-    current implementation is functional for IMU-architecture only, but may not
+    current implementation is functional for IMU-architecture only. It may not
     work as expected.
 
-    Wait until release 0.4.0 for a stable version.
+    Wait until pypi release 0.4.0 for a fully tested version.
 
 The Unscented Kaman filter was first proposed by S. Julier and J. Uhlmann
 :cite:p:`julier1997` as an alternative to the Kalman Fiter for nonlinear
@@ -32,14 +32,13 @@ suitable for certain applications, particularly those with limited
 computational resources.
 
 The implementation in this module is based on the UKF algorithm for nonlinear
-estimations proposed by Wan and Rudolph van de Merwe :cite:p:`wan2000`, and 
-urther developed by Kraft :cite:p:`kraft2003` and Klingbeil
-:cite:p:`klingbeil2006` for orientation estimation using quaternions.
+estimations proposed by Wan and van de Merwe :cite:p:`wan2000`, and further
+developed by Kraft :cite:p:`kraft2003` and Klingbeil :cite:p:`klingbeil2006`
+for orientation estimation using quaternions.
 
 .. seealso::
 
-   `EKF <./ekf.html>`_ - Extended Kalman Filter for orientation
-   estimation.
+   `EKF <./ekf.html>`_ - Extended Kalman Filter for orientation estimation.
 
 """
 
