@@ -112,13 +112,12 @@ class UKF:
         predicted_state_mean = Quaternion(np.sum(self.weight_mean[:, None] * predicted_sigma_points, axis=0))
 
         # Predicted States difference: X_i - x_i
-        error_quaternion = [points.product(predicted_state_mean.conjugate) * 2.0 for points in predicted_sigma_points]
+        predicted_state_diffs = [points.product(predicted_state_mean.conjugate) * 2.0 for points in predicted_sigma_points]
 
         # 5. Predicted state covariance (using error quaternions) (eq. 70)
         predicted_state_covariance = np.zeros((3, 3))   # 3x3 for orientation error
-        for i in range(self.sigma_point_count):
-            # Error quaternion between sigma point and mean
-            predicted_state_covariance += self.weight_covariance[i] * np.outer(error_quaternion[i][1:], error_quaternion[i][1:])
+        for i, eq in enumerate(predicted_state_diffs):
+            predicted_state_covariance += self.weight_covariance[i] * np.outer(eq[1:], eq[1:])
         # Add process noise to orientation part
         predicted_state_covariance += self.Q[1:4, 1:4]
 
@@ -140,7 +139,7 @@ class UKF:
         # 9. Cross-covariance (eq. 71)
         cross_covariance = np.zeros((3, 3))
         for i in range(self.sigma_point_count):
-            cross_covariance += self.weight_covariance[i] * np.outer(error_quaternion[i][1:], predicted_measurements_diff[i]) # Update cross-covariance with vector part of error quaternion
+            cross_covariance += self.weight_covariance[i] * np.outer(predicted_state_diffs[i][1:], predicted_measurements_diff[i]) # Update cross-covariance with vector part of error quaternion
 
         # 10. Calculate Kalman gain (eq. 72)
         kalman_gain = cross_covariance @ np.linalg.inv(predicted_measurement_covariance)
