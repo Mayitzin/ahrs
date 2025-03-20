@@ -36,6 +36,137 @@ estimations proposed by Wan and van de Merwe :cite:p:`wan2000`, and further
 developed by Kraft :cite:p:`kraft2003` and Klingbeil :cite:p:`klingbeil2006`
 for orientation estimation using quaternions.
 
+Kalman Filter
+-------------
+
+We have a `discrete system <https://en.wikipedia.org/wiki/Discrete_system>`_,
+whose `states <https://en.wikipedia.org/wiki/State_(computer_science)>`_ are
+described by a vector :math:`\\mathbf{x}_t` at each time :math:`t`.
+
+This vector has :math`n` items describing an object in the system. These items
+could be the position, velocity, orientation, etc. Basically, anything that can
+be measured or estimated can be a state, as long as it can be described
+numerically.
+
+Given that we know how the state was at time :math:`t-1`, we would like to
+predict how the state will be at time :math:`t`. We also have a set of
+measurements :math:`\\mathbf{z}_t` that can be used to improve the prediction
+of the state.
+
+The traditional `Kalman filter <https://en.wikipedia.org/wiki/Kalman_filter>`_,
+as described by :cite:p:`kalman1960` computes a state in two steps:
+
+1. The **prediction step** computes a guess of the current state,
+   :math:`\\hat{\\mathbf{x}}_t`, and its covariance :math:`\\hat{\\mathbf{P}}_t`,
+   at time :math:`t`, given the previous state at time :math:`t-1`.
+
+.. math::
+    \\begin{array}{rcl}
+    \\hat{\\mathbf{x}}_t &=& \\mathbf{F}\\mathbf{x}_{t-1} + \\mathbf{Bu}_t \\\\
+    \\hat{\\mathbf{P}}_t &=& \\mathbf{F}(\\mathbf{x}_{t-1}, \\mathbf{u}_t)\\mathbf{P}_{t-1}\\mathbf{F}^T(\\mathbf{x}_{t-1}, \\mathbf{u}_t) + \\mathbf{Q}_t
+    \\end{array}
+
+2. The **correction step** rectifies the estimation with a measurement (or set
+   of measurements) :math:`\\mathbf{z}_t` at time :math:`t`.
+
+.. math::
+    \\begin{array}{rcl}
+    \\mathbf{v}_t &=& \\mathbf{z}_t - \\mathbf{H}\\hat{\\mathbf{x}}_t \\\\
+    \\mathbf{S}_t &=& \\mathbf{H} \\hat{\\mathbf{P}}_t \\mathbf{H}^T + \\mathbf{R} \\\\
+    \\mathbf{K}_t &=& \\hat{\\mathbf{P}}_t \\mathbf{H}^T \\mathbf{S}_t^{-1} \\\\
+    \\mathbf{x}_t &=& \\hat{\\mathbf{x}}_t + \\mathbf{K}_t \\mathbf{v}_t \\\\
+    \\mathbf{P}_t &=& \\hat{\\mathbf{P}}_t - \\mathbf{K}_t \\mathbf{S}_t \\mathbf{K}_t^T
+    \\end{array}
+
+where:
+
+- :math:`\\hat{\\mathbf{F}}\\in\\mathbb{R}^{n\\times n}` is the **State
+  Transition Matrix**.
+- :math:`\\hat{\\mathbf{P}}_t\\in\\mathbb{R}^{n\\times n}` is the **Predicted
+  Covariance** of the state at time :math:`t`.
+- :math:`\\mathbf{B}\\in\\mathbb{R}^{n\\times k}` is the **Control input model**.
+- :math:`\\mathbf{u}_t\\in\\mathbb{R}^k` is a **Control input vector**.
+- :math:`\\mathbf{Q}_t\\in\\mathbb{R}^{n\\times n}` is the **Process Noise
+  Covariance**.
+- :math:`\\mathbf{H}\\in\\mathbb{R}^{m\\times n}` is the **Observation model**.
+- :math:`\\mathbf{R}_t\\in\\mathbb{R}^{m\\times m}` is the **Measurement Noise
+  Covariance**.
+- :math:`\\mathbf{K}_t\\in\\mathbb{R}^{n\\times m}` is the filter *gain*,
+  a.k.a. the **Kalman Gain**.
+- :math:`\\mathbf{P}_t\\in\\mathbb{R}^{n\\times n}` is the **Updated
+  Covariance** of the corrected state :math:`\\mathbf{x}_t`.
+
+The Kalman filter, however, is limited to linear systems, rendering the process
+above inapplicable to nonlinear systems, like our attitude estimation problem.
+
+A common solution to this issue is the `Extended Kalman Filter  <./ekf.html>`_
+(EKF), which linearizes the system model and measurement functions around the
+current estimate to approximate the terms llinearly, allowing the use of the
+Kalman filter equations as if it were a linear system.
+
+In this approach we modify the state transition and measurement models to
+include the Jacobian matrices of the nonlinear functions, which are used to
+linearize the system.
+
+The predicted mean and covariance are computed using the linearized models:
+
+.. math::
+
+    \\begin{array}{rcl}
+    \\hat{\\mathbf{x}}_t &=& \\mathbf{F}(\\mathbf{x}_{t-1}, \\mathbf{u}_t) \\\\
+    \\hat{\\mathbf{P}}_t &=& \\mathbf{F}(\\mathbf{P}_{t-1}, \\mathbf{Q}_t) \\mathbf{F}^T + \\mathbf{Q}_t \\\\
+    \\end{array}
+
+with the Jacobian:
+
+.. math::
+
+    \\mathbf{F}(\\mathbf{x}_{t-1}, \\mathbf{u}_t) = \\frac{\\partial \\mathbf{F}}{\\partial \\mathbf{x}} \\bigg|_{\\mathbf{x}_{t-1}, \\mathbf{u}_t}
+
+whereas the measurement model is linearized as:
+
+.. math::
+
+    \\begin{array}{rcl}
+    \\mathbf{v}_t &=& \\mathbf{z}_t - \\mathbf{h}(\\mathbf{x}_t) \\\\
+    \\mathbf{S}_t &=& \\mathbf{H}(\\mathbf{x}_t) \\hat{\\mathbf{P}}_t \\mathbf{H}^T(\\mathbf{x}_t) + \\mathbf{R}_t \\\\
+    \\mathbf{K}_t &=& \\hat{\\mathbf{P}}_t \\mathbf{H}^T(\\mathbf{x}_t) \\mathbf{S}_t^{-1} \\\\
+    \\mathbf{x}_t &=& \\hat{\\mathbf{x}}_t + \\mathbf{K}_t \\mathbf{v}_t \\\\
+    \\mathbf{P}_t &=& \\big(\\mathbf{I}_4 - \\mathbf{K}_t\\mathbf{H}(\\mathbf{x}_t)\\big)\\hat{\\mathbf{P}}_t
+    \\end{array}
+
+with the Jacobian:
+
+.. math::
+
+    \\mathbf{H}(\\hat{\\mathbf{x}}_t) = \\frac{\\partial \\mathbf{H}}{\\partial \\mathbf{x}} \\bigg|_{\\hat{\\mathbf{x}}_t}
+
+Unfortunately these approximations can introduce large errors in the posterior
+mean and covariance of the transformed random variable, which may lead to
+sub-optimal performance.
+
+To avoid these issues, a solution using unscented transforms was proposed by
+Julier and Uhlmann :cite:p:`julier1997`, which is the basis for the Unscented
+Kalman Filter (UKF).
+
+Unscented Kalman Filter
+------------------------
+
+The UKF is a type of Kalman filter that replaces the linearization with a
+deterministic sampling technique called the `Unscented Transform
+<https://en.wikipedia.org/wiki/Unscented_transform>`_.
+
+This transformation generates a set of points that capture the mean and
+covariance of the state distribution, called the **Sigma Points**.
+
+Each of the sigma points is used as an input to the state transition
+and measurement functions to get a new set of transformed state points. The
+mean and covariance of the transformed points is then used to obtain state
+estimates and state estimation error covariance.
+
+This propagation captures the posterior mean and covariance of the state
+distribution more accurately than the EKF.
+
 .. seealso::
 
    `EKF <./ekf.html>`_ - Extended Kalman Filter for orientation estimation.
@@ -97,6 +228,7 @@ class UKF:
             [x[2],  x[1], -x[0],   0.0]])
 
     def update(self, q, gyro, acc, dt):
+        ## Prediction
         # 1. Normalize accelerometer data
         acc_normalized = acc / np.linalg.norm(acc)
 
@@ -120,6 +252,7 @@ class UKF:
         # Add process noise to orientation part
         predicted_state_covariance += self.Q[1:4, 1:4]
 
+        ## Correction
         # 6. Transform sigma points to measurement space (predicted accelerometer readings) (eq. 16)
         predicted_measurements = [point.to_DCM().T @ np.array([0, 0, 1]) for point in predicted_sigma_points]
 
