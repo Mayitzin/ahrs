@@ -535,7 +535,7 @@ class AngularRate:
                [-0.92504595, -0.23174096,  0.20086376, -0.22414251]])
 
         """
-        _assert_numerical_iterable(self.q0, 'q0')
+        _assert_numerical_iterable(q, 'q')
         _assert_numerical_iterable(gyr, 'gyr')
         if len(gyr) != 3:
             raise ValueError(f"gyr must be a 3-element array. Got {len(gyr)} instead.")
