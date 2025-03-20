@@ -542,9 +542,9 @@ class AngularRate:
         if method.lower() not in ['series', 'closed']:
             raise ValueError(f"Invalid method '{method}'. Try 'series' or 'closed'")
         dt = self.Dt if dt is None else dt
-        q = np.copy(q)
+        q = Quaternion(q)
         if np.linalg.norm(gyr) == 0:
-            return q
+            return q.to_array()
         Omega = np.array([
             [   0.0, -gyr[0], -gyr[1], -gyr[2]],
             [gyr[0],     0.0,  gyr[2], -gyr[1]],
@@ -560,5 +560,5 @@ class AngularRate:
             A = np.identity(4)
             for i in range(1, order+1):
                 A += S**i / factorial(i)
-        q = A @ q
-        return q / np.linalg.norm(q)
+        q_new = Quaternion(A @ q)
+        return q_new.to_array()
