@@ -76,7 +76,7 @@ of the quaternions [#]_ follows the formal definition:
     &=& \\underset{\\Delta t\\to 0}{\\mathrm{lim}} \\frac{\\mathbf{q}(t+\\Delta t)-\\mathbf{q}(t)}{\\Delta t} \\\\
     &=& \\underset{\\Delta t\\to 0}{\\mathrm{lim}} \\frac{1}{\\Delta t}\\Big(-2\\sin^2\\frac{\\|\\boldsymbol\\omega\\|\\Delta t}{4} + \\frac{\\boldsymbol\\omega}{\\|\\boldsymbol\\omega\\|}\\sin\\frac{\\|\\boldsymbol\\omega\\|\\Delta t}{2}\\Big)\\mathbf{q} \\\\
     &=& \\frac{\\boldsymbol\\omega}{\\|\\boldsymbol\\omega\\|} \\underset{\\Delta t\\to 0}{\\mathrm{lim}} \\frac{1}{\\Delta t}\\sin\\big(\\frac{\\|\\boldsymbol\\omega\\|\\Delta t}{2}\\big) \\mathbf{q} \\\\
-    &=& \\frac{\\boldsymbol\\omega}{\\|\\boldsymbol\\omega\\|} \\frac{d}{dt} \\sin\\big(\\frac{\\|\\boldsymbol\\omega\\|}{2}t\\big) \\Big || _{t=0} \\; \\mathbf{q} \\\\
+    &=& \\frac{\\boldsymbol\\omega}{\\|\\boldsymbol\\omega\\|} \\frac{d}{dt} \\sin\\big(\\frac{\\|\\boldsymbol\\omega\\|}{2}t\\big) \\Big | _{t=0} \\; \\mathbf{q} \\\\
     &=& \\frac{1}{2}\\boldsymbol\\omega \\mathbf{q} \\\\
     &=& \\frac{1}{2}
     \\begin{bmatrix}
