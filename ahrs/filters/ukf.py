@@ -3,12 +3,12 @@
 .. attention::
 
     The UKF algorithm and its documentation are **under development**. The
-    current implementation is functional for IMU-architecture only. It may not
-    work as expected.
+    current implementation is functional for IMU-architecture only, but is not
+    yet finalized.
 
     Wait until pypi release 0.4.0 for a fully tested version.
 
-The Unscented Kaman filter was first proposed by S. Julier and J. Uhlmann
+The Unscented Kaman Filter (UKF) was first proposed by S. Julier and J. Uhlmann
 :cite:p:`julier1997` as an alternative to the Kalman Fiter for nonlinear
 systems.
 
@@ -36,22 +36,19 @@ estimations proposed by Wan and van de Merwe :cite:p:`wan2000`, and further
 developed by Kraft :cite:p:`kraft2003` and Klingbeil :cite:p:`klingbeil2006`
 for orientation estimation using quaternions.
 
-Kalman Filter
--------------
+**Kalman Filter**
 
 We have a `discrete system <https://en.wikipedia.org/wiki/Discrete_system>`_,
 whose `states <https://en.wikipedia.org/wiki/State_(computer_science)>`_ are
 described by a vector :math:`\\mathbf{x}_t` at each time :math:`t`.
 
-This vector has :math`n` items describing an object in the system. These items
-could be the position, velocity, orientation, etc. Basically, anything that can
-be measured or estimated can be a state, as long as it can be described
-numerically.
+This vector has :math:`n` items, which quantify the position, velocity,
+orientation, etc. Basically, anything that can be measured or estimated can be
+a state, as long as it can be described numerically.
 
-Given that we know how the state was at time :math:`t-1`, we would like to
-predict how the state will be at time :math:`t`. We also have a set of
-measurements :math:`\\mathbf{z}_t` that can be used to improve the prediction
-of the state.
+If we know how the state was at time :math:`t-1`, we predict how the state will
+be at time :math:`t`. In addition, we also have a set of measurements
+:math:`\\mathbf{z}_t` that can be used to improve the prediction of the state.
 
 The traditional `Kalman filter <https://en.wikipedia.org/wiki/Kalman_filter>`_,
 as described by :cite:p:`kalman1960` computes a state in two steps:
@@ -78,50 +75,32 @@ as described by :cite:p:`kalman1960` computes a state in two steps:
     \\mathbf{P}_t &=& \\hat{\\mathbf{P}}_t - \\mathbf{K}_t \\mathbf{S}_t \\mathbf{K}_t^T
     \\end{array}
 
-where:
-
-- :math:`\\hat{\\mathbf{F}}\\in\\mathbb{R}^{n\\times n}` is the **State
-  Transition Matrix**.
-- :math:`\\hat{\\mathbf{P}}_t\\in\\mathbb{R}^{n\\times n}` is the **Predicted
-  Covariance** of the state at time :math:`t`.
-- :math:`\\mathbf{B}\\in\\mathbb{R}^{n\\times k}` is the **Control input model**.
-- :math:`\\mathbf{u}_t\\in\\mathbb{R}^k` is a **Control input vector**.
-- :math:`\\mathbf{Q}_t\\in\\mathbb{R}^{n\\times n}` is the **Process Noise
-  Covariance**.
-- :math:`\\mathbf{H}\\in\\mathbb{R}^{m\\times n}` is the **Observation model**.
-- :math:`\\mathbf{R}_t\\in\\mathbb{R}^{m\\times m}` is the **Measurement Noise
-  Covariance**.
-- :math:`\\mathbf{K}_t\\in\\mathbb{R}^{n\\times m}` is the filter *gain*,
-  a.k.a. the **Kalman Gain**.
-- :math:`\\mathbf{P}_t\\in\\mathbb{R}^{n\\times n}` is the **Updated
-  Covariance** of the corrected state :math:`\\mathbf{x}_t`.
-
 The Kalman filter, however, is limited to linear systems, rendering the process
-above inapplicable to nonlinear systems, like our attitude estimation problem.
+above inapplicable to nonlinear systems like our attitude estimation problem.
 
-A common solution to this issue is the `Extended Kalman Filter  <./ekf.html>`_
+**Extended Kalman Filter**
+
+A common solution to this issue is the `Extended Kalman Filter <./ekf.html>`_
 (EKF), which linearizes the system model and measurement functions around the
-current estimate to approximate the terms llinearly, allowing the use of the
-Kalman filter equations as if it were a linear system.
+current estimate to approximate the terms, allowing the use of the Kalman
+filter equations as if it were a linear system.
 
-In this approach we modify the state transition and measurement models to
-include the Jacobian matrices of the nonlinear functions, which are used to
-linearize the system.
-
-The predicted mean and covariance are computed using the linearized models:
+In this approach the predicted mean and covariance are computed using the
+linearized models:
 
 .. math::
 
     \\begin{array}{rcl}
-    \\hat{\\mathbf{x}}_t &=& \\mathbf{F}(\\mathbf{x}_{t-1}, \\mathbf{u}_t) \\\\
-    \\hat{\\mathbf{P}}_t &=& \\mathbf{F}(\\mathbf{P}_{t-1}, \\mathbf{Q}_t) \\mathbf{F}^T + \\mathbf{Q}_t \\\\
+    \\hat{\\mathbf{x}}_t &=& \\mathbf{f}(\\mathbf{x}_{t-1}, \\mathbf{u}_t) \\\\
+    \\hat{\\mathbf{P}}_t &=& \\mathbf{F}(\\mathbf{x}_{t-1}, \\mathbf{u}_t)\\mathbf{P}_{t-1}\\mathbf{F}^T(\\mathbf{x}_{t-1}, \\mathbf{u}_t) + \\mathbf{Q}_t
     \\end{array}
 
-with the Jacobian:
+where :math:`\\mathbf{f}(\\mathbf{x}_{t-1}, \\mathbf{u}_t)` is the nonlinear
+dynamic model function, whose Jacobian is:
 
 .. math::
 
-    \\mathbf{F}(\\mathbf{x}_{t-1}, \\mathbf{u}_t) = \\frac{\\partial \\mathbf{F}}{\\partial \\mathbf{x}} \\bigg|_{\\mathbf{x}_{t-1}, \\mathbf{u}_t}
+    \\mathbf{F}(\\mathbf{x}_{t-1}, \\mathbf{u}_t) = \\frac{\\partial \\mathbf{f}(\\mathbf{x}_{t-1}, \\mathbf{u}_t)}{\\partial \\mathbf{x}}
 
 whereas the measurement model is linearized as:
 
@@ -135,13 +114,14 @@ whereas the measurement model is linearized as:
     \\mathbf{P}_t &=& \\big(\\mathbf{I}_4 - \\mathbf{K}_t\\mathbf{H}(\\mathbf{x}_t)\\big)\\hat{\\mathbf{P}}_t
     \\end{array}
 
-with the Jacobian:
+where :math:`\\mathbf{h}(\\mathbf{x}_t)` is the nonlinear measurement model
+function, whose Jacobian is:
 
 .. math::
 
-    \\mathbf{H}(\\hat{\\mathbf{x}}_t) = \\frac{\\partial \\mathbf{H}}{\\partial \\mathbf{x}} \\bigg|_{\\hat{\\mathbf{x}}_t}
+    \\mathbf{H}(\\hat{\\mathbf{x}}_t) = \\frac{\\partial \\mathbf{h}(\\mathbf{x}_t)}{\\partial \\mathbf{x}}
 
-Unfortunately these approximations can introduce large errors in the posterior
+Unfortunately, these approximations can introduce large errors in the posterior
 mean and covariance of the transformed random variable, which may lead to
 sub-optimal performance.
 
@@ -152,6 +132,8 @@ Kalman Filter (UKF).
 Unscented Kalman Filter
 ------------------------
 
+**Unscented Transform**
+
 The UKF is a type of Kalman filter that replaces the linearization with a
 deterministic sampling technique called the `Unscented Transform
 <https://en.wikipedia.org/wiki/Unscented_transform>`_.
@@ -159,13 +141,51 @@ deterministic sampling technique called the `Unscented Transform
 This transformation generates a set of points that capture the mean and
 covariance of the state distribution, called the **Sigma Points**.
 
-Each of the sigma points is used as an input to the state transition
-and measurement functions to get a new set of transformed state points. The
-mean and covariance of the transformed points is then used to obtain state
-estimates and state estimation error covariance.
+Each of the sigma points is used as an input to the state transition and
+measurement functions to get a new set of transformed state points.
 
-This propagation captures the posterior mean and covariance of the state
-distribution more accurately than the EKF.
+.. epigraph::
+
+   The unscented transformation ... is founded on the intuition that it is
+   easier to approximate a Gaussian distribution than it is to approximate an
+   arbitrary nonlinear function or transformation.
+
+   -- Jeffrey K. Uhlmann
+
+Imagine there is a set of random points :math:`\\mathbf{X}` with mean
+:math:`\\bar{\\mathbf{x}}`, and covariance :math:`\\mathbf{P_{xx}}`, and there is
+also a set of random points :math:`\\mathbf{y}` related to :math:`\\mathbf{x}`
+by a nonlinear function :math:`\\mathbf{y} = f(\\mathbf{x})`.
+
+Our goal is to find the mean :math:`\\bar{\\mathbf{y}}` and covariance
+:math:`\\mathbf{P}_{yy}` of :math:`\\mathbf{y}`. The unscented transform
+approximates the mean and covariance of :math:`\\mathbf{y}` by sampling a set
+of points :math:`\\mathbf{X}` from :math:`\\mathbf{x}` and applying the
+nonlinear function :math:`f` to each of the points.
+
+The samples are not drawn at random but according to a deterministic method.
+High order information about the distribution can be captured using only a
+small number of points.
+
+We start by defining the state vector :math:`\\mathbf{x}_t`, and the
+measurement vector :math:`\\mathbf{z}_t` as:
+
+.. math::
+
+    \\begin{array}{rcl}
+    \\mathbf{x}_t &=& \\begin{bmatrix} q_w & q_x & q_y & q_z \\end{bmatrix}^T \\\\ \\\\
+    \\mathbf{z}_t &=& \\begin{bmatrix} a_x & a_y & a_z \\end{bmatrix}^T
+    \\end{array}
+
+In this case, we will try to have a very simple model for the UKF, so that we
+can focus on the implementation details.
+
+Given the initial state :math:`\\mathbf{x}_0`, its covariance matrix
+:math:`\\mathbf{P}_0` the UKF algorithm can be summarized as follows:
+
+**Prediction**:
+
+1. Calculate the sigma points
 
 .. seealso::
 
