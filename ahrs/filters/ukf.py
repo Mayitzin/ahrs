@@ -152,20 +152,73 @@ measurement functions to get a new set of transformed state points.
 
    -- Jeffrey K. Uhlmann
 
-Imagine there is a set of random points :math:`\\mathbf{X}` with mean
-:math:`\\bar{\\mathbf{x}}`, and covariance :math:`\\mathbf{P_{xx}}`, and there is
-also a set of random points :math:`\\mathbf{y}` related to :math:`\\mathbf{x}`
-by a nonlinear function :math:`\\mathbf{y} = f(\\mathbf{x})`.
+**Sigma Points**
+
+Imagine there is a set of random points :math:`\\mathbf{x}` with mean
+:math:`\\bar{\\mathbf{x}}`, and covariance :math:`\\mathbf{P_{xx}}`, and there
+is another set of random points :math:`\\mathbf{y}` related to
+:math:`\\mathbf{x}` by a nonlinear function :math:`\\mathbf{y} = f(\\mathbf{x})`.
 
 Our goal is to find the mean :math:`\\bar{\\mathbf{y}}` and covariance
-:math:`\\mathbf{P}_{yy}` of :math:`\\mathbf{y}`. The unscented transform
-approximates the mean and covariance of :math:`\\mathbf{y}` by sampling a set
-of points :math:`\\mathbf{X}` from :math:`\\mathbf{x}` and applying the
-nonlinear function :math:`f` to each of the points.
+:math:`\\mathbf{P_{yy}}` of :math:`\\mathbf{y}`. The unscented transform
+approximates the by sampling a set of points from :math:`\\mathbf{x}` and
+applying the nonlinear function :math:`f` to each of the sampled points.
 
 The samples are not drawn at random but according to a deterministic method.
-High order information about the distribution can be captured using only a
-small number of points.
+Information about the distribution can be captured using only a small number of
+points.
+
+The :math:`n`-dimensional random variable :math:`\\mathbf{x}` with mean
+:math:`\\bar{\\mathbf{x}}` and covariance :math:`\\mathbf{P_{xx}}` is
+approximated by :math:`2n + 1` points given by
+
+.. math::
+
+    \\begin{array}{rcl}
+    \\mathcal{X}_0 &=& \\bar{\\mathbf{x}} \\\\
+    \\mathcal{X}_i &=& \\bar{\\mathbf{x}} + \\Big(\\sqrt{(n + \\lambda)\\mathbf{P_{xx}}}\\Big)_i\\\\
+    \\mathcal{X}_{i+n} &=& \\bar{\\mathbf{x}} - \\Big(\\sqrt{(n + \\lambda)\\mathbf{P_{xx}}}\\Big)_i
+    \\end{array}
+
+where :math:`(\\sqrt{(n + \\lambda)\\mathbf{P_{xx}}})_i` is the :math:`i`-th
+column of the matrix square root, and :math:`\\lambda=\\alpha^2(n + \\kappa) - n`
+is a scaling parameter.
+
+:math:`\\alpha` determines the spread of the sigma points around the mean,
+usually set to :math:`0.001`, and :math:`\\kappa` is a secondary scaling
+parameter, usually set to :math:`0` :cite:p:`wan2000`.
+
+We start the computation of the sigma points by passing them through the
+nonlinear function :math:`f` to get the transformed points :math:`\\mathcal{Y}`.
+
+.. math::
+
+    \\mathcal{Y}_i = f(\\mathcal{X}_i)
+
+Their mean is given by their wieghted sum:
+
+.. math::
+
+    \\bar{\\mathbf{y}} = \\sum_{i=0}^{2n} W_i^{(m)} \\mathcal{Y}_i
+
+And their covariance is given by their weighted outer product:
+
+.. math::
+
+    \\mathbf{P_{yy}} = \\sum_{i=0}^{2n} W_i^{(c)} (\\mathcal{Y}_i - \\bar{\\mathbf{y}})(\\mathcal{Y}_i - \\bar{\\mathbf{y}})^T
+
+The weights :math:`W` are computed as:
+
+.. math::
+
+    \\begin{array}{rcl}
+    W_0^{(m)} &=& \\frac{\\lambda}{n + \\lambda} \\\\
+    W_0^{(c)} &=& \\frac{\\lambda}{n + \\lambda} + (1 - \\alpha^2 + \\beta) \\\\
+    W_i^{(m)} = W_i^{(c)} &=& \\frac{1}{2(n + \\lambda)} \\quad \\text{for} \\quad i=1,2,\\ldots,2n
+    \\end{array}
+
+UKF for Attitude Estimation
+---------------------------
 
 We start by defining the state vector :math:`\\mathbf{x}_t`, and the
 measurement vector :math:`\\mathbf{z}_t` as:
@@ -199,12 +252,12 @@ from ..common.quaternion import Quaternion
 class UKF:
     def __init__(self, alpha=1e-3, beta=2, kappa=0, **kwargs):
         # UKF parameters
-        self.state_dimension = 4    # L : State dimension (Quaternion items)
-        self.sigma_point_count = 2 * self.state_dimension + 1   # 2*L+1 sigma points
+        self.state_dimension = 4    # n : State dimension (Quaternion items)
+        self.sigma_point_count = 2 * self.state_dimension + 1   # 2*n+1 sigma points
         self.alpha = alpha          # Spread parameter
         self.beta = beta            # Distribution parameter
         self.kappa = kappa          # Secondary scaling parameter
-        # Lambda parameter: λ = α²(L + κ) - L
+        # Lambda parameter: λ = α²(n + κ) - n
         self.lambda_param = self.alpha**2 * (self.state_dimension + self.kappa) - self.state_dimension
         # Weights for sigma points
         self.weight_mean, self.weight_covariance = self.set_weights()
