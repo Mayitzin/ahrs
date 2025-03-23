@@ -217,6 +217,10 @@ The weights :math:`W` are computed as:
     W_i^{(m)} = W_i^{(c)} &=& \\frac{1}{2(n + \\lambda)} \\quad \\text{for} \\quad i=1,2,\\ldots,2n
     \\end{array}
 
+The constant :math:`\\beta` is used to incorporate prior knowledge about the
+distribution of the random variable, and is usually set to :math:`2` for
+Gaussian distributions :cite:p:`wan2000`.
+
 UKF for Attitude Estimation
 ---------------------------
 
