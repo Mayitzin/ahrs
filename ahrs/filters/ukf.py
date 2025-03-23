@@ -152,8 +152,6 @@ measurement functions to get a new set of transformed state points.
 
    -- Jeffrey K. Uhlmann
 
-**Sigma Points**
-
 Imagine there is a set of random points :math:`\\mathbf{x}` with mean
 :math:`\\bar{\\mathbf{x}}`, and covariance :math:`\\mathbf{P_{xx}}`, and there
 is another set of random points :math:`\\mathbf{y}` related to
@@ -164,9 +162,11 @@ Our goal is to find the mean :math:`\\bar{\\mathbf{y}}` and covariance
 approximates the by sampling a set of points from :math:`\\mathbf{x}` and
 applying the nonlinear function :math:`f` to each of the sampled points.
 
-The samples are not drawn at random but according to a deterministic method.
 Information about the distribution can be captured using only a small number of
-points.
+points :cite:p:`julier1997`. The samples are not drawn at random but according
+to a deterministic method.
+
+**Sigma Points**
 
 The :math:`n`-dimensional random variable :math:`\\mathbf{x}` with mean
 :math:`\\bar{\\mathbf{x}}` and covariance :math:`\\mathbf{P_{xx}}` is
@@ -181,15 +181,15 @@ approximated by :math:`2n + 1` points given by
     \\end{array}
 
 where :math:`(\\sqrt{(n + \\lambda)\\mathbf{P_{xx}}})_i` is the :math:`i`-th
-column of the matrix square root, and :math:`\\lambda=\\alpha^2(n + \\kappa) - n`
-is a scaling parameter.
+column of the `matrix square root <https://en.wikipedia.org/wiki/Square_root_of_a_matrix>`_,
+and :math:`\\lambda=\\alpha^2(n + \\kappa) - n` is a scaling parameter.
 
 :math:`\\alpha` determines the spread of the sigma points around the mean,
 usually set to :math:`0.001`, and :math:`\\kappa` is a secondary scaling
 parameter, usually set to :math:`0` :cite:p:`wan2000`.
 
-We start the computation of the sigma points by passing them through the
-nonlinear function :math:`f` to get the transformed points :math:`\\mathcal{Y}`.
+We obtain the sigma points by passing them through the nonlinear function
+:math:`f` to get the transformed points :math:`\\mathcal{Y}`.
 
 .. math::
 
@@ -199,13 +199,13 @@ Their mean is given by their wieghted sum:
 
 .. math::
 
-    \\bar{\\mathbf{y}} = \\sum_{i=0}^{2n} W_i^{(m)} \\mathcal{Y}_i
+    \\boxed{\\bar{\\mathbf{y}} = \\sum_{i=0}^{2n} W_i^{(m)} \\mathcal{Y}_i}
 
 And their covariance is given by their weighted outer product:
 
 .. math::
 
-    \\mathbf{P_{yy}} = \\sum_{i=0}^{2n} W_i^{(c)} (\\mathcal{Y}_i - \\bar{\\mathbf{y}})(\\mathcal{Y}_i - \\bar{\\mathbf{y}})^T
+    \\boxed{\\mathbf{P_{yy}} = \\sum_{i=0}^{2n} W_i^{(c)} (\\mathcal{Y}_i - \\bar{\\mathbf{y}})(\\mathcal{Y}_i - \\bar{\\mathbf{y}})^T}
 
 The weights :math:`W` are computed as:
 
@@ -326,8 +326,7 @@ class UKF:
         predicted_state_covariance = np.zeros((3, 3))   # 3x3 for orientation error
         for i, eq in enumerate(predicted_state_diffs):
             predicted_state_covariance += self.weight_covariance[i] * np.outer(eq[1:], eq[1:])
-        # Add process noise to orientation part
-        predicted_state_covariance += self.Q[1:4, 1:4]
+        predicted_state_covariance += self.Q[1:4, 1:4]  # Add process noise to orientation part
 
         ## Correction
         # 6. Transform sigma points to measurement space (predicted accelerometer readings) (eq. 16)
@@ -341,8 +340,8 @@ class UKF:
 
         # 8. Predicted measurement covariance (eq. 18) (eq. 68)
         predicted_measurement_covariance = np.zeros((3, 3))
-        for i in range(self.sigma_point_count):
-            predicted_measurement_covariance += self.weight_covariance[i] * np.outer(predicted_measurements_diff[i], predicted_measurements_diff[i])
+        for i, measured_difference in enumerate(predicted_measurements_diff):
+            predicted_measurement_covariance += self.weight_covariance[i] * np.outer(measured_difference, measured_difference)
         predicted_measurement_covariance += self.R      # Add measurement noise (eq. 45)
 
         # 9. Cross-covariance (eq. 71)
