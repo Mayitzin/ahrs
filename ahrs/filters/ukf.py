@@ -277,7 +277,7 @@ class UKF:
         weight_covariance[1:] = weight_mean[1:] = 1.0 / (2 * (self.state_dimension + self.lambda_param))
         return weight_mean, weight_covariance
 
-    def compute_sigma_points(self, quaternion_state, state_covariance):
+    def compute_sigma_points(self, state, state_covariance):
         # Calculate square root of scaled covariance (eq. 36)
         try:
             sqrt_covariance = np.linalg.cholesky((self.state_dimension + self.lambda_param) * state_covariance)
@@ -286,11 +286,11 @@ class UKF:
             regularized_covariance = state_covariance + np.eye(self.state_dimension) * 1e-8
             sqrt_covariance = np.linalg.cholesky((self.state_dimension + self.lambda_param) * regularized_covariance)
         sigma_points = np.zeros((self.sigma_point_count, self.state_dimension)) # Initialize sigma points array
-        sigma_points[0] = quaternion_state                                      # Set mean as the first sigma point
+        sigma_points[0] = state                                      # Set mean as the first sigma point
         # Set remaining sigma points as Quaternions (eq. 33)
         for i in range(1, self.state_dimension+1):
-            sigma_points[i] = Quaternion(quaternion_state + sqrt_covariance[i-1])
-            sigma_points[i+self.state_dimension] = Quaternion(quaternion_state - sqrt_covariance[i-1])
+            sigma_points[i] = state + sqrt_covariance[i-1]
+            sigma_points[i+self.state_dimension] = state - sqrt_covariance[i-1]
         return sigma_points
 
     def Omega(self, x: np.ndarray) -> np.ndarray:
