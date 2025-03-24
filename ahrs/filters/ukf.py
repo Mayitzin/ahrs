@@ -159,10 +159,10 @@ is another set of random points :math:`\\mathbf{y}` related to
 
 Our goal is to find the mean :math:`\\bar{\\mathbf{y}}` and covariance
 :math:`\\mathbf{P_{yy}}` of :math:`\\mathbf{y}`. The unscented transform
-approximates the by sampling a set of points from :math:`\\mathbf{x}` and
+approximates them by sampling a set of points from :math:`\\mathbf{x}` and
 applying the nonlinear function :math:`f` to each of the sampled points.
 
-Information about the distribution can be captured using only a small number of
+Information about the distribution can be captured using a small number of
 points :cite:p:`julier1997`. The samples are not drawn at random but according
 to a deterministic method.
 
@@ -170,7 +170,7 @@ to a deterministic method.
 
 The :math:`n`-dimensional random variable :math:`\\mathbf{x}` with mean
 :math:`\\bar{\\mathbf{x}}` and covariance :math:`\\mathbf{P_{xx}}` is
-approximated by :math:`2n + 1` points given by
+approximated by :math:`2n + 1` points computed with:
 
 .. math::
 
@@ -188,20 +188,54 @@ and :math:`\\lambda=\\alpha^2(n + \\kappa) - n` is a scaling parameter.
 usually set to :math:`0.001`, and :math:`\\kappa` is a secondary scaling
 parameter, usually set to :math:`0` :cite:p:`wan2000`.
 
-We obtain the sigma points by passing them through the nonlinear function
-:math:`f` to get the transformed points :math:`\\mathcal{Y}`.
+But, how do we obtain the matrix form of the `square root
+<https://en.wikipedia.org/wiki/Square_root_of_a_matrix>`_ of
+:math:`(n + \\lambda)\\mathbf{P_{xx}}`?
+
+This is where the `Cholesky decomposition <https://en.wikipedia.org/wiki/Cholesky_decomposition>`_
+comes in. The Cholesky decomposition of a `positive-definite matrix
+<https://en.wikipedia.org/wiki/Definite_matrix>`_ :math:`\\mathbf{A}` is a
+lower triangular matrix :math:`\\mathbf{L}` such that :math:`\\mathbf{A} =
+\\mathbf{LL}^T`. The square root of :math:`\\mathbf{A}` is then
+:math:`\\mathbf{L}`.
+
+The Cholesky decomposition is preferred because:
+
+- It efficiently computes (roughly :math:`\\frac{n^3}{3}` operations for an
+  :math:`n\\times n` matrix) the lower triangular matrix :math:`\\mathbf{L}`.
+- It's numerically stable.
+- It naturally handles the positive-definiteness requirement of covariance
+  matrices.
+
+Therefore, before computing the sigma points, we first calculate the Cholesky
+decomposition of :math:`(n + \\lambda)\\mathbf{P_{xx}}`, and then we obtain
+them by adding and subtracting the columns of :math:`\\mathbf{L}` to the mean.
+
+.. math::
+
+    \\begin{array}{rcl}
+    \\mathcal{X}_0 &=& \\bar{\\mathbf{x}} \\\\
+    \\mathcal{X}_i &=& \\bar{\\mathbf{x}} + \\mathbf{L}_i \\\\
+    \\mathcal{X}_{i+n} &=& \\bar{\\mathbf{x}} - \\mathbf{L}_i
+    \\end{array}
+
+where :math:`\\mathbf{L}` is the Cholesky decomposition of
+:math:`(n + \\lambda)\\mathbf{P_{xx}}`.
+
+We pass these sigma points through the nonlinear function :math:`f` to get the
+transformed points :math:`\\mathcal{Y}`.
 
 .. math::
 
     \\mathcal{Y}_i = f(\\mathcal{X}_i)
 
-Their mean is given by their wieghted sum:
+Their **mean** is given by their wieghted sum:
 
 .. math::
 
     \\boxed{\\bar{\\mathbf{y}} = \\sum_{i=0}^{2n} W_i^{(m)} \\mathcal{Y}_i}
 
-And their covariance is given by their weighted outer product:
+And their **covariance** by their weighted outer product:
 
 .. math::
 
@@ -221,8 +255,16 @@ The constant :math:`\\beta` is used to incorporate prior knowledge about the
 distribution of the random variable, and is usually set to :math:`2` for
 Gaussian distributions :cite:p:`wan2000`.
 
+The sigma points capture the same mean and covariance irrespective of the
+choice of matrix square root :cite:p:`julier1997`, and they are computed using
+standard linear operations, which makes the UKF suitable to any process model.
+
 UKF for Attitude Estimation
 ---------------------------
+
+In this implementation, we build a simple model for the UKF, so that we can
+focus on the details of the algorithm. Once the basic structure is understood,
+we could extend the model to include more complex systems.
 
 We start by defining the state vector :math:`\\mathbf{x}_t`, and the
 measurement vector :math:`\\mathbf{z}_t` as:
@@ -233,9 +275,6 @@ measurement vector :math:`\\mathbf{z}_t` as:
     \\mathbf{x}_t &=& \\begin{bmatrix} q_w & q_x & q_y & q_z \\end{bmatrix}^T \\\\ \\\\
     \\mathbf{z}_t &=& \\begin{bmatrix} a_x & a_y & a_z \\end{bmatrix}^T
     \\end{array}
-
-In this case, we will try to have a very simple model for the UKF, so that we
-can focus on the implementation details.
 
 Given the initial state :math:`\\mathbf{x}_0`, its covariance matrix
 :math:`\\mathbf{P}_0` the UKF algorithm can be summarized as follows:
@@ -316,10 +355,10 @@ class UKF:
         rotation_operator = np.eye(4) + 0.5 * self.Omega(gyro) * dt
         predicted_sigma_points = [Quaternion(rotation_operator @ point) for point in sigma_points]
 
-        # 4. Predicted state mean (x_i) (eq. 38)
+        # 4. Predicted state mean (x_bar) (eq. 38)
         predicted_state_mean = Quaternion(np.sum(self.weight_mean[:, None] * predicted_sigma_points, axis=0))
 
-        # Predicted States difference: X_i - x_i
+        # Predicted States difference: x_i - x_bar
         predicted_state_diffs = [points.product(predicted_state_mean.conjugate) * 2.0 for points in predicted_sigma_points]
 
         # 5. Predicted state covariance (using error quaternions) (eq. 70)
@@ -345,9 +384,7 @@ class UKF:
         predicted_measurement_covariance += self.R      # Add measurement noise (eq. 45)
 
         # 9. Cross-covariance (eq. 71)
-        cross_covariance = np.zeros((3, 3))
-        for i in range(self.sigma_point_count):
-            cross_covariance += self.weight_covariance[i] * np.outer(predicted_state_diffs[i][1:], predicted_measurements_diff[i]) # Update cross-covariance with vector part of error quaternion
+        cross_covariance = np.sum(self.weight_covariance[i] * np.outer(predicted_state_diffs[i][1:], predicted_measurements_diff[i]) for i in range(self.sigma_point_count))
 
         # 10. Calculate Kalman gain (eq. 72)
         kalman_gain = cross_covariance @ np.linalg.inv(predicted_measurement_covariance)
