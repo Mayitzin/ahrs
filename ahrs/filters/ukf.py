@@ -46,9 +46,9 @@ This vector has :math:`n` items, which quantify the position, velocity,
 orientation, etc. Basically, anything that can be measured or estimated can be
 a state, as long as it can be described numerically.
 
-If we know how the state was at time :math:`t-1`, we predict how the state will
-be at time :math:`t`. In addition, we also have a set of measurements
-:math:`\\mathbf{z}_t` that can be used to improve the prediction of the state.
+Knowing how the state was at time :math:`t-1`, we want to predict how the state
+is at time :math:`t`. In addition, we also have a set of measurements
+:math:`\\mathbf{z}_t`, that can be used to improve the prediction of the state.
 
 The traditional `Kalman filter <https://en.wikipedia.org/wiki/Kalman_filter>`_,
 as described by :cite:p:`kalman1960` computes a state in two steps:
@@ -60,10 +60,10 @@ as described by :cite:p:`kalman1960` computes a state in two steps:
 .. math::
     \\begin{array}{rcl}
     \\hat{\\mathbf{x}}_t &=& \\mathbf{F}\\mathbf{x}_{t-1} + \\mathbf{Bu}_t \\\\
-    \\hat{\\mathbf{P}}_t &=& \\mathbf{F}(\\mathbf{x}_{t-1}, \\mathbf{u}_t)\\mathbf{P}_{t-1}\\mathbf{F}^T(\\mathbf{x}_{t-1}, \\mathbf{u}_t) + \\mathbf{Q}_t
+    \\hat{\\mathbf{P}}_t &=& \\mathbf{F}\\mathbf{P}_{t-1}\\mathbf{F}^T + \\mathbf{Q}_t
     \\end{array}
 
-2. The **correction step** rectifies the estimation with a measurement (or set
+2. The **correction step** improves the prediction with a measurement (or set
    of measurements) :math:`\\mathbf{z}_t` at time :math:`t`.
 
 .. math::
@@ -251,6 +251,9 @@ The weights :math:`W` are computed as:
     W_i^{(m)} = W_i^{(c)} &=& \\frac{1}{2(n + \\lambda)} \\quad \\text{for} \\quad i=1,2,\\ldots,2n
     \\end{array}
 
+where the weights :math:`W^{(m)}` are used to compute the mean, and the weights
+:math:`W^{(c)}` are used to compute the covariance.
+
 The constant :math:`\\beta` is used to incorporate prior knowledge about the
 distribution of the random variable, and is usually set to :math:`2` for
 Gaussian distributions :cite:p:`wan2000`.
@@ -262,9 +265,9 @@ standard linear operations, which makes the UKF suitable to any process model.
 UKF for Attitude Estimation
 ---------------------------
 
-In this implementation, we build a simple model for the UKF, so that we can
-focus on the details of the algorithm. Once the basic structure is understood,
-we could extend the model to include more complex systems.
+In this implementation, we build a simple UKF for the attitude estimation, so
+that we can focus on the details of the algorithm. Once the basic structure is
+understood, we could extend the model to include more complex systems.
 
 We start by defining the state vector :math:`\\mathbf{x}_t`, and the
 measurement vector :math:`\\mathbf{z}_t` as:
@@ -276,12 +279,33 @@ measurement vector :math:`\\mathbf{z}_t` as:
     \\mathbf{z}_t &=& \\begin{bmatrix} a_x & a_y & a_z \\end{bmatrix}^T
     \\end{array}
 
-Given the initial state :math:`\\mathbf{x}_0`, its covariance matrix
-:math:`\\mathbf{P}_0` the UKF algorithm can be summarized as follows:
+where the state vector :math:`\\mathbf{x}_t` is a quaternion representing the
+orientation, and the measurement vector :math:`\\mathbf{z}_t` contains the
+readings of a tri-axial accelerometer.
+
+Given the initial state :math:`\\mathbf{x}_0`, and its covariance matrix
+:math:`\\mathbf{P}_0\\in\\mathbb{R}^{4\\times 4}`, the UKF algorithm can be
+summarized as follows:
 
 **Prediction**:
 
 1. Calculate the sigma points
+
+2. Propagate the sigma points through the process model
+
+3. Compute the predicted state mean and covariance
+
+**Correction**:
+
+4. Transform the predicted sigma points to the measurement space
+
+5. Compute the predicted measurement mean and covariance
+
+6. Compute the cross-covariance
+
+7. Compute the Kalman gain
+
+8. Update the state and covariance
 
 .. seealso::
 
