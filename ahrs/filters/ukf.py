@@ -192,12 +192,16 @@ But, how do we obtain the matrix form of the `square root
 <https://en.wikipedia.org/wiki/Square_root_of_a_matrix>`_ of
 :math:`(n + \\lambda)\\mathbf{P_{xx}}`?
 
-This is where the `Cholesky decomposition <https://en.wikipedia.org/wiki/Cholesky_decomposition>`_
-comes in. The Cholesky decomposition of a `positive-definite matrix
-<https://en.wikipedia.org/wiki/Definite_matrix>`_ :math:`\\mathbf{A}` is a
-lower triangular matrix :math:`\\mathbf{L}` such that :math:`\\mathbf{A} =
-\\mathbf{LL}^T`. The square root of :math:`\\mathbf{A}` is then
-:math:`\\mathbf{L}`.
+Because :math:`\\mathbf{P_{xx}}` is a covariance matrix, it means it is
+symmetric and positive-definite.
+
+The `Cholesky decomposition <https://en.wikipedia.org/wiki/Cholesky_decomposition>`_
+of a `positive-definite matrix <https://en.wikipedia.org/wiki/Definite_matrix>`_
+:math:`\\mathbf{A}` is a lower triangular matrix :math:`\\mathbf{L}` such that
+:math:`\\mathbf{A} = \\mathbf{LL}^T`.
+
+The square root of :math:`\\mathbf{P_{xx}}` is then
+:math:`\\mathbf{L}=\\mathrm{chol}(\\mathbf{P_{xx}})`.
 
 The Cholesky decomposition is preferred because:
 
@@ -227,7 +231,7 @@ transformed points :math:`\\mathcal{Y}`.
 
 .. math::
 
-    \\mathcal{Y}_i = f(\\mathcal{X}_i)
+    \\mathcal{Y} = f(\\mathcal{X})
 
 Their **mean** is given by their wieghted sum:
 
@@ -239,7 +243,9 @@ And their **covariance** by their weighted outer product:
 
 .. math::
 
-    \\boxed{\\mathbf{P_{yy}} = \\sum_{i=0}^{2n} W_i^{(c)} (\\mathcal{Y}_i - \\bar{\\mathbf{y}})(\\mathcal{Y}_i - \\bar{\\mathbf{y}})^T}
+    \\boxed{\\mathbf{P_{yy}} = \\sum_{i=0}^{2n} W_i^{(c)} (\\mathcal{Y}_i - \\bar{\\mathbf{y}})(\\mathcal{Y}_i - \\bar{\\mathbf{y}})^T + \\mathbf{Q}}
+
+with :math:`\\mathbf{Q}` being the process noise covariance.
 
 The weights :math:`W` are computed as:
 
@@ -291,21 +297,62 @@ summarized as follows:
 
 1. Calculate the sigma points
 
+.. math::
+
+    \\mathcal{X} = \\Big\\{ \\mathcal{X}_0 \\; , \\quad\\mathcal{X}_i \\; , \\quad\\mathcal{X}_{i+n} \\Big\\}
+
 2. Propagate the sigma points through the process model
 
+.. math::
+
+    \\mathcal{Y} = f(\\mathcal{X})
+
 3. Compute the predicted state mean and covariance
+
+.. math::
+
+    \\begin{array}{rcl}
+    \\bar{\\mathbf{y}} &=& \\sum_{i=0}^{2n} W_i^{(m)} \\mathcal{Y}_i \\\\ \\\\
+    \\mathbf{P}_{yy} &=& \\sum_{i=0}^{2n} W_i^{(c)} (\\mathcal{Y}_i - \\bar{\\mathbf{y}})(\\mathcal{Y}_i - \\bar{\\mathbf{y}})^T + \\mathbf{Q}
+    \\end{array}
 
 **Correction**:
 
 4. Transform the predicted sigma points to the measurement space
 
+.. math::
+
+    \\mathcal{Z} = h(\\mathcal{Y})
+
 5. Compute the predicted measurement mean and covariance
+
+.. math::
+
+    \\begin{array}{rcl}
+    \\bar{\\mathbf{z}} &=& \\sum_{i=0}^{2n} W_i^{(m)} \\mathcal{Y}_i \\\\ \\\\
+    \\mathbf{P}_{yy} &=& \\sum_{i=0}^{2n} W_i^{(c)} (\\mathcal{Y}_i - \\bar{\\mathbf{y}})(\\mathcal{Y}_i - \\bar{\\mathbf{y}})^T + \\mathbf{R}
+    \\end{array}
 
 6. Compute the cross-covariance
 
+.. math::
+
+    \\mathbf{P}_{xy} = \\sum_{i=0}^{2n} W_i^{(c)} (\\mathcal{X}_i - \\bar{\\mathbf{x}})(\\mathcal{Y}_i - \\bar{\\mathbf{y}})^T
+
 7. Compute the Kalman gain
 
+.. math::
+
+    \\mathbf{K} = \\mathbf{P}_{xy} \\mathbf{P}_{yy}^{-1}
+
 8. Update the state and covariance
+
+.. math::
+
+    \\begin{array}{rcl}
+    \\mathbf{x}_t &=& \\bar{\\mathbf{x}} + \\mathbf{K} (\\mathbf{z}_t - \\bar{\\mathbf{z}}) \\\\ \\\\
+    \\mathbf{P}_t &=& \\mathbf{P}_{xx} - \\mathbf{K} \\mathbf{P}_{yy} \\mathbf{K}^T
+    \\end{array}
 
 .. seealso::
 
@@ -373,6 +420,7 @@ class UKF:
         acc_normalized = acc / np.linalg.norm(acc)
 
         # 2. Generate sigma points
+        self.P += self.Q
         sigma_points = self.compute_sigma_points(q, self.P)
 
         # 3. Process model - propagate sigma points with gyro data (eq. 37)
@@ -385,11 +433,11 @@ class UKF:
         # Predicted States difference: x_i - x_bar
         predicted_state_diffs = [points.product(predicted_state_mean.conjugate) * 2.0 for points in predicted_sigma_points]
 
-        # 5. Predicted state covariance (using error quaternions) (eq. 70)
+        # 5. Predicted state covariance (using error quaternions)
         predicted_state_covariance = np.zeros((3, 3))   # 3x3 for orientation error
         for i, eq in enumerate(predicted_state_diffs):
             predicted_state_covariance += self.weight_covariance[i] * np.outer(eq[1:], eq[1:])
-        predicted_state_covariance += self.Q[1:4, 1:4]  # Add process noise to orientation part
+        # predicted_state_covariance += self.Q[1:4, 1:4]  # Add process noise to orientation part
 
         ## Correction
         # 6. Transform sigma points to measurement space (predicted accelerometer readings) (eq. 16)
