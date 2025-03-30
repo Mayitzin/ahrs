@@ -245,7 +245,8 @@ And their **covariance** by their weighted outer product:
 
     \\boxed{\\mathbf{P_{yy}} = \\sum_{i=0}^{2n} W_i^{(c)} (\\mathcal{Y}_i - \\bar{\\mathbf{y}})(\\mathcal{Y}_i - \\bar{\\mathbf{y}})^T + \\mathbf{Q}}
 
-with :math:`\\mathbf{Q}` being the process noise covariance.
+with :math:`\\mathbf{Q}` being the :math:`4\\times 4` process noise covariance
+matrix.
 
 The weights :math:`W` are computed as:
 
@@ -257,7 +258,7 @@ The weights :math:`W` are computed as:
     W_i^{(m)} = W_i^{(c)} &=& \\frac{1}{2(n + \\lambda)} \\quad \\text{for} \\quad i=1,2,\\ldots,2n
     \\end{array}
 
-where the weights :math:`W^{(m)}` are used to compute the mean, and the weights
+The weights :math:`W^{(m)}` are used to compute the mean, and the weights
 :math:`W^{(c)}` are used to compute the covariance.
 
 The constant :math:`\\beta` is used to incorporate prior knowledge about the
@@ -288,6 +289,15 @@ measurement vector :math:`\\mathbf{z}_t` as:
 where the state vector :math:`\\mathbf{x}_t` is a quaternion representing the
 orientation, and the measurement vector :math:`\\mathbf{z}_t` contains the
 readings of a tri-axial accelerometer.
+
+Notice we don't extend the state vector to include the gyroscope biases like
+other implementations do. For the sake of simplicity we are not interested in
+estimating their biases in this implementation.
+
+The estimation process is done as a two-step filter consisting of an attitude
+propagation (using the gyroscope) and a correction (using the accelerometer.)
+
+**UKF Summary**
 
 Given the initial state :math:`\\mathbf{x}_0`, and its covariance matrix
 :math:`\\mathbf{P}_0\\in\\mathbb{R}^{4\\times 4}`, the UKF algorithm can be
