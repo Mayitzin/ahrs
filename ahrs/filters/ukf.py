@@ -282,13 +282,13 @@ measurement vector :math:`\\mathbf{z}_t` as:
 .. math::
 
     \\begin{array}{rcl}
-    \\mathbf{x}_t &=& \\begin{bmatrix} q_w & q_x & q_y & q_z \\end{bmatrix}^T \\\\ \\\\
+    \\mathbf{x}_t = \\mathbf{q}_t &=& \\begin{bmatrix} q_w & q_x & q_y & q_z \\end{bmatrix}^T \\\\ \\\\
     \\mathbf{z}_t &=& \\begin{bmatrix} a_x & a_y & a_z \\end{bmatrix}^T
     \\end{array}
 
-where the state vector :math:`\\mathbf{x}_t` is a quaternion representing the
-orientation, and the measurement vector :math:`\\mathbf{z}_t` contains the
-readings of a tri-axial accelerometer.
+where the state vector :math:`\\mathbf{x}_t=\\mathbf{q}_t` is a quaternion
+representing the orientation, and the measurement vector :math:`\\mathbf{z}_t`
+contains the readings of a tri-axial accelerometer.
 
 Notice we don't extend the state vector to include the gyroscope biases like
 other implementations do. For the sake of simplicity we are not interested in
@@ -296,6 +296,48 @@ estimating their biases in this implementation.
 
 The estimation process is done as a two-step filter consisting of an attitude
 propagation (using the gyroscope) and a correction (using the accelerometer.)
+
+**Attitude Propagation**
+
+For the propagation we use the the gyroscope data to measure the angular
+velocity. Based on the time spent between :math:`t-1` and :math:`t` (known as
+the time step :math:`\\Delta t`) we can obtain the angular displacement
+:math:`\\boldsymbol\\theta_t`, and add it to the previous attitude
+:math:`\\mathbf{q}_{t-1}` to get the new attitude :math:`\\hat{\\mathbf{q}}_t`:
+
+.. math::
+
+    \\begin{array}{rcl}
+    \\hat{\\mathbf{q}}_t &=& \\mathbf{q}_{t-1} + \\boldsymbol\\theta_t \\\\
+    &=& \\mathbf{q}_{t-1} + \\int_{t-1}^t\\boldsymbol\\omega\\, dt
+    \\end{array}
+
+However, this operation is not linear, and we cannot use it in the Kalman
+filter. We need to use a linear operation to propagate the attitude. This
+common operation, known as **attitude propagation**, defines the **Process
+model as**:
+
+.. math::
+    \\begin{array}{rcl}
+    \\hat{\\mathbf{q}}_t &=& \\mathbf{f}(\\mathbf{q}_{t-1}, \\boldsymbol\\omega_t) \\\\
+    &=&\\Big(\\mathbf{I}_4 + \\frac{\\Delta t}{2}\\boldsymbol\\Omega_t\\Big)\\mathbf{q}_{t-1} \\\\
+    \\begin{bmatrix}\\hat{q_w} \\\\ \\hat{q_x} \\\\ \\hat{q_y} \\\\ \\hat{q_z}\\end{bmatrix}
+    &=&
+    \\begin{bmatrix}
+        q_w - \\frac{\\Delta t}{2} \\omega_x q_x - \\frac{\\Delta t}{2} \\omega_y q_y - \\frac{\\Delta t}{2} \\omega_z q_z\\\\
+        q_x + \\frac{\\Delta t}{2} \\omega_x q_w - \\frac{\\Delta t}{2} \\omega_y q_z + \\frac{\\Delta t}{2} \\omega_z q_y\\\\
+        q_y + \\frac{\\Delta t}{2} \\omega_x q_z + \\frac{\\Delta t}{2} \\omega_y q_w - \\frac{\\Delta t}{2} \\omega_z q_x\\\\
+        q_z - \\frac{\\Delta t}{2} \\omega_x q_y + \\frac{\\Delta t}{2} \\omega_y q_x + \\frac{\\Delta t}{2} \\omega_z q_w
+    \\end{bmatrix}
+    \\end{array}
+
+where the term :math:`\\mathbf{I}_4 + \\frac{\\Delta t}{2}\\boldsymbol\\Omega_t`
+is a linearized approximation of the attitude propagation.
+
+.. tip::
+
+    For more details about this linear operation, please refer to the `Attitude
+    from Angular Rate <./angular.html>`_ documentation.
 
 **UKF Summary**
 
