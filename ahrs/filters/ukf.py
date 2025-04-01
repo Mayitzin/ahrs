@@ -269,6 +269,73 @@ The sigma points capture the same mean and covariance irrespective of the
 choice of matrix square root :cite:p:`julier1997`, and they are computed using
 standard linear operations, which makes the UKF suitable to any process model.
 
+**UKF Summary**
+
+Given the initial state :math:`\\mathbf{x}_0`, and its covariance matrix
+:math:`\\mathbf{P}_0\\in\\mathbb{R}^{4\\times 4}`, the UKF algorithm can be
+summarized as follows:
+
+**Prediction**:
+
+1. Calculate the sigma points
+
+.. math::
+
+    \\mathcal{X} = \\Big\\{ \\mathcal{X}_0 \\; , \\quad\\mathcal{X}_i \\; , \\quad\\mathcal{X}_{i+n} \\Big\\}
+
+2. Propagate the sigma points through the process model
+
+.. math::
+
+    \\mathcal{Y} = f(\\mathcal{X})
+
+3. Compute the predicted state mean and covariance
+
+.. math::
+
+    \\begin{array}{rcl}
+    \\bar{\\mathbf{y}} &=& \\sum_{i=0}^{2n} W_i^{(m)} \\mathcal{Y}_i \\\\ \\\\
+    \\mathbf{P}_{yy} &=& \\sum_{i=0}^{2n} W_i^{(c)} (\\mathcal{Y}_i - \\bar{\\mathbf{y}})(\\mathcal{Y}_i - \\bar{\\mathbf{y}})^T + \\mathbf{Q}
+    \\end{array}
+
+**Correction**:
+
+4. Transform the predicted sigma points to the measurement space
+
+.. math::
+
+    \\mathcal{Z} = h(\\mathcal{Y})
+
+5. Compute the predicted measurement mean and covariance
+
+.. math::
+
+    \\begin{array}{rcl}
+    \\bar{\\mathbf{z}} &=& \\sum_{i=0}^{2n} W_i^{(m)} \\mathcal{Y}_i \\\\ \\\\
+    \\mathbf{P}_{yy} &=& \\sum_{i=0}^{2n} W_i^{(c)} (\\mathcal{Y}_i - \\bar{\\mathbf{y}})(\\mathcal{Y}_i - \\bar{\\mathbf{y}})^T + \\mathbf{R}
+    \\end{array}
+
+6. Compute the cross-covariance
+
+.. math::
+
+    \\mathbf{P}_{xy} = \\sum_{i=0}^{2n} W_i^{(c)} (\\mathcal{X}_i - \\bar{\\mathbf{x}})(\\mathcal{Y}_i - \\bar{\\mathbf{y}})^T
+
+7. Compute the Kalman gain
+
+.. math::
+
+    \\mathbf{K} = \\mathbf{P}_{xy} \\mathbf{P}_{yy}^{-1}
+
+8. Update the state and covariance
+
+.. math::
+
+    \\begin{array}{rcl}
+    \\mathbf{x}_t &=& \\bar{\\mathbf{x}} + \\mathbf{K} (\\mathbf{z}_t - \\bar{\\mathbf{z}}) \\\\ \\\\
+    \\mathbf{P}_t &=& \\mathbf{P}_{xx} - \\mathbf{K} \\mathbf{P}_{yy} \\mathbf{K}^T
+    \\end{array}
+
 UKF for Attitude Estimation
 ---------------------------
 
@@ -354,73 +421,6 @@ is a linearized approximation of the attitude propagation.
 
     For more details about this linear operation, please refer to the `Attitude
     from Angular Rate <./angular.html>`_ documentation.
-
-**UKF Summary**
-
-Given the initial state :math:`\\mathbf{x}_0`, and its covariance matrix
-:math:`\\mathbf{P}_0\\in\\mathbb{R}^{4\\times 4}`, the UKF algorithm can be
-summarized as follows:
-
-**Prediction**:
-
-1. Calculate the sigma points
-
-.. math::
-
-    \\mathcal{X} = \\Big\\{ \\mathcal{X}_0 \\; , \\quad\\mathcal{X}_i \\; , \\quad\\mathcal{X}_{i+n} \\Big\\}
-
-2. Propagate the sigma points through the process model
-
-.. math::
-
-    \\mathcal{Y} = f(\\mathcal{X})
-
-3. Compute the predicted state mean and covariance
-
-.. math::
-
-    \\begin{array}{rcl}
-    \\bar{\\mathbf{y}} &=& \\sum_{i=0}^{2n} W_i^{(m)} \\mathcal{Y}_i \\\\ \\\\
-    \\mathbf{P}_{yy} &=& \\sum_{i=0}^{2n} W_i^{(c)} (\\mathcal{Y}_i - \\bar{\\mathbf{y}})(\\mathcal{Y}_i - \\bar{\\mathbf{y}})^T + \\mathbf{Q}
-    \\end{array}
-
-**Correction**:
-
-4. Transform the predicted sigma points to the measurement space
-
-.. math::
-
-    \\mathcal{Z} = h(\\mathcal{Y})
-
-5. Compute the predicted measurement mean and covariance
-
-.. math::
-
-    \\begin{array}{rcl}
-    \\bar{\\mathbf{z}} &=& \\sum_{i=0}^{2n} W_i^{(m)} \\mathcal{Y}_i \\\\ \\\\
-    \\mathbf{P}_{yy} &=& \\sum_{i=0}^{2n} W_i^{(c)} (\\mathcal{Y}_i - \\bar{\\mathbf{y}})(\\mathcal{Y}_i - \\bar{\\mathbf{y}})^T + \\mathbf{R}
-    \\end{array}
-
-6. Compute the cross-covariance
-
-.. math::
-
-    \\mathbf{P}_{xy} = \\sum_{i=0}^{2n} W_i^{(c)} (\\mathcal{X}_i - \\bar{\\mathbf{x}})(\\mathcal{Y}_i - \\bar{\\mathbf{y}})^T
-
-7. Compute the Kalman gain
-
-.. math::
-
-    \\mathbf{K} = \\mathbf{P}_{xy} \\mathbf{P}_{yy}^{-1}
-
-8. Update the state and covariance
-
-.. math::
-
-    \\begin{array}{rcl}
-    \\mathbf{x}_t &=& \\bar{\\mathbf{x}} + \\mathbf{K} (\\mathbf{z}_t - \\bar{\\mathbf{z}}) \\\\ \\\\
-    \\mathbf{P}_t &=& \\mathbf{P}_{xx} - \\mathbf{K} \\mathbf{P}_{yy} \\mathbf{K}^T
-    \\end{array}
 
 .. seealso::
 
