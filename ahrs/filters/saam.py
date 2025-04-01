@@ -4,21 +4,44 @@ This novel estimator proposed by :cite:p:`wu2018-2`, offers an extremely
 simplified computation of `Davenport's <../davenport.html>`_ solution to
 `Wahba's problem <https://en.wikipedia.org/wiki/Wahba%27s_problem>`_, where the
 full solution is reduced to a couple of floating point operations, without
-losing much accuracy, and sparing computational time.
+losing much accuracy, and sparing computing time.
 
-The accelerometer and magnetometer have their normalized observations
+The accelerometer and magnetometer have their normalized **measurements**
 :math:`^b\\mathbf{a}=\\begin{bmatrix}a_x&a_y&a_z\\end{bmatrix}^T`,
 :math:`^b\\mathbf{m}=\\begin{bmatrix}m_x&m_y&m_z\\end{bmatrix}^T` in the body
 frame :math:`b`.
 
-Their corresponding normalized vectors :math:`^r\\mathbf{a}=\\begin{bmatrix}0&0&1\\end{bmatrix}^T` and
+Their corresponding normalized **reference** vectors
+:math:`^r\\mathbf{a}=\\begin{bmatrix}0&0&1\\end{bmatrix}^T` and
 :math:`^r\\mathbf{m}=\\begin{bmatrix}m_N&0&m_D\\end{bmatrix}^T` are such that:
 
 .. math::
     a_x^2+a_y^2+a_z^2 = m_x^2+m_y^2+m_z^2 = m_N^2+m_D^2 = 1
 
-and they are related by the `direction cosine matrix <../dcm.html>`_
-:math:`\\mathbf{C}\\in SO(3)` with the minimization of Wahba's problem as:
+We define a rotation matrix :math:`\\mathbf{C}\\in SO(3)` that transforms the
+reference vectors into the body frame:
+
+.. math::
+
+    \\mathbf{C}\\,^r\\mathbf{a}=\\,^b\\mathbf{a}
+
+and
+
+.. math::
+
+    \\mathbf{C}\\,^r\\mathbf{m}=\\,^b\\mathbf{m}
+
+Our goal is to find the rotation matrix :math:`\\mathbf{C}` that minimizes the
+error between the measured and reference vectors
+
+.. math::
+
+    \\begin{array}{rcl}
+    \\|\\,^b\\mathbf{a}-\\mathbf{C}\\,^r\\mathbf{a}\\|^2 \\approx 0 \\\\ \\\\
+    \\|\\,^b\\mathbf{m}-\\mathbf{C}\\,^r\\mathbf{m}\\|^2 \\approx 0
+    \\end{array}
+
+which is equivalent to solving the following optimization problem:
 
 .. math::
     \\mathrm{min} \\big(w\\|\\,^b\\mathbf{a}-\\mathbf{C}\\,^r\\mathbf{a}\\|^2+(1-w)\\|\\,^b\\mathbf{m}-\\mathbf{C}\\,^r\\mathbf{m}\\|^2\\big)
@@ -51,7 +74,7 @@ in which :math:`B_{ij}` stands for the element of :math:`\\mathbf{B}` in the
 
 .. note::
     Indexing is normally starting from zero, especially in computational setups,
-    but the article starts it from one, and it is kept like that in this
+    but the article starts indexing from one, and it is kept like that in this
     documentation to coincide with the original document.
 
 The eigenvalues of :math:`\\mathbf{K}` are given by:
@@ -76,7 +99,7 @@ The local `geomagnetic dip angle  <https://en.wikipedia.org/wiki/Magnetic_dip>`_
 :math:`\\theta\\in[-\\frac{\\pi}{2}, \\frac{\\pi}{2}]` ensures that
 :math:`m_N=\\cos\\theta>0` and :math:`\\lambda_{\\mathbf{K},1}>\\lambda_{\\mathbf{K},2}>\\lambda_{\\mathbf{K},3}>\\lambda_{\\mathbf{K},4}`.
 
-So, the attitude quaternion should be the eigenvector associated to the
+Therefore, the attitude quaternion should be the eigenvector associated to the
 eigenvalue :math:`\\lambda_{\\mathbf{K},1}`.
 
 The dip angle is not required in the accelerometer-magnetometer configuration,
