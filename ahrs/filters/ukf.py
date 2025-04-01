@@ -200,8 +200,8 @@ of a `positive-definite matrix <https://en.wikipedia.org/wiki/Definite_matrix>`_
 :math:`\\mathbf{A}` is a lower triangular matrix :math:`\\mathbf{L}` such that
 :math:`\\mathbf{A} = \\mathbf{LL}^T`.
 
-The square root of :math:`\\mathbf{P_{xx}}` is then
-:math:`\\mathbf{L}=\\mathrm{chol}(\\mathbf{P_{xx}})`.
+The square root of :math:`(n + \\lambda)\\mathbf{P_{xx}}` is then
+:math:`\\mathbf{L}=\\mathrm{chol}((n + \\lambda)\\mathbf{P_{xx}})`.
 
 The Cholesky decomposition is preferred because:
 
@@ -343,39 +343,70 @@ In this implementation, we build a simple UKF for the attitude estimation, so
 that we can focus on the details of the algorithm. Once the basic structure is
 understood, we could extend the model to include more complex systems.
 
-We start by defining the state vector :math:`\\mathbf{x}_t`, and the
-measurement vector :math:`\\mathbf{z}_t` as:
+We start by defining the state vector :math:`\\mathbf{x}_t\\in\\mathbb{R}^4`,
+the input vector :math:`\\mathbf{u}_t\\in\\mathbb{R}^3`, and the measurement
+vector :math:`\\mathbf{z}_t\\in\\mathbb{R}^3` as:
 
 .. math::
 
     \\begin{array}{rcl}
-    \\mathbf{x}_t = \\mathbf{q}_t &=& \\begin{bmatrix} q_w & q_x & q_y & q_z \\end{bmatrix}^T \\\\ \\\\
+    \\mathbf{x}_t &=& \\begin{bmatrix} q_w & q_x & q_y & q_z \\end{bmatrix}^T \\\\ \\\\
+    \\mathbf{u}_t &=& \\begin{bmatrix} \\omega_x & \\omega_y & \\omega_z \\end{bmatrix}^T \\\\ \\\\
     \\mathbf{z}_t &=& \\begin{bmatrix} a_x & a_y & a_z \\end{bmatrix}^T
     \\end{array}
 
-where the state vector :math:`\\mathbf{x}_t=\\mathbf{q}_t` is a quaternion
-representing the orientation, and the measurement vector :math:`\\mathbf{z}_t`
-contains the readings of a tri-axial accelerometer.
+where the state vector :math:`\\mathbf{x}_t` is the quaternion representing the
+orientation at time :math:`t`, the input vector :math:`\\mathbf{u}_t` contains
+the angular velocity readings from a tri-axial gyroscope, and the measurement
+vector :math:`\\mathbf{z}_t` has the readings of a tri-axial accelerometer.
 
 Notice we don't extend the state vector to include the gyroscope biases like
-other implementations do. For the sake of simplicity we are not interested in
-estimating their biases in this implementation.
+others do. For the sake of simplicity we don't estimate these biases, and
+assume the sensor readings are already calibrated.
 
 **Sigma Points**
 
-The sigma points are first computed given the previous state and covariance.
-Given that the state vector has 4 items, the sigma points are computed as:
+Given the previous state and covariance, the sigma points are computed first.
+
+Using the cholesky decomposition we obtain the matrix square root:
+
+.. math::
+
+    \\mathbf{L} = \\mathrm{chol}\\Big(\\sqrt{(n + \\lambda)\\mathbf{P_{xx}}}\\Big)
+
+where :math:`n=4` is the number of items in the state vector :math:`\\mathbf{x}`,
+and :math:`\\lambda=\\alpha^2(n + \\kappa) - n` is the scaling parameter.
+
+Using the default values :math:`\\alpha=1e-3`, and :math:`\\kappa=0`, we get
+:math:`\\lambda=-3.999996`, and :math:`\\mathbf{L} = \\mathrm{chol}\\Big(\\sqrt{0.000004\\mathbf{P_{xx}}}\\Big)`.
+
+Then we compute the sigma points using the equation:
 
 .. math::
 
     \\begin{array}{rcl}
     \\mathcal{X}_0 &=& \\mathbf{q}_{t-1} \\\\
-    \\mathcal{X}_i &=& \\mathbf{q}_{t-1} + \\Big(\\sqrt{(n + \\lambda)\\mathbf{P_{xx}}}\\Big)_i \\\\
-    \\mathcal{X}_{i+n} &=& \\mathbf{q}_{t-1} - \\Big(\\sqrt{(n + \\lambda)\\mathbf{P_{xx}}}\\Big)_i
+    \\mathcal{X}_i &=& \\mathbf{q}_{t-1} + \\mathbf{L}_i \\\\
+    \\mathcal{X}_{i+n} &=& \\mathbf{q}_{t-1} - \\mathbf{L}_i
     \\end{array}
 
-where :math:`\\mathbf{P_{xx}}` is the covariance matrix of the state vector
-:math:`\\mathbf{x}_t`.
+The first sigma point :math:`\\mathcal{X}_0` is always equal to the previous
+state :math:`\\mathbf{q}_{t-1}`. The other sigma points are obtained by adding
+and subtracting the columns of :math:`\\mathbf{L}` to the mean.
+
+Because the state vector has 4 items, we obtain a set of 9 sigma points:
+
+.. math::
+
+    \\begin{array}{rcl}
+    \\mathcal{X} &=&
+    \\begin{Bmatrix}
+        q_w & q_w + \\mathbf{L}_{1,1} & q_w + \\mathbf{L}_{1,2} & q_w + \\mathbf{L}_{1,3} & q_w + \\mathbf{L}_{1,4} & q_w - \\mathbf{L}_{1,1} & q_w - \\mathbf{L}_{1,2} & q_w - \\mathbf{L}_{1,3} & q_w - \\mathbf{L}_{1,4} \\\\
+        q_x & q_x + \\mathbf{L}_{2,1} & q_x + \\mathbf{L}_{2,2} & q_x + \\mathbf{L}_{2,3} & q_x + \\mathbf{L}_{2,4} & q_x - \\mathbf{L}_{2,1} & q_x - \\mathbf{L}_{2,2} & q_x - \\mathbf{L}_{2,3} & q_x - \\mathbf{L}_{2,4} \\\\
+        q_y & q_y + \\mathbf{L}_{3,1} & q_y + \\mathbf{L}_{3,2} & q_y + \\mathbf{L}_{3,3} & q_y + \\mathbf{L}_{3,4} & q_y - \\mathbf{L}_{3,1} & q_y - \\mathbf{L}_{3,2} & q_y - \\mathbf{L}_{3,3} & q_y - \\mathbf{L}_{3,4} \\\\
+        q_z & q_z + \\mathbf{L}_{4,1} & q_z + \\mathbf{L}_{4,2} & q_z + \\mathbf{L}_{4,3} & q_z + \\mathbf{L}_{4,4} & q_z - \\mathbf{L}_{4,1} & q_z - \\mathbf{L}_{4,2} & q_z - \\mathbf{L}_{4,3} & q_z - \\mathbf{L}_{4,4}
+    \\end{Bmatrix}
+    \\end{array}
 
 The estimation process is done as a two-step filter consisting of an attitude
 propagation (using the gyroscope) and a correction (using the accelerometer.)
