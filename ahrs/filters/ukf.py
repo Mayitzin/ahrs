@@ -574,7 +574,8 @@ class UKF:
         # 11. Update state with measurement
         innovation = acc_normalized - predicted_measurement_mean                    # Innovation (measurement residual) (eq. 44)
         correction_vector = kalman_gain @ innovation                                # Correction as a rotation vector
-        correction_quaternion = Quaternion([1.0, *(correction_vector/2.0)])         # Convert to quaternion (small angle approximation)
+        theta = np.linalg.norm(correction_vector)  # Angle of rotation
+        correction_quaternion = Quaternion([np.cos(theta/2.0), *(np.sin(theta/2.0) * correction_vector/theta)])  # Convert to quaternion
         updated_quaternion = predicted_state_mean.product(correction_quaternion)    # Apply correction to predicted state
 
         # 12. Re-define state covariance
