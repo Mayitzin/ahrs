@@ -37,8 +37,8 @@ error between the measured and reference vectors
 .. math::
 
     \\begin{array}{rcl}
-    \\|\\,^b\\mathbf{a}-\\mathbf{C}\\,^r\\mathbf{a}\\|^2 \\approx 0 \\\\ \\\\
-    \\|\\,^b\\mathbf{m}-\\mathbf{C}\\,^r\\mathbf{m}\\|^2 \\approx 0
+    \\|\\,^b\\mathbf{a}-\\mathbf{C}\\,^r\\mathbf{a}\\|^2 & \\simeq & 0 \\\\ \\\\
+    \\|\\,^b\\mathbf{m}-\\mathbf{C}\\,^r\\mathbf{m}\\|^2 & \\simeq & 0
     \\end{array}
 
 which is equivalent to solving the following optimization problem:
