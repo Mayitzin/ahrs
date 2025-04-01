@@ -380,7 +380,7 @@ and :math:`\\lambda=\\alpha^2(n + \\kappa) - n` is the scaling parameter.
 Using the default values :math:`\\alpha=1e-3`, and :math:`\\kappa=0`, we get
 :math:`\\lambda=-3.999996`, and :math:`\\mathbf{L} = \\mathrm{chol}\\Big(\\sqrt{0.000004\\mathbf{P_{xx}}}\\Big)`.
 
-Then we compute the sigma points using the equation:
+Then, we compute the sigma points using the equations:
 
 .. math::
 
@@ -400,6 +400,12 @@ Because the state vector has 4 items, we obtain a set of 9 sigma points:
 
     \\begin{array}{rcl}
     \\mathcal{X} &=&
+    \\begin{Bmatrix}
+        \\big| & \\big| & \\big| & \\big| & \\big| & \\big| & \\big| & \\big| & \\big| \\\\
+        \\mathcal{X}_0 & \\mathcal{X}_1 & \\mathcal{X}_2 & \\mathcal{X}_3 & \\mathcal{X}_4 & \\mathcal{X}_5 & \\mathcal{X}_6 & \\mathcal{X}_7 & \\mathcal{X}_8 \\\\
+        \\big| & \\big| & \\big| & \\big| & \\big| & \\big| & \\big| & \\big| & \\big|
+    \\end{Bmatrix} \\\\ \\\\
+    &=&
     \\begin{Bmatrix}
         q_w & q_w + \\mathbf{L}_{1,1} & q_w + \\mathbf{L}_{1,2} & q_w + \\mathbf{L}_{1,3} & q_w + \\mathbf{L}_{1,4} & q_w - \\mathbf{L}_{1,1} & q_w - \\mathbf{L}_{1,2} & q_w - \\mathbf{L}_{1,3} & q_w - \\mathbf{L}_{1,4} \\\\
         q_x & q_x + \\mathbf{L}_{2,1} & q_x + \\mathbf{L}_{2,2} & q_x + \\mathbf{L}_{2,3} & q_x + \\mathbf{L}_{2,4} & q_x - \\mathbf{L}_{2,1} & q_x - \\mathbf{L}_{2,2} & q_x - \\mathbf{L}_{2,3} & q_x - \\mathbf{L}_{2,4} \\\\
