@@ -343,9 +343,7 @@ In this implementation, we build a simple UKF for the attitude estimation, so
 that we can focus on the details of the algorithm. Once the basic structure is
 understood, we could extend the model to include more complex systems.
 
-We start by defining the state vector :math:`\\mathbf{x}_t\\in\\mathbb{R}^4`,
-the input vector :math:`\\mathbf{u}_t\\in\\mathbb{R}^3`, and the measurement
-vector :math:`\\mathbf{z}_t\\in\\mathbb{R}^3` as:
+We start by defining the main vectors:
 
 .. math::
 
@@ -355,10 +353,12 @@ vector :math:`\\mathbf{z}_t\\in\\mathbb{R}^3` as:
     \\mathbf{z}_t &=& \\begin{bmatrix} a_x & a_y & a_z \\end{bmatrix}^T
     \\end{array}
 
-where the state vector :math:`\\mathbf{x}_t` is the quaternion representing the
-orientation at time :math:`t`, the input vector :math:`\\mathbf{u}_t` contains
-the angular velocity readings from a tri-axial gyroscope, and the measurement
-vector :math:`\\mathbf{z}_t` has the readings of a tri-axial accelerometer.
+where the state vector :math:`\\mathbf{x}_t\\in\\mathbb{R}^4` is the quaternion
+representing the orientation at time :math:`t`, the input vector
+:math:`\\mathbf{u}_t\\in\\mathbb{R}^3` contains the angular velocity readings
+from a tri-axial gyroscope, and the measurement vector
+:math:`\\mathbf{z}_t\\in\\mathbb{R}^3` has the readings of a tri-axial
+accelerometer.
 
 Notice we don't extend the state vector to include the gyroscope biases like
 others do. For the sake of simplicity we don't estimate these biases, and
@@ -390,13 +390,13 @@ Then, we compute the sigma points using the equations:
 .. math::
 
     \\begin{array}{rcl}
-    \\mathcal{X}_0 &=& \\mathbf{q}_{t-1} \\\\
-    \\mathcal{X}_i &=& \\mathbf{q}_{t-1} + \\mathbf{L}_i \\\\
-    \\mathcal{X}_{i+n} &=& \\mathbf{q}_{t-1} - \\mathbf{L}_i
+    \\mathcal{X}_0 &=& \\mathbf{x}_{t-1} \\\\
+    \\mathcal{X}_i &=& \\mathbf{x}_{t-1} + \\mathbf{L}_i \\\\
+    \\mathcal{X}_{i+n} &=& \\mathbf{x}_{t-1} - \\mathbf{L}_i
     \\end{array}
 
 The first sigma point :math:`\\mathcal{X}_0` is always equal to the previous
-state :math:`\\mathbf{q}_{t-1}`. The other sigma points are obtained by adding
+state :math:`\\mathbf{x}_{t-1}`. The other sigma points are obtained by adding
 and subtracting the columns of :math:`\\mathbf{L}` to the mean.
 
 Because the state vector has 4 items, we obtain a set of 9 sigma points:
@@ -428,13 +428,13 @@ For the propagation we use the the gyroscope data to measure the angular
 velocity. Based on the time spent between :math:`t-1` and :math:`t` (known as
 the time step :math:`\\Delta t`) we can obtain the angular displacement
 :math:`\\boldsymbol\\theta_t`, and add it to the previous attitude
-:math:`\\mathbf{q}_{t-1}` to get the new attitude :math:`\\hat{\\mathbf{q}}_t`:
+:math:`\\mathbf{x}_{t-1}` to get the new attitude :math:`\\hat{\\mathbf{q}}_t`:
 
 .. math::
 
     \\begin{array}{rcl}
-    \\hat{\\mathbf{q}}_t &=& \\mathbf{q}_{t-1} + \\boldsymbol\\theta_t \\\\
-    &=& \\mathbf{q}_{t-1} + \\int_{t-1}^t\\boldsymbol\\omega\\, dt
+    \\hat{\\mathbf{x}}_t &=& \\mathbf{x}_{t-1} + \\boldsymbol\\theta_t \\\\
+    &=& \\mathbf{x}_{t-1} + \\int_{t-1}^t\\boldsymbol\\omega\\, dt
     \\end{array}
 
 However, this operation is not linear, and we cannot use it in the Kalman
@@ -444,8 +444,8 @@ model as**:
 
 .. math::
     \\begin{array}{rcl}
-    \\hat{\\mathbf{q}}_t &=& \\mathbf{f}(\\mathbf{q}_{t-1}, \\boldsymbol\\omega_t) \\\\
-    &=&\\Big(\\mathbf{I}_4 + \\frac{\\Delta t}{2}\\boldsymbol\\Omega_t\\Big)\\mathbf{q}_{t-1} \\\\
+    \\hat{\\mathbf{x}}_t &=& \\mathbf{f}(\\mathbf{x}_{t-1}, \\boldsymbol\\omega_t) \\\\
+    &=&\\Big(\\mathbf{I}_4 + \\frac{\\Delta t}{2}\\boldsymbol\\Omega_t\\Big)\\mathbf{x}_{t-1} \\\\
     \\begin{bmatrix}\\hat{q_w} \\\\ \\hat{q_x} \\\\ \\hat{q_y} \\\\ \\hat{q_z}\\end{bmatrix}
     &=&
     \\begin{bmatrix}
