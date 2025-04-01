@@ -377,8 +377,13 @@ Using the cholesky decomposition we obtain the matrix square root:
 where :math:`n=4` is the number of items in the state vector :math:`\\mathbf{x}`,
 and :math:`\\lambda=\\alpha^2(n + \\kappa) - n` is the scaling parameter.
 
-Using the default values :math:`\\alpha=1e-3`, and :math:`\\kappa=0`, we get
-:math:`\\lambda=-3.999996`, and :math:`\\mathbf{L} = \\mathrm{chol}\\Big(\\sqrt{0.000004\\mathbf{P_{xx}}}\\Big)`.
+Using the default values :math:`\\alpha=0.001`, and :math:`\\kappa=0`, we get:
+
+.. math::
+
+    \\lambda = 0.001^2 (4 + 0) - 4 = -3.999996
+
+which yields :math:`\\mathbf{L} = \\mathrm{chol}\\Big(\\sqrt{0.000004\\mathbf{P_{xx}}}\\Big)`.
 
 Then, we compute the sigma points using the equations:
 
