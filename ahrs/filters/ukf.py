@@ -348,12 +348,12 @@ We start by defining the main vectors:
 .. math::
 
     \\begin{array}{rcl}
-    \\mathbf{x}_t &=& \\begin{bmatrix} q_w & q_x & q_y & q_z \\end{bmatrix}^T \\\\ \\\\
-    \\mathbf{u}_t &=& \\begin{bmatrix} \\omega_x & \\omega_y & \\omega_z \\end{bmatrix}^T \\\\ \\\\
-    \\mathbf{z}_t &=& \\begin{bmatrix} a_x & a_y & a_z \\end{bmatrix}^T
+    \\mathbf{x} &=& \\begin{bmatrix} q_w & q_x & q_y & q_z \\end{bmatrix}^T \\\\ \\\\
+    \\mathbf{u} &=& \\begin{bmatrix} \\omega_x & \\omega_y & \\omega_z \\end{bmatrix}^T \\\\ \\\\
+    \\mathbf{z} &=& \\begin{bmatrix} a_x & a_y & a_z \\end{bmatrix}^T
     \\end{array}
 
-where the state vector :math:`\\mathbf{x}_t\\in\\mathbb{R}^4` is the quaternion
+The state vector :math:`\\mathbf{x}_t\\in\\mathbb{R}^4` is the quaternion
 representing the orientation at time :math:`t`, the input vector
 :math:`\\mathbf{u}_t\\in\\mathbb{R}^3` contains the angular velocity readings
 from a tri-axial gyroscope, and the measurement vector
@@ -383,7 +383,7 @@ Using the default values :math:`\\alpha=0.001`, and :math:`\\kappa=0`, we get:
 
     \\lambda = 0.001^2 (4 + 0) - 4 = -3.999996
 
-which yields :math:`\\mathbf{L} = \\mathrm{chol}\\Big(\\sqrt{0.000004\\mathbf{P_{xx}}}\\Big)`.
+which yields :math:`\\mathbf{L} = \\mathrm{chol}\\big(\\sqrt{0.000004\\mathbf{P_{xx}}}\\big)`.
 
 Then, we compute the sigma points using the equations:
 
@@ -578,7 +578,7 @@ class UKF:
         updated_quaternion = predicted_state_mean.product(correction_quaternion)    # Apply correction to predicted state
 
         # 12. Re-define state covariance
-        self.P = np.zeros((4, 4))
+        self.P = np.eye(self.state_dimension) * 0.01
         self.P[1:, 1:] = predicted_state_covariance - kalman_gain @ predicted_measurement_covariance @ kalman_gain.T
 
         return updated_quaternion
