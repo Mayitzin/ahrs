@@ -294,6 +294,22 @@ Notice we don't extend the state vector to include the gyroscope biases like
 other implementations do. For the sake of simplicity we are not interested in
 estimating their biases in this implementation.
 
+**Sigma Points**
+
+The sigma points are first computed given the previous state and covariance.
+Given that the state vector has 4 items, the sigma points are computed as:
+
+.. math::
+
+    \\begin{array}{rcl}
+    \\mathcal{X}_0 &=& \\mathbf{q}_{t-1} \\\\
+    \\mathcal{X}_i &=& \\mathbf{q}_{t-1} + \\Big(\\sqrt{(n + \\lambda)\\mathbf{P_{xx}}}\\Big)_i \\\\
+    \\mathcal{X}_{i+n} &=& \\mathbf{q}_{t-1} - \\Big(\\sqrt{(n + \\lambda)\\mathbf{P_{xx}}}\\Big)_i
+    \\end{array}
+
+where :math:`\\mathbf{P_{xx}}` is the covariance matrix of the state vector
+:math:`\\mathbf{x}_t`.
+
 The estimation process is done as a two-step filter consisting of an attitude
 propagation (using the gyroscope) and a correction (using the accelerometer.)
 
