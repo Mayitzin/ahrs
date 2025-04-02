@@ -455,7 +455,7 @@ the attitude propagation to define the **process model**:
     \\end{bmatrix}
     \\end{array}
 
-where the term :math:`\\mathbf{I}_4 + \\frac{\\Delta t}{2}\\boldsymbol\\Omega_t`
+where the rotation operator :math:`\\big(\\mathbf{I}_4 + \\frac{\\Delta t}{2}\\boldsymbol\\Omega_t\\big)`
 is a truncation up to the second term of the Taylor series expansion of
 :math:`\\int_{t-1}^t\\boldsymbol\\omega\\, dt`.
 
@@ -487,11 +487,10 @@ We propagate each of the sigma points through the process model
 Every :math:`\\mathcal{Y}_i` describes a quaternion. If necessary, they must to
 be normalized after the transformation, so that :math:`\\forall i \\in
 \\{0, \\ldots, 2n\\} \\;, \\|\\mathcal{Y}_i\\|=1`.
-
 .. seealso::
 
-   `EKF <./ekf.html>`_ - Extended Kalman Filter for orientation estimation.
-   `AngularRate <./angular.html>`_ - Attitude propagation using angular rate.
+   - `EKF <./ekf.html>`_ - Extended Kalman Filter for orientation estimation.
+   - `AngularRate <./angular.html>`_ - Attitude propagation using angular rate.
 
 """
 
@@ -565,7 +564,7 @@ class UKF:
         predicted_state_mean = Quaternion(np.sum(self.weight_mean[:, None] * predicted_sigma_points, axis=0))
 
         # Predicted States difference: x_i - x_bar
-        predicted_state_diffs = [points.product(predicted_state_mean.conjugate) * 2.0 for points in predicted_sigma_points]
+        predicted_state_diffs = [Quaternion(point + predicted_state_mean.conj) for point in predicted_sigma_points]
 
         # 5. Predicted state covariance (using error quaternions)
         predicted_state_covariance = np.zeros((3, 3))   # 3x3 for orientation error
