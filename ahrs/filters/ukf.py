@@ -487,6 +487,16 @@ We propagate each of the sigma points through the process model
 Every :math:`\\mathcal{Y}_i` describes a quaternion. If necessary, they must to
 be normalized after the transformation, so that :math:`\\forall i \\in
 \\{0, \\ldots, 2n\\} \\;, \\|\\mathcal{Y}_i\\|=1`.
+
+Now we can compute the predicted state mean and covariance:
+
+.. math::
+
+    \\begin{array}{rcl}
+    \\bar{\\mathbf{y}} &=& \\sum_{i=0}^{2n} W_i^{(m)} \\mathcal{Y}_i \\\\ \\\\
+    \\mathbf{P}_{yy} &=& \\sum_{i=0}^{2n} W_i^{(c)} (\\mathcal{Y}_i - \\bar{\\mathbf{y}})(\\mathcal{Y}_i - \\bar{\\mathbf{y}})^T + \\mathbf{Q}
+    \\end{array}
+
 .. seealso::
 
    - `EKF <./ekf.html>`_ - Extended Kalman Filter for orientation estimation.
