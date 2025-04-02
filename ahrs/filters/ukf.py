@@ -245,7 +245,7 @@ And their **covariance** by their weighted outer product:
 
     \\boxed{\\mathbf{P_{yy}} = \\sum_{i=0}^{2n} W_i^{(c)} (\\mathcal{Y}_i - \\bar{\\mathbf{y}})(\\mathcal{Y}_i - \\bar{\\mathbf{y}})^T + \\mathbf{Q}}
 
-with :math:`\\mathbf{Q}` being the :math:`4\\times 4` process noise covariance
+with :math:`\\mathbf{Q}` being the :math:`n\\times n` process noise covariance
 matrix.
 
 The weights :math:`W` are computed as:
@@ -265,14 +265,10 @@ The constant :math:`\\beta` is used to incorporate prior knowledge about the
 distribution of the random variable, and is usually set to :math:`2` for
 Gaussian distributions :cite:p:`wan2000`.
 
-The sigma points capture the same mean and covariance irrespective of the
-choice of matrix square root :cite:p:`julier1997`, and they are computed using
-standard linear operations, which makes the UKF suitable to any process model.
-
 **UKF Summary**
 
 Given the initial state :math:`\\mathbf{x}_0`, and its covariance matrix
-:math:`\\mathbf{P}_0\\in\\mathbb{R}^{4\\times 4}`, the UKF algorithm can be
+:math:`\\mathbf{P}_0\\in\\mathbb{R}^{n\\times n}`, the UKF algorithm can be
 summarized as follows:
 
 **Prediction**:
@@ -366,9 +362,9 @@ assume the sensor readings are already calibrated.
 
 **Sigma Points**
 
-Given the previous state and covariance, the sigma points are computed first.
+The sigma points are computed first, given the previous state and covariance.
 
-Using the cholesky decomposition we obtain the matrix square root:
+Using the cholesky decomposition we obtain the **matrix square root**:
 
 .. math::
 
@@ -396,8 +392,8 @@ Then, we compute the sigma points using the equations:
     \\end{array}
 
 The first sigma point :math:`\\mathcal{X}_0` is always equal to the previous
-state :math:`\\mathbf{x}_{t-1}`. The other sigma points are obtained by adding
-and subtracting the columns of :math:`\\mathbf{L}` to the mean.
+state :math:`\\mathbf{x}_{t-1}`. The rest are obtained by adding and
+subtracting the columns of :math:`\\mathbf{L}` to the mean.
 
 Because the state vector has 4 items, we obtain a set of 9 sigma points:
 
@@ -530,7 +526,6 @@ class UKF:
         acc_normalized = acc / np.linalg.norm(acc)
 
         # 2. Generate sigma points
-        self.P += self.Q
         sigma_points = self.compute_sigma_points(q, self.P)
 
         # 3. Process model - propagate sigma points with gyro data (eq. 37)
@@ -547,6 +542,7 @@ class UKF:
         predicted_state_covariance = np.zeros((3, 3))   # 3x3 for orientation error
         for i, eq in enumerate(predicted_state_diffs):
             predicted_state_covariance += self.weight_covariance[i] * np.outer(eq[1:], eq[1:])
+        predicted_state_covariance += self.Q[1:, 1:]  # Add process noise (eq. 45)
 
         ## Correction
         # 6. Transform sigma points to measurement space (predicted accelerometer readings) (eq. 16)
