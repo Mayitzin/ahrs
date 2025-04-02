@@ -374,7 +374,7 @@ where the previous covariance is set as :math:`\\mathbf{P_{xx}}=\\mathbf{P}_{t-1
 :math:`n=4` is the number of items in the state vector :math:`\\mathbf{x}`, and
 :math:`\\lambda=\\alpha^2(n + \\kappa) - n` is the scaling parameter.
 
-.. tip::
+.. hint::
 
     Using the default values :math:`\\alpha=0.001`, and :math:`\\kappa=0`, we
     get:
@@ -459,6 +459,11 @@ where the term :math:`\\mathbf{I}_4 + \\frac{\\Delta t}{2}\\boldsymbol\\Omega_t`
 is a truncation up to the second term of the Taylor series expansion of
 :math:`\\int_{t-1}^t\\boldsymbol\\omega\\, dt`.
 
+.. note::
+
+    For more details about this linear operation, please refer to the `Attitude
+    from Angular Rate <./angular.html>`_ documentation.
+
 We propagate each of the sigma points through the process model
 :math:`f` to get a new set of transformed state points :math:`\\mathcal{Y}`:
 
@@ -483,14 +488,10 @@ Every :math:`\\mathcal{Y}_i` describes a quaternion. If necessary, they must to
 be normalized after the transformation, so that :math:`\\forall i \\in
 \\{0, \\ldots, 2n\\} \\;, \\|\\mathcal{Y}_i\\|=1`.
 
-.. note::
-
-    For more details about this linear operation, please refer to the `Attitude
-    from Angular Rate <./angular.html>`_ documentation.
-
 .. seealso::
 
    `EKF <./ekf.html>`_ - Extended Kalman Filter for orientation estimation.
+   `AngularRate <./angular.html>`_ - Attitude propagation using angular rate.
 
 """
 
