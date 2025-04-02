@@ -370,16 +370,20 @@ Using the cholesky decomposition we obtain the **matrix square root**:
 
     \\mathbf{L} = \\mathrm{chol}\\Big(\\sqrt{(n + \\lambda)\\mathbf{P_{xx}}}\\Big)
 
-where :math:`n=4` is the number of items in the state vector :math:`\\mathbf{x}`,
-and :math:`\\lambda=\\alpha^2(n + \\kappa) - n` is the scaling parameter.
+where the previous covariance is set as :math:`\\mathbf{P_{xx}}=\\mathbf{P}_{t-1}`,
+:math:`n=4` is the number of items in the state vector :math:`\\mathbf{x}`, and
+:math:`\\lambda=\\alpha^2(n + \\kappa) - n` is the scaling parameter.
 
-Using the default values :math:`\\alpha=0.001`, and :math:`\\kappa=0`, we get:
+.. tip::
 
-.. math::
+    Using the default values :math:`\\alpha=0.001`, and :math:`\\kappa=0`, we
+    get:
 
-    \\lambda = 0.001^2 (4 + 0) - 4 = -3.999996
+    .. math::
 
-which yields :math:`\\mathbf{L} = \\mathrm{chol}\\big(\\sqrt{0.000004\\mathbf{P_{xx}}}\\big)`.
+        \\lambda = 0.001^2 (4 + 0) - 4 = -3.999996
+
+    which yields :math:`\\mathbf{L} = \\mathrm{chol}\\big(\\sqrt{0.000004\\mathbf{P}_{t-1}}\\big)`.
 
 Then, we compute the sigma points using the equations:
 
@@ -420,11 +424,11 @@ propagation (using the gyroscope) and a correction (using the accelerometer.)
 
 **Attitude Propagation**
 
-For the propagation we use the the gyroscope data to measure the angular
-velocity. Based on the time spent between :math:`t-1` and :math:`t` (known as
-the time step :math:`\\Delta t`) we can obtain the angular displacement
-:math:`\\boldsymbol\\theta_t`, and add it to the previous attitude
-:math:`\\mathbf{x}_{t-1}` to get the new attitude :math:`\\hat{\\mathbf{q}}_t`:
+Based on the time spent between :math:`t-1` and :math:`t` (known as
+the time step :math:`\\Delta t`) we could measure the angular displacement
+:math:`\\boldsymbol\\theta_t` with the gyroscopes, and add it to the previous
+attitude :math:`\\mathbf{x}_{t-1}` to get the new attitude
+:math:`\\hat{\\mathbf{x}}_t`:
 
 .. math::
 
@@ -433,15 +437,14 @@ the time step :math:`\\Delta t`) we can obtain the angular displacement
     &=& \\mathbf{x}_{t-1} + \\int_{t-1}^t\\boldsymbol\\omega\\, dt
     \\end{array}
 
-However, this operation is not linear, and we cannot use it in the Kalman
-filter. We need to use a linear operation to propagate the attitude. This
-common operation, known as **attitude propagation**, defines the **Process
-model as**:
+This is called **attitude propagation**. However, this operation is not linear,
+and we cannot use it in the Kalman filter. We can linearize an approximation of
+the attitude propagation to define the **process model**:
 
 .. math::
     \\begin{array}{rcl}
-    \\hat{\\mathbf{x}}_t &=& \\mathbf{f}(\\mathbf{x}_{t-1}, \\boldsymbol\\omega_t) \\\\
-    &=&\\Big(\\mathbf{I}_4 + \\frac{\\Delta t}{2}\\boldsymbol\\Omega_t\\Big)\\mathbf{x}_{t-1} \\\\
+    \\hat{\\mathbf{x}}_t &=& f(\\mathbf{x}_{t-1}, \\boldsymbol\\omega_t) \\\\
+    &=&\\Big(\\mathbf{I}_4 + \\frac{\\Delta t}{2}\\boldsymbol\\Omega_t(\\boldsymbol\\omega_t)\\Big)\\mathbf{x}_{t-1} \\\\
     \\begin{bmatrix}\\hat{q_w} \\\\ \\hat{q_x} \\\\ \\hat{q_y} \\\\ \\hat{q_z}\\end{bmatrix}
     &=&
     \\begin{bmatrix}
@@ -453,9 +456,34 @@ model as**:
     \\end{array}
 
 where the term :math:`\\mathbf{I}_4 + \\frac{\\Delta t}{2}\\boldsymbol\\Omega_t`
-is a linearized approximation of the attitude propagation.
+is a truncation up to the second term of the Taylor series expansion of
+:math:`\\int_{t-1}^t\\boldsymbol\\omega\\, dt`.
 
-.. tip::
+We propagate each of the sigma points through the process model
+:math:`f` to get a new set of transformed state points :math:`\\mathcal{Y}`:
+
+.. math::
+
+    \\mathcal{Y} =
+    \\begin{Bmatrix}
+        \\big| & \\big| & \\big| & \\big| & \\big| & \\big| & \\big| & \\big| & \\big| \\\\
+        f(\\mathcal{X}_0, \\boldsymbol\\omega_t) &
+        f(\\mathcal{X}_1, \\boldsymbol\\omega_t) &
+        f(\\mathcal{X}_2, \\boldsymbol\\omega_t) &
+        f(\\mathcal{X}_3, \\boldsymbol\\omega_t) &
+        f(\\mathcal{X}_4, \\boldsymbol\\omega_t) &
+        f(\\mathcal{X}_5, \\boldsymbol\\omega_t) &
+        f(\\mathcal{X}_6, \\boldsymbol\\omega_t) &
+        f(\\mathcal{X}_7, \\boldsymbol\\omega_t) &
+        f(\\mathcal{X}_8, \\boldsymbol\\omega_t) \\\\
+        \\big| & \\big| & \\big| & \\big| & \\big| & \\big| & \\big| & \\big| & \\big|
+    \\end{Bmatrix}
+
+Every :math:`\\mathcal{Y}_i` describes a quaternion. If necessary, they must to
+be normalized after the transformation, so that :math:`\\forall i \\in
+\\{0, \\ldots, 2n\\} \\;, \\|\\mathcal{Y}_i\\|=1`.
+
+.. note::
 
     For more details about this linear operation, please refer to the `Attitude
     from Angular Rate <./angular.html>`_ documentation.
@@ -542,7 +570,7 @@ class UKF:
         predicted_state_covariance = np.zeros((3, 3))   # 3x3 for orientation error
         for i, eq in enumerate(predicted_state_diffs):
             predicted_state_covariance += self.weight_covariance[i] * np.outer(eq[1:], eq[1:])
-        predicted_state_covariance += self.Q[1:, 1:]  # Add process noise (eq. 45)
+        predicted_state_covariance += self.Q[1:, 1:]    # Add process noise
 
         ## Correction
         # 6. Transform sigma points to measurement space (predicted accelerometer readings) (eq. 16)
