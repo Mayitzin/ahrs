@@ -547,7 +547,6 @@ class UKF:
         predicted_state_covariance = np.zeros((3, 3))   # 3x3 for orientation error
         for i, eq in enumerate(predicted_state_diffs):
             predicted_state_covariance += self.weight_covariance[i] * np.outer(eq[1:], eq[1:])
-        # predicted_state_covariance += self.Q[1:4, 1:4]  # Add process noise to orientation part
 
         ## Correction
         # 6. Transform sigma points to measurement space (predicted accelerometer readings) (eq. 16)
@@ -579,7 +578,7 @@ class UKF:
         updated_quaternion = predicted_state_mean.product(correction_quaternion)    # Apply correction to predicted state
 
         # 12. Re-define state covariance
-        self.P = np.eye(self.state_dimension) * 0.01
+        self.P = np.zeros((self.state_dimension, self.state_dimension))  # Reset covariance
         self.P[1:, 1:] = predicted_state_covariance - kalman_gain @ predicted_measurement_covariance @ kalman_gain.T
 
         return updated_quaternion
