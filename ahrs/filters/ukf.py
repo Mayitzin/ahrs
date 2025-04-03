@@ -216,6 +216,7 @@ decomposition of :math:`(n + \\lambda)\\mathbf{P_{xx}}`, and then we obtain
 them by adding and subtracting the columns of :math:`\\mathbf{L}` to the mean.
 
 .. math::
+   :label: sigma_points
 
     \\begin{array}{rcl}
     \\mathcal{X}_0 &=& \\bar{\\mathbf{x}} \\\\
@@ -230,20 +231,23 @@ We pass these sigma points through the nonlinear function :math:`f` to get the
 transformed points :math:`\\mathcal{Y}`.
 
 .. math::
+   :label: ukf_process_model
 
     \\mathcal{Y} = f(\\mathcal{X})
 
 Their **mean** is given by their wieghted sum:
 
 .. math::
+   :label: ukf_predicted_state_mean
 
-    \\boxed{\\bar{\\mathbf{y}} = \\sum_{i=0}^{2n} W_i^{(m)} \\mathcal{Y}_i}
+    \\bar{\\mathbf{y}} = \\sum_{i=0}^{2n} W_i^{(m)} \\mathcal{Y}_i
 
 And their **covariance** by their weighted outer product:
 
 .. math::
+   :label: ukf_predicted_state_covariance
 
-    \\boxed{\\mathbf{P_{yy}} = \\sum_{i=0}^{2n} W_i^{(c)} (\\mathcal{Y}_i - \\bar{\\mathbf{y}})(\\mathcal{Y}_i - \\bar{\\mathbf{y}})^T + \\mathbf{Q}}
+    \\mathbf{P_{yy}} = \\sum_{i=0}^{2n} W_i^{(c)} (\\mathcal{Y}_i - \\bar{\\mathbf{y}})(\\mathcal{Y}_i - \\bar{\\mathbf{y}})^T + \\mathbf{Q}
 
 with :math:`\\mathbf{Q}` being the :math:`n\\times n` process noise covariance
 matrix.
@@ -493,7 +497,7 @@ Every :math:`\\mathcal{Y}_i` describes a quaternion. If necessary, they must to
 be normalized after the transformation, so that :math:`\\forall i \\in
 \\{0, \\ldots, 2n\\} \\;, \\|\\mathcal{Y}_i\\|=1`.
 
-Now we can compute the **predicted state mean**:
+Now we compute the **predicted state mean**:
 
 .. math::
 
@@ -506,7 +510,8 @@ quaternion. Therefore, we must normalize it:
 
     \\bar{\\mathbf{y}} \\leftarrow \\frac{\\bar{\\mathbf{y}}}{\\|\\bar{\\mathbf{y}}\\|}
 
-We proceed to compute the **predicted state covariance** :math:`\\mathbf{P}_{yy}`.
+We proceed to compute the **predicted state covariance** :math:`\\mathbf{P}_{yy}`
+as in equation :eq:`ukf_predicted_state_covariance`:
 
 .. caution::
 
@@ -530,11 +535,12 @@ With this in mind, we re-define the predicted state covariance as:
 
 .. math::
 
-    \\mathbf{P}_{yy} = \\sum_{i=0}^{2n} W_i^{(c)} (\\mathcal{Y}_i + \\bar{\\mathbf{y}}^*)(\\mathcal{Y}_i + \\bar{\\mathbf{y}}^*)^T + \\mathbf{Q}
+    \\boxed{\\mathbf{P}_{yy} = \\sum_{i=0}^{2n} W_i^{(c)} (\\mathcal{Y}_i + \\bar{\\mathbf{y}}^*)(\\mathcal{Y}_i + \\bar{\\mathbf{y}}^*)^T + \\mathbf{Q}}
 
-Notice the substraction :math:`\\mathcal{Y}_i - \\bar{\\mathbf{y}}` is replaced
-by the sum :math:`\\mathcal{Y}_i + \\bar{\\mathbf{y}}^*`, where
-:math:`\\bar{\\mathbf{y}}^*` is the conjugate of the predicted state mean.
+Notice the original substraction :math:`\\mathcal{Y}_i - \\bar{\\mathbf{y}}` is
+replaced by the sum :math:`\\mathcal{Y}_i + \\bar{\\mathbf{y}}^*`, where
+:math:`\\bar{\\mathbf{y}}^*` is the conjugate of the predicted quaternion
+(state mean.)
 
 .. seealso::
 
