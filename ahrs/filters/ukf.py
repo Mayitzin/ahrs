@@ -356,6 +356,11 @@ from a tri-axial gyroscope, and the measurement vector
 :math:`\\mathbf{z}_t\\in\\mathbb{R}^3` has the readings of a tri-axial
 accelerometer.
 
+The state vector describing the quaternion represents an orientation. This type
+of quaternion is also known as a `versor <https://en.wikipedia.org/wiki/Versor>`_,
+and they are unit quaternions, meaning :math:`\\|\\mathbf{q}\\|^2=1`. So, we
+must normalize the quaternion after each transformation.
+
 Notice we don't extend the state vector to include the gyroscope biases like
 others do. For the sake of simplicity we don't estimate these biases, and
 assume the sensor readings are already calibrated.
@@ -488,14 +493,41 @@ Every :math:`\\mathcal{Y}_i` describes a quaternion. If necessary, they must to
 be normalized after the transformation, so that :math:`\\forall i \\in
 \\{0, \\ldots, 2n\\} \\;, \\|\\mathcal{Y}_i\\|=1`.
 
-Now we can compute the predicted state mean and covariance:
+Now we can compute the **predicted state mean**:
 
 .. math::
 
-    \\begin{array}{rcl}
-    \\bar{\\mathbf{y}} &=& \\sum_{i=0}^{2n} W_i^{(m)} \\mathcal{Y}_i \\\\ \\\\
-    \\mathbf{P}_{yy} &=& \\sum_{i=0}^{2n} W_i^{(c)} (\\mathcal{Y}_i - \\bar{\\mathbf{y}})(\\mathcal{Y}_i - \\bar{\\mathbf{y}})^T + \\mathbf{Q}
-    \\end{array}
+    \\bar{\\mathbf{y}} = \\sum_{i=0}^{2n} W_i^{(m)} \\mathcal{Y}_i
+
+This predicted state represents the mean of the transformed state points as a
+quaternion. Therefore, we must normalize it:
+
+.. math::
+
+    \\bar{\\mathbf{y}} \\leftarrow \\frac{\\bar{\\mathbf{y}}}{\\|\\bar{\\mathbf{y}}\\|}
+
+Now we can compute the **predicted state covariance**:
+.. math::
+
+    \\mathbf{P}_{yy} = \\sum_{i=0}^{2n} W_i^{(c)} (\\mathcal{Y}_i - \\bar{\\mathbf{y}})(\\mathcal{Y}_i - \\bar{\\mathbf{y}})^T + \\mathbf{Q}
+
+where :math:`\\mathbf{Q}` is the process noise covariance matrix.
+
+**Beware!** The difference between two quaternions cannot be simply computed by
+subtracting them. Let's remember the quaternions used here represent rotations,
+and we are interested in the difference between two rotations.
+
+We have to apply the **opposite rotation** to the first rotation. For a
+quaternion :math:`\\mathbf{q}=\\begin{pmatrix}q_w&q_x&q_y&q_z\\end{pmatrix}`,
+the opposite rotation is given by its conjugate :math:`\\mathbf{q}^*=
+\\begin{pmatrix}q_w&-q_x&-q_y&-q_z\\end{pmatrix}`.
+
+So, the difference between two quaternions :math:`\\mathbf{q}_1` and
+:math:`\\mathbf{q}_2` is given by:
+
+.. math::
+
+    \\delta\\mathbf{q} = \\mathbf{q}_1 + \\mathbf{q}_2^*
 
 .. seealso::
 
@@ -570,17 +602,17 @@ class UKF:
         rotation_operator = np.eye(4) + 0.5 * self.Omega(gyro) * dt
         predicted_sigma_points = [Quaternion(rotation_operator @ point) for point in sigma_points]
 
-        # 4. Predicted state mean (x_bar) (eq. 38)
+        # 4. Predicted state mean (y_bar)
         predicted_state_mean = Quaternion(np.sum(self.weight_mean[:, None] * predicted_sigma_points, axis=0))
 
-        # Predicted States difference: x_i - x_bar
+        # Predicted States difference: y_i - y_bar
         predicted_state_diffs = [Quaternion(point + predicted_state_mean.conj) for point in predicted_sigma_points]
 
         # 5. Predicted state covariance (using error quaternions)
-        predicted_state_covariance = np.zeros((3, 3))   # 3x3 for orientation error
+        predicted_state_covariance = np.zeros((4, 4))
         for i, eq in enumerate(predicted_state_diffs):
-            predicted_state_covariance += self.weight_covariance[i] * np.outer(eq[1:], eq[1:])
-        predicted_state_covariance += self.Q[1:, 1:]    # Add process noise
+            predicted_state_covariance += self.weight_covariance[i] * np.outer(eq, eq)
+        predicted_state_covariance += self.Q    # Add process noise
 
         ## Correction
         # 6. Transform sigma points to measurement space (predicted accelerometer readings) (eq. 16)
@@ -613,6 +645,6 @@ class UKF:
 
         # 12. Re-define state covariance
         self.P = np.zeros((self.state_dimension, self.state_dimension))  # Reset covariance
-        self.P[1:, 1:] = predicted_state_covariance - kalman_gain @ predicted_measurement_covariance @ kalman_gain.T
+        self.P[1:, 1:] = predicted_state_covariance[1:, 1:] - kalman_gain @ predicted_measurement_covariance @ kalman_gain.T
 
         return updated_quaternion
