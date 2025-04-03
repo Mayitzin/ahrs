@@ -453,7 +453,17 @@ attitude propagation to define the **process model**:
 .. math::
     \\begin{array}{rcl}
     \\hat{\\mathbf{x}}_t &=& f(\\mathbf{x}_{t-1}, \\boldsymbol\\omega_t) \\\\
-    &=&\\Big(\\mathbf{I}_4 + \\frac{\\Delta t}{2}\\boldsymbol\\Omega_t(\\boldsymbol\\omega_t)\\Big)\\mathbf{x}_{t-1} \\\\
+    &=&\\Big[\\mathbf{I}_4 + \\frac{\\Delta t}{2}\\boldsymbol\\Omega_t(\\boldsymbol\\omega_t)\\Big]\\mathbf{x}_{t-1} \\\\
+    &=&
+    \\begin{bmatrix}
+    1 & -\\frac{\\Delta t}{2}\\omega_x & -\\frac{\\Delta t}{2}\\omega_y & -\\frac{\\Delta t}{2}\\omega_z \\\\
+    \\frac{\\Delta t}{2}\\omega_x & 1 & \\frac{\\Delta t}{2}\\omega_z & -\\frac{\\Delta t}{2}\\omega_y \\\\
+    \\frac{\\Delta t}{2}\\omega_y & -\\frac{\\Delta t}{2}\\omega_z & 1 & \\frac{\\Delta t}{2}\\omega_x \\\\
+    \\frac{\\Delta t}{2}\\omega_z & \\frac{\\Delta t}{2}\\omega_y & -\\frac{\\Delta t}{2}\\omega_x & 1
+    \\end{bmatrix}
+    \\begin{bmatrix}
+        q_w \\\\ q_x \\\\ q_y \\\\ q_z
+    \\end{bmatrix} \\\\
     \\begin{bmatrix}\\hat{q_w} \\\\ \\hat{q_x} \\\\ \\hat{q_y} \\\\ \\hat{q_z}\\end{bmatrix}
     &=&
     \\begin{bmatrix}
