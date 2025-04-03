@@ -506,28 +506,35 @@ quaternion. Therefore, we must normalize it:
 
     \\bar{\\mathbf{y}} \\leftarrow \\frac{\\bar{\\mathbf{y}}}{\\|\\bar{\\mathbf{y}}\\|}
 
-Now we can compute the **predicted state covariance**:
+We proceed to compute the **predicted state covariance** :math:`\\mathbf{P}_{yy}`.
+
+.. caution::
+
+    The difference between two quaternions is not a simple substraction in this
+    case. Let's remember that the quaternions used here represent rotations,
+    and we are interested in the difference between two rotations.
+
+    To obtain it we apply the **opposite** of the second rotation to the first
+    one. For any quaternion :math:`\\mathbf{q}=\\begin{pmatrix}q_w&q_x&q_y&q_z\\end{pmatrix}`,
+    the opposite rotation is given by its conjugate :math:`\\mathbf{q}^*=
+    \\begin{pmatrix}q_w&-q_x&-q_y&-q_z\\end{pmatrix}`.
+
+    So, the difference between quaternions :math:`\\mathbf{q}_1` and
+    :math:`\\mathbf{q}_2` is given by:
+
+    .. math::
+
+        \\delta\\mathbf{q} = \\mathbf{q}_1 + \\mathbf{q}_2^*
+
+With this in mind, we re-define the predicted state covariance as:
+
 .. math::
 
-    \\mathbf{P}_{yy} = \\sum_{i=0}^{2n} W_i^{(c)} (\\mathcal{Y}_i - \\bar{\\mathbf{y}})(\\mathcal{Y}_i - \\bar{\\mathbf{y}})^T + \\mathbf{Q}
+    \\mathbf{P}_{yy} = \\sum_{i=0}^{2n} W_i^{(c)} (\\mathcal{Y}_i + \\bar{\\mathbf{y}}^*)(\\mathcal{Y}_i + \\bar{\\mathbf{y}}^*)^T + \\mathbf{Q}
 
-where :math:`\\mathbf{Q}` is the process noise covariance matrix.
-
-**Beware!** The difference between two quaternions cannot be simply computed by
-subtracting them. Let's remember the quaternions used here represent rotations,
-and we are interested in the difference between two rotations.
-
-We have to apply the **opposite rotation** to the first rotation. For a
-quaternion :math:`\\mathbf{q}=\\begin{pmatrix}q_w&q_x&q_y&q_z\\end{pmatrix}`,
-the opposite rotation is given by its conjugate :math:`\\mathbf{q}^*=
-\\begin{pmatrix}q_w&-q_x&-q_y&-q_z\\end{pmatrix}`.
-
-So, the difference between two quaternions :math:`\\mathbf{q}_1` and
-:math:`\\mathbf{q}_2` is given by:
-
-.. math::
-
-    \\delta\\mathbf{q} = \\mathbf{q}_1 + \\mathbf{q}_2^*
+Notice the substraction :math:`\\mathcal{Y}_i - \\bar{\\mathbf{y}}` is replaced
+by the sum :math:`\\mathcal{Y}_i + \\bar{\\mathbf{y}}^*`, where
+:math:`\\bar{\\mathbf{y}}^*` is the conjugate of the predicted state mean.
 
 .. seealso::
 
