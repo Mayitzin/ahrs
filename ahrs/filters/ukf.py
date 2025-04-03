@@ -155,7 +155,8 @@ measurement functions to get a new set of transformed state points.
 Imagine there is a set of random points :math:`\\mathbf{x}` with mean
 :math:`\\bar{\\mathbf{x}}`, and covariance :math:`\\mathbf{P_{xx}}`, and there
 is another set of random points :math:`\\mathbf{y}` related to
-:math:`\\mathbf{x}` by a nonlinear function :math:`\\mathbf{y} = f(\\mathbf{x})`.
+:math:`\\mathbf{x}` by a nonlinear function :math:`\\mathbf{y} = f(\\mathbf{x},
+\\mathbf{u})`.
 
 Our goal is to find the mean :math:`\\bar{\\mathbf{y}}` and covariance
 :math:`\\mathbf{P_{yy}}` of :math:`\\mathbf{y}`. The unscented transform
@@ -233,7 +234,7 @@ transformed points :math:`\\mathcal{Y}`.
 .. math::
    :label: ukf_process_model
 
-    \\mathcal{Y} = f(\\mathcal{X})
+    \\mathcal{Y} = f(\\mathcal{X}, \\mathbf{u})
 
 Their **mean** is given by their wieghted sum:
 
@@ -520,8 +521,7 @@ quaternion. Therefore, we must normalize it:
 
     \\bar{\\mathbf{y}} \\leftarrow \\frac{\\bar{\\mathbf{y}}}{\\|\\bar{\\mathbf{y}}\\|}
 
-We proceed to compute the **predicted state covariance** :math:`\\mathbf{P}_{yy}`
-as in equation :eq:`ukf_predicted_state_covariance`:
+We proceed to compute the **predicted state covariance** :math:`\\mathbf{P}_{yy}`.
 
 .. caution::
 
@@ -547,10 +547,10 @@ With this in mind, we re-define the predicted state covariance as:
 
     \\boxed{\\mathbf{P}_{yy} = \\sum_{i=0}^{2n} w_i^{(c)} (\\mathcal{Y}_i + \\bar{\\mathbf{y}}^*)(\\mathcal{Y}_i + \\bar{\\mathbf{y}}^*)^T + \\mathbf{Q}}
 
-Notice the original substraction :math:`\\mathcal{Y}_i - \\bar{\\mathbf{y}}` is
-replaced by the sum :math:`\\mathcal{Y}_i + \\bar{\\mathbf{y}}^*`, where
-:math:`\\bar{\\mathbf{y}}^*` is the conjugate of the predicted quaternion
-(state mean.)
+Notice the original substraction :math:`\\mathcal{Y}_i - \\bar{\\mathbf{y}}` in
+:eq:`ukf_predicted_state_covariance` is replaced by the sum
+:math:`\\mathcal{Y}_i + \\bar{\\mathbf{y}}^*`, where :math:`\\bar{\\mathbf{y}}^*`
+is the conjugate of the predicted quaternion (state mean.)
 
 .. seealso::
 
@@ -628,13 +628,11 @@ class UKF:
         # 4. Predicted state mean (y_bar)
         predicted_state_mean = Quaternion(np.sum(self.weight_mean[:, None] * predicted_sigma_points, axis=0))
 
-        # Predicted States difference: y_i - y_bar
+        # Predicted States difference: y_i + y_bar*
         predicted_state_diffs = [Quaternion(point + predicted_state_mean.conj) for point in predicted_sigma_points]
 
         # 5. Predicted state covariance (using error quaternions)
-        predicted_state_covariance = np.zeros((4, 4))
-        for i, eq in enumerate(predicted_state_diffs):
-            predicted_state_covariance += self.weight_covariance[i] * np.outer(eq, eq)
+        predicted_state_covariance = np.sum([self.weight_covariance[i] * np.outer(eq, eq) for i, eq in enumerate(predicted_state_diffs)], axis=0)
         predicted_state_covariance += self.Q    # Add process noise
 
         ## Correction
