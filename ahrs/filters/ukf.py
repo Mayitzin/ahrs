@@ -240,30 +240,30 @@ Their **mean** is given by their wieghted sum:
 .. math::
    :label: ukf_predicted_state_mean
 
-    \\bar{\\mathbf{y}} = \\sum_{i=0}^{2n} W_i^{(m)} \\mathcal{Y}_i
+    \\bar{\\mathbf{y}} = \\sum_{i=0}^{2n} w_i^{(m)} \\mathcal{Y}_i
 
 And their **covariance** by their weighted outer product:
 
 .. math::
    :label: ukf_predicted_state_covariance
 
-    \\mathbf{P_{yy}} = \\sum_{i=0}^{2n} W_i^{(c)} (\\mathcal{Y}_i - \\bar{\\mathbf{y}})(\\mathcal{Y}_i - \\bar{\\mathbf{y}})^T + \\mathbf{Q}
+    \\mathbf{P_{yy}} = \\sum_{i=0}^{2n} w_i^{(c)} (\\mathcal{Y}_i - \\bar{\\mathbf{y}})(\\mathcal{Y}_i - \\bar{\\mathbf{y}})^T + \\mathbf{Q}
 
 with :math:`\\mathbf{Q}` being the :math:`n\\times n` process noise covariance
 matrix.
 
-The weights :math:`W` are computed as:
+The weights :math:`\\mathbf{w}` are computed as:
 
 .. math::
 
     \\begin{array}{rcl}
-    W_0^{(m)} &=& \\frac{\\lambda}{n + \\lambda} \\\\
-    W_0^{(c)} &=& \\frac{\\lambda}{n + \\lambda} + (1 - \\alpha^2 + \\beta) \\\\
-    W_i^{(m)} = W_i^{(c)} &=& \\frac{1}{2(n + \\lambda)} \\quad \\text{for} \\quad i=1,2,\\ldots,2n
+    w_0^{(m)} &=& \\frac{\\lambda}{n + \\lambda} \\\\
+    w_0^{(c)} &=& \\frac{\\lambda}{n + \\lambda} + (1 - \\alpha^2 + \\beta) \\\\
+    w_i^{(m)} = w_i^{(c)} &=& \\frac{1}{2(n + \\lambda)} \\quad \\text{for} \\quad i=1,2,\\ldots,2n
     \\end{array}
 
-The weights :math:`W^{(m)}` are used to compute the mean, and the weights
-:math:`W^{(c)}` are used to compute the covariance.
+The weights :math:`\\mathbf{w}^{(m)}` are used to compute the mean, and the
+weights :math:`\\mathbf{w}^{(c)}` are used to compute the covariance.
 
 The constant :math:`\\beta` is used to incorporate prior knowledge about the
 distribution of the random variable, and is usually set to :math:`2` for
@@ -294,8 +294,8 @@ summarized as follows:
 .. math::
 
     \\begin{array}{rcl}
-    \\bar{\\mathbf{y}} &=& \\sum_{i=0}^{2n} W_i^{(m)} \\mathcal{Y}_i \\\\ \\\\
-    \\mathbf{P}_{yy} &=& \\sum_{i=0}^{2n} W_i^{(c)} (\\mathcal{Y}_i - \\bar{\\mathbf{y}})(\\mathcal{Y}_i - \\bar{\\mathbf{y}})^T + \\mathbf{Q}
+    \\bar{\\mathbf{y}} &=& \\sum_{i=0}^{2n} w_i^{(m)} \\mathcal{Y}_i \\\\ \\\\
+    \\mathbf{P}_{yy} &=& \\sum_{i=0}^{2n} w_i^{(c)} (\\mathcal{Y}_i - \\bar{\\mathbf{y}})(\\mathcal{Y}_i - \\bar{\\mathbf{y}})^T + \\mathbf{Q}
     \\end{array}
 
 **Correction**:
@@ -311,15 +311,15 @@ summarized as follows:
 .. math::
 
     \\begin{array}{rcl}
-    \\bar{\\mathbf{z}} &=& \\sum_{i=0}^{2n} W_i^{(m)} \\mathcal{Y}_i \\\\ \\\\
-    \\mathbf{P}_{yy} &=& \\sum_{i=0}^{2n} W_i^{(c)} (\\mathcal{Y}_i - \\bar{\\mathbf{y}})(\\mathcal{Y}_i - \\bar{\\mathbf{y}})^T + \\mathbf{R}
+    \\bar{\\mathbf{z}} &=& \\sum_{i=0}^{2n} w_i^{(m)} \\mathcal{Y}_i \\\\ \\\\
+    \\mathbf{P}_{yy} &=& \\sum_{i=0}^{2n} w_i^{(c)} (\\mathcal{Y}_i - \\bar{\\mathbf{y}})(\\mathcal{Y}_i - \\bar{\\mathbf{y}})^T + \\mathbf{R}
     \\end{array}
 
 6. Compute the cross-covariance
 
 .. math::
 
-    \\mathbf{P}_{xy} = \\sum_{i=0}^{2n} W_i^{(c)} (\\mathcal{X}_i - \\bar{\\mathbf{x}})(\\mathcal{Y}_i - \\bar{\\mathbf{y}})^T
+    \\mathbf{P}_{xy} = \\sum_{i=0}^{2n} w_i^{(c)} (\\mathcal{X}_i - \\bar{\\mathbf{x}})(\\mathcal{Y}_i - \\bar{\\mathbf{y}})^T
 
 7. Compute the Kalman gain
 
@@ -447,8 +447,8 @@ attitude :math:`\\mathbf{x}_{t-1}` to get the new attitude
     \\end{array}
 
 This is called **attitude propagation**. However, this operation is not linear,
-and we cannot use it in the Kalman filter. We can linearize an approximation of
-the attitude propagation to define the **process model**:
+and we cannot use it in the Kalman filter. We linearize an approximation of the
+attitude propagation to define the **process model**:
 
 .. math::
     \\begin{array}{rcl}
@@ -501,7 +501,7 @@ Now we compute the **predicted state mean**:
 
 .. math::
 
-    \\bar{\\mathbf{y}} = \\sum_{i=0}^{2n} W_i^{(m)} \\mathcal{Y}_i
+    \\bar{\\mathbf{y}} = \\sum_{i=0}^{2n} w_i^{(m)} \\mathcal{Y}_i
 
 This predicted state represents the mean of the transformed state points as a
 quaternion. Therefore, we must normalize it:
@@ -535,7 +535,7 @@ With this in mind, we re-define the predicted state covariance as:
 
 .. math::
 
-    \\boxed{\\mathbf{P}_{yy} = \\sum_{i=0}^{2n} W_i^{(c)} (\\mathcal{Y}_i + \\bar{\\mathbf{y}}^*)(\\mathcal{Y}_i + \\bar{\\mathbf{y}}^*)^T + \\mathbf{Q}}
+    \\boxed{\\mathbf{P}_{yy} = \\sum_{i=0}^{2n} w_i^{(c)} (\\mathcal{Y}_i + \\bar{\\mathbf{y}}^*)(\\mathcal{Y}_i + \\bar{\\mathbf{y}}^*)^T + \\mathbf{Q}}
 
 Notice the original substraction :math:`\\mathcal{Y}_i - \\bar{\\mathbf{y}}` is
 replaced by the sum :math:`\\mathcal{Y}_i + \\bar{\\mathbf{y}}^*`, where
