@@ -328,12 +328,18 @@ summarized as follows:
 
     \\mathbf{K} = \\mathbf{P}_{xy} \\mathbf{P}_{yy}^{-1}
 
-8. Update the state and covariance
+8. Compute the innovation (residual)
+
+.. math::
+
+    \\mathbf{v}_t = \\mathbf{z}_t - \\bar{\\mathbf{z}}
+
+9. Update the state and covariance
 
 .. math::
 
     \\begin{array}{rcl}
-    \\mathbf{x}_t &=& \\bar{\\mathbf{x}} + \\mathbf{K} (\\mathbf{z}_t - \\bar{\\mathbf{z}}) \\\\ \\\\
+    \\mathbf{x}_t &=& \\bar{\\mathbf{x}} + \\mathbf{K} \\mathbf{v}_t \\\\ \\\\
     \\mathbf{P}_t &=& \\mathbf{P}_{xx} - \\mathbf{K} \\mathbf{P}_{yy} \\mathbf{K}^T
     \\end{array}
 
@@ -615,56 +621,58 @@ class UKF:
 
     def update(self, q, gyro, acc, dt):
         ## Prediction
-        # 1. Normalize accelerometer data
+        # Normalize accelerometer data
         acc_normalized = acc / np.linalg.norm(acc)
 
-        # 2. Generate sigma points
+        # 1. Generate sigma points
         sigma_points = self.compute_sigma_points(q, self.P)
 
-        # 3. Process model - propagate sigma points with gyro data (eq. 37)
+        # 2. Process model - propagate sigma points with gyro data
         rotation_operator = np.eye(4) + 0.5 * self.Omega(gyro) * dt
         predicted_sigma_points = [Quaternion(rotation_operator @ point) for point in sigma_points]
 
-        # 4. Predicted state mean (y_bar)
+        # 3.1. Predicted state mean (y_bar)
         predicted_state_mean = Quaternion(np.sum(self.weight_mean[:, None] * predicted_sigma_points, axis=0))
 
-        # Predicted States difference: y_i + y_bar*
+        # 3.2.1 Predicted States difference: y_i + y_bar*
         predicted_state_diffs = [Quaternion(point + predicted_state_mean.conj) for point in predicted_sigma_points]
 
-        # 5. Predicted state covariance (using error quaternions)
+        # 3.2.2. Predicted state covariance (using error quaternions)
         predicted_state_covariance = np.sum([self.weight_covariance[i] * np.outer(eq, eq) for i, eq in enumerate(predicted_state_diffs)], axis=0)
         predicted_state_covariance += self.Q    # Add process noise
 
         ## Correction
-        # 6. Transform sigma points to measurement space (predicted accelerometer readings) (eq. 16)
+        # 4. Transform sigma points to measurement space (predicted accelerometer readings)
         predicted_measurements = [point.to_DCM().T @ np.array([0, 0, 1]) for point in predicted_sigma_points]
 
-        # 7. Predicted measurement mean (eq. 17)
+        # 5.1. Predicted measurement mean
         predicted_measurement_mean = np.sum(self.weight_mean[:, None] * predicted_measurements, axis=0)
 
-        # Predicted measurements difference: Z_i - z_i
+        # 5.1.1. Predicted measurements difference: Z_i - z_i
         predicted_measurements_diff = predicted_measurements - predicted_measurement_mean
 
-        # 8. Predicted measurement covariance (eq. 18) (eq. 68)
+        # 5.2. Predicted measurement covariance
         predicted_measurement_covariance = np.zeros((3, 3))
         for i, measured_difference in enumerate(predicted_measurements_diff):
             predicted_measurement_covariance += self.weight_covariance[i] * np.outer(measured_difference, measured_difference)
-        predicted_measurement_covariance += self.R      # Add measurement noise (eq. 45)
+        predicted_measurement_covariance += self.R      # Add measurement noise
 
-        # 9. Cross-covariance (eq. 71)
+        # 6. Cross-covariance
         cross_covariance = np.sum(self.weight_covariance[i] * np.outer(predicted_state_diffs[i][1:], predicted_measurements_diff[i]) for i in range(self.sigma_point_count))
 
-        # 10. Calculate Kalman gain (eq. 72)
+        # 7. Calculate Kalman gain
         kalman_gain = cross_covariance @ np.linalg.inv(predicted_measurement_covariance)
 
-        # 11. Update state with measurement
-        innovation = acc_normalized - predicted_measurement_mean                    # Innovation (measurement residual) (eq. 44)
+        # 8. Compute the innovation (measurement residual)
+        innovation = acc_normalized - predicted_measurement_mean
+
+        # 9.1. Update state estimation
         correction_vector = kalman_gain @ innovation                                # Correction as a rotation vector
         theta = np.linalg.norm(correction_vector)  # Angle of rotation
         correction_quaternion = Quaternion([np.cos(theta/2.0), *(np.sin(theta/2.0) * correction_vector/theta)])  # Convert to quaternion
         updated_quaternion = predicted_state_mean.product(correction_quaternion)    # Apply correction to predicted state
 
-        # 12. Re-define state covariance
+        # 9.2. Update state covariance
         self.P = np.zeros((self.state_dimension, self.state_dimension))  # Reset covariance
         self.P[1:, 1:] = predicted_state_covariance[1:, 1:] - kalman_gain @ predicted_measurement_covariance @ kalman_gain.T
 
