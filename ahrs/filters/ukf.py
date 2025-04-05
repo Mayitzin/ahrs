@@ -288,7 +288,7 @@ summarized as follows:
 
 .. math::
 
-    \\mathcal{Y} = f(\\mathcal{X})
+    \\mathcal{Y} = f(\\mathcal{X}, \\mathbf{u})
 
 3. Compute the predicted state mean and covariance
 
@@ -350,7 +350,10 @@ In this implementation, we build a simple UKF for the attitude estimation, so
 that we can focus on the details of the algorithm. Once the basic structure is
 understood, we could extend the model to include more complex systems.
 
-We start by defining the main vectors:
+Again, the UKF is based on two main steps: the **prediction** and the
+**correction**.
+
+We start the prediction by defining the main vectors:
 
 .. math::
 
@@ -557,6 +560,69 @@ Notice the original substraction :math:`\\mathcal{Y}_i - \\bar{\\mathbf{y}}` in
 :eq:`ukf_predicted_state_covariance` is replaced by the sum
 :math:`\\mathcal{Y}_i + \\bar{\\mathbf{y}}^*`, where :math:`\\bar{\\mathbf{y}}^*`
 is the conjugate of the predicted quaternion (state mean.)
+
+**Measurement Model**
+
+The accelerometer measures the direction of the gravity vector in the
+inertial frame.
+
+If we assume the accelerometer is perfectly calibrated and its Z-axis is
+colinear with the gravity vector :math:`\\mathbf{g}` in the global frame, then
+the accelerometer reading :math:`\\mathbf{z}_t` would be:
+
+.. math::
+
+    \\mathbf{g} = \\mathbf{z}_t = \\begin{bmatrix} 0 \\\\ 0 \\\\ 9.81 \\end{bmatrix}
+
+indicating the Z-axis is pointing up, and the X and Y axes are pointing
+sideways.
+
+However, the accelerometer readings will depend on the geographical location of
+the sensor. The gravitational acceleration force is greater at the poles
+than at the equator, and it also varies with altitude.
+
+To counteract these effects, we assume the gravitational force will not change
+in our location and we set it to be equal to 1g. This way, we can ignore the
+magnitude of the accelerometer readings and focus on its direction.
+
+.. math::
+
+    \\mathbf{g} = \\mathbf{z}_t = \\begin{bmatrix} 0 \\\\ 0 \\\\ 1 \\end{bmatrix}
+
+We then normalize the accelerometer readings :math:`\\mathbf{z}_t` to unit length, so that we can use it as a direction
+vector:
+
+.. math::
+
+    \\mathbf{z}_t = \\frac{\\mathbf{z}_t}{\\|\\mathbf{z}_t\\|} = \\begin{bmatrix} z_x \\\\ z_y \\\\ z_z \\end{bmatrix}
+
+We can use this information to correct the predicted state
+:math:`\\bar{\\mathbf{x}}_t` with the accelerometer readings
+:math:`\\mathbf{z}_t`.
+
+Our strategy is to rotate the gravitational vector around the predicted
+orientation :math:`\\bar{\\mathbf{x}}_t` to get the predicted
+accelerometer readings :math:`\\bar{\\mathbf{z}}_t`:
+
+.. math::
+
+    \\begin{array}{rcl}
+    \\bar{\\mathbf{z}}_t &=& \\mathbf{R}(\\bar{\\mathbf{x}}_t)^T \\begin{bmatrix} 0 \\\\ 0 \\\\ 1 \\end{bmatrix} \\\\
+    &=& \\begin{bmatrix}
+        1 - 2(q_y^2 + q_z^2) & 2(q_x q_y - q_w q_z) & 2(q_x q_z + q_w q_y) \\\\
+        2(q_x q_y + q_w q_z) & 1 - 2(q_x^2 + q_z^2) & 2(q_y q_z - q_w q_x) \\\\
+        2(q_x q_z - q_w q_y) & 2(q_y q_z + q_w q_x) & 1 - 2(q_x^2 + q_y^2)
+    \\end{bmatrix}
+    \\begin{bmatrix} 0 \\\\ 0 \\\\ 1 \\end{bmatrix} \\\\
+    &=& \\begin{bmatrix}
+        2(q_x q_z + q_w q_y) \\\\
+        2(q_y q_z - q_w q_x) \\\\
+        1 - 2(q_x^2 + q_y^2)
+    \\end{bmatrix}
+    \\end{array}
+
+We compare this predicted acceleration force with the actual accelerometer
+reading :math:`\\mathbf{z}_t` to get the **innovation**.
 
 .. seealso::
 
