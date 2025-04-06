@@ -278,19 +278,19 @@ summarized as follows:
 
 **Prediction**:
 
-1. Calculate the sigma points
+1. Compute Sigma Points.
 
 .. math::
 
     \\mathcal{X} = \\Big\\{ \\mathcal{X}_0 \\; , \\quad\\mathcal{X}_i \\; , \\quad\\mathcal{X}_{i+n} \\Big\\}
 
-2. Propagate the sigma points through the process model
+2. Propagate Sigma Points through Process model to get Transformed Sigma Points.
 
 .. math::
 
     \\mathcal{Y} = f(\\mathcal{X}, \\mathbf{u})
 
-3. Compute the predicted state mean and covariance
+3. Estimate Predicted State Mean and Covariance.
 
 .. math::
 
@@ -301,46 +301,46 @@ summarized as follows:
 
 **Correction**:
 
-4. Transform the predicted sigma points to the measurement space
+4. Instantiate each Transformed Sigma Point through Measurement model.
 
 .. math::
 
     \\mathcal{Z} = h(\\mathcal{Y})
 
-5. Compute the predicted measurement mean and covariance
+5. Compute Predicted Measurement Mean and Covariance.
 
 .. math::
 
     \\begin{array}{rcl}
     \\bar{\\mathbf{z}} &=& \\sum_{i=0}^{2n} w_i^{(m)} \\mathcal{Z}_i \\\\ \\\\
-    \\mathbf{P}_{yy} &=& \\sum_{i=0}^{2n} w_i^{(c)} (\\mathcal{Z}_i - \\bar{\\mathbf{z}})(\\mathcal{Z}_i - \\bar{\\mathbf{z}})^T + \\mathbf{R}
+    \\mathbf{P}_{vv} &=& \\sum_{i=0}^{2n} w_i^{(c)} (\\mathcal{Z}_i - \\bar{\\mathbf{z}})(\\mathcal{Z}_i - \\bar{\\mathbf{z}})^T + \\mathbf{R}
     \\end{array}
 
-6. Compute the cross-covariance
+6. Compute Cross-Covariance.
 
 .. math::
 
     \\mathbf{P}_{xy} = \\sum_{i=0}^{2n} w_i^{(c)} (\\mathcal{X}_i - \\bar{\\mathbf{x}})(\\mathcal{Y}_i - \\bar{\\mathbf{y}})^T
 
-7. Compute the Kalman gain
+7. Compute Kalman gain.
 
 .. math::
 
-    \\mathbf{K} = \\mathbf{P}_{xy} \\mathbf{P}_{yy}^{-1}
+    \\mathbf{K} = \\mathbf{P}_{xy} \\mathbf{P}_{vv}^{-1}
 
-8. Compute the innovation (residual)
+8. Compute Innovation (residual.)
 
 .. math::
 
     \\mathbf{v}_t = \\mathbf{z}_t - \\bar{\\mathbf{z}}
 
-9. Update the state and covariance
+9. Update State and Covariance
 
 .. math::
 
     \\begin{array}{rcl}
     \\mathbf{x}_t &=& \\bar{\\mathbf{x}} + \\mathbf{K} \\mathbf{v}_t \\\\ \\\\
-    \\mathbf{P}_t &=& \\mathbf{P}_{xx} - \\mathbf{K} \\mathbf{P}_{yy} \\mathbf{K}^T
+    \\mathbf{P}_t &=& \\mathbf{P}_{xx} - \\mathbf{K} \\mathbf{P}_{vv} \\mathbf{K}^T
     \\end{array}
 
 UKF for Attitude Estimation
@@ -599,14 +599,17 @@ This is our **measurement model** function.
 .. math::
 
     \\begin{array}{rcl}
-    \\mathcal{Z} &=& h(\\mathcal{Y}) \\\\
-    &=& \\mathbf{R}(\\mathcal{Y})^T \\begin{bmatrix} 0 \\\\ 0 \\\\ 1 \\end{bmatrix} \\\\
+    \\hat{\\mathbf{z}} &=& h(\\hat{\\mathbf{x}})\\\\
+    &=& \\mathbf{R}(\\hat{\\mathbf{x}})^T \\mathbf{g} \\\\
     &=& \\begin{bmatrix}
         1 - 2(\\hat{q_y}^2 + \\hat{q_z}^2) & 2(\\hat{q_x} \\hat{q_y} + \\hat{q_w} \\hat{q_z}) & 2(\\hat{q_x} \\hat{q_z} - \\hat{q_w} \\hat{q_y}) \\\\
         2(\\hat{q_x} \\hat{q_y} - \\hat{q_w} \\hat{q_z}) & 1 - 2(\\hat{q_x}^2 + \\hat{q_z}^2) & 2(\\hat{q_y} \\hat{q_z} + \\hat{q_w} \\hat{q_x}) \\\\
         2(\\hat{q_x} \\hat{q_z} + \\hat{q_w} \\hat{q_y}) & 2(\\hat{q_y} \\hat{q_z} - \\hat{q_w} \\hat{q_x}) & 1 - 2(\\hat{q_x}^2 + \\hat{q_y}^2)
     \\end{bmatrix}
     \\begin{bmatrix} 0 \\\\ 0 \\\\ 1 \\end{bmatrix} \\\\
+    \\begin{bmatrix}
+        \\hat{z_x} \\\\ \\hat{z_y} \\\\ \\hat{z_z}
+    \\end{bmatrix}
     &=& \\begin{bmatrix}
         2(\\hat{q_x} \\hat{q_z} - \\hat{q_w} \\hat{q_y}) \\\\
         2(\\hat{q_y} \\hat{q_z} + \\hat{q_w} \\hat{q_x}) \\\\
@@ -616,9 +619,31 @@ This is our **measurement model** function.
 
 .. note::
 
-    Notice we use the transpose of the rotation matrix to rotate the gravity vector
-    from the global frame to the sensor frame (the opposite of what it
-    describes.) so that we can compare it against the accelerometer readings.
+    Notice we use the transpose of the rotation matrix to rotate the gravity
+    vector from the global frame to the sensor frame (the opposite of what it
+    describes), so that we can compare it against the accelerometer readings in
+    sensor frame.
+
+We apply the measurement model to each of the predicted sigma points
+:math:`\\mathcal{Y}` to get the predicted accelerometer readings
+:math:`\\mathcal{Z}`:
+
+.. math::
+
+    \\mathcal{Z} =
+    \\begin{Bmatrix}
+        \\big| & \\big| & \\big| & \\big| & \\big| & \\big| & \\big| & \\big| & \\big| \\\\
+        h(\\mathcal{Y}_0) &
+        h(\\mathcal{Y}_1) &
+        h(\\mathcal{Y}_2) &
+        h(\\mathcal{Y}_3) &
+        h(\\mathcal{Y}_4) &
+        h(\\mathcal{Y}_5) &
+        h(\\mathcal{Y}_6) &
+        h(\\mathcal{Y}_7) &
+        h(\\mathcal{Y}_8) \\\\
+        \\big| & \\big| & \\big| & \\big| & \\big| & \\big| & \\big| & \\big| & \\big|
+    \\end{Bmatrix}
 
 With this set of predicted accelerometer readings :math:`\\mathcal{Z}` we can
 compute the **predicted measurement mean**:
@@ -627,7 +652,7 @@ compute the **predicted measurement mean**:
 
     \\bar{\\mathbf{z}} = \\sum_{i=0}^{2n} w_i^{(m)} \\mathcal{Z}_i
 
-And the **predicted measurement covariance** :math:`\\mathbf{P}_{zz}`:
+And the **predicted measurement covariance** :math:`\\mathbf{P}_{vv}`:
 
 .. math::
 
@@ -724,13 +749,13 @@ class UKF:
         predicted_state_covariance += self.Q    # Add process noise
 
         ## Correction
-        # 4. Transform sigma points to measurement space (predicted accelerometer readings)
+        # 4. Measurement Model: Transform sigma points to get predicted accelerometer readings
         predicted_measurements = [point.to_DCM().T @ np.array([0, 0, 1]) for point in predicted_sigma_points]
 
         # 5.1. Predicted measurement mean
         predicted_measurement_mean = np.sum(self.weight_mean[:, None] * predicted_measurements, axis=0)
 
-        # 5.1.1. Predicted measurements difference: Z_i - z_i
+        # 5.1.1. Predicted measurements difference: Z_i - z_bar
         predicted_measurements_diff = predicted_measurements - predicted_measurement_mean
 
         # 5.2. Predicted measurement covariance
