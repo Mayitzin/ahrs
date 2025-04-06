@@ -566,63 +566,79 @@ is the conjugate of the predicted quaternion (state mean.)
 The accelerometer measures the direction of the gravity vector in the
 inertial frame.
 
-If we assume the accelerometer is perfectly calibrated and its Z-axis is
-colinear with the gravity vector :math:`\\mathbf{g}` in the global frame, then
-the accelerometer reading :math:`\\mathbf{z}_t` would be:
-
-.. math::
-
-    \\mathbf{g} = \\mathbf{z}_t = \\begin{bmatrix} 0 \\\\ 0 \\\\ 9.81 \\end{bmatrix}
-
-indicating the Z-axis is pointing up, and the X and Y axes are pointing
-sideways.
-
 However, the accelerometer readings will depend on the geographical location of
 the sensor. The gravitational acceleration force is greater at the poles
 than at the equator, and it also varies with altitude.
 
 To counteract these effects, we assume the gravitational force will not change
-in our location and we set it to be equal to 1g. This way, we can ignore the
-magnitude of the accelerometer readings and focus on its direction.
+at our location and we set it to be equal to 1g. This way, we can ignore the
+magnitude of the accelerometer readings, and focus on its direction.
 
 .. math::
 
-    \\mathbf{g} = \\mathbf{z}_t = \\begin{bmatrix} 0 \\\\ 0 \\\\ 1 \\end{bmatrix}
+    \\mathbf{g} = \\begin{bmatrix} 0 \\\\ 0 \\\\ 1 \\end{bmatrix}
 
-We then normalize the accelerometer readings :math:`\\mathbf{z}_t` to unit length, so that we can use it as a direction
-vector:
+We normalize the accelerometer readings :math:`\\mathbf{z}_t` to unit length as
+well, so that we can use it as a direction vector too:
 
 .. math::
 
     \\mathbf{z}_t = \\frac{\\mathbf{z}_t}{\\|\\mathbf{z}_t\\|} = \\begin{bmatrix} z_x \\\\ z_y \\\\ z_z \\end{bmatrix}
 
-We can use this information to correct the predicted state
-:math:`\\bar{\\mathbf{x}}_t` with the accelerometer readings
-:math:`\\mathbf{z}_t`.
+Our strategy is to obtain the predicted accelerometer readings
+:math:`\\mathcal{Z}` by rotating the reference gravitational vector
+:math:`\\mathbf{g}` around the predicted orientations :math:`\\mathcal{Y}`,
+and compare it with the actual accelerometer readings :math:`\\mathbf{z}_t`.
 
-Our strategy is to rotate the gravitational vector around the predicted
-orientation :math:`\\bar{\\mathbf{x}}_t` to get the predicted
-accelerometer readings :math:`\\bar{\\mathbf{z}}_t`:
+In order to do this, we use the `direction cosine matrix <../dcm.html>`_, a.k.a.
+rotation matrix, built from each predicted orientation (transformed points) to
+rotate the gravity vector :math:`\\mathbf{g}` to the sensor frame.
+
+This is our **measurement model** function.
 
 .. math::
 
     \\begin{array}{rcl}
-    \\bar{\\mathbf{z}}_t &=& \\mathbf{R}(\\bar{\\mathbf{x}}_t)^T \\begin{bmatrix} 0 \\\\ 0 \\\\ 1 \\end{bmatrix} \\\\
+    \\mathcal{Z} &=& h(\\mathcal{Y}) \\\\
+    &=& \\mathbf{R}(\\mathcal{Y})^T \\begin{bmatrix} 0 \\\\ 0 \\\\ 1 \\end{bmatrix} \\\\
     &=& \\begin{bmatrix}
-        1 - 2(q_y^2 + q_z^2) & 2(q_x q_y - q_w q_z) & 2(q_x q_z + q_w q_y) \\\\
-        2(q_x q_y + q_w q_z) & 1 - 2(q_x^2 + q_z^2) & 2(q_y q_z - q_w q_x) \\\\
-        2(q_x q_z - q_w q_y) & 2(q_y q_z + q_w q_x) & 1 - 2(q_x^2 + q_y^2)
+        1 - 2(\\hat{q_y}^2 + \\hat{q_z}^2) & 2(\\hat{q_x} \\hat{q_y} + \\hat{q_w} \\hat{q_z}) & 2(\\hat{q_x} \\hat{q_z} - \\hat{q_w} \\hat{q_y}) \\\\
+        2(\\hat{q_x} \\hat{q_y} - \\hat{q_w} \\hat{q_z}) & 1 - 2(\\hat{q_x}^2 + \\hat{q_z}^2) & 2(\\hat{q_y} \\hat{q_z} + \\hat{q_w} \\hat{q_x}) \\\\
+        2(\\hat{q_x} \\hat{q_z} + \\hat{q_w} \\hat{q_y}) & 2(\\hat{q_y} \\hat{q_z} - \\hat{q_w} \\hat{q_x}) & 1 - 2(\\hat{q_x}^2 + \\hat{q_y}^2)
     \\end{bmatrix}
     \\begin{bmatrix} 0 \\\\ 0 \\\\ 1 \\end{bmatrix} \\\\
     &=& \\begin{bmatrix}
-        2(q_x q_z + q_w q_y) \\\\
-        2(q_y q_z - q_w q_x) \\\\
-        1 - 2(q_x^2 + q_y^2)
+        2(\\hat{q_x} \\hat{q_z} - \\hat{q_w} \\hat{q_y}) \\\\
+        2(\\hat{q_y} \\hat{q_z} + \\hat{q_w} \\hat{q_x}) \\\\
+        1 - 2(\\hat{q_x}^2 + \\hat{q_y}^2)
     \\end{bmatrix}
     \\end{array}
 
-We compare this predicted acceleration force with the actual accelerometer
-reading :math:`\\mathbf{z}_t` to get the **innovation**.
+.. note::
+
+    Notice we use the transpose of the rotation matrix to rotate the gravity vector
+    from the global frame to the sensor frame (the opposite of what it
+    describes.) so that we can compare it against the accelerometer readings.
+
+With this set of predicted accelerometer readings :math:`\\mathcal{Z}` we can
+compute the **predicted measurement mean**:
+
+.. math::
+
+    \\bar{\\mathbf{z}} = \\sum_{i=0}^{2n} w_i^{(m)} \\mathcal{Z}_i
+
+And the **predicted measurement covariance** :math:`\\mathbf{P}_{zz}`:
+
+.. math::
+
+    \\mathbf{P}_{vv} = \\sum_{i=0}^{2n} w_i^{(c)} (\\mathcal{Z}_i - \\bar{\\mathbf{z}})(\\mathcal{Z}_i - \\bar{\\mathbf{z}})^T + \\mathbf{R}
+
+We compare the predicted acceleration force with the actual accelerometer
+reading :math:`\\mathbf{z}_t` to get the **innovation**:
+
+.. math::
+
+    \\mathbf{v}_t = \\mathbf{z}_t - \\bar{\\mathbf{z}}_t
 
 .. seealso::
 
