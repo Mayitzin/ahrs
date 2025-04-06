@@ -102,7 +102,7 @@ dynamic model function, whose Jacobian is:
 
     \\mathbf{F}(\\mathbf{x}_{t-1}, \\mathbf{u}_t) = \\frac{\\partial \\mathbf{f}(\\mathbf{x}_{t-1}, \\mathbf{u}_t)}{\\partial \\mathbf{x}}
 
-whereas the measurement model is linearized as:
+whereas the measurement model [#]_ is linearized as:
 
 .. math::
 
@@ -563,38 +563,55 @@ is the conjugate of the predicted quaternion (state mean.)
 
 **Measurement Model**
 
-The accelerometer measures the direction of the gravity vector in the
-inertial frame.
+The accelerometer measures any `linear accelerating force
+<https://en.wikipedia.org/wiki/Proper_acceleration>`_ in the inertial frame,
+including the gravitational force.
 
-However, the accelerometer readings will depend on the geographical location of
-the sensor. The gravitational acceleration force is greater at the poles
-than at the equator, and it also varies with altitude.
+.. math::
 
-To counteract these effects, we assume the gravitational force will not change
-at our location and we set it to be equal to 1g. This way, we can ignore the
-magnitude of the accelerometer readings, and focus on its direction.
+    \\mathbf{a} = \\begin{bmatrix} a_x \\\\ a_y \\\\ a_z \\end{bmatrix}
+
+However, the accelerometer readings vary depending on the geographical location
+of the sensor. The gravitational acceleration force is greater at the poles
+than at the equator, and it also changes with altitude.
+
+To counteract these effects, we assume the gravitational acceleration will not
+change at our location and we set it to be equal to 1g. This way, we can ignore
+its magnitude, and focus on its direction.
 
 .. math::
 
     \\mathbf{g} = \\begin{bmatrix} 0 \\\\ 0 \\\\ 1 \\end{bmatrix}
+
+Because the accelerometer is the only sensor that we are using to correct the
+orientation, we set it to be equal to the **measurement vector**:
+
+.. math::
+
+    \\mathbf{z} = \\begin{bmatrix} z_x \\\\ z_y \\\\ z_z \\end{bmatrix}
+    = \\begin{bmatrix} a_x \\\\ a_y \\\\ a_z \\end{bmatrix}
 
 We normalize the accelerometer readings :math:`\\mathbf{z}_t` to unit length as
 well, so that we can use it as a direction vector too:
 
 .. math::
 
-    \\mathbf{z}_t = \\frac{\\mathbf{z}_t}{\\|\\mathbf{z}_t\\|} = \\begin{bmatrix} z_x \\\\ z_y \\\\ z_z \\end{bmatrix}
+    \\mathbf{z} = \\frac{\\mathbf{z}}{\\|\\mathbf{z}\\|} = \\begin{bmatrix} z_x \\\\ z_y \\\\ z_z \\end{bmatrix}
 
-Our strategy is to obtain the predicted accelerometer readings
+Our strategy is to obtain a set of predicted measurement readings
 :math:`\\mathcal{Z}` by rotating the reference gravitational vector
 :math:`\\mathbf{g}` around the predicted orientations :math:`\\mathcal{Y}`,
-and compare it with the actual accelerometer readings :math:`\\mathbf{z}_t`.
+and compare it with the actual accelerometer readings :math:`\\mathbf{z}`.
 
-In order to do this, we use the `direction cosine matrix <../dcm.html>`_, a.k.a.
-rotation matrix, built from each predicted orientation (transformed points) to
-rotate the gravity vector :math:`\\mathbf{g}` to the sensor frame.
+Both the reference gravitational vector and the accelerometer readings must be
+normalized to unit length, so that we can compare them as direction vectors.
 
-This is our **measurement model** function.
+In order to perform this rotation, we use the `direction cosine matrix
+<../dcm.html>`_, a.k.a. rotation matrix, built from each predicted orientation
+(transformed points) to rotate the gravity vector :math:`\\mathbf{g}` to the
+sensor frame.
+
+This is our **Measurement Model** function.
 
 .. math::
 
@@ -621,8 +638,8 @@ This is our **measurement model** function.
 
     Notice we use the transpose of the rotation matrix to rotate the gravity
     vector from the global frame to the sensor frame (the opposite of what it
-    describes), so that we can compare it against the accelerometer readings in
-    sensor frame.
+    describes.) We do this, so that we can compare it against the accelerometer
+    readings in sensor frame.
 
 We apply the measurement model to each of the predicted sigma points
 :math:`\\mathcal{Y}` to get the predicted accelerometer readings
@@ -646,13 +663,13 @@ We apply the measurement model to each of the predicted sigma points
     \\end{Bmatrix}
 
 With this set of predicted accelerometer readings :math:`\\mathcal{Z}` we can
-compute the **predicted measurement mean**:
+compute the **Predicted Measurement Mean**:
 
 .. math::
 
     \\bar{\\mathbf{z}} = \\sum_{i=0}^{2n} w_i^{(m)} \\mathcal{Z}_i
 
-And the **predicted measurement covariance** :math:`\\mathbf{P}_{vv}`:
+And the **Predicted Measurement Covariance** :math:`\\mathbf{P}_{vv}`:
 
 .. math::
 
@@ -664,6 +681,10 @@ reading :math:`\\mathbf{z}_t` to get the **innovation**:
 .. math::
 
     \\mathbf{v}_t = \\mathbf{z}_t - \\bar{\\mathbf{z}}_t
+
+Footnotes
+---------
+.. [#] The Measurement Model is sometimes called **Observation Model**.
 
 .. seealso::
 
