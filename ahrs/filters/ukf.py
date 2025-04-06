@@ -272,8 +272,8 @@ Gaussian distributions :cite:p:`wan2000`.
 
 **UKF Summary**
 
-Given the initial state :math:`\\mathbf{x}_0`, and its covariance matrix
-:math:`\\mathbf{P}_0\\in\\mathbb{R}^{n\\times n}`, the UKF algorithm can be
+Given the previous state :math:`\\mathbf{x}_{t-1}`, and its covariance matrix
+:math:`\\mathbf{P}_{t_1}\\in\\mathbb{R}^{n\\times n}`, the UKF algorithm can be
 summarized as follows:
 
 **Prediction**:
@@ -282,7 +282,7 @@ summarized as follows:
 
 .. math::
 
-    \\mathcal{X} = \\Big\\{ \\mathcal{X}_0 \\; , \\quad\\mathcal{X}_i \\; , \\quad\\mathcal{X}_{i+n} \\Big\\}
+    \\mathcal{X}(\\mathbf{x}_{t-1}, \\mathbf{P}_{t_1}) = \\Big\\{ \\mathcal{X}_0 \\; , \\quad\\mathcal{X}_i \\; , \\quad\\mathcal{X}_{i+n} \\Big\\}
 
 2. Propagate Sigma Points through Process model to get Transformed Sigma Points.
 
@@ -320,13 +320,13 @@ summarized as follows:
 
 .. math::
 
-    \\mathbf{P}_{xy} = \\sum_{i=0}^{2n} w_i^{(c)} (\\mathcal{X}_i - \\bar{\\mathbf{x}})(\\mathcal{Y}_i - \\bar{\\mathbf{y}})^T
+    \\mathbf{P}_{yz} = \\sum_{i=0}^{2n} w_i^{(c)} (\\mathcal{Y}_i - \\bar{\\mathbf{y}})(\\mathcal{Z}_i - \\bar{\\mathbf{z}})^T
 
 7. Compute Kalman gain.
 
 .. math::
 
-    \\mathbf{K} = \\mathbf{P}_{xy} \\mathbf{P}_{vv}^{-1}
+    \\mathbf{K} = \\mathbf{P}_{yz} \\mathbf{P}_{vv}^{-1}
 
 8. Compute Innovation (residual.)
 
@@ -521,7 +521,7 @@ Now we compute the **predicted state mean**:
 
 .. math::
 
-    \\bar{\\mathbf{y}} = \\sum_{i=0}^{2n} w_i^{(m)} \\mathcal{Y}_i
+    \\boxed{\\bar{\\mathbf{y}} = \\sum_{i=0}^{2n} w_i^{(m)} \\mathcal{Y}_i}
 
 This predicted state represents the mean of the transformed state points as a
 quaternion. Therefore, we must normalize it:
@@ -667,20 +667,53 @@ compute the **Predicted Measurement Mean**:
 
 .. math::
 
-    \\bar{\\mathbf{z}} = \\sum_{i=0}^{2n} w_i^{(m)} \\mathcal{Z}_i
+    \\boxed{\\bar{\\mathbf{z}} = \\sum_{i=0}^{2n} w_i^{(m)} \\mathcal{Z}_i}
 
 And the **Predicted Measurement Covariance** :math:`\\mathbf{P}_{vv}`:
 
 .. math::
 
-    \\mathbf{P}_{vv} = \\sum_{i=0}^{2n} w_i^{(c)} (\\mathcal{Z}_i - \\bar{\\mathbf{z}})(\\mathcal{Z}_i - \\bar{\\mathbf{z}})^T + \\mathbf{R}
+    \\boxed{\\mathbf{P}_{vv} = \\sum_{i=0}^{2n} w_i^{(c)} (\\mathcal{Z}_i - \\bar{\\mathbf{z}})(\\mathcal{Z}_i - \\bar{\\mathbf{z}})^T + \\mathbf{R}}
 
-We compare the predicted acceleration force with the actual accelerometer
-reading :math:`\\mathbf{z}_t` to get the **innovation**:
+where :math:`\\mathbf{R}` is the :math:`3\\times 3` measurement noise
+covariance matrix.
+
+The Cross-Covariance matrix :math:`\\mathbf{P}_{yz}` represents how changes in
+the state variables correlate with changes in the measurement variables.
+Specifically, it quantifies how errors in the state estimate are related to
+errors in the predicted measurements.
+
+.. math::
+
+    \\mathbf{P}_{yz} = \\sum_{i=0}^{2n} w_i^{(c)} (\\mathcal{Y}_i - \\bar{\\mathbf{y}})(\\mathcal{Z}_i - \\bar{\\mathbf{z}})^T
+
+We compute the **Kalman Gain** :math:`\\mathbf{K}`:
+
+.. math::
+
+    \\mathbf{K} = \\mathbf{P}_{yz} \\mathbf{P}_{vv}^{-1}
+
+where :math:`\\mathbf{P}_{vv}^{-1}` is the inverse of the predicted measurement
+covariance matrix.
+
+We compare the predicted measurement mean :math:`\\bar{\\mathbf{z}}` against
+the actual measurement reading :math:`\\mathbf{z}` to get the **innovation** at
+the curent time step :math:`t`:
 
 .. math::
 
     \\mathbf{v}_t = \\mathbf{z}_t - \\bar{\\mathbf{z}}_t
+
+And, finally, we correct the state and covariance:
+
+.. math::
+
+    \\begin{array}{rcl}
+    \\mathbf{x}_t &=& \\bar{\\mathbf{x}} + \\mathbf{K} \\mathbf{v}_t \\\\ \\\\
+    \\mathbf{P}_t &=& \\mathbf{P}_{xx} - \\mathbf{K} \\mathbf{P}_{vv} \\mathbf{K}^T
+    \\end{array}
+
+where :math:`\\mathbf{P}_{xx}` is the previous state covariance matrix.
 
 Footnotes
 ---------
