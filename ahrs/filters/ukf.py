@@ -363,20 +363,20 @@ We start the prediction by defining the main vectors:
     \\mathbf{z} &=& \\begin{bmatrix} a_x & a_y & a_z \\end{bmatrix}^T
     \\end{array}
 
-The state vector :math:`\\mathbf{x}_t\\in\\mathbb{R}^4` is the quaternion
-representing the orientation at time :math:`t`, the input vector
+The state vector :math:`\\mathbf{x}_t\\in\\mathbb{R}^4` has the elements of a
+quaternion representing the orientation at any time :math:`t`; the input vector
 :math:`\\mathbf{u}_t\\in\\mathbb{R}^3` contains the angular velocity readings
 from a tri-axial gyroscope, and the measurement vector
 :math:`\\mathbf{z}_t\\in\\mathbb{R}^3` has the readings of a tri-axial
 accelerometer.
 
-The state vector describing the quaternion represents an orientation. This type
-of quaternion is also known as a `versor <https://en.wikipedia.org/wiki/Versor>`_,
-and they are unit quaternions, meaning :math:`\\|\\mathbf{q}\\|^2=1`. So, we
-must normalize the quaternion after each transformation.
+The state vector describing the orientation as a quaternion is also known as a
+`versor <https://en.wikipedia.org/wiki/Versor>`_, and they are unit quaternions,
+meaning :math:`\\|\\mathbf{q}\\|^2=1`. So, we must normalize the quaternion
+after each transformation.
 
 Notice we don't extend the state vector to include the gyroscope biases like
-others do. For the sake of simplicity we don't estimate these biases, and
+other models do. For the sake of simplicity we don't estimate these biases, and
 assume the sensor readings are already calibrated.
 
 **Sigma Points**
@@ -484,11 +484,17 @@ attitude propagation to define the **process model**:
     \\end{bmatrix}
     \\end{array}
 
-where the rotation operator :math:`\\big(\\mathbf{I}_4 + \\frac{\\Delta t}{2}\\boldsymbol\\Omega_t\\big)`
-is a truncation up to the second term of the Taylor series expansion of
+where the rotation operator :math:`\\big(\\mathbf{I}_4 +
+\\frac{\\Delta t}{2}\\boldsymbol\\Omega_t\\big)` is a truncation up to the
+second term of the Taylor series expansion of
 :math:`\\int_{t-1}^t\\boldsymbol\\omega\\, dt`.
 
 .. note::
+
+    The third parameter of the process model :math:`\\Delta t` is the time step
+    between the previous state and the current one. We assume, in this
+    description, that the time step is constant. However, it can be changed at
+    any time during the process.
 
     For more details about this linear operation, please refer to the `Attitude
     from Angular Rate <./angular.html>`_ documentation.
@@ -598,7 +604,7 @@ well, so that we can use it as a direction vector too:
 
     \\mathbf{z} = \\frac{\\mathbf{z}}{\\|\\mathbf{z}\\|} = \\begin{bmatrix} z_x \\\\ z_y \\\\ z_z \\end{bmatrix}
 
-Our strategy is to obtain a set of predicted measurement readings
+Our strategy is to obtain a set of expected measurement readings
 :math:`\\mathcal{Z}` by rotating the reference gravitational vector
 :math:`\\mathbf{g}` around the predicted orientations :math:`\\mathcal{Y}`,
 and compare it with the actual accelerometer readings :math:`\\mathbf{z}`.
@@ -642,7 +648,7 @@ This is our **Measurement Model** function.
     readings in sensor frame.
 
 We apply the measurement model to each of the predicted sigma points
-:math:`\\mathcal{Y}` to get the predicted accelerometer readings
+:math:`\\mathcal{Y}` to get the expected accelerometer readings
 :math:`\\mathcal{Z}`:
 
 .. math::
@@ -662,14 +668,14 @@ We apply the measurement model to each of the predicted sigma points
         \\big| & \\big| & \\big| & \\big| & \\big| & \\big| & \\big| & \\big| & \\big|
     \\end{Bmatrix}
 
-With this set of predicted accelerometer readings :math:`\\mathcal{Z}` we can
-compute the **Predicted Measurement Mean**:
+With this set of expected accelerometer readings :math:`\\mathcal{Z}` we can
+compute the **Measurement Mean**:
 
 .. math::
 
     \\boxed{\\bar{\\mathbf{z}} = \\sum_{i=0}^{2n} w_i^{(m)} \\mathcal{Z}_i}
 
-And the **Predicted Measurement Covariance** :math:`\\mathbf{P}_{zz}`:
+And the **Measurement Covariance**:
 
 .. math::
 
@@ -680,40 +686,42 @@ covariance matrix.
 
 The Cross-Covariance matrix :math:`\\mathbf{P}_{yz}` represents how changes in
 the state variables correlate with changes in the measurement variables.
-Specifically, it quantifies how errors in the state estimate are related to
-errors in the predicted measurements.
+Specifically, it quantifies how errors in the predicted states are related to
+errors in the expected measurements.
 
 .. math::
 
-    \\mathbf{P}_{yz} = \\sum_{i=0}^{2n} w_i^{(c)} (\\mathcal{Y}_i - \\bar{\\mathbf{y}})(\\mathcal{Z}_i - \\bar{\\mathbf{z}})^T
+    \\boxed{\\mathbf{P}_{yz} = \\sum_{i=0}^{2n} w_i^{(c)} (\\mathcal{Y}_i - \\bar{\\mathbf{y}})(\\mathcal{Z}_i - \\bar{\\mathbf{z}})^T}
 
-We compute the **Kalman Gain** :math:`\\mathbf{K}`:
+We compute the **Kalman Gain**:
 
 .. math::
 
-    \\mathbf{K} = \\mathbf{P}_{yz} \\mathbf{P}_{zz}^{-1}
+    \\boxed{\\mathbf{K} = \\mathbf{P}_{yz} \\mathbf{P}_{zz}^{-1}}
 
-where :math:`\\mathbf{P}_{zz}^{-1}` is the inverse of the predicted measurement
-covariance matrix.
+Notice this is a much simpler operation than the Extended Kalman Filter (EKF)
+where we need to compute the Jacobian matrix.
 
-We compare the predicted measurement mean :math:`\\bar{\\mathbf{z}}` against
+We compare the expected measurement mean :math:`\\bar{\\mathbf{z}}` against
 the actual measurement reading :math:`\\mathbf{z}` to get the **innovation** at
 the curent time step :math:`t`:
 
 .. math::
 
-    \\mathbf{v}_t = \\mathbf{z}_t - \\bar{\\mathbf{z}}_t
+    \\boxed{\\mathbf{v}_t = \\mathbf{z}_t - \\bar{\\mathbf{z}}_t}
 
-And, finally, we correct the state and covariance:
+This tells us, basically, how "far off" the predicted state is from the actual
+measurements.
+
+Finally, we use all this information to correct the state and covariance:
 
 .. math::
 
+    \\boxed{
     \\begin{array}{rcl}
     \\mathbf{x}_t &=& \\bar{\\mathbf{x}} + \\mathbf{K} \\mathbf{v}_t \\\\ \\\\
-    \\mathbf{P}_t &=& \\mathbf{P}_{xx} - \\mathbf{K} \\mathbf{P}_{zz} \\mathbf{K}^T
-    \\end{array}
-
-where :math:`\\mathbf{P}_{xx}` is the previous state covariance matrix.
+    \\mathbf{P}_t &=& \\mathbf{P}_{yy} - \\mathbf{K} \\mathbf{P}_{zz} \\mathbf{K}^T
+    \\end{array}}
 
 Footnotes
 ---------
@@ -782,7 +790,7 @@ class UKF:
 
     def update(self, q, gyro, acc, dt):
         ## Prediction
-        # Normalize accelerometer data
+        # Normalize sensor data
         acc_normalized = acc / np.linalg.norm(acc)
 
         # 1. Generate sigma points
