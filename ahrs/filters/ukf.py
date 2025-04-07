@@ -313,7 +313,7 @@ summarized as follows:
 
     \\begin{array}{rcl}
     \\bar{\\mathbf{z}} &=& \\sum_{i=0}^{2n} w_i^{(m)} \\mathcal{Z}_i \\\\ \\\\
-    \\mathbf{P}_{vv} &=& \\sum_{i=0}^{2n} w_i^{(c)} (\\mathcal{Z}_i - \\bar{\\mathbf{z}})(\\mathcal{Z}_i - \\bar{\\mathbf{z}})^T + \\mathbf{R}
+    \\mathbf{P}_{zz} &=& \\sum_{i=0}^{2n} w_i^{(c)} (\\mathcal{Z}_i - \\bar{\\mathbf{z}})(\\mathcal{Z}_i - \\bar{\\mathbf{z}})^T + \\mathbf{R}
     \\end{array}
 
 6. Compute Cross-Covariance.
@@ -326,7 +326,7 @@ summarized as follows:
 
 .. math::
 
-    \\mathbf{K} = \\mathbf{P}_{yz} \\mathbf{P}_{vv}^{-1}
+    \\mathbf{K} = \\mathbf{P}_{yz} \\mathbf{P}_{zz}^{-1}
 
 8. Compute Innovation (residual.)
 
@@ -340,7 +340,7 @@ summarized as follows:
 
     \\begin{array}{rcl}
     \\mathbf{x}_t &=& \\bar{\\mathbf{x}} + \\mathbf{K} \\mathbf{v}_t \\\\ \\\\
-    \\mathbf{P}_t &=& \\mathbf{P}_{xx} - \\mathbf{K} \\mathbf{P}_{vv} \\mathbf{K}^T
+    \\mathbf{P}_t &=& \\mathbf{P}_{xx} - \\mathbf{K} \\mathbf{P}_{zz} \\mathbf{K}^T
     \\end{array}
 
 UKF for Attitude Estimation
@@ -669,11 +669,11 @@ compute the **Predicted Measurement Mean**:
 
     \\boxed{\\bar{\\mathbf{z}} = \\sum_{i=0}^{2n} w_i^{(m)} \\mathcal{Z}_i}
 
-And the **Predicted Measurement Covariance** :math:`\\mathbf{P}_{vv}`:
+And the **Predicted Measurement Covariance** :math:`\\mathbf{P}_{zz}`:
 
 .. math::
 
-    \\boxed{\\mathbf{P}_{vv} = \\sum_{i=0}^{2n} w_i^{(c)} (\\mathcal{Z}_i - \\bar{\\mathbf{z}})(\\mathcal{Z}_i - \\bar{\\mathbf{z}})^T + \\mathbf{R}}
+    \\boxed{\\mathbf{P}_{zz} = \\sum_{i=0}^{2n} w_i^{(c)} (\\mathcal{Z}_i - \\bar{\\mathbf{z}})(\\mathcal{Z}_i - \\bar{\\mathbf{z}})^T + \\mathbf{R}}
 
 where :math:`\\mathbf{R}` is the :math:`3\\times 3` measurement noise
 covariance matrix.
@@ -691,9 +691,9 @@ We compute the **Kalman Gain** :math:`\\mathbf{K}`:
 
 .. math::
 
-    \\mathbf{K} = \\mathbf{P}_{yz} \\mathbf{P}_{vv}^{-1}
+    \\mathbf{K} = \\mathbf{P}_{yz} \\mathbf{P}_{zz}^{-1}
 
-where :math:`\\mathbf{P}_{vv}^{-1}` is the inverse of the predicted measurement
+where :math:`\\mathbf{P}_{zz}^{-1}` is the inverse of the predicted measurement
 covariance matrix.
 
 We compare the predicted measurement mean :math:`\\bar{\\mathbf{z}}` against
@@ -710,7 +710,7 @@ And, finally, we correct the state and covariance:
 
     \\begin{array}{rcl}
     \\mathbf{x}_t &=& \\bar{\\mathbf{x}} + \\mathbf{K} \\mathbf{v}_t \\\\ \\\\
-    \\mathbf{P}_t &=& \\mathbf{P}_{xx} - \\mathbf{K} \\mathbf{P}_{vv} \\mathbf{K}^T
+    \\mathbf{P}_t &=& \\mathbf{P}_{xx} - \\mathbf{K} \\mathbf{P}_{zz} \\mathbf{K}^T
     \\end{array}
 
 where :math:`\\mathbf{P}_{xx}` is the previous state covariance matrix.
