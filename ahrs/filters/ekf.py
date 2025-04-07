@@ -566,14 +566,6 @@ For the estimated quaternion :math:`\\hat{\\mathbf{q}}_t` this becomes:
     \\begin{bmatrix}x_1 \\\\ x_2 \\\\ x_3 \\end{bmatrix}
     \\end{array}
 
-.. note::
-
-    The rotation matrix :math:`\\mathbf{C}(\\hat{\\mathbf{q}})` in this
-    estimator is computed with the function :func:`ahrs.common.orientation.q2R`,
-    using the version 2. By default (version 1), the function returns a
-    rotation matrix with a different definition of diagonal values. Please see
-    the documentation of the function for more details.
-
 **Global References**
 
 There are two main global reference frames based on the `local tangent plane
