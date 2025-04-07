@@ -72,6 +72,7 @@ ROLEQ          NO         YES            YES
 SAAM           NO         YES            YES
 Tilt           NO         YES            Optional
 TRIAD          NO         YES            YES
+UKF            YES        YES            NO
 =============  =========  =============  ============
 
 .. toctree::
@@ -95,3 +96,4 @@ TRIAD          NO         YES            YES
    filters/saam
    filters/tilt
    filters/triad
+   filters/ukf
