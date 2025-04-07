@@ -606,8 +606,8 @@ simplifying their definition to:
     \\mathbf{g} &=&
     \\left\\{
     \\begin{array}{ll}
-        \\begin{bmatrix}0 & 0 & -1\\end{bmatrix}^T & \\mathrm{if}\\; \\mathrm{NED} \\\\
-        \\begin{bmatrix}0 & 0 & 1\\end{bmatrix}^T & \\mathrm{if}\\; \\mathrm{ENU}
+        \\begin{bmatrix}0 & 0 & 1\\end{bmatrix}^T & \\mathrm{if}\\; \\mathrm{NED} \\\\
+        \\begin{bmatrix}0 & 0 & -1\\end{bmatrix}^T & \\mathrm{if}\\; \\mathrm{ENU}
     \\end{array}
     \\right.\\\\ && \\\\
     \\mathbf{r} &=&
