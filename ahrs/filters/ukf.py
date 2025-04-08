@@ -739,9 +739,21 @@ Footnotes
 
 import numpy as np
 from ..common.quaternion import Quaternion
+from ..utils.core import _assert_numerical_iterable
 
 class UKF:
-    def __init__(self, alpha=1e-3, beta=2, kappa=0, **kwargs):
+    def __init__(self,
+            gyr: np.ndarray = None,
+            acc: np.ndarray = None,
+            frequency: float = 100.0,
+            alpha: float = 1e-3,
+            beta: float = 2,
+            kappa: float = 0,
+            **kwargs):
+        self.gyr: np.ndarray = gyr
+        self.acc: np.ndarray = acc
+        self.frequency: float = frequency
+        self.Dt: float = kwargs.get('Dt', (1.0/self.frequency) if self.frequency else 0.01)
         # UKF parameters
         self.state_dimension = 4    # n : State dimension (Quaternion items)
         self.sigma_point_count = 2 * self.state_dimension + 1   # 2*n+1 sigma points
@@ -790,13 +802,16 @@ class UKF:
             [x[1], -x[2],   0.0,  x[0]],
             [x[2],  x[1], -x[0],   0.0]])
 
-    def update(self, q, gyro, acc, dt):
+    def update(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, dt: float = None) -> np.ndarray:
+        _assert_numerical_iterable(q, 'Quaternion')
+        _assert_numerical_iterable(gyr, 'Tri-axial gyroscope sample')
+        _assert_numerical_iterable(acc, 'Tri-axial accelerometer sample')
         ## Prediction
         # 1. Generate sigma points
         sigma_points = self.compute_sigma_points(q, self.P)
 
         # 2. Process model - propagate sigma points with gyro data
-        rotation_operator = np.eye(4) + 0.5 * self.Omega(gyro) * dt
+        rotation_operator = np.eye(4) + 0.5 * self.Omega(gyr) * dt
         predicted_sigma_points = [Quaternion(rotation_operator @ point) for point in sigma_points]
 
         # 3.1. Predicted state mean (y_bar)
