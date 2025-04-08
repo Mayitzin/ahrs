@@ -743,6 +743,64 @@ from ..common.orientation import acc2q
 from ..utils.core import _assert_numerical_iterable
 
 class UKF:
+    """
+    Unscented Kalman Filter to estimate orientation as Quaternion.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from ahrs.filters import UKF
+    >>> from ahrs.common.orientation import acc2q
+    >>> ukf = UKF()
+    >>> num_samples = 1000              # Assuming sensors have 1000 samples each
+    >>> Q = np.zeros((num_samples, 4))  # Allocate array for quaternions
+    >>> Q[0] = acc2q(acc_data[0])       # First sample of tri-axial accelerometer
+    >>> for t in range(1, num_samples):
+    ...     Q[t] = ukf.update(Q[t-1], gyr_data[t], acc_data[t])
+
+    The estimation can be simplified by giving all sensor values at the
+    construction of the UKF object.
+
+    >>> ukf = UKF(gyr=gyr_data, acc=acc_data)
+    >>> ukf.Q.shape
+    (1000, 4)
+
+    This will perform all steps above and store the estimated orientations, as
+    quaternions, in the attribute ``Q``.
+
+    The most common sampling frequency is 100 Hz, which is used in the filter.
+    If the sampling frequency is different in the given sensor data, it can be
+    changed too.
+
+    >>> ukf = UKF(gyr=gyr_data, acc=acc_data, frequency=200.0)  # Sampling frequency is 200 Hz
+
+    The initial quaternion is estimated with the first observations of the
+    tri-axial accelerometers, but it can also be given directly in the
+    parameter ``q0``.
+
+    >>> ukf = UKF(gyr=gyr_data, acc=acc_data, mag=mag_data, q0=[0.7071, 0.0, -0.7071, 0.0])
+
+    Parameters
+    ----------
+    gyr : numpy.ndarray, default: None
+        N-by-3 array with measurements of angular velocity in rad/s
+    acc : numpy.ndarray, default: None
+        N-by-3 array with measurements of acceleration in in m/s^2
+    frequency : float, default: 100.0
+        Sampling frequency in Herz.
+    q0 : numpy.ndarray, default: None
+        Initial orientation, as a versor (normalized quaternion).
+    Dt : float, default: 0.01
+        Sampling step in seconds. Inverse of sampling frequency. NOT required
+        if ``frequency`` value is given.
+    alpha : float, default: 1e-3
+        Parameter controlling spread of Sigma points.
+    beta : float, default: 2
+        Parameter controlling distribution of Sigma points.
+    kappa : float, default: 0
+        Secondary scaling parameter. Usually set to 0.
+
+    """
     def __init__(self,
             gyr: np.ndarray = None,
             acc: np.ndarray = None,
@@ -785,12 +843,50 @@ class UKF:
         Q = np.zeros((num_samples, 4))
         Q[0] = acc2q(self.acc[0]) if self.q0 is None else self.q0
         Q[0] /= np.linalg.norm(Q[0])
-        # EKF Loop over all data
+        # Loop over all data
         for t in range(1, num_samples):
             Q[t] = self.update(Q[t-1], self.gyr[t], self.acc[t], self.Dt)
         return Q
 
-    def set_weights(self):
+    def set_weights(self) -> tuple:
+        """
+        Set weights for mean and covariance computation
+
+        The weights :math:`\\mathbf{w}=\\begin{bmatrix}\\mathbf{w}{(m)}&
+        \\mathbf{w}{(c)}\\end{bmatrix}` are computed as:
+
+        .. math::
+
+            \\begin{array}{rcl}
+            w_0^{(m)} &=& \\frac{\\lambda}{n + \\lambda} \\\\
+            w_0^{(c)} &=& \\frac{\\lambda}{n + \\lambda} + (1 - \\alpha^2 + \\beta) \\\\
+            w_i^{(m)} = w_i^{(c)} &=& \\frac{1}{2(n + \\lambda)} \\quad \\text{for} \\quad i=1,2,\\ldots,2n
+            \\end{array}
+
+        The weights :math:`\\mathbf{w}^{(m)}` are used to compute the mean, and
+        the weights :math:`\\mathbf{w}^{(c)}` are used to compute the
+        covariance.
+
+        The constant :math:`\\beta` is used to incorporate prior knowledge
+        about the distribution of the random variable, and is usually set to
+        :math:`2`.
+
+        The scaling parameter :math:`\\alpha` determines the spread of the
+        sigma points around the mean. A small value of :math:`\\alpha` results
+        in sigma points that are close to the mean, while a larger value
+        results in sigma points that are more spread out. The value of
+        :math:`\\alpha` is usually set to a small positive number, typically in
+        the range of :math:`10^{-3}` to :math:`10^{-1}`.
+
+        Returns
+        -------
+        tuple
+            Weights for mean and covariance.
+
+            - ``weight_mean``: Weights for mean.
+            - ``weight_covariance``: Weights for covariance.
+
+        """
         # Weights for sigma points
         weight_mean = np.zeros(self.sigma_point_count)
         weight_covariance = np.zeros(self.sigma_point_count)
@@ -800,7 +896,36 @@ class UKF:
         weight_covariance[1:] = weight_mean[1:] = 1.0 / (2 * (self.state_dimension + self.lambda_param))
         return weight_mean, weight_covariance
 
-    def compute_sigma_points(self, state, state_covariance):
+    def compute_sigma_points(self, state: np.ndarray, state_covariance: np.ndarray) -> np.ndarray:
+        """
+        Sigma Points computation.
+
+        Given a state :math:`\\mathbf{x}` and its covariance
+        :math:`\\mathbf{P}_{xx}`, compute the sigma points
+        :math:`\\mathcal{X}` as:
+
+        .. math::
+
+            \\begin{array}{rcl}
+            \\mathcal{X}_0 &=& \\mathbf{x}_{t-1} \\\\
+            \\mathcal{X}_i &=& \\mathbf{x}_{t-1} + \\mathbf{L}_i \\\\
+            \\mathcal{X}_{i+n} &=& \\mathbf{x}_{t-1} - \\mathbf{L}_i
+            \\end{array}
+
+        where the **Square Root** covariance matrix :math:`\\mathbf{L}` is
+        obtained using the `Cholesky decomposition
+        <https://en.wikipedia.org/wiki/Cholesky_decomposition>`_:
+
+        .. math::
+
+            \\mathbf{L} = \\mathrm{chol}\\Big(\\sqrt{(n + \\lambda)\\mathbf{P_{xx}}}\\Big)
+
+        Returns
+        -------
+        sigma_points : numpy.ndarray
+            Sigma points array of shape `(2n+1, n)`, where `n` is the state
+            dimension.
+        """
         try:
             sqrt_covariance = np.linalg.cholesky((self.state_dimension + self.lambda_param) * state_covariance)
         except np.linalg.LinAlgError:
@@ -816,6 +941,35 @@ class UKF:
         return sigma_points
 
     def Omega(self, x: np.ndarray) -> np.ndarray:
+        """
+        Omega operator.
+
+        Given a vector :math:`\\mathbf{x}\\in\\mathbb{R}^3`, return a
+        :math:`4\\times 4` matrix of the form:
+
+        .. math::
+            \\boldsymbol\\Omega(\\mathbf{x}) =
+            \\begin{bmatrix}
+                0 & -\\mathbf{x}^T \\\\
+                \\mathbf{x} & -\\lfloor\\mathbf{x}\\rfloor_\\times
+            \\end{bmatrix} =
+            \\begin{bmatrix}
+                0   & -x_1 & -x_2 & -x_3 \\\\
+                x_1 &    0 &  x_3 & -x_2 \\\\
+                x_2 & -x_3 &    0 &  x_1 \\\\
+                x_3 &  x_2 & -x_1 & 0
+            \\end{bmatrix}
+
+        Parameters
+        ----------
+        x : numpy.ndarray
+            Three-dimensional vector.
+
+        Returns
+        -------
+        Omega : numpy.ndarray
+            Omega matrix.
+        """
         return np.array([
             [0.0,  -x[0], -x[1], -x[2]],
             [x[0],   0.0,  x[2], -x[1]],
@@ -823,6 +977,26 @@ class UKF:
             [x[2],  x[1], -x[0],   0.0]])
 
     def update(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, dt: float = None) -> np.ndarray:
+        """
+        Perform an update of the state.
+
+        Parameters
+        ----------
+        q : numpy.ndarray
+            A-priori state describing orientation as quaternion.
+        gyr : numpy.ndarray
+            Sample of tri-axial Gyroscope in rad/s.
+        acc : numpy.ndarray
+            Sample of tri-axial Accelerometer in m/s^2.
+        dt : float, default: None
+            Time step, in seconds, between consecutive Quaternions.
+
+        Returns
+        -------
+        updated_quaternion : numpy.ndarray
+            Estimated state describing orientation as quaternion.
+
+        """
         _assert_numerical_iterable(q, 'Quaternion')
         _assert_numerical_iterable(gyr, 'Tri-axial gyroscope sample')
         _assert_numerical_iterable(acc, 'Tri-axial accelerometer sample')
