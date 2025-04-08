@@ -739,6 +739,7 @@ Footnotes
 
 import numpy as np
 from ..common.quaternion import Quaternion
+from ..common.orientation import acc2q
 from ..utils.core import _assert_numerical_iterable
 
 class UKF:
@@ -754,6 +755,7 @@ class UKF:
         self.acc: np.ndarray = acc
         self.frequency: float = frequency
         self.Dt: float = kwargs.get('Dt', (1.0/self.frequency) if self.frequency else 0.01)
+        self.q0: np.ndarray = kwargs.get('q0')
         # UKF parameters
         self.state_dimension = 4    # n : State dimension (Quaternion items)
         self.sigma_point_count = 2 * self.state_dimension + 1   # 2*n+1 sigma points
@@ -765,10 +767,28 @@ class UKF:
         # Weights for sigma points
         self.weight_mean, self.weight_covariance = self.set_weights()
         # Process and measurement noise covariances
-        self.Q = kwargs.get('process_noise_covariance', np.eye(4) * 0.0001)
+        self.P: np.ndarray = kwargs.get('P', np.eye(self.state_dimension) * 0.01)    # Initial state covariance
+        self.Q_t = kwargs.get('process_noise_covariance', np.eye(4) * 0.0001)
         self.R = kwargs.get('measurement_noise_covariance', np.eye(3) * 0.01)
-        # Initial state covariance
-        self.P = np.eye(self.state_dimension) * 0.01
+        # Process of data is given
+        if self.gyr is not None and self.acc is not None:
+            self.Q = self._compute_all()
+
+    def _compute_all(self) -> np.ndarray:
+        _assert_numerical_iterable(self.gyr, 'Angular velocity vector')
+        _assert_numerical_iterable(self.acc, 'Gravitational acceleration vector')
+        self.gyr = np.array(self.gyr)
+        self.acc = np.array(self.acc)
+        if self.acc.shape != self.gyr.shape:
+            raise ValueError("acc and gyr are not the same size")
+        num_samples = len(self.acc)
+        Q = np.zeros((num_samples, 4))
+        Q[0] = acc2q(self.acc[0]) if self.q0 is None else self.q0
+        Q[0] /= np.linalg.norm(Q[0])
+        # EKF Loop over all data
+        for t in range(1, num_samples):
+            Q[t] = self.update(Q[t-1], self.gyr[t], self.acc[t], self.Dt)
+        return Q
 
     def set_weights(self):
         # Weights for sigma points
@@ -806,6 +826,7 @@ class UKF:
         _assert_numerical_iterable(q, 'Quaternion')
         _assert_numerical_iterable(gyr, 'Tri-axial gyroscope sample')
         _assert_numerical_iterable(acc, 'Tri-axial accelerometer sample')
+        dt = self.Dt if dt is None else dt
         ## Prediction
         # 1. Generate sigma points
         sigma_points = self.compute_sigma_points(q, self.P)
@@ -822,7 +843,7 @@ class UKF:
 
         # 3.2.2. Predicted state covariance (using error quaternions)
         predicted_state_covariance = np.sum([self.weight_covariance[i] * np.outer(eq, eq) for i, eq in enumerate(predicted_state_diffs)], axis=0)
-        predicted_state_covariance += self.Q    # Add process noise
+        predicted_state_covariance += self.Q_t    # Add process noise
 
         ## Correction
         # 4. Measurement Model: Transform sigma points to get predicted accelerometer readings
