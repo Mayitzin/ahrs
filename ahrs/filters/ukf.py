@@ -815,22 +815,22 @@ class UKF:
         self.Dt: float = kwargs.get('Dt', (1.0/self.frequency) if self.frequency else 0.01)
         self.q0: np.ndarray = kwargs.get('q0')
         # UKF parameters
-        self.state_dimension = 4    # n : State dimension (Quaternion items)
-        self.sigma_point_count = 2 * self.state_dimension + 1   # 2*n+1 sigma points
-        self.alpha = alpha          # Spread parameter
-        self.beta = beta            # Distribution parameter
-        self.kappa = kappa          # Secondary scaling parameter
+        self.state_dimension: int = 4      # n : State dimension (Quaternion items)
+        self.sigma_point_count: int = 2 * self.state_dimension + 1   # 2*n+1 sigma points
+        self.alpha: float = alpha          # Spread parameter
+        self.beta: float = beta            # Distribution parameter
+        self.kappa: float = kappa          # Secondary scaling parameter
         # Lambda parameter: λ = α²(n + κ) - n
-        self.lambda_param = self.alpha**2 * (self.state_dimension + self.kappa) - self.state_dimension
+        self.lambda_param: float = self.alpha**2 * (self.state_dimension + self.kappa) - self.state_dimension
         # Weights for sigma points
         self.weight_mean, self.weight_covariance = self.set_weights()
         # Process and measurement noise covariances
         self.P: np.ndarray = kwargs.get('P', np.eye(self.state_dimension) * 0.01)    # Initial state covariance
-        self.Q_t = kwargs.get('process_noise_covariance', np.eye(4) * 0.0001)
-        self.R = kwargs.get('measurement_noise_covariance', np.eye(3) * 0.01)
-        # Process of data is given
+        self.Q_t : np.ndarray = kwargs.get('process_noise_covariance', np.eye(4) * 0.0001)
+        self.R : np.ndarray = kwargs.get('measurement_noise_covariance', np.eye(3) * 0.01)
+        # Sensor data is given. Compute all
         if self.gyr is not None and self.acc is not None:
-            self.Q = self._compute_all()
+            self.Q: np.ndarray = self._compute_all()
 
     def _compute_all(self) -> np.ndarray:
         _assert_numerical_iterable(self.gyr, 'Angular velocity vector')
