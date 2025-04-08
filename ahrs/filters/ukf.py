@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """
+.. versionadded:: 0.4.0
+
 .. attention::
 
     The UKF algorithm and its documentation are **under development**. The
@@ -272,9 +274,10 @@ Gaussian distributions :cite:p:`wan2000`.
 
 **UKF Summary**
 
-Given the previous state :math:`\\mathbf{x}_{t-1}`, and its covariance matrix
-:math:`\\mathbf{P}_{t_1}\\in\\mathbb{R}^{n\\times n}`, the UKF algorithm can be
-summarized as follows:
+Given the previous state :math:`\\mathbf{x}_{t-1}`, its covariance matrix
+:math:`\\mathbf{P}_{t-1}`, a control vector :math:`\\mathbf{u}_t`, and a vector
+with the most recent :math:`m` measurements :math:`\\mathbf{z}_t`, the UKF
+algorithm can be summarized as follows:
 
 **Prediction**:
 
@@ -282,15 +285,15 @@ summarized as follows:
 
 .. math::
 
-    \\mathcal{X}(\\mathbf{x}_{t-1}, \\mathbf{P}_{t_1}) = \\Big\\{ \\mathcal{X}_0 \\; , \\quad\\mathcal{X}_i \\; , \\quad\\mathcal{X}_{i+n} \\Big\\}
+    \\mathcal{X}(\\mathbf{x}_{t-1}, \\mathbf{P}_{t-1}) = \\Big\\{ \\mathcal{X}_0 \\; , \\quad\\mathcal{X}_i \\; , \\quad\\mathcal{X}_{i+n} \\Big\\}
 
 2. Propagate Sigma Points through Process model to get Transformed Sigma Points.
 
 .. math::
 
-    \\mathcal{Y} = f(\\mathcal{X}, \\mathbf{u})
+    \\mathcal{Y} = f(\\mathcal{X}, \\mathbf{u}_t)
 
-3. Estimate Predicted State Mean and Covariance.
+3. Predict State Mean and Covariance.
 
 .. math::
 
@@ -334,13 +337,13 @@ summarized as follows:
 
     \\mathbf{v}_t = \\mathbf{z}_t - \\bar{\\mathbf{z}}
 
-9. Update State and Covariance
+9. Update (Correct) State and Covariance
 
 .. math::
 
     \\begin{array}{rcl}
-    \\mathbf{x}_t &=& \\bar{\\mathbf{x}} + \\mathbf{K} \\mathbf{v}_t \\\\ \\\\
-    \\mathbf{P}_t &=& \\mathbf{P}_{xx} - \\mathbf{K} \\mathbf{P}_{zz} \\mathbf{K}^T
+    \\mathbf{x}_t &=& \\bar{\\mathbf{y}} + \\mathbf{K} \\mathbf{v}_t \\\\ \\\\
+    \\mathbf{P}_t &=& \\mathbf{P}_{yy} - \\mathbf{K} \\mathbf{P}_{zz} \\mathbf{K}^T
     \\end{array}
 
 UKF for Attitude Estimation
@@ -766,7 +769,6 @@ class UKF:
         return weight_mean, weight_covariance
 
     def compute_sigma_points(self, state, state_covariance):
-        # Calculate square root of scaled covariance (eq. 36)
         try:
             sqrt_covariance = np.linalg.cholesky((self.state_dimension + self.lambda_param) * state_covariance)
         except np.linalg.LinAlgError:
@@ -790,9 +792,6 @@ class UKF:
 
     def update(self, q, gyro, acc, dt):
         ## Prediction
-        # Normalize sensor data
-        acc_normalized = acc / np.linalg.norm(acc)
-
         # 1. Generate sigma points
         sigma_points = self.compute_sigma_points(q, self.P)
 
@@ -833,6 +832,7 @@ class UKF:
         kalman_gain = cross_covariance @ np.linalg.inv(predicted_measurement_covariance)
 
         # 8. Compute the innovation (measurement residual)
+        acc_normalized = acc / np.linalg.norm(acc)
         innovation = acc_normalized - predicted_measurement_mean
 
         # 9.1. Update state estimation
