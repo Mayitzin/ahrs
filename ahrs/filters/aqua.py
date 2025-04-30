@@ -587,7 +587,7 @@ from ..utils.core import _assert_same_shapes
 
 # Reference Observations in Munich, Germany
 from ..utils.wgs84 import WGS
-GRAVITY = WGS().normal_gravity(MUNICH_LATITUDE, MUNICH_HEIGHT*1000)
+GRAVITY = WGS().normal_gravity(MUNICH_LATITUDE, MUNICH_HEIGHT)
 
 def slerp_I(q: np.ndarray, ratio: float, t: float) -> np.ndarray:
     """
