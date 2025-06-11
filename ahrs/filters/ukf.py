@@ -739,8 +739,12 @@ Footnotes
 
 import numpy as np
 from ..common.quaternion import Quaternion
+from ..common.orientation import ecompass
 from ..common.orientation import acc2q
 from ..utils.core import _assert_numerical_iterable
+# Local magnetic reference of Munich, Germany
+from ..common.constants import MUNICH_LATITUDE, MUNICH_LONGITUDE, MUNICH_HEIGHT
+from ..utils.wmm import WMM
 
 class UKF:
     """
@@ -804,6 +808,7 @@ class UKF:
     def __init__(self,
             gyr: np.ndarray = None,
             acc: np.ndarray = None,
+            mag: np.ndarray = None,
             frequency: float = 100.0,
             alpha: float = 1e-3,
             beta: float = 2,
@@ -811,6 +816,7 @@ class UKF:
             **kwargs):
         self.gyr: np.ndarray = gyr
         self.acc: np.ndarray = acc
+        self.mag: np.ndarray = mag
         self.frequency: float = frequency
         self.Dt: float = kwargs.get('Dt', (1.0/self.frequency) if self.frequency else 0.01)
         self.q0: np.ndarray = kwargs.get('q0')
@@ -828,24 +834,50 @@ class UKF:
         self.P: np.ndarray = kwargs.get('P', np.eye(self.state_dimension) * 0.01)    # Initial state covariance
         self.Q_t : np.ndarray = kwargs.get('process_noise_covariance', np.eye(4) * 0.0001)
         self.R : np.ndarray = kwargs.get('measurement_noise_covariance', np.eye(3) * 0.01)
+
+        # Reference gravitational acceleration
+        self.a_ref: np.ndarray = kwargs.get('a_ref', np.array([0., 0., 1.]))
+        # Reference magnetic field vector
+        wmm = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT)
+        self.m_ref = np.array([wmm.X, wmm.Y, wmm.Z])
+        self.m_ref /= np.linalg.norm(self.m_ref)  # Normalize magnetic reference
         # Sensor data is given. Compute all
         if self.gyr is not None and self.acc is not None:
             self.Q: np.ndarray = self._compute_all()
 
     def _compute_all(self) -> np.ndarray:
+        # Assert input types and values
         _assert_numerical_iterable(self.gyr, 'Angular velocity vector')
         _assert_numerical_iterable(self.acc, 'Gravitational acceleration vector')
+        if self.mag is not None:
+            _assert_numerical_iterable(self.mag, 'Magnetic field vector')
         self.gyr = np.array(self.gyr)
         self.acc = np.array(self.acc)
+        if self.mag is not None:
+            self.mag = np.array(self.mag)
         if self.acc.shape != self.gyr.shape:
             raise ValueError("acc and gyr are not the same size")
+        if self.mag is not None and self.acc.shape != self.mag.shape:
+            raise ValueError("acc and mag are not the same size")
         num_samples = len(self.acc)
-        Q = np.zeros((num_samples, 4))
-        Q[0] = acc2q(self.acc[0]) if self.q0 is None else self.q0
-        Q[0] /= np.linalg.norm(Q[0])
+
+        # Normalize sensor data
+        self.acc = self.acc / np.linalg.norm(self.acc, axis=1, keepdims=True)
+        if self.mag is not None:
+            self.mag = self.mag / np.linalg.norm(self.mag, axis=1, keepdims=True)
+
         # Loop over all data
-        for t in range(1, num_samples):
-            Q[t] = self.update(Q[t-1], self.gyr[t], self.acc[t], self.Dt)
+        Q = np.zeros((num_samples, 4))
+        if self.mag is not None:
+            # 
+            Q[0] = ecompass(self.acc[0], self.mag[0], frame='NED', representation='quaternion')
+            for t in range(1, num_samples):
+                Q[t] = self.update(q=Q[t-1], gyr=self.gyr[t], acc=self.acc[t], mag=self.mag[t])
+        else:
+            Q[0] = acc2q(self.acc[0]) if self.q0 is None else self.q0
+            Q[0] /= np.linalg.norm(Q[0])
+            for t in range(1, num_samples):
+                Q[t] = self.update(q=Q[t-1], gyr=self.gyr[t], acc=self.acc[t])
         return Q
 
     def set_weights(self) -> tuple:
@@ -932,12 +964,11 @@ class UKF:
             # Add small regularization if Cholesky decomposition fails
             regularized_covariance = state_covariance + np.eye(self.state_dimension) * 1e-8
             sqrt_covariance = np.linalg.cholesky((self.state_dimension + self.lambda_param) * regularized_covariance)
-        sigma_points = np.zeros((self.sigma_point_count, self.state_dimension)) # Initialize sigma points array
-        sigma_points[0] = state                                      # Set mean as the first sigma point
-        # Set remaining sigma points as Quaternions (eq. 33)
-        for i in range(1, self.state_dimension+1):
-            sigma_points[i] = state + sqrt_covariance[i-1]
-            sigma_points[i+self.state_dimension] = state - sqrt_covariance[i-1]
+        sigma_points = np.zeros((self.state_dimension, 2 * self.state_dimension + 1))
+        sigma_points[:, 0] = state
+        for i in range(self.state_dimension):
+            sigma_points[:, i + 1] = state + sqrt_covariance[:, i]
+            sigma_points[:, self.state_dimension + i + 1] = state - sqrt_covariance[:, i]
         return sigma_points
 
     def Omega(self, x: np.ndarray) -> np.ndarray:
@@ -976,7 +1007,7 @@ class UKF:
             [x[1], -x[2],   0.0,  x[0]],
             [x[2],  x[1], -x[0],   0.0]])
 
-    def update(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, dt: float = None) -> np.ndarray:
+    def update(self, q: np.ndarray, gyr: np.ndarray, acc: np.ndarray, mag: np.ndarray = None, dt: float = None) -> np.ndarray:
         """
         Perform an update of the state.
 
@@ -1000,59 +1031,69 @@ class UKF:
         _assert_numerical_iterable(q, 'Quaternion')
         _assert_numerical_iterable(gyr, 'Tri-axial gyroscope sample')
         _assert_numerical_iterable(acc, 'Tri-axial accelerometer sample')
+        if mag is not None:
+            _assert_numerical_iterable(mag, 'Tri-axial magnetometer sample')
         dt = self.Dt if dt is None else dt
-        ## Prediction
-        # 1. Generate sigma points
+
+        ## Prediction Step
+        # 1. Generate Sigma Points
         sigma_points = self.compute_sigma_points(q, self.P)
 
         # 2. Process model - propagate sigma points with gyro data
         rotation_operator = np.eye(4) + 0.5 * self.Omega(gyr) * dt
-        predicted_sigma_points = [Quaternion(rotation_operator @ point) for point in sigma_points]
+        sigma_points_propagated = np.zeros_like(sigma_points)
+        for i in range(self.sigma_point_count):
+            sigma_points_propagated[:, i] = Quaternion(rotation_operator @ sigma_points[:, i])
 
         # 3.1. Predicted state mean (y_bar)
-        predicted_state_mean = Quaternion(np.sum(self.weight_mean[:, None] * predicted_sigma_points, axis=0))
+        predicted_state_mean = Quaternion(np.sum(sigma_points_propagated * self.weight_mean, axis=1))
 
-        # 3.2.1 Predicted States difference: y_i + y_bar*
-        predicted_state_diffs = [Quaternion(point + predicted_state_mean.conj) for point in predicted_sigma_points]
-
-        # 3.2.2. Predicted state covariance (using error quaternions)
-        predicted_state_covariance = np.sum([self.weight_covariance[i] * np.outer(eq, eq) for i, eq in enumerate(predicted_state_diffs)], axis=0)
-        predicted_state_covariance += self.Q_t    # Add process noise
+        # 3.2 Predicted States difference and Predicted state covariance
+        # Quaternion variation using direct difference, although less robust for large rotations
+        predicted_covariance = np.zeros((self.state_dimension, self.state_dimension))
+        for i in range(self.sigma_point_count):
+            diff = sigma_points_propagated[:, i] - predicted_state_mean
+            predicted_covariance += self.weight_covariance[i] * np.outer(diff, diff)
+        predicted_covariance += self.Q_t # Add process noise
 
         ## Correction
-        # 4. Measurement Model: Transform sigma points to get predicted accelerometer readings
-        predicted_measurements = [point.to_DCM().T @ np.array([0, 0, 1]) for point in predicted_sigma_points]
+        # 4. Measurement Model: Transform Sigma Points into Measurement Space (expected sensor readings)
+        measurement_dimension = 6 if mag is not None else 3
+        sigma_points_measurement_space = np.zeros((measurement_dimension, self.sigma_point_count))
+        for i in range(self.sigma_point_count):
+            # Rotation matrix from inertial to body frame
+            R_i_to_b = Quaternion(sigma_points_propagated[:, i]).to_DCM().T
+            # Expected accelerometer reading in body frame
+            sigma_points_measurement_space[:3, i] = R_i_to_b @ self.a_ref
+            if mag is not None:
+                # Expected magnetometer reading in body frame
+                sigma_points_measurement_space[3:, i] = R_i_to_b @ self.m_ref
 
-        # 5.1. Predicted measurement mean
-        predicted_measurement_mean = np.sum(self.weight_mean[:, None] * predicted_measurements, axis=0)
+        # 5. Predicted measurement mean
+        predicted_measurement_mean = np.sum(sigma_points_measurement_space * self.weight_mean, axis=1)
 
-        # 5.1.1. Predicted measurements difference: Z_i - z_bar
-        predicted_measurements_diff = predicted_measurements - predicted_measurement_mean
+        #6. Calculate Innovation Covariance and Cross-Covariance
+        innovation_covariance = np.zeros((measurement_dimension, measurement_dimension))
+        cross_covariance = np.zeros((self.state_dimension, measurement_dimension))
+        for i in range(self.sigma_point_count):
+            diff_measurement = sigma_points_measurement_space[:, i] - predicted_measurement_mean
+            diff_state = sigma_points_propagated[:, i] - predicted_state_mean
+            innovation_covariance += self.weight_covariance[i] * np.outer(diff_measurement, diff_measurement)
+            cross_covariance += self.weight_covariance[i] * np.outer(diff_state, diff_measurement)
+        measurement_noise_covariance = np.kron(np.eye(2), self.R) if mag is not None else self.R
+        innovation_covariance += measurement_noise_covariance # Add measurement noise
 
-        # 5.2. Predicted measurement covariance
-        predicted_measurement_covariance = np.zeros((3, 3))
-        for i, measured_difference in enumerate(predicted_measurements_diff):
-            predicted_measurement_covariance += self.weight_covariance[i] * np.outer(measured_difference, measured_difference)
-        predicted_measurement_covariance += self.R      # Add measurement noise
+        # 7. Kalman Gain
+        kalman_gain = cross_covariance @ np.linalg.inv(innovation_covariance)
 
-        # 6. Cross-covariance
-        cross_covariance = np.sum(self.weight_covariance[i] * np.outer(predicted_state_diffs[i][1:], predicted_measurements_diff[i]) for i in range(self.sigma_point_count))
+        # 8. Innovation (measurement residual)
+        actual_measurement = np.concatenate((acc, mag)) if mag is not None else acc
+        innovation = actual_measurement - predicted_measurement_mean
 
-        # 7. Calculate Kalman gain
-        kalman_gain = cross_covariance @ np.linalg.inv(predicted_measurement_covariance)
+        # 9.1. Update State Estimate
+        correction = kalman_gain @ innovation
+        updated_quaternion = Quaternion(predicted_state_mean + correction)
 
-        # 8. Compute the innovation (measurement residual)
-        acc_normalized = acc / np.linalg.norm(acc)
-        innovation = acc_normalized - predicted_measurement_mean
-
-        # 9.1. Update state estimation
-        correction_vector = kalman_gain @ innovation                                # Correction as a rotation vector
-        theta = np.linalg.norm(correction_vector)  # Angle of rotation
-        correction_quaternion = Quaternion([np.cos(theta/2.0), *(np.sin(theta/2.0) * correction_vector/theta)])  # Convert to quaternion
-        updated_quaternion = predicted_state_mean.product(correction_quaternion)    # Apply correction to predicted state
-
-        # 9.2. Update state covariance
-        self.P = np.zeros((self.state_dimension, self.state_dimension))  # Reset covariance
-        self.P[1:, 1:] = predicted_state_covariance[1:, 1:] - kalman_gain @ predicted_measurement_covariance @ kalman_gain.T
-
+        # 9.2. Update Covariance Estimate
+        self.P = predicted_covariance - kalman_gain @ innovation_covariance @ kalman_gain.T
         return updated_quaternion
