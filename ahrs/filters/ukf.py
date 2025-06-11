@@ -869,11 +869,12 @@ class UKF:
         # Loop over all data
         Q = np.zeros((num_samples, 4))
         if self.mag is not None:
-            # 
+            # Estimation with MARG
             Q[0] = ecompass(self.acc[0], self.mag[0], frame='NED', representation='quaternion')
             for t in range(1, num_samples):
                 Q[t] = self.update(q=Q[t-1], gyr=self.gyr[t], acc=self.acc[t], mag=self.mag[t])
         else:
+            # Estimation with IMU
             Q[0] = acc2q(self.acc[0]) if self.q0 is None else self.q0
             Q[0] /= np.linalg.norm(Q[0])
             for t in range(1, num_samples):
