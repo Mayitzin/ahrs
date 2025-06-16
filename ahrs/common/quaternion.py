@@ -920,36 +920,41 @@ class Quaternion(np.ndarray):
         """
         Exponential of Quaternion
 
-        The quaternion exponential works as in the ordinary case, defined with
-        the absolute convergent power series:
+        The quaternion exponential is defined with the absolute convergent
+        power series:
 
         .. math::
             e^{\\mathbf{q}} = \\sum_{k=0}^{\\infty}\\frac{\\mathbf{q}^k}{k!}
 
-        The exponential of a **pure quaternion** is, with the help of Euler
-        formula and the series of :math:`\\cos\\theta` and :math:`\\sin\\theta`,
-        redefined as:
+        We start with the exponential of a **pure quaternion**
+        :math:`\\mathbf{q} = (0, \\mathbf{q}_v) = 0 + xi + yj + zk`:
+
+        .. math::
+            e^{\\mathbf{q}_v} &=& \\sum_{k=0}^{\\infty}\\frac{\\mathbf{q}_v^k}{k!} \\\\
+
+        With the help of `Euler's formula
+        <https://en.wikipedia.org/wiki/Euler%27s_formula#Using_power_series>`_,
+        and letting :math:`\\mathbf{q}_v = \\mathbf{u}\\theta` with
+        :math:`\\theta=\\|\\mathbf{v}\\|` and :math:`\\|\\mathbf{u}\\|=1` we
+        can express the exponential as:
 
         .. math::
             \\begin{array}{rcl}
-            e^{\\mathbf{q}_v} &=& \\sum_{k=0}^{\\infty}\\frac{\\mathbf{q}_v^k}{k!} \\\\
-            e^{\\mathbf{u}\\theta} &=&
+            e^{\\mathbf{q}_v} &=& e^{\\mathbf{u}\\theta} \\\\
+            &=&
             \\Big(1-\\frac{\\theta^2}{2!} + \\frac{\\theta^4}{4!}+\\cdots\\Big)+
             \\Big(\\mathbf{u}\\theta-\\frac{\\mathbf{u}\\theta^3}{3!} + \\frac{\\mathbf{u}\\theta^5}{5!}+\\cdots\\Big) \\\\
             &=& \\cos\\theta + \\mathbf{u}\\sin\\theta \\\\
             &=& \\begin{bmatrix}\\cos\\theta \\\\ \\mathbf{u}\\sin\\theta \\end{bmatrix}
             \\end{array}
 
-        Letting :math:`\\mathbf{q}_v = \\mathbf{u}\\theta` with :math:`\\theta=\\|\\mathbf{v}\\|`
-        and :math:`\\|\\mathbf{u}\\|=1`.
-
         Since :math:`\\|e^{\\mathbf{q}_v}\\|^2=\\cos^2\\theta+\\sin^2\\theta=1`,
         the exponential of a pure quaternion is always unitary. Therefore, if
         the quaternion is real, its exponential is the identity.
 
         For **general quaternions** the exponential is defined using
-        :math:`\\mathbf{u}\\theta=\\mathbf{q}_v` and the exponential of the pure
-        quaternion:
+        :math:`\\mathbf{u}\\theta=\\mathbf{q}_v` and the exponential of the
+        pure quaternion:
 
         .. math::
             \\begin{array}{rcl}
