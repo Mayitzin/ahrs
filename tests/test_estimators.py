@@ -892,6 +892,49 @@ class TestEKF(unittest.TestCase):
         self.assertRaises(ValueError, ahrs.filters.EKF, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, noises=[1.0, 2.0, 3.0, 4.0])
         self.assertRaises(ValueError, ahrs.filters.EKF, gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers, noises=np.eye(5, 4))
 
+class TestUKF(unittest.TestCase):
+    def setUp(self) -> None:
+        # Synthetic sensor data
+        self.gyroscopes = np.copy(SENSOR_DATA.gyroscopes)
+        self.accelerometers = np.copy(SENSOR_DATA.accelerometers)
+        self.magnetometers = np.copy(SENSOR_DATA.magnetometers)
+
+    def test_gyr_acc(self):
+        orientation = ahrs.QuaternionArray(ahrs.filters.UKF(gyr=self.gyroscopes, acc=self.accelerometers).Q)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS, orientation)), THRESHOLD)
+
+    def test_gyr_acc_mag(self):
+        orientation = ahrs.QuaternionArray(ahrs.filters.UKF(gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers).Q)
+        self.assertLess(np.nanmean(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS, orientation)), THRESHOLD)
+
+    def test_wrong_input_vectors(self):
+        self.assertRaises(TypeError, ahrs.filters.UKF, gyr=1.0, acc=self.accelerometers)
+        self.assertRaises(TypeError, ahrs.filters.UKF, gyr="self.gyroscopes", acc=self.accelerometers)
+        self.assertRaises(TypeError, ahrs.filters.UKF, gyr=True, acc=self.accelerometers)
+        self.assertRaises(TypeError, ahrs.filters.UKF, gyr=self.gyroscopes, acc=1.0)
+        self.assertRaises(TypeError, ahrs.filters.UKF, gyr=self.gyroscopes, acc="self.accelerometers")
+        self.assertRaises(TypeError, ahrs.filters.UKF, gyr=self.gyroscopes, acc=True)
+        self.assertRaises(TypeError, ahrs.filters.UKF, gyr=self.gyroscopes, acc=1.0, mag=2.0)
+        self.assertRaises(TypeError, ahrs.filters.UKF, gyr=self.gyroscopes, acc=self.accelerometers, mag=2.0)
+        self.assertRaises(TypeError, ahrs.filters.UKF, gyr=self.gyroscopes, acc=1.0, mag=self.magnetometers)
+        self.assertRaises(TypeError, ahrs.filters.UKF, gyr=self.gyroscopes, acc="self.accelerometers", mag="self.magnetometers")
+        self.assertRaises(TypeError, ahrs.filters.UKF, gyr=self.gyroscopes[0], acc=self.accelerometers[0], mag=True)
+        self.assertRaises(TypeError, ahrs.filters.UKF, gyr=self.gyroscopes, acc=True, mag=[1.0, 2.0, 3.0])
+        self.assertRaises(ValueError, ahrs.filters.UKF, gyr=self.gyroscopes[:2], acc=self.accelerometers, mag=self.magnetometers)
+        self.assertRaises(ValueError, ahrs.filters.UKF, gyr=self.gyroscopes, acc=[1.0, 2.0, 3.0])
+        self.assertRaises(ValueError, ahrs.filters.UKF, gyr=self.gyroscopes, acc=[1.0, 2.0], mag=[2.0, 3.0, 4.0])
+        self.assertRaises(ValueError, ahrs.filters.UKF, gyr=self.gyroscopes, acc=[1.0, 2.0, 3.0, 4.0], mag=[2.0, 3.0, 4.0, 5.0])
+        self.assertRaises(ValueError, ahrs.filters.UKF, gyr=self.gyroscopes, acc=np.zeros(3), mag=self.magnetometers)
+        self.assertRaises(ValueError, ahrs.filters.UKF, gyr=self.gyroscopes, acc=self.accelerometers, mag=np.zeros(3))
+
+    def test_wrong_input_vector_types(self):
+        self.assertRaises(TypeError, ahrs.filters.UKF, gyr=['1.0', 2.0, 3.0], acc=self.accelerometers[0], mag=self.magnetometers[0])
+        self.assertRaises(TypeError, ahrs.filters.UKF, gyr=['1.0', '2.0', '3.0'], acc=self.accelerometers[0], mag=self.magnetometers[0])
+        self.assertRaises(TypeError, ahrs.filters.UKF, gyr=self.gyroscopes[0], acc=['1.0', 2.0, 3.0], mag=[2.0, 3.0, 4.0])
+        self.assertRaises(TypeError, ahrs.filters.UKF, gyr=self.gyroscopes[0], acc=[1.0, 2.0, 3.0], mag=['2.0', 3.0, 4.0])
+        self.assertRaises(TypeError, ahrs.filters.UKF, gyr=self.gyroscopes[0], acc=['1.0', '2.0', '3.0'], mag=[2.0, 3.0, 4.0])
+        self.assertRaises(TypeError, ahrs.filters.UKF, gyr=self.gyroscopes[0], acc=[1.0, 2.0, 3.0], mag=['2.0', '3.0', '4.0'])
+
 class TestTilt(unittest.TestCase):
     def setUp(self) -> None:
         # Synthetic sensor data
