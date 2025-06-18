@@ -2,14 +2,6 @@
 """
 .. versionadded:: 0.4.0
 
-.. attention::
-
-    The UKF algorithm and its documentation are **under development**. The
-    current implementation is functional for IMU-architecture only, but is not
-    yet finalized.
-
-    Wait until pypi release 0.4.0 for a fully tested version.
-
 The Unscented Kaman Filter (UKF) was first proposed by S. Julier and J. Uhlmann
 :cite:p:`julier1997` as an alternative to the Kalman Fiter for nonlinear
 systems.
@@ -1070,22 +1062,24 @@ class UKF:
                 # Expected magnetometer reading in body frame
                 sigma_points_measurement_space[3:, i] = R_i_to_b @ self.m_ref
 
-        # 5. Predicted measurement mean
+        # 5.1. Predicted measurement mean
         predicted_measurement_mean = np.sum(sigma_points_measurement_space * self.weight_mean, axis=1)
 
-        #6. Calculate Innovation Covariance and Cross-Covariance
-        innovation_covariance = np.zeros((measurement_dimension, measurement_dimension))
+        # 5.2. Measurement Covariance
+        measurement_covariance = np.zeros((measurement_dimension, measurement_dimension))
+        # 6. Cross-Covariance
         cross_covariance = np.zeros((self.state_dimension, measurement_dimension))
         for i in range(self.sigma_point_count):
             diff_measurement = sigma_points_measurement_space[:, i] - predicted_measurement_mean
             diff_state = sigma_points_propagated[:, i] - predicted_state_mean
-            innovation_covariance += self.weight_covariance[i] * np.outer(diff_measurement, diff_measurement)
+            measurement_covariance += self.weight_covariance[i] * np.outer(diff_measurement, diff_measurement)
             cross_covariance += self.weight_covariance[i] * np.outer(diff_state, diff_measurement)
+        # Kronecker product is used to extend covariance if magnetometer is present.
         measurement_noise_covariance = np.kron(np.eye(2), self.R) if mag is not None else self.R
-        innovation_covariance += measurement_noise_covariance # Add measurement noise
+        measurement_covariance += measurement_noise_covariance # Add measurement noise
 
         # 7. Kalman Gain
-        kalman_gain = cross_covariance @ np.linalg.inv(innovation_covariance)
+        kalman_gain = cross_covariance @ np.linalg.inv(measurement_covariance)
 
         # 8. Innovation (measurement residual)
         actual_measurement = np.concatenate((acc, mag)) if mag is not None else acc
@@ -1096,5 +1090,5 @@ class UKF:
         updated_quaternion = Quaternion(predicted_state_mean + correction)
 
         # 9.2. Update Covariance Estimate
-        self.P = predicted_covariance - kalman_gain @ innovation_covariance @ kalman_gain.T
+        self.P = predicted_covariance - kalman_gain @ measurement_covariance @ kalman_gain.T
         return updated_quaternion
