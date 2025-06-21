@@ -348,22 +348,19 @@ understood, we could extend the model to include more complex systems.
 Again, the UKF is based on two main steps: the **prediction** and the
 **correction**.
 
-We start the prediction by defining the main vectors:
+We start the prediction by defining the vectors:
 
 .. math::
 
     \\begin{array}{rcl}
     \\mathbf{x} &=& \\begin{bmatrix} q_w & q_x & q_y & q_z \\end{bmatrix}^T \\\\ \\\\
-    \\mathbf{u} &=& \\begin{bmatrix} \\omega_x & \\omega_y & \\omega_z \\end{bmatrix}^T \\\\ \\\\
-    \\mathbf{z} &=& \\begin{bmatrix} a_x & a_y & a_z \\end{bmatrix}^T
+    \\mathbf{u} &=& \\begin{bmatrix} \\omega_x & \\omega_y & \\omega_z \\end{bmatrix}^T
     \\end{array}
 
 The state vector :math:`\\mathbf{x}_t\\in\\mathbb{R}^4` has the elements of a
-quaternion representing the orientation at any time :math:`t`; the input vector
-:math:`\\mathbf{u}_t\\in\\mathbb{R}^3` contains the angular velocity readings
-from a tri-axial gyroscope, and the measurement vector
-:math:`\\mathbf{z}_t\\in\\mathbb{R}^3` has the readings of a tri-axial
-accelerometer.
+quaternion representing the orientation at any time :math:`t`, and the input
+vector :math:`\\mathbf{u}_t\\in\\mathbb{R}^3` contains the angular velocity
+readings from a tri-axial gyroscope.
 
 The state vector describing the orientation as a quaternion is also known as a
 `versor <https://en.wikipedia.org/wiki/Versor>`_, and they are unit quaternions,
@@ -518,7 +515,7 @@ Every :math:`\\mathcal{Y}_i` describes a quaternion. If necessary, they must to
 be normalized after the transformation, so that :math:`\\forall i \\in
 \\{0, \\ldots, 2n\\} \\;, \\|\\mathcal{Y}_i\\|=1`.
 
-Now we compute the **predicted state mean**:
+Now we compute the **Predicted State Mean**:
 
 .. math::
 
@@ -531,38 +528,22 @@ quaternion. Therefore, we must normalize it:
 
     \\bar{\\mathbf{y}} \\leftarrow \\frac{\\bar{\\mathbf{y}}}{\\|\\bar{\\mathbf{y}}\\|}
 
-We proceed to compute the **predicted state covariance** :math:`\\mathbf{P}_{yy}`.
-
-.. caution::
-
-    The difference between two quaternions is not a simple substraction in this
-    case. Let's remember that the quaternions used here represent rotations,
-    and we are interested in the difference between two rotations.
-
-    To obtain it we apply the **opposite** of the second rotation to the first
-    one. For any quaternion :math:`\\mathbf{q}=\\begin{pmatrix}q_w&q_x&q_y&q_z\\end{pmatrix}`,
-    the opposite rotation is given by its conjugate :math:`\\mathbf{q}^*=
-    \\begin{pmatrix}q_w&-q_x&-q_y&-q_z\\end{pmatrix}`.
-
-    So, the difference between quaternions :math:`\\mathbf{q}_1` and
-    :math:`\\mathbf{q}_2` is given by:
-
-    .. math::
-
-        \\delta\\mathbf{q} = \\mathbf{q}_1 + \\mathbf{q}_2^*
-
-With this in mind, we re-define the predicted state covariance as:
+We proceed to compute the **Predicted State Covariance** :math:`\\mathbf{P}_{yy}`.
 
 .. math::
 
-    \\boxed{\\mathbf{P}_{yy} = \\sum_{i=0}^{2n} w_i^{(c)} (\\mathcal{Y}_i + \\bar{\\mathbf{y}}^*)(\\mathcal{Y}_i + \\bar{\\mathbf{y}}^*)^T + \\mathbf{Q}}
+    \\boxed{\\mathbf{P}_{yy} = \\sum_{i=0}^{2n} w_i^{(c)} (\\mathcal{Y}_i - \\bar{\\mathbf{y}})(\\mathcal{Y}_i - \\bar{\\mathbf{y}})^T + \\mathbf{Q}}
 
-Notice the original substraction :math:`\\mathcal{Y}_i - \\bar{\\mathbf{y}}` in
-:eq:`ukf_predicted_state_covariance` is replaced by the sum
-:math:`\\mathcal{Y}_i + \\bar{\\mathbf{y}}^*`, where :math:`\\bar{\\mathbf{y}}^*`
-is the conjugate of the predicted quaternion (state mean.)
+Notice the product :math:`(\\mathcal{Y}_i - \\bar{\\mathbf{y}})(\\mathcal{Y}_i
+- \\bar{\\mathbf{y}})^T` is the `outer product
+<https://en.wikipedia.org/wiki/Outer_product>`_ of the vector
+:math:`(\\mathcal{Y}_i - \\bar{\\mathbf{y}})`, which results in a
+:math:`4\\times 4` matrix.
 
 **Measurement Model**
+
+The measurement vector :math:`\\mathbf{z}_t\\in\\mathbb{R}^3` has the readings
+of a tri-axial accelerometer.
 
 The accelerometer measures any `linear accelerating force
 <https://en.wikipedia.org/wiki/Proper_acceleration>`_ in the inertial frame,
