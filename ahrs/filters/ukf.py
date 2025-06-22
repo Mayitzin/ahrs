@@ -49,7 +49,7 @@ as described by :cite:p:`kalman1960` computes a state in two steps:
 
 1. The **prediction step** computes a guess of the current state,
    :math:`\\hat{\\mathbf{x}}_t`, and its covariance :math:`\\hat{\\mathbf{P}}_t`,
-   at time :math:`t`, given the previous state at time :math:`t-1`.
+   at time :math:`t`, given the previous state and covariance at time :math:`t-1`.
 
 .. math::
     \\begin{array}{rcl}
@@ -57,7 +57,7 @@ as described by :cite:p:`kalman1960` computes a state in two steps:
     \\hat{\\mathbf{P}}_t &=& \\mathbf{F}\\mathbf{P}_{t-1}\\mathbf{F}^T + \\mathbf{Q}_t
     \\end{array}
 
-2. The **correction step** improves the prediction with a measurement (or set
+2. The **correction step** improves this prediction using a measurement (or set
    of measurements) :math:`\\mathbf{z}_t` at time :math:`t`.
 
 .. math::
@@ -69,15 +69,17 @@ as described by :cite:p:`kalman1960` computes a state in two steps:
     \\mathbf{P}_t &=& \\hat{\\mathbf{P}}_t - \\mathbf{K}_t \\mathbf{S}_t \\mathbf{K}_t^T
     \\end{array}
 
-The Kalman filter, however, is limited to linear systems, rendering the process
-above inapplicable to nonlinear systems like our attitude estimation problem.
+The Kalman filter, however, is limited to `linear systems
+<https://en.wikipedia.org/wiki/Linear_system>`_, rendering the process above
+inapplicable to `nonlinear systems <https://en.wikipedia.org/wiki/Nonlinear_system>`_
+like our attitude estimation problem.
 
 **Extended Kalman Filter**
 
-A common solution to this issue is the `Extended Kalman Filter <./ekf.html>`_
-(EKF), which linearizes the system model and measurement functions around the
-current estimate to approximate the terms, allowing the use of the Kalman
-filter equations as if it were a linear system.
+A common solution to the nonlinearity issue is the `Extended Kalman Filter
+<./ekf.html>`_ (EKF), which linearizes the system model and measurement
+functions to __approximate__ the terms, allowing the use of the Kalman filter
+as if it were a linear system.
 
 In this approach the predicted mean and covariance are computed using the
 linearized models:
@@ -149,8 +151,7 @@ measurement functions to get a new set of transformed state points.
 Imagine there is a set of random points :math:`\\mathbf{x}` with mean
 :math:`\\bar{\\mathbf{x}}`, and covariance :math:`\\mathbf{P_{xx}}`, and there
 is another set of random points :math:`\\mathbf{y}` related to
-:math:`\\mathbf{x}` by a nonlinear function :math:`\\mathbf{y} = f(\\mathbf{x},
-\\mathbf{u})`.
+:math:`\\mathbf{x}` by a nonlinear function :math:`\\mathbf{y} = f(\\mathbf{x})`.
 
 Our goal is to find the mean :math:`\\bar{\\mathbf{y}}` and covariance
 :math:`\\mathbf{P_{yy}}` of :math:`\\mathbf{y}`. The unscented transform
@@ -206,9 +207,9 @@ The Cholesky decomposition is preferred because:
 - It naturally handles the positive-definiteness requirement of covariance
   matrices.
 
-Therefore, before computing the sigma points, we first calculate the Cholesky
-decomposition of :math:`(n + \\lambda)\\mathbf{P_{xx}}`, and then we obtain
-them by adding and subtracting the columns of :math:`\\mathbf{L}` to the mean.
+Therefore, we first calculate the Cholesky decomposition of
+:math:`(n + \\lambda)\\mathbf{P_{xx}}`, and then we obtain the Sigma Points by
+adding and subtracting the columns of :math:`\\mathbf{L}` to the mean.
 
 .. math::
    :label: sigma_points
@@ -220,7 +221,7 @@ them by adding and subtracting the columns of :math:`\\mathbf{L}` to the mean.
     \\end{array}
 
 where :math:`\\mathbf{L}` is the Cholesky decomposition of
-:math:`(n + \\lambda)\\mathbf{P_{xx}}`.
+:math:`(n + \\lambda)\\mathbf{P_{xx}}`, as mentioned above.
 
 We pass these sigma points through the nonlinear function :math:`f` to get the
 transformed points :math:`\\mathcal{Y}`.
@@ -228,7 +229,7 @@ transformed points :math:`\\mathcal{Y}`.
 .. math::
    :label: ukf_process_model
 
-    \\mathcal{Y} = f(\\mathcal{X}, \\mathbf{u})
+    \\mathcal{Y} = f(\\mathcal{X})
 
 Their **mean** is given by their wieghted sum:
 
@@ -283,7 +284,7 @@ algorithm can be summarized as follows:
 
 .. math::
 
-    \\mathcal{Y} = f(\\mathcal{X}, \\mathbf{u}_t)
+    \\mathcal{Y} = f(\\mathcal{X})
 
 3. Predict State Mean and Covariance.
 
@@ -341,14 +342,15 @@ algorithm can be summarized as follows:
 UKF for Attitude Estimation
 ---------------------------
 
-In this implementation, we build a simple UKF for the attitude estimation, so
-that we can focus on the details of the algorithm. Once the basic structure is
-understood, we could extend the model to include more complex systems.
+In this implementation, we build the simplest UKF for attitude estimation using
+gyroscopes and accelerometers (and magnetometer, if available), so that we can
+focus on the details of the algorithm. Once the basic structure is understood,
+we could extend the model to create more complex systems.
 
-Again, the UKF is based on two main steps: the **prediction** and the
-**correction**.
+**PREDICTION MODEL**
 
-We start the prediction by defining the vectors:
+We start by defining the vectors of the Prediction Model, a.k.a. **Process
+Model**:
 
 .. math::
 
@@ -358,22 +360,29 @@ We start the prediction by defining the vectors:
     \\end{array}
 
 The state vector :math:`\\mathbf{x}_t\\in\\mathbb{R}^4` has the elements of a
-quaternion representing the orientation at any time :math:`t`, and the input
-vector :math:`\\mathbf{u}_t\\in\\mathbb{R}^3` contains the angular velocity
-readings from a tri-axial gyroscope.
+quaternion representing the orientation at any time :math:`t`.
 
-The state vector describing the orientation as a quaternion is also known as a
-`versor <https://en.wikipedia.org/wiki/Versor>`_, and they are unit quaternions,
-meaning :math:`\\|\\mathbf{q}\\|^2=1`. So, we must normalize the quaternion
-after each transformation.
+We have added the **control vector** :math:`\\mathbf{u}_t\\in\\mathbb{R}^3`
+containing the angular velocity readings from a tri-axial gyroscope. This
+control vector is used to propagate the state vector through the process model.
+Normally, it is ignored when the gyroscope is not available or when we assume
+the model is not affected by external forces, but this is not the case in our
+implementation.
 
-Notice we don't extend the state vector to include the gyroscope biases like
-other models do. For the sake of simplicity we don't estimate these biases, and
-assume the sensor readings are already calibrated.
+The quaternion describing the orientation is also known as a `versor
+<https://en.wikipedia.org/wiki/Versor>`_, and it is a unit quaternion, meaning
+:math:`\\|\\mathbf{q}\\|=1`. Thus, we normalize the quaternion after each
+transformation.
+
+.. note::
+
+    Notice we don't extend the state vector to include the gyroscope biases
+    like other models do. For the sake of simplicity we don't estimate these
+    biases, and assume the sensor readings are already calibrated.
 
 **Sigma Points**
 
-The sigma points are computed first, given the previous state and covariance.
+Given the previous state and covariance, the sigma points are computed first.
 
 Using the cholesky decomposition we obtain the **matrix square root**:
 
@@ -430,27 +439,29 @@ Because the state vector has 4 items, we obtain a set of 9 sigma points:
     \\end{Bmatrix}
     \\end{array}
 
-The estimation process is done as a two-step filter consisting of an attitude
-propagation (using the gyroscope) and a correction (using the accelerometer.)
+The estimation process is done as a two-step filter consisting of an `attitude
+propagation <./angular.html>`_ (using the gyroscope) and a correction (using
+the accelerometer.)
 
 **Attitude Propagation**
 
 Based on the time spent between :math:`t-1` and :math:`t` (known as
-the time step :math:`\\Delta t`) we could measure the angular displacement
-:math:`\\boldsymbol\\theta_t` with the gyroscopes, and add it to the previous
-attitude :math:`\\mathbf{x}_{t-1}` to get the new attitude
+the time step :math:`\\Delta t`) we can compute the angular displacement
+:math:`\\boldsymbol\\Delta_\\theta` using the measured angular velocities
+:math:`\\boldsymbol\\omega` from the gyroscopes, and add it to the previous
+attitude :math:`\\mathbf{x}_{t-1}` to obtain the predicted attitude
 :math:`\\hat{\\mathbf{x}}_t`:
 
 .. math::
 
     \\begin{array}{rcl}
-    \\hat{\\mathbf{x}}_t &=& \\mathbf{x}_{t-1} + \\boldsymbol\\theta_t \\\\
+    \\hat{\\mathbf{x}}_t &=& \\mathbf{x}_{t-1} + \\boldsymbol\\Delta_\\theta \\\\
     &=& \\mathbf{x}_{t-1} + \\int_{t-1}^t\\boldsymbol\\omega\\, dt
     \\end{array}
 
-This is called **attitude propagation**. However, this operation is not linear,
-and we cannot use it in the Kalman filter. We linearize an approximation of the
-attitude propagation to define the **process model**:
+This is called **attitude propagation**. However, this is a nonlinear operation
+and we cannot use it in the Kalman Filter. Therefore, we approximate it to
+define our required linear **Process Model**:
 
 .. math::
     \\begin{array}{rcl}
@@ -476,20 +487,18 @@ attitude propagation to define the **process model**:
     \\end{bmatrix}
     \\end{array}
 
-where the rotation operator :math:`\\big(\\mathbf{I}_4 +
-\\frac{\\Delta t}{2}\\boldsymbol\\Omega_t\\big)` is a truncation up to the
+where the rotation operator :math:`\\Big[\\mathbf{I}_4 + \\frac{\\Delta t}{2}
+\\boldsymbol\\Omega_t(\\boldsymbol\\omega_t)\\Big]` is a truncation up to the
 second term of the Taylor series expansion of
 :math:`\\int_{t-1}^t\\boldsymbol\\omega\\, dt`.
 
+We assume in this description, that the time step :math:`\\Delta t` is constant.
+However, it can be changed at any time during the implementation.
+
 .. note::
 
-    The third parameter of the process model :math:`\\Delta t` is the time step
-    between the previous state and the current one. We assume, in this
-    description, that the time step is constant. However, it can be changed at
-    any time during the process.
-
-    For more details about this linear operation, please refer to the `Attitude
-    from Angular Rate <./angular.html>`_ documentation.
+    For more details about this linear operation, please refer to the
+    documentation of the `Attitude from Angular Rate <./angular.html>`_.
 
 We propagate each of the sigma points through the process model
 :math:`f` to get a new set of transformed state points :math:`\\mathcal{Y}`:
@@ -540,38 +549,45 @@ Notice the product :math:`(\\mathcal{Y}_i - \\bar{\\mathbf{y}})(\\mathcal{Y}_i
 :math:`(\\mathcal{Y}_i - \\bar{\\mathbf{y}})`, which results in a
 :math:`4\\times 4` matrix.
 
-**Measurement Model**
+**MEASUREMENT MODEL**
 
-The measurement vector :math:`\\mathbf{z}_t\\in\\mathbb{R}^3` has the readings
-of a tri-axial accelerometer.
+Our strategy is to obtain a set of expected measurement readings
+:math:`\\mathcal{Z}` by rotating the reference vectors around the set of
+predicted orientations :math:`\\mathcal{Y}`, and compare them against the
+actual accelerometer readings :math:`\\mathbf{z}`.
 
-The accelerometer measures any `linear accelerating force
-<https://en.wikipedia.org/wiki/Proper_acceleration>`_ in the inertial frame,
-including the gravitational force.
+Their difference will tell us how "off" the predicted orientation is from the
+actual one.
+
+Both the reference vectors and the sensor readings must be normalized to unit
+length, so that we can compare them as direction vectors.
+
+In order to perform this rotation, we use the `direction cosine matrix
+<../dcm.html>`_, a.k.a. rotation matrix, built from each predicted orientation
+(transformed points) to rotate the gravity vector :math:`\\mathbf{g}` to the
+sensor frame.
+
+If only a tri-axial accelerometer is available to correct (update) the
+predicted attitude, the measurement vector :math:`\\mathbf{z}_t\\in\\mathbb{R}^3`
+would only include the readings from the accelerometer measuring any `linear
+accelerating force <https://en.wikipedia.org/wiki/Proper_acceleration>`_ in the
+inertial frame, including the gravitational force.
 
 .. math::
 
     \\mathbf{a} = \\begin{bmatrix} a_x \\\\ a_y \\\\ a_z \\end{bmatrix}
 
-However, the accelerometer readings vary depending on the geographical location
-of the sensor. The gravitational acceleration force is greater at the poles
-than at the equator, and it also changes with altitude.
+The accelerometer readings vary depending on the geographical place of the
+sensor. The gravitational acceleration force is greater at the poles than at
+the Equator, and it also changes with altitude.
 
-To counteract these effects, we assume the gravitational acceleration will not
-change at our location and we set it to be equal to 1g. This way, we can ignore
-its magnitude, and focus on its direction.
+To counteract these effects, we assume we will not change our location, and we
+set it to be equal to 1g. This way, we can ignore its magnitude, and focus on
+its direction.
 
 .. math::
 
     \\mathbf{g} = \\begin{bmatrix} 0 \\\\ 0 \\\\ 1 \\end{bmatrix}
-
-Because the accelerometer is the only sensor that we are using to correct the
-orientation, we set it to be equal to the **measurement vector**:
-
-.. math::
-
-    \\mathbf{z} = \\begin{bmatrix} z_x \\\\ z_y \\\\ z_z \\end{bmatrix}
-    = \\begin{bmatrix} a_x \\\\ a_y \\\\ a_z \\end{bmatrix}
 
 We normalize the accelerometer readings :math:`\\mathbf{z}_t` to unit length as
 well, so that we can use it as a direction vector too:
@@ -579,19 +595,6 @@ well, so that we can use it as a direction vector too:
 .. math::
 
     \\mathbf{z} = \\frac{\\mathbf{z}}{\\|\\mathbf{z}\\|} = \\begin{bmatrix} z_x \\\\ z_y \\\\ z_z \\end{bmatrix}
-
-Our strategy is to obtain a set of expected measurement readings
-:math:`\\mathcal{Z}` by rotating the reference gravitational vector
-:math:`\\mathbf{g}` around the predicted orientations :math:`\\mathcal{Y}`,
-and compare it with the actual accelerometer readings :math:`\\mathbf{z}`.
-
-Both the reference gravitational vector and the accelerometer readings must be
-normalized to unit length, so that we can compare them as direction vectors.
-
-In order to perform this rotation, we use the `direction cosine matrix
-<../dcm.html>`_, a.k.a. rotation matrix, built from each predicted orientation
-(transformed points) to rotate the gravity vector :math:`\\mathbf{g}` to the
-sensor frame.
 
 This is our **Measurement Model** function.
 
