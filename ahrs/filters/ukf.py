@@ -464,6 +464,7 @@ and we cannot use it in the Kalman Filter. Therefore, we approximate it to
 define our required linear **Process Model**:
 
 .. math::
+
     \\begin{array}{rcl}
     \\hat{\\mathbf{x}}_t &=& f(\\mathbf{x}_{t-1}, \\boldsymbol\\omega_t) \\\\
     &=&\\Big[\\mathbf{I}_4 + \\frac{\\Delta t}{2}\\boldsymbol\\Omega_t(\\boldsymbol\\omega_t)\\Big]\\mathbf{x}_{t-1} \\\\
@@ -487,8 +488,8 @@ define our required linear **Process Model**:
     \\end{bmatrix}
     \\end{array}
 
-where the rotation operator :math:`\\Big[\\mathbf{I}_4 + \\frac{\\Delta t}{2}
-\\boldsymbol\\Omega_t(\\boldsymbol\\omega_t)\\Big]` is a truncation up to the
+where the rotation operator :math:`\\big[\\mathbf{I}_4 + \\frac{\\Delta t}{2}
+\\boldsymbol\\Omega_t(\\boldsymbol\\omega_t)\\big]` is a truncation up to the
 second term of the Taylor series expansion of
 :math:`\\int_{t-1}^t\\boldsymbol\\omega\\, dt`.
 
@@ -507,24 +508,18 @@ We propagate each of the sigma points through the process model
 
     \\mathcal{Y} =
     \\begin{Bmatrix}
-        \\big| & \\big| & \\big| & \\big| & \\big| & \\big| & \\big| & \\big| & \\big| \\\\
+        \\big| & \\big| & & \\big| \\\\
         f(\\mathcal{X}_0, \\boldsymbol\\omega_t) &
         f(\\mathcal{X}_1, \\boldsymbol\\omega_t) &
-        f(\\mathcal{X}_2, \\boldsymbol\\omega_t) &
-        f(\\mathcal{X}_3, \\boldsymbol\\omega_t) &
-        f(\\mathcal{X}_4, \\boldsymbol\\omega_t) &
-        f(\\mathcal{X}_5, \\boldsymbol\\omega_t) &
-        f(\\mathcal{X}_6, \\boldsymbol\\omega_t) &
-        f(\\mathcal{X}_7, \\boldsymbol\\omega_t) &
+        \\cdots &
         f(\\mathcal{X}_8, \\boldsymbol\\omega_t) \\\\
-        \\big| & \\big| & \\big| & \\big| & \\big| & \\big| & \\big| & \\big| & \\big|
+        \\big| & \\big| & & \\big|
     \\end{Bmatrix}
 
-Every :math:`\\mathcal{Y}_i` describes a quaternion. If necessary, they must to
-be normalized after the transformation, so that :math:`\\forall i \\in
+Every :math:`\\mathcal{Y}_i` describes a quaternion. They must be normalized after the transformation, so that :math:`\\forall i \\in
 \\{0, \\ldots, 2n\\} \\;, \\|\\mathcal{Y}_i\\|=1`.
 
-Now we compute the **Predicted State Mean**:
+Now we compute the **Predicted State Mean**.
 
 .. math::
 
@@ -537,7 +532,7 @@ quaternion. Therefore, we must normalize it:
 
     \\bar{\\mathbf{y}} \\leftarrow \\frac{\\bar{\\mathbf{y}}}{\\|\\bar{\\mathbf{y}}\\|}
 
-We proceed to compute the **Predicted State Covariance** :math:`\\mathbf{P}_{yy}`.
+We proceed to compute the **Predicted State Covariance**.
 
 .. math::
 
@@ -553,44 +548,37 @@ Notice the product :math:`(\\mathcal{Y}_i - \\bar{\\mathbf{y}})(\\mathcal{Y}_i
 
 Our strategy is to obtain a set of expected measurement readings
 :math:`\\mathcal{Z}` by rotating the reference vectors around the set of
-predicted orientations :math:`\\mathcal{Y}`, and compare them against the
-actual accelerometer readings :math:`\\mathbf{z}`.
+predicted orientations :math:`\\mathcal{Y}`. We then compare these against the
+actual sensor readings :math:`\\mathbf{z}`.
 
-Their difference will tell us how "off" the predicted orientation is from the
-actual one.
+Both the rotated reference vectors and the sensor readings must be normalized
+to unit length, so that we can compare them as vectors.
 
-Both the reference vectors and the sensor readings must be normalized to unit
-length, so that we can compare them as direction vectors.
+Their difference will tell us how "off" the predicted orientation is.
 
 In order to perform this rotation, we use the `direction cosine matrix
 <../dcm.html>`_, a.k.a. rotation matrix, built from each predicted orientation
-(transformed points) to rotate the gravity vector :math:`\\mathbf{g}` to the
-sensor frame.
+(transformed points) to rotate the reference vectors to the sensor frame.
 
 If only a tri-axial accelerometer is available to correct (update) the
-predicted attitude, the measurement vector :math:`\\mathbf{z}_t\\in\\mathbb{R}^3`
-would only include the readings from the accelerometer measuring any `linear
-accelerating force <https://en.wikipedia.org/wiki/Proper_acceleration>`_ in the
-inertial frame, including the gravitational force.
+predicted attitude, the measurement vector :math:`\\mathbf{z}_t` includes only
+the accelerometer's readings.
 
 .. math::
 
-    \\mathbf{a} = \\begin{bmatrix} a_x \\\\ a_y \\\\ a_z \\end{bmatrix}
+    \\mathbf{z} = \\mathbf{a} = \\begin{bmatrix} a_x \\\\ a_y \\\\ a_z \\end{bmatrix}
 
 The accelerometer readings vary depending on the geographical place of the
-sensor. The gravitational acceleration force is greater at the poles than at
-the Equator, and it also changes with altitude.
-
-To counteract these effects, we assume we will not change our location, and we
-set it to be equal to 1g. This way, we can ignore its magnitude, and focus on
-its direction.
+sensor. To counteract these effects, we assume a constant location, and we
+normalize the reference gravitational vector. This way, we can ignore its
+magnitude, and focus on its direction.
 
 .. math::
 
     \\mathbf{g} = \\begin{bmatrix} 0 \\\\ 0 \\\\ 1 \\end{bmatrix}
 
-We normalize the accelerometer readings :math:`\\mathbf{z}_t` to unit length as
-well, so that we can use it as a direction vector too:
+We also normalize the accelerometer readings :math:`\\mathbf{z}_t` to unit
+length, so that we can use it as a direction vector too:
 
 .. math::
 
