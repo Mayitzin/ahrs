@@ -560,6 +560,8 @@ In order to perform this rotation, we use the `direction cosine matrix
 <../dcm.html>`_, a.k.a. rotation matrix, built from each predicted orientation
 (transformed points) to rotate the reference vectors to the sensor frame.
 
+**Accelerometer Only**
+
 If only a tri-axial accelerometer is available to correct (update) the
 predicted attitude, the measurement vector :math:`\\mathbf{z}_t` includes only
 the accelerometer's readings.
@@ -583,6 +585,10 @@ length, so that we can use it as a direction vector too:
 .. math::
 
     \\mathbf{z} = \\frac{\\mathbf{z}}{\\|\\mathbf{z}\\|} = \\begin{bmatrix} z_x \\\\ z_y \\\\ z_z \\end{bmatrix}
+
+If the accelerometer is perfectly calibrated and its Z-axis is aligned with the
+gravitational vector, the normalized accelerometer readings should be equal to
+:math:`\\mathbf{g}`.
 
 This is our **Measurement Model** function.
 
@@ -613,6 +619,22 @@ This is our **Measurement Model** function.
     vector from the global frame to the sensor frame (the opposite of what it
     describes.) We do this, so that we can compare it against the accelerometer
     readings in sensor frame.
+
+**Accelerometer and Magnetometer**
+
+If a tri-axial magnetometer is also available, we can use it to correct the
+predicted attitude as well. In this case, the measurement vector
+:math:`\\mathbf{z}_t` includes both the accelerometer and magnetometer readings:
+
+.. math::
+
+    \\mathbf{z} = \\begin{bmatrix} a_x \\\\ a_y \\\\ a_z \\\\ m_x \\\\ m_y \\\\ m_z \\end{bmatrix}
+
+The reference gravitational vector :math:`\\mathbf{g}` remains the same as
+before, but we also need a reference magnetic vector :math:`\\mathbf{m}` to
+correct the X- and Y-axes. This vector is usually obtained from a `World
+Magnetic Model <https://en.wikipedia.org/wiki/World_Magnetic_Model>`_ (WMM)
+based on the sensor's geographical location.
 
 We apply the measurement model to each of the predicted sigma points
 :math:`\\mathcal{Y}` to get the expected accelerometer readings
