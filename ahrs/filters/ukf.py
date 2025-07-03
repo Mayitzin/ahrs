@@ -546,70 +546,112 @@ Notice the product :math:`(\\mathcal{Y}_i - \\bar{\\mathbf{y}})(\\mathcal{Y}_i
 
 **MEASUREMENT MODEL**
 
-Our strategy is to obtain a set of expected measurement readings
-:math:`\\mathcal{Z}` by rotating the reference vectors around the set of
-predicted orientations :math:`\\mathcal{Y}`. We then compare these against the
-actual sensor readings :math:`\\mathbf{z}`.
+Our strategy is to use Earth's known physical reference values, rotate them
+around the set of predicted orientations :math:`\\mathcal{Y}`, and compare
+these against actual sensor readings :math:`\\mathbf{z}`.
 
-Both the rotated reference vectors and the sensor readings must be normalized
-to unit length, so that we can compare them as vectors.
+Their difference tells us how "off" the predicted orientation is. To ease the
+comparison both the references and the sensor readings are `normalized
+<https://en.wikipedia.org/wiki/Unit_vector>`_.
 
-Their difference will tell us how "off" the predicted orientation is.
+In order to perform these rotations, we use the `direction cosine matrix
+<../dcm.html>`_, a.k.a. rotation matrix, built **from each predicted
+orientation** (transformed points) to rotate the reference vectors to the
+sensor frame.
 
-In order to perform this rotation, we use the `direction cosine matrix
-<../dcm.html>`_, a.k.a. rotation matrix, built from each predicted orientation
-(transformed points) to rotate the reference vectors to the sensor frame.
-
-**Accelerometer Only**
-
-If only a tri-axial accelerometer is available to correct (update) the
-predicted attitude, the measurement vector :math:`\\mathbf{z}_t` includes only
-the accelerometer's readings.
-
-.. math::
-
-    \\mathbf{z} = \\mathbf{a} = \\begin{bmatrix} a_x \\\\ a_y \\\\ a_z \\end{bmatrix}
-
-The accelerometer readings vary depending on the geographical place of the
-sensor. To counteract these effects, we assume a constant location, and we
-normalize the reference gravitational vector. This way, we can ignore its
-magnitude, and focus on its direction.
+For `Earth's gravitational vector <https://en.wikipedia.org/wiki/Gravity_of_Earth#Direction>`_,
+we set the normalized reference on `local tangent plane coordinates
+<https://en.wikipedia.org/wiki/Local_tangent_plane_coordinates>`_ (LTP) as:
 
 .. math::
 
     \\mathbf{g} = \\begin{bmatrix} 0 \\\\ 0 \\\\ 1 \\end{bmatrix}
 
-We also normalize the accelerometer readings :math:`\\mathbf{z}_t` to unit
-length, so that we can use it as a direction vector too:
+We assume Earth's gravitational vector is aligned with the Z-axis of the LTP
+and, therefore, the X- and Y-axes are equal to zero.
+
+`Earth's Magnetic Field <https://en.wikipedia.org/wiki/Earth%27s_magnetic_field>`_
+is not aligned with a particular axis of `Earth's ellipsoid
+<https://en.wikipedia.org/wiki/Earth_ellipsoid>`_, and it is fully described
+with:
 
 .. math::
 
-    \\mathbf{z} = \\frac{\\mathbf{z}}{\\|\\mathbf{z}\\|} = \\begin{bmatrix} z_x \\\\ z_y \\\\ z_z \\end{bmatrix}
+    \\mathbf{r} = \\begin{bmatrix} r_x \\\\ r_y \\\\ r_z \\end{bmatrix}
 
-If the accelerometer is perfectly calibrated and its Z-axis is aligned with the
-gravitational vector, the normalized accelerometer readings should be equal to
-:math:`\\mathbf{g}`.
+where :math:`r_x`, :math:`r_y`, and :math:`r_z` are the components of the
+reference geomagnetic vector, which can be obtained from the `World Magnetic
+Model <https://en.wikipedia.org/wiki/World_Magnetic_Model>`_ (WMM)
+based on the sensor's geographical location.
 
-This is our **Measurement Model** function.
+This vector represents the direction and intensity of the Earth's magnetic
+field at the sensor's location.
+
+The reference geomagnetic vector :math:`\\mathbf{r}` is also normalized to
+unit length, so that we can use it as a direction vector too:
+
+.. math::
+
+    \\mathbf{r} = \\frac{\\mathbf{r}}{\\|\\mathbf{r}\\|} = \\begin{bmatrix} r_x \\\\ r_y \\\\ r_z \\end{bmatrix}
+
+**Sensor Readings**
+
+If only a tri-axial accelerometer is available to correct (update) the
+predicted attitude, the measurement vector :math:`\\mathbf{z}_t` has normalized
+accelerometer readings only.
+
+.. math::
+
+    \\mathbf{z} = \\mathbf{a} = \\begin{bmatrix} a_x \\\\ a_y \\\\ a_z \\end{bmatrix}
+
+However, if both tri-axial accelerometer and magnetometer are available, the
+measurement vector :math:`\\mathbf{z}_t` includes both:
+
+.. math::
+
+    \\mathbf{z} = \\begin{bmatrix} a_x \\\\ a_y \\\\ a_z \\\\ m_x \\\\ m_y \\\\ m_z \\end{bmatrix}
+
+**Reference Rotations**
+
+Given one predicted orientation :math:`\\mathcal{Y}_i` we rotate a reference
+vector :math:`\\mathbf{g}` or :math:`\\mathbf{r}` to get its corresponding
+expected sensor reading. We call this the **Measurement Model Function**.
+
+If only the accelerometer is available, the measurement model function yields:
 
 .. math::
 
     \\begin{array}{rcl}
-    \\hat{\\mathbf{z}} &=& h(\\hat{\\mathbf{x}})\\\\
-    &=& \\mathbf{R}(\\hat{\\mathbf{x}})^T \\mathbf{g} \\\\
+    h(\\hat{\\mathbf{x}}) &=& \\mathbf{R}(\\hat{\\mathbf{x}})^T \\mathbf{g} \\\\
     &=& \\begin{bmatrix}
         1 - 2(\\hat{q_y}^2 + \\hat{q_z}^2) & 2(\\hat{q_x} \\hat{q_y} + \\hat{q_w} \\hat{q_z}) & 2(\\hat{q_x} \\hat{q_z} - \\hat{q_w} \\hat{q_y}) \\\\
         2(\\hat{q_x} \\hat{q_y} - \\hat{q_w} \\hat{q_z}) & 1 - 2(\\hat{q_x}^2 + \\hat{q_z}^2) & 2(\\hat{q_y} \\hat{q_z} + \\hat{q_w} \\hat{q_x}) \\\\
         2(\\hat{q_x} \\hat{q_z} + \\hat{q_w} \\hat{q_y}) & 2(\\hat{q_y} \\hat{q_z} - \\hat{q_w} \\hat{q_x}) & 1 - 2(\\hat{q_x}^2 + \\hat{q_y}^2)
     \\end{bmatrix}
     \\begin{bmatrix} 0 \\\\ 0 \\\\ 1 \\end{bmatrix} \\\\
-    \\begin{bmatrix}
-        \\hat{z_x} \\\\ \\hat{z_y} \\\\ \\hat{z_z}
-    \\end{bmatrix}
     &=& \\begin{bmatrix}
         2(\\hat{q_x} \\hat{q_z} - \\hat{q_w} \\hat{q_y}) \\\\
         2(\\hat{q_y} \\hat{q_z} + \\hat{q_w} \\hat{q_x}) \\\\
         1 - 2(\\hat{q_x}^2 + \\hat{q_y}^2)
+    \\end{bmatrix}
+    \\end{array}
+
+If both accelerometer and magnetometer are available, it is stacked as:
+
+.. math::
+
+    \\begin{array}{rcl}
+    h(\\hat{\\mathbf{x}}) &=& \\begin{bmatrix}
+        \\mathbf{R}(\\hat{\\mathbf{x}})^T \\mathbf{g} \\\\
+        \\mathbf{R}(\\hat{\\mathbf{x}})^T \\ \\mathbf{r}
+    \\end{bmatrix} \\\\
+    &=& \\begin{bmatrix}
+        2(\\hat{q_x} \\hat{q_z} - \\hat{q_w} \\hat{q_y}) \\\\
+        2(\\hat{q_y} \\hat{q_z} + \\hat{q_w} \\hat{q_x}) \\\\
+        1 - 2(\\hat{q_x}^2 + \\hat{q_y}^2) \\\\
+        r_x\\big(1 - 2(\\hat{q_y}^2 + \\hat{q_z}^2)\\big) + 2r_y(\\hat{q_x} \\hat{q_y} + \\hat{q_w} \\hat{q_z}) + 2r_z(\\hat{q_x} \\hat{q_z} - \\hat{q_w} \\hat{q_y}) \\\\
+        2r_x(\\hat{q_x} \\hat{q_y} - \\hat{q_w} \\hat{q_z}) + r_y\\big(1 - 2(\\hat{q_x}^2 + \\hat{q_z}^2)\\big) + 2r_z(\\hat{q_y} \\hat{q_z} + \\hat{q_w} \\hat{q_x}) \\\\
+        2r_x(\\hat{q_x} \\hat{q_z} + \\hat{q_w} \\hat{q_y}) + 2r_y(\\hat{q_y} \\hat{q_z} - \\hat{q_w} \\hat{q_x}) + r_z\\big(1 - 2(\\hat{q_x}^2 + \\hat{q_y}^2)\\big)
     \\end{bmatrix}
     \\end{array}
 
@@ -619,22 +661,6 @@ This is our **Measurement Model** function.
     vector from the global frame to the sensor frame (the opposite of what it
     describes.) We do this, so that we can compare it against the accelerometer
     readings in sensor frame.
-
-**Accelerometer and Magnetometer**
-
-If a tri-axial magnetometer is also available, we can use it to correct the
-predicted attitude as well. In this case, the measurement vector
-:math:`\\mathbf{z}_t` includes both the accelerometer and magnetometer readings:
-
-.. math::
-
-    \\mathbf{z} = \\begin{bmatrix} a_x \\\\ a_y \\\\ a_z \\\\ m_x \\\\ m_y \\\\ m_z \\end{bmatrix}
-
-The reference gravitational vector :math:`\\mathbf{g}` remains the same as
-before, but we also need a reference magnetic vector :math:`\\mathbf{m}` to
-correct the X- and Y-axes. This vector is usually obtained from a `World
-Magnetic Model <https://en.wikipedia.org/wiki/World_Magnetic_Model>`_ (WMM)
-based on the sensor's geographical location.
 
 We apply the measurement model to each of the predicted sigma points
 :math:`\\mathcal{Y}` to get the expected accelerometer readings
