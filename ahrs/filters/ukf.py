@@ -554,7 +554,13 @@ Their difference tells us how "off" the predicted orientation is. To ease the
 comparison both the references and the sensor readings are `normalized
 <https://en.wikipedia.org/wiki/Unit_vector>`_.
 
-In order to perform these rotations, we use the `direction cosine matrix
+The two main physical references are commonly used in attitude estimation, and
+we will use them in our **Measurement Model**:
+
+- Earth's gravitational vector :math:`\\mathbf{g}`.
+- Earth's geomagnetic vector :math:`\\mathbf{r}`.
+
+In order to perform the rotations, we use the `direction cosine matrix
 <../dcm.html>`_, a.k.a. rotation matrix, built **from each predicted
 orientation** (transformed points) to rotate the reference vectors to the
 sensor frame.
@@ -611,8 +617,6 @@ measurement vector :math:`\\mathbf{z}_t` includes both:
 
     \\mathbf{z} = \\begin{bmatrix} a_x \\\\ a_y \\\\ a_z \\\\ m_x \\\\ m_y \\\\ m_z \\end{bmatrix}
 
-**Reference Rotations**
-
 Given one predicted orientation :math:`\\mathcal{Y}_i` we rotate a reference
 vector :math:`\\mathbf{g}` or :math:`\\mathbf{r}` to get its corresponding
 expected sensor reading. We call this the **Measurement Model Function**.
@@ -662,25 +666,20 @@ If both accelerometer and magnetometer are available, it is stacked as:
     describes.) We do this, so that we can compare it against the accelerometer
     readings in sensor frame.
 
-We apply the measurement model to each of the predicted sigma points
-:math:`\\mathcal{Y}` to get the expected accelerometer readings
+We execute the measurement model function over each of the predicted sigma
+points :math:`\\mathcal{Y}` to get the expected accelerometer readings
 :math:`\\mathcal{Z}`:
 
 .. math::
 
     \\mathcal{Z} =
     \\begin{Bmatrix}
-        \\big| & \\big| & \\big| & \\big| & \\big| & \\big| & \\big| & \\big| & \\big| \\\\
+        \\big| & \\big| & & \\big| \\\\
         h(\\mathcal{Y}_0) &
         h(\\mathcal{Y}_1) &
-        h(\\mathcal{Y}_2) &
-        h(\\mathcal{Y}_3) &
-        h(\\mathcal{Y}_4) &
-        h(\\mathcal{Y}_5) &
-        h(\\mathcal{Y}_6) &
-        h(\\mathcal{Y}_7) &
+        \\cdots &
         h(\\mathcal{Y}_8) \\\\
-        \\big| & \\big| & \\big| & \\big| & \\big| & \\big| & \\big| & \\big| & \\big|
+        \\big| & \\big| & & \\big|
     \\end{Bmatrix}
 
 With this set of expected accelerometer readings :math:`\\mathcal{Z}` we can
@@ -696,8 +695,9 @@ And the **Measurement Covariance**:
 
     \\boxed{\\mathbf{P}_{zz} = \\sum_{i=0}^{2n} w_i^{(c)} (\\mathcal{Z}_i - \\bar{\\mathbf{z}})(\\mathcal{Z}_i - \\bar{\\mathbf{z}})^T + \\mathbf{R}}
 
-where :math:`\\mathbf{R}` is the :math:`3\\times 3` measurement noise
-covariance matrix.
+where measurement noise covariance matrix :math:`\\mathbf{R}` is
+:math:`3\\times 3` if only the accelerometer is used, or :math:`6\\times 6`
+if both accelerometer and magnetometer are used.
 
 The Cross-Covariance matrix :math:`\\mathbf{P}_{yz}` represents how changes in
 the state variables correlate with changes in the measurement variables.
