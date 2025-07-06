@@ -763,7 +763,7 @@ Finally, we use all this information to correct the state and covariance:
 
     \\boxed{
     \\begin{array}{rcl}
-    \\mathbf{x}_t &=& \\bar{\\mathbf{x}} + \\mathbf{K} \\mathbf{v}_t \\\\ \\\\
+    \\mathbf{x}_t &=& \\bar{\\mathbf{y}} + \\mathbf{K} \\mathbf{v}_t \\\\ \\\\
     \\mathbf{P}_t &=& \\mathbf{P}_{yy} - \\mathbf{K} \\mathbf{P}_{zz} \\mathbf{K}^T
     \\end{array}}
 
