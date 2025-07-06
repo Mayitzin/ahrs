@@ -695,12 +695,41 @@ And the **Measurement Covariance**:
 
     \\boxed{\\mathbf{P}_{zz} = \\sum_{i=0}^{2n} w_i^{(c)} (\\mathcal{Z}_i - \\bar{\\mathbf{z}})(\\mathcal{Z}_i - \\bar{\\mathbf{z}})^T + \\mathbf{R}}
 
-where measurement noise covariance matrix :math:`\\mathbf{R}` is
-:math:`3\\times 3` if only the accelerometer is used, or :math:`6\\times 6`
-if both accelerometer and magnetometer are used.
+The **Measurement Noise Covariance Matrix** :math:`\\mathbf{R}` is built based
+on whether we have accelerometer readings only, or both accelerometer and
+magnetometer readings.
 
-The Cross-Covariance matrix :math:`\\mathbf{P}_{yz}` represents how changes in
-the state variables correlate with changes in the measurement variables.
+.. math::
+
+    \\mathbf{R} &=&
+    \\left\\{
+    \\begin{array}{ll}
+        \\begin{bmatrix}
+            \\sigma_{a_x}^2 & 0 & 0 \\\\
+            0 & \\sigma_{a_y}^2 & 0 \\\\
+            0 & 0 & \\sigma_{a_z}^2
+        \\end{bmatrix}
+        & \\mathrm{if}\\; \\mathrm{Acc} \\\\ \\\\
+        \\begin{bmatrix}
+            \\sigma_{a_x}^2 & 0 & 0 & 0 & 0 & 0 \\\\
+            0 & \\sigma_{a_y}^2 & 0 & 0 & 0 & 0 \\\\
+            0 & 0 & \\sigma_{a_z}^2 & 0 & 0 & 0 \\\\
+            0 & 0 & 0 & \\sigma_{m_x}^2 & 0 & 0 \\\\
+            0 & 0 & 0 & 0 & \\sigma_{m_y}^2 & 0 \\\\
+            0 & 0 & 0 & 0 & 0 & \\sigma_{m_z}^2
+        \\end{bmatrix}
+        & \\mathrm{if}\\; \\mathrm{Acc+Mag}
+    \\end{array}
+    \\right.\\\\
+
+where :math:`\\sigma_{a_x}`, :math:`\\sigma_{a_y}`, and :math:`\\sigma_{a_z}`
+are the `standard deviations <https://en.wikipedia.org/wiki/Standard_deviation>`_
+of the accelerometer readings, and :math:`\\sigma_{m_x}`, :math:`\\sigma_{m_y}`,
+and :math:`\\sigma_{m_z}` are the standard deviations of the magnetometer
+readings.
+
+The **Cross-Covariance Matrix** :math:`\\mathbf{P}_{yz}` represents how changes
+in the state variables correlate with changes in the measurement variables.
 Specifically, it quantifies how errors in the predicted states are related to
 errors in the expected measurements.
 
@@ -708,7 +737,7 @@ errors in the expected measurements.
 
     \\boxed{\\mathbf{P}_{yz} = \\sum_{i=0}^{2n} w_i^{(c)} (\\mathcal{Y}_i - \\bar{\\mathbf{y}})(\\mathcal{Z}_i - \\bar{\\mathbf{z}})^T}
 
-We compute the **Kalman Gain**:
+With these matrices we compute the **Kalman Gain**.
 
 .. math::
 
