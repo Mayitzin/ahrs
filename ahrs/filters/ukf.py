@@ -926,8 +926,8 @@ class UKF:
         """
         Set weights for mean and covariance computation
 
-        The weights :math:`\\mathbf{w}=\\begin{bmatrix}\\mathbf{w}{(m)}&
-        \\mathbf{w}{(c)}\\end{bmatrix}` are computed as:
+        The weights :math:`\\mathbf{w}=\\begin{bmatrix}\\mathbf{w}^{(m)}&
+        \\mathbf{w}^{(c)}\\end{bmatrix}` are computed as:
 
         .. math::
 
