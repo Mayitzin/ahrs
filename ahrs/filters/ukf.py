@@ -795,18 +795,18 @@ class UKF:
     --------
     >>> import numpy as np
     >>> from ahrs.filters import UKF
-    >>> from ahrs.common.orientation import acc2q
+    >>> from ahrs.common.orientation import ecompass
     >>> ukf = UKF()
     >>> num_samples = 1000              # Assuming sensors have 1000 samples each
     >>> Q = np.zeros((num_samples, 4))  # Allocate array for quaternions
-    >>> Q[0] = acc2q(acc_data[0])       # First sample of tri-axial accelerometer
+    >>> Q[0] = ecompass(acc_data[0], mag_data[0])   # First sample of tri-axial accelerometer and magnetometer
     >>> for t in range(1, num_samples):
-    ...     Q[t] = ukf.update(Q[t-1], gyr_data[t], acc_data[t])
+    ...     Q[t] = ukf.update(Q[t-1], gyr_data[t], acc_data[t], mag_data[t])
 
     The estimation can be simplified by giving all sensor values at the
     construction of the UKF object.
 
-    >>> ukf = UKF(gyr=gyr_data, acc=acc_data)
+    >>> ukf = UKF(gyr=gyr_data, acc=acc_data, mag=mag_data)
     >>> ukf.Q.shape
     (1000, 4)
 
@@ -820,8 +820,8 @@ class UKF:
     >>> ukf = UKF(gyr=gyr_data, acc=acc_data, frequency=200.0)  # Sampling frequency is 200 Hz
 
     The initial quaternion is estimated with the first observations of the
-    tri-axial accelerometers, but it can also be given directly in the
-    parameter ``q0``.
+    tri-axial accelerometers and, if available, magnetometers, but it can also
+    be given directly in the parameter ``q0``.
 
     >>> ukf = UKF(gyr=gyr_data, acc=acc_data, mag=mag_data, q0=[0.7071, 0.0, -0.7071, 0.0])
 
@@ -831,6 +831,9 @@ class UKF:
         N-by-3 array with measurements of angular velocity in rad/s
     acc : numpy.ndarray, default: None
         N-by-3 array with measurements of acceleration in in m/s^2
+    mag : numpy.ndarray, default: None
+        N-by-3 array with measurements of magnetic field in mT. If not given,
+        the filter will estimate orientation using only the accelerometer data.
     frequency : float, default: 100.0
         Sampling frequency in Herz.
     q0 : numpy.ndarray, default: None
