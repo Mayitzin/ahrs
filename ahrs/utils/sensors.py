@@ -97,13 +97,14 @@ def random_angpos(num_samples: int = 500, max_positions: int = 4, num_axes: int 
     angular_positions: np.ndarray
         M-by-3 Array of angular positions.
     """
+    rng = kwargs.pop('rng', GENERATOR)
     span = span if isinstance(span, (list, tuple)) else [-0.5*np.pi, 0.5*np.pi]
-    all_angs = [GENERATOR.uniform(span[0], span[1], GENERATOR.integers(1, max_positions)) for _ in np.arange(num_axes)]
+    all_angs = [rng.uniform(span[0], span[1], rng.integers(1, max_positions)) for _ in np.arange(num_axes)]
     angular_positions = np.zeros((num_samples, num_axes))
     for j, angs in enumerate(all_angs):
         # Create angular positions per axis
         num_angs = len(angs)
-        idxs = np.sort(GENERATOR.integers(0, num_samples, 2*num_angs)).reshape((num_angs, 2))
+        idxs = np.sort(rng.integers(0, num_samples, 2*num_angs)).reshape((num_angs, 2))
         for i, idx in enumerate(idxs):
             # Extend each angular position for several samples
             angular_positions[idx[0]:idx[1], j] = angs[i]
