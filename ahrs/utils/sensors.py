@@ -25,14 +25,11 @@ GENERATOR = np.random.default_rng(42)
 # Geomagnetic values
 wmm = WMM(latitude=MUNICH_LATITUDE, longitude=MUNICH_LONGITUDE, height=MUNICH_HEIGHT)
 REFERENCE_MAGNETIC_VECTOR = wmm.geodetic_vector
-MAG_NOISE_STD_DEVIATION = np.linalg.norm(REFERENCE_MAGNETIC_VECTOR) * 0.005
 
 # Gravitational values
 NORMAL_GRAVITY = WGS().normal_gravity(MUNICH_LATITUDE, MUNICH_HEIGHT)
 REFERENCE_GRAVITY_VECTOR = np.array([0.0, 0.0, NORMAL_GRAVITY])
-ACC_NOISE_STD_DEVIATION = np.linalg.norm(REFERENCE_GRAVITY_VECTOR) * 0.01
 
-NOISE_SIGMA = abs(GENERATOR.standard_normal(3) * 0.1) * RAD2DEG
 SAMPLING_FREQUENCY = 100.0
 
 def __gaussian_filter(in_array: np.ndarray, size: int = 10, sigma: float = 1.0) -> np.ndarray:
@@ -199,9 +196,12 @@ class Sensors:
         self.reference_magnetic_vector = kwargs.get('reference_magnetic_vector', REFERENCE_MAGNETIC_VECTOR)
 
         # Spectral noise density
-        self.gyr_noise = kwargs.get('gyr_noise', NOISE_SIGMA)
-        self.acc_noise = kwargs.get('acc_noise', ACC_NOISE_STD_DEVIATION)
-        self.mag_noise = kwargs.get('mag_noise', MAG_NOISE_STD_DEVIATION)
+        self.gyr_noise_default_std_deviation = abs(GENERATOR.standard_normal(3) * 0.1) * RAD2DEG
+        self.acc_noise_default_std_deviation = np.linalg.norm(REFERENCE_GRAVITY_VECTOR) * 0.01
+        self.mag_noise_default_std_deviation = np.linalg.norm(REFERENCE_MAGNETIC_VECTOR) * 0.005
+        self.gyr_noise = kwargs.get('gyr_noise', self.gyr_noise_default_std_deviation)
+        self.acc_noise = kwargs.get('acc_noise', self.acc_noise_default_std_deviation)
+        self.mag_noise = kwargs.get('mag_noise', self.mag_noise_default_std_deviation)
 
         # Orientations as quaternions
         if quaternions is None:
