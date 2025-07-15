@@ -176,6 +176,9 @@ class Sensors:
         Standard deviation of the magnetometer noise. If None given, it is
         generated from a normal distribution with zero mean. It is then scaled
         to be in the same units as the magnetometer data.
+    rng : np.random.Generator, default: np.random.default_rng(42)
+        Random number generator to use. If not given, it uses the default
+        random number generator with seed 42.
 
     Examples
     --------
@@ -213,7 +216,10 @@ class Sensors:
             # Orientations were NOT given
             self.num_samples = num_samples
             # Generate orientations (angular positions)
-            self.ang_pos = random_angpos(num_samples=self.num_samples, span=kwargs.get("span", (-np.pi, np.pi)), max_positions=20)
+            self.ang_pos = random_angpos(num_samples=self.num_samples,
+                                         span=kwargs.get("span", (-np.pi, np.pi)),
+                                         max_positions=20,
+                                         rng=self.rng)
             if 'yaw' in kwargs:
                 self.ang_pos[:, 2] = kwargs.get('yaw') * DEG2RAD
             self.quaternions = QuaternionArray(rpy=self.ang_pos)
