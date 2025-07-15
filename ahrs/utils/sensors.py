@@ -91,6 +91,9 @@ def random_angpos(num_samples: int = 500, max_positions: int = 4, num_axes: int 
         Number of axes required.
     span : list or tuple, default: [-pi/2, pi/2]
         Span (minimum to maximum) of the random values.
+    rng : np.random.Generator, default: np.random.default_rng(42)
+        Random number generator to use. If not given, it uses the default
+        random number generator with seed 42.
 
     Returns
     -------
@@ -191,13 +194,14 @@ class Sensors:
         self.frequency = freq
         self.in_degrees = kwargs.get('in_degrees', False)
         self.normalized_mag = kwargs.get('normalized_mag', False)
+        self.rng = kwargs.pop('rng', GENERATOR)
 
         # Reference earth frames
         self.reference_gravitational_vector = kwargs.get('reference_gravitational_vector', REFERENCE_GRAVITY_VECTOR)
         self.reference_magnetic_vector = kwargs.get('reference_magnetic_vector', REFERENCE_MAGNETIC_VECTOR)
 
         # Spectral noise density
-        self.gyr_noise_default_std_deviation = abs(GENERATOR.standard_normal(3) * 0.1) * RAD2DEG
+        self.gyr_noise_default_std_deviation = abs(self.rng.standard_normal(3) * 0.1) * RAD2DEG
         self.acc_noise_default_std_deviation = np.linalg.norm(REFERENCE_GRAVITY_VECTOR) * 0.01
         self.mag_noise_default_std_deviation = np.linalg.norm(REFERENCE_MAGNETIC_VECTOR) * 0.005
         self.gyr_noise = kwargs.get('gyr_noise', self.gyr_noise_default_std_deviation)
@@ -247,7 +251,7 @@ class Sensors:
         self.gyroscopes = np.copy(self.ang_vel) * RAD2DEG
 
         # Add gyro biases: uniform random constant biases within 1/200th of the full range of the gyroscopes
-        self.biases_gyroscopes = (GENERATOR.random(3)-0.5) * np.ptp(self.gyroscopes)/200
+        self.biases_gyroscopes = (self.rng.random(3)-0.5) * np.ptp(self.gyroscopes)/200
         if not self.in_degrees:
             self.biases_gyroscopes *= DEG2RAD
         self.gyroscopes += self.biases_gyroscopes
@@ -264,11 +268,11 @@ class Sensors:
         # Add noise
         if self.mag_noise < np.ptp(self.magnetometers):
             self.mag_noise = np.linalg.norm(REFERENCE_MAGNETIC_VECTOR) * 0.005
-        self.gyroscopes += GENERATOR.standard_normal((self.num_samples, 3)) * self.gyr_noise
-        self.accelerometers += GENERATOR.standard_normal((self.num_samples, 3)) * self.acc_noise
-        self.magnetometers += GENERATOR.standard_normal((self.num_samples, 3)) * self.mag_noise
-        self.magnetometers_nd += GENERATOR.standard_normal((self.num_samples, 3)) * self.mag_noise
-        self.magnetometers_enu += GENERATOR.standard_normal((self.num_samples, 3)) * self.mag_noise
+        self.gyroscopes += self.rng.standard_normal((self.num_samples, 3)) * self.gyr_noise
+        self.accelerometers += self.rng.standard_normal((self.num_samples, 3)) * self.acc_noise
+        self.magnetometers += self.rng.standard_normal((self.num_samples, 3)) * self.mag_noise
+        self.magnetometers_nd += self.rng.standard_normal((self.num_samples, 3)) * self.mag_noise
+        self.magnetometers_enu += self.rng.standard_normal((self.num_samples, 3)) * self.mag_noise
 
         if not self.in_degrees:
             self.gyroscopes *= DEG2RAD
