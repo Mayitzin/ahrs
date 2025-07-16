@@ -119,8 +119,8 @@ class Sensors:
     Generate synthetic sensor data of a hypothetical strapdown inertial
     navigation system.
 
-    It generates data of a 9-DOF IMU (3-axes gyroscope, 3-axes accelerometer,
-    and 3-axes magnetometer) from a given array of orientations as quaternions.
+    It generates data of a 9-DOF IMU (3-axis gyroscopes, 3-axis accelerometers,
+    and 3-axis magnetometers) from a given array of orientations as quaternions.
 
     The accelerometer data is given as m/s^2, the gyroscope data as rad/s, and
     the magnetometer data as nT.
@@ -139,8 +139,8 @@ class Sensors:
     - ``quaternions``: N-by-4 array with orientations as quaternions.
     - ``rotations``: N-by-3-by-3 array with orientations as 3x3 Rotation
       matrices.
-    - ``ang_pos``: N-by-3 array with orientations as Euler angles (roll, pitch,
-      yaw).
+    - ``angular_positions``: N-by-3 array with orientations as Euler angles
+      (roll, pitch, yaw.)
     - ``ang_vel``: N-by-3 array with angular velocities around the X-, Y-, and
       Z-axes. Obtained from differentiation of the orientations.
     - ``frequency``: Sampling frequency of the data, in Hz.
@@ -216,21 +216,21 @@ class Sensors:
             # Orientations were NOT given
             self.num_samples = num_samples
             # Generate orientations (angular positions)
-            self.ang_pos = random_angpos(num_samples=self.num_samples,
-                                         span=kwargs.get("span", (-np.pi, np.pi)),
-                                         max_positions=20,
-                                         rng=self.rng)
+            self.angular_positions = random_angpos(num_samples=self.num_samples,
+                                                   span=kwargs.get("span", (-np.pi, np.pi)),
+                                                   max_positions=20,
+                                                   rng=self.rng)
             if 'yaw' in kwargs:
-                self.ang_pos[:, 2] = kwargs.get('yaw') * DEG2RAD
-            self.quaternions = QuaternionArray(rpy=self.ang_pos)
+                self.angular_positions[:, 2] = kwargs.get('yaw') * DEG2RAD
+            self.quaternions = QuaternionArray(rpy=self.angular_positions)
             # Estimate angular velocities
-            self.ang_vel = self.angular_velocities(self.ang_pos, self.frequency)
+            self.ang_vel = self.angular_velocities(self.angular_positions, self.frequency)
         else:
             # Orientations were given (as quaternions)
             # Define angular positions and velocities
             self.quaternions = QuaternionArray(quaternions)
             self.num_samples = self.quaternions.shape[0]
-            self.ang_pos = self.quaternions.to_angles()
+            self.angular_positions = self.quaternions.to_angles()
             self.ang_vel = np.r_[np.zeros((1, 3)), self.quaternions.angular_velocities(1/self.frequency)]
         # Rotation Matrices
         self.rotations = self.quaternions.to_DCM()
