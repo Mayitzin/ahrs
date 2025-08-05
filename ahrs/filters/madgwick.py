@@ -256,7 +256,7 @@ class Madgwick:
         acc : numpy.ndarray
             Sample of tri-axial Accelerometer in m/s^2
         mag : numpy.ndarray
-            Sample of tri-axial Magnetometer in T
+            Sample of tri-axial Magnetometer in mT
 
         Returns
         -------
