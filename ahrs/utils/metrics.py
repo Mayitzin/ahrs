@@ -493,7 +493,7 @@ def qad(q1: np.ndarray, q2: np.ndarray) -> float:
         return np.arccos(2.0*(q1@q2)**2-1.0)
     q1 /= np.linalg.norm(q1, axis=1)[:, None]
     q2 /= np.linalg.norm(q2, axis=1)[:, None]
-    return np.arccos(np.clip(2.0*np.nansum(q1*q2, axis=1)**2-1.0, -1.0, 1.0))
+    return np.arccos(np.clip(2.0*np.sum(q1*q2, axis=1)**2-1.0, -1.0, 1.0))
 
 def rmse(x: np.ndarray, y: np.ndarray):
     """
