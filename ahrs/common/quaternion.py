@@ -2727,25 +2727,28 @@ class QuaternionArray(np.ndarray):
         _assert_iterables(DCM, 'Direction Cosine Matrices')
         # Allocate local quaternion array
         quaternion_array = np.zeros((DCM.shape[0], 4))
+        idx = None
         try:
             if method.lower() == 'hughes':
                 quaternion_array = hughes(DCM)
             if method.lower() == 'chiaverini':
                 quaternion_array = chiaverini(DCM)
             if method.lower() == 'shepperd':
-                for i, R in enumerate(DCM):
-                    quaternion_array[i] = shepperd(R)
+                for idx, rotmat in enumerate(DCM):
+                    quaternion_array[idx] = shepperd(rotmat)
             if method.lower() == 'itzhack':
                 version = kw.get('version', 3)
-                for i, R in enumerate(DCM):
-                    quaternion_array[i] = itzhack(R, version=version)
+                for idx, rotmat in enumerate(DCM):
+                    quaternion_array[idx] = itzhack(rotmat, version=version)
             if method.lower() == 'sarabandi':
                 threshold = kw.get('threshold', 0.0)
-                for i, R in enumerate(DCM):
-                    quaternion_array[i] = sarabandi(R, eta=threshold)
+                for idx, rotmat in enumerate(DCM):
+                    quaternion_array[idx] = sarabandi(rotmat, eta=threshold)
         except RuntimeWarning as exc:
-            failed_DCM = DCM[i]
-            msg = f"Method '{method}' failed at DCM[{i}]:\n{failed_DCM}\n"
+            msg = f"Method '{method}' failed"
+            if idx is not None:
+                failed_DCM = DCM[idx]
+                msg += f" at DCM[{idx}]:\n{failed_DCM}\n"
             raise RuntimeError(msg) from exc
         quaternion_array /= np.linalg.norm(quaternion_array, axis=1)[:, None]
         if inplace:
