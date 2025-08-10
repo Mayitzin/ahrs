@@ -2743,10 +2743,10 @@ class QuaternionArray(np.ndarray):
                 threshold = kw.get('threshold', 0.0)
                 for i, R in enumerate(DCM):
                     quaternion_array[i] = sarabandi(R, eta=threshold)
-        except RuntimeWarning:
+        except RuntimeWarning as exc:
             failed_DCM = DCM[i]
             msg = f"Method '{method}' failed at DCM[{i}]:\n{failed_DCM}\n"
-            raise RuntimeError(msg)
+            raise RuntimeError(msg) from exc
         quaternion_array /= np.linalg.norm(quaternion_array, axis=1)[:, None]
         if inplace:
             self.array = quaternion_array
