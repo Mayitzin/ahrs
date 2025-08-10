@@ -3006,16 +3006,16 @@ class QuaternionArray(np.ndarray):
 
     def remove_jumps(self) -> None:
         """
-        Flip sign of opposite quaternions.
+        Flip sign of negated quaternions.
 
         Some estimations and measurements of quaternions might have "jumps"
         produced when their values are multiplied by -1. They still represent
         the same rotation, but the continuity of the signal "flips", making it
         difficult to evaluate continuously.
 
-        To revert this, the flipping instances are identified and the next
-        samples are multiplied by -1, until it "flips back". This
-        function does that correction over all values of the attribute ``array``.
+        To revert this, the "flipped" instances are identified and multiplied
+        by -1 to "flip them back". This function does that correction over all
+        values of the attribute ``array``.
 
         Examples
         --------
@@ -3024,24 +3024,24 @@ class QuaternionArray(np.ndarray):
         >>> Q = QuaternionArray(qts + v)
         >>> Q.view()
         QuaternionArray([[ 0.17614144, -0.39173347,  0.56303067, -0.70605634],
-                        [ 0.17607515, -0.3839024 ,  0.52673809, -0.73767437],
-                        [ 0.16823806, -0.35898889,  0.53664261, -0.74487424],
-                        [ 0.17094453, -0.3723117 ,  0.54109885, -0.73442086],
-                        [ 0.1862619 , -0.38421818,  0.5260265 , -0.73551276]])
+                         [ 0.17607515, -0.3839024 ,  0.52673809, -0.73767437],
+                         [ 0.16823806, -0.35898889,  0.53664261, -0.74487424],
+                         [ 0.17094453, -0.3723117 ,  0.54109885, -0.73442086],
+                         [ 0.1862619 , -0.38421818,  0.5260265 , -0.73551276]])
         >>> Q[1:3] *= -1    # 2nd and 3rd Quaternions "flip"
         >>> Q.view()
         QuaternionArray([[ 0.17614144, -0.39173347,  0.56303067, -0.70605634],
-                        [-0.17607515,  0.3839024 , -0.52673809,  0.73767437],
-                        [-0.16823806,  0.35898889, -0.53664261,  0.74487424],
-                        [ 0.17094453, -0.3723117 ,  0.54109885, -0.73442086],
-                        [ 0.1862619 , -0.38421818,  0.5260265 , -0.73551276]])
+                         [-0.17607515,  0.3839024 , -0.52673809,  0.73767437],
+                         [-0.16823806,  0.35898889, -0.53664261,  0.74487424],
+                         [ 0.17094453, -0.3723117 ,  0.54109885, -0.73442086],
+                         [ 0.1862619 , -0.38421818,  0.5260265 , -0.73551276]])
         >>> Q.remove_jumps()
         >>> Q.view()
         QuaternionArray([[ 0.17614144, -0.39173347,  0.56303067, -0.70605634],
-                        [ 0.17607515, -0.3839024 ,  0.52673809, -0.73767437],
-                        [ 0.16823806, -0.35898889,  0.53664261, -0.74487424],
-                        [ 0.17094453, -0.3723117 ,  0.54109885, -0.73442086],
-                        [ 0.1862619 , -0.38421818,  0.5260265 , -0.73551276]])
+                         [ 0.17607515, -0.3839024 ,  0.52673809, -0.73767437],
+                         [ 0.16823806, -0.35898889,  0.53664261, -0.74487424],
+                         [ 0.17094453, -0.3723117 ,  0.54109885, -0.73442086],
+                         [ 0.1862619 , -0.38421818,  0.5260265 , -0.73551276]])
         """
         q_diff = np.diff(self.array, axis=0)
         jumps = np.nonzero(np.where(np.linalg.norm(q_diff, axis=1)>1, 1, 0))[0]+1
