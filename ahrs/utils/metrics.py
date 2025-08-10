@@ -61,7 +61,7 @@ def _quaternions_guard_clauses(q1: Union[list, np.ndarray], q2: Union[list, np.n
     if q1.shape != q2.shape:
         raise ValueError(f"Cannot compare q1 of shape {q1.shape} and q2 of shape {q2.shape}")
 
-def euclidean(x: np.ndarray, y: np.ndarray, **kwargs) -> float:
+def euclidean(x: np.ndarray, y: np.ndarray) -> float:
     """
     Euclidean distance between Euler angles as described in :cite:p:`huynh2009`.
 
