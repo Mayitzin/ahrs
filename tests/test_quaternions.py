@@ -421,5 +421,12 @@ class TestRandomAttitudes(unittest.TestCase):
         self.assertRaises(TypeError, ahrs.common.quaternion.random_attitudes, 10, representation=["quaternion"])
         self.assertRaises(TypeError, ahrs.common.quaternion.random_attitudes, 10, representation=("quaternion",))
 
+class TestTransformationQuaternionToAngles(unittest.TestCase):
+    def setUp(self) -> None:
+        self.q1 = ahrs.Quaternion([1.0, 1.0, 0.0, 0.0])
+
+    def test_quaternion_to_angles(self):
+        np.testing.assert_almost_equal(self.q1.to_angles(), [0., 0., np.pi/2], decimal=15)
+
 if __name__ == "__main__":
     unittest.main()
