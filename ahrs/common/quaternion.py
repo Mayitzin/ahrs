@@ -1708,6 +1708,112 @@ class Quaternion(np.ndarray):
         This is a new implementation based on the excellent work by Evandro
         Bernardes and Stéphane Viollet :cite:p:`bernardes2022`.
 
+        We start with the equivalence between a versor (unit quaternion) and
+        the axis-angle representation of a rotation.
+
+        .. math::
+
+            \\mathbf{q} =
+            \\begin{bmatrix}
+                \\cos\\big(\\frac{\\theta}{2}\\big) \\\\
+                \\sin\\big(\\frac{\\theta}{2}\\big) \\mathbf{v}
+            \\end{bmatrix} =
+            \\begin{bmatrix}
+                \\cos\\big(\\frac{\\theta}{2}\\big) \\\\
+                \\sin\\big(\\frac{\\theta}{2}\\big) v_x \\\\
+                \\sin\\big(\\frac{\\theta}{2}\\big) v_y \\\\
+                \\sin\\big(\\frac{\\theta}{2}\\big) v_z
+            \\end{bmatrix} =
+            \\begin{bmatrix}
+                q_w \\\\ q_x \\\\ q_y \\\\ q_z
+            \\end{bmatrix}
+
+        where :math:`\\mathbf{v}=\\begin{bmatrix}v_x & v_y & v_z\\end{bmatrix}`
+        is a **unit vector** describing the axis of rotation about which a
+        point rotates by an angle :math:`\\theta`.
+
+        .. note::
+
+            Remember that a **versor** is the unit quaternion commonly used to
+            represent rotations, and it has a norm equal to one:
+
+            .. math::
+
+                \\|\\mathbf{q}\\| = 1
+
+            Likewise, a **unit vector** is a vector, whose norm is also equal
+            to one:
+
+            .. math::
+
+                \\|\\mathbf{v}\\| = 1
+
+        We can decompose this relation as follows:
+
+        .. math::
+
+            \\mathbf{q} =
+            \\begin{bmatrix}
+                c_3 \\\\ s_3\\mathbf{v}
+            \\end{bmatrix} \\otimes
+            \\begin{bmatrix}
+                c_2 \\\\ s_2\\mathbf{v}'
+            \\end{bmatrix} \\otimes
+            \\begin{bmatrix}
+                c_1 \\\\ s_1\\mathbf{v}
+            \\end{bmatrix}
+
+        where, for :math:`0 \\leq \\theta_2 \\leq \\pi`:
+
+        .. math::
+
+            \\begin{eqnarray}
+            s_1 \\equiv \\, & \\sin\\frac{\\theta_1}{2}, & \\; &
+            c_1 \\equiv \\, & \\cos\\frac{\\theta_1}{2} \\\\
+            s_2 \\equiv \\, & \\sin\\frac{\\theta_2}{2}, & \\; &
+            c_2 \\equiv \\, & \\cos\\frac{\\theta_2}{2} \\\\
+            s_3 \\equiv \\, & \\sin\\frac{\\theta_3}{2}, & \\; &
+            c_3 \\equiv \\, & \\cos\\frac{\\theta_3}{2}
+            \\end{eqnarray}
+
+        and :math:`\\mathbf{v}` and :math:`\\mathbf{v}'` are orthonormal unit
+        vectors such that :math:`\\mathbf{v} \\cdot \\mathbf{v}' = 0`. A third
+        orthonormal unit vector can be obtained from their cross product:
+
+        .. math::
+
+            \\mathbf{v}'' = \\epsilon \\mathbf{v} \\times \\mathbf{v}'
+
+        where :math:`\\epsilon = \\pm 1`.
+
+        A factorization around the unit vector leads to:
+
+        .. math::
+
+            \\mathbf{q} =
+            \\begin{bmatrix}
+                c_2c_+ \\\\
+                c_2s_+\\mathbf{v} + s_2c_-\\mathbf{v}' + s_2s_-\\epsilon\\mathbf{v}''
+            \\end{bmatrix}
+
+        with:
+        
+        .. math::
+
+            \\begin{eqnarray}
+            s_+ \\equiv \\, & \\sin\\frac{\\theta_1 + \\theta_3}{2}, & \\; &
+
+        With it we can obtain the following relation between the quaternion and
+        the orthogonal components:
+
+        .. math::
+
+            \\begin{eqnarray}
+            \\begin{bmatrix}
+                a \\\\ b \\\\ c \\\\ d
+            \\end{bmatrix} & = &
+            \\begin{bmatrix}
+
         Returns
         -------
         angles : numpy.ndarray
