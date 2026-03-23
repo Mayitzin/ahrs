@@ -305,6 +305,8 @@ Footnotes
 
 """
 
+import re
+
 import numpy as np
 from typing import Union, Tuple
 
@@ -1697,23 +1699,14 @@ class Quaternion(np.ndarray):
         axis = np.zeros(3) if angle==0.0 else self.v/denom
         return axis, angle
 
-    def to_angles(self) -> np.ndarray:
+    def to_angles(self, seq='ZYX') -> np.ndarray:
         """
-        Return corresponding Euler angles of quaternion.
+        .. versionchanged:: 0.4.1
 
-        Given a unit quaternion
-        :math:`\\mathbf{q} = \\begin{pmatrix}q_w & q_x & q_y & q_z\\end{pmatrix}`,
-        its corresponding Euler angles :cite:p:`Wiki_Conversions` are:
+        Return the Euler angles of quaternion.
 
-        .. math::
-            \\begin{bmatrix}
-            \\phi \\\\ \\theta \\\\ \\psi
-            \\end{bmatrix} =
-            \\begin{bmatrix}
-            \\mathrm{atan2}\\big(2(q_wq_x + q_yq_z), 1-2(q_x^2+q_y^2)\\big) \\\\
-            \\arcsin\\big(2(q_wq_y - q_zq_x)\\big) \\\\
-            \\mathrm{atan2}\\big(2(q_wq_z + q_xq_y), 1-2(q_y^2+q_z^2)\\big)
-            \\end{bmatrix}
+        This is a new implementation based on the excellent work by Evandro
+        Bernardes and Stéphane Viollet :cite:p:`bernardes2022`.
 
         Returns
         -------
@@ -1721,10 +1714,117 @@ class Quaternion(np.ndarray):
             Euler angles of quaternion.
 
         """
-        phi = np.arctan2(2.0*(self.w*self.x + self.y*self.z), 1.0 - 2.0*(self.x**2 + self.y**2))
-        theta = np.arcsin(2.0*(self.w*self.y - self.z*self.x))
-        psi = np.arctan2(2.0*(self.w*self.z + self.x*self.y), 1.0 - 2.0*(self.y**2 + self.z**2))
-        return np.array([phi, theta, psi])
+        if len(seq) != 3:
+            raise ValueError(f"Expected 3 axes, got {seq}.")
+
+        intrinsic = (re.match(r'^[XYZ]{1,3}$', seq) is not None)
+        extrinsic = (re.match(r'^[xyz]{1,3}$', seq) is not None)
+        if not (intrinsic or extrinsic):
+            raise ValueError("Expected axes of `seq` to be from either "
+                             "['x', 'y', 'z'] or ['X', 'Y', 'Z'], "
+                             f"got {seq}")
+
+        if any(seq[i] == seq[i+1] for i in range(2)):
+            raise ValueError("Expected consecutive axes to be different, "
+                             f"got {seq}")
+
+        seq = seq.lower()
+        quat = self.A    # qx, qy, qz, qw
+        if not extrinsic:
+            seq = seq[::-1]
+        valid_axes = ['x', 'y', 'z']
+        if not any(axis in valid_axes for axis in seq):
+            raise ValueError(f"Expected axes from `seq` to be from "
+                             f"{valid_axes}, got {seq}")
+        i = valid_axes.index(seq[0])
+        j = valid_axes.index(seq[1])
+        k = valid_axes.index(seq[2])
+        is_proper = i == k
+        if is_proper:
+            k = 3 - i - j # get third axis
+
+        # Step 0
+        # Check if permutation is even (+1) or odd (-1)
+        sign = int((i-j)*(j-k)*(k-i)/2)
+        eps = 1e-7
+        angles = np.zeros(3)
+        if is_proper:
+            a = quat[3]
+            b = quat[i]
+            c = quat[j]
+            d = quat[k] * sign
+        else:
+            a = quat[3] - quat[j]
+            b = quat[i] + quat[k] * sign
+            c = quat[j] + quat[3]
+            d = quat[k] * sign - quat[i]
+        n2 = a**2 + b**2 + c**2 + d**2
+
+        # Step 3
+        # Compute second angle
+        angles[1] = np.arccos(2*(a**2 + b**2) / n2 - 1)
+
+        # ... and check if equalt to is 0 or pi, causing a singularity
+        safe1 = abs(angles[1]) >= eps
+        safe2 = abs(angles[1] - np.pi) >= eps
+        safe = safe1 and safe2
+
+        # Step 4
+        # compute first and third angles, according to case
+        if safe:
+            half_sum = np.arctan2(b, a)     # == (alpha+gamma)/2
+            half_diff = np.arctan2(-d, c)   # == (alpha-gamma)/2
+            angles[0] = half_sum + half_diff
+            angles[2] = half_sum - half_diff
+        else:
+            if not extrinsic:
+                # For intrinsic, set first angle to zero so that after reversal we
+                # ensure that third angle is zero
+                # 6a
+                if not safe:
+                    angles[0] = 0
+                if not safe1:
+                    half_sum = np.arctan2(b, a)
+                    angles[2] = 2 * half_sum
+                # 6c
+                if not safe2:
+                    half_diff = np.arctan2(-d, c)
+                    angles[2] = -2 * half_diff
+            else:
+                # For extrinsic, set third angle to zero
+                # 6b
+                if not safe:
+                    angles[2] = 0
+                if not safe1:
+                    half_sum = np.arctan2(b, a)
+                    angles[0] = 2 * half_sum
+                # 6c
+                if not safe2:
+                    half_diff = np.arctan2(-d, c)
+                    angles[0] = 2 * half_diff
+
+        for i_ in range(3):
+            if angles[i_] < -np.pi:
+                angles[i_] += 2 * np.pi
+            elif angles[i_] > np.pi:
+                angles[i_] -= 2 * np.pi
+
+        # for Tait-Bryan angles
+        if not is_proper:
+            angles[2] *= sign
+            angles[1] -= np.pi / 2
+
+        if not extrinsic:
+            # reversal
+            angles[0], angles[2] = angles[2], angles[0]
+
+        # Step 8
+        if not safe:
+            print("Gimbal lock detected. Setting third angle to zero "
+                  "since it is not possible to uniquely determine "
+                  "all angles.")
+
+        return angles
 
     def to_DCM(self) -> np.ndarray:
         """
@@ -2785,20 +2885,9 @@ class QuaternionArray(np.ndarray):
 
     def to_angles(self) -> np.ndarray:
         """
-        Return corresponding roll-pitch-yaw angles of quaternion.
+        .. versionchanged:: 0.4.1
 
-        Having a unit quaternion :math:`\\mathbf{q} = \\begin{pmatrix}q_w & q_x & q_y & q_z\\end{pmatrix}`,
-        its corresponding roll-pitch-yaw angles :cite:p:`Wiki_Conversions` are:
-
-        .. math::
-            \\begin{bmatrix}
-            \\phi \\\\ \\theta \\\\ \\psi
-            \\end{bmatrix} =
-            \\begin{bmatrix}
-            \\mathrm{atan2}\\big(2(q_wq_x + q_yq_z), 1-2(q_x^2+q_y^2)\\big) \\\\
-            \\arcsin\\big(2(q_wq_y - q_zq_x)\\big) \\\\
-            \\mathrm{atan2}\\big(2(q_wq_z + q_xq_y), 1-2(q_y^2+q_z^2)\\big)
-            \\end{bmatrix}
+        Return the Euler angles of all quaternions.
 
         Returns
         -------
