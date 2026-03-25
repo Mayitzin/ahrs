@@ -1703,10 +1703,22 @@ class Quaternion(np.ndarray):
         """
         .. versionchanged:: 0.4.1
 
-        Return the Euler angles of quaternion.
+        Return the Euler angles from quaternion.
 
         This is a new implementation based on the excellent work by Evandro
         Bernardes and Stéphane Viollet :cite:p:`bernardes2022`.
+
+        Given a versor (unit quaternion) :math:`\\mathbf{q} = \\begin{bmatrix}
+        q_w & q_x & q_y & q_z \\end{bmatrix}^T`, the goal is to obtain the
+        Euler angles :math:`\\begin{bmatrix}\\theta_1 & \\theta_2 & \\theta_3
+        \\end{bmatrix}^T` that represent the same orientation for a given
+        sequence of rotations (e.g., ``'ZYX'``, ``'XYZ'``, etc.)
+
+        If the rotations occur around a fixed global coordinate system, the
+        angles are called **extrinsic**.
+
+        If the rotations occur sequentially around its local coordinate system,
+        the angles are called **intrinsic**.
 
         We start with the equivalence between a versor (unit quaternion) and
         the axis-angle representation of a rotation.
@@ -1714,6 +1726,9 @@ class Quaternion(np.ndarray):
         .. math::
 
             \\mathbf{q} =
+            \\begin{bmatrix}
+                q_w \\\\ \\mathbf{q}_v
+            \\end{bmatrix} =
             \\begin{bmatrix}
                 \\cos\\big(\\frac{\\theta}{2}\\big) \\\\
                 \\sin\\big(\\frac{\\theta}{2}\\big) \\mathbf{v}
@@ -1728,7 +1743,7 @@ class Quaternion(np.ndarray):
                 q_w \\\\ q_x \\\\ q_y \\\\ q_z
             \\end{bmatrix}
 
-        where :math:`\\mathbf{v}=\\begin{bmatrix}v_x & v_y & v_z\\end{bmatrix}`
+        where :math:`\\mathbf{v}=\\begin{bmatrix}v_x & v_y & v_z\\end{bmatrix}^T`
         is a **unit vector** describing the axis of rotation about which a
         point rotates by an angle :math:`\\theta`.
 
@@ -1782,37 +1797,123 @@ class Quaternion(np.ndarray):
 
         .. math::
 
-            \\mathbf{v}'' = \\epsilon \\mathbf{v} \\times \\mathbf{v}'
+            \\mathbf{v}'' = \\varepsilon \\mathbf{v} \\times \\mathbf{v}'
 
-        where :math:`\\epsilon = \\pm 1`.
+        where :math:`\\varepsilon = \\pm 1`.
 
-        A factorization around the unit vector leads to:
+        The authors chose a solution in which :math:`s_2>0`, and :math:`c_2>0`.
+        Therefore, a factorization around with these properties leads to:
 
         .. math::
 
             \\mathbf{q} =
             \\begin{bmatrix}
+                q_w \\\\
+                \\mathbf{q}_v \\cdot \\mathbf{v} \\\\
+                \\mathbf{q}_v \\cdot \\mathbf{v}' \\\\
+                \\varepsilon \\mathbf{q}_v \\cdot \\mathbf{v}''
+            \\end{bmatrix} =
+            \\begin{bmatrix}
                 c_2c_+ \\\\
-                c_2s_+\\mathbf{v} + s_2c_-\\mathbf{v}' + s_2s_-\\epsilon\\mathbf{v}''
+                c_2s_+\\mathbf{v} + s_2c_-\\mathbf{v}' + s_2s_-\\varepsilon\\mathbf{v}''
             \\end{bmatrix}
 
         with:
-        
+
         .. math::
 
             \\begin{eqnarray}
-            s_+ \\equiv \\, & \\sin\\frac{\\theta_1 + \\theta_3}{2}, & \\; &
+                s_+ \\equiv \\, & \\sin(\\theta_+) = & \\sin(\\frac{\\theta_3+\\theta_1}{2}) = & c_1s_3 + s_1c_3 \\\\
+                s_- \\equiv \\, & \\sin(\\theta_-) = & \\sin(\\frac{\\theta_3-\\theta_1}{2}) = & c_1s_3 - s_1c_3 \\\\
+                c_+ \\equiv \\, & \\cos(\\theta_+) = & \\cos(\\frac{\\theta_3+\\theta_1}{2}) = & c_1c_3 - s_1s_3 \\\\
+                c_- \\equiv \\, & \\cos(\\theta_-) = & \\cos(\\frac{\\theta_3-\\theta_1}{2}) = & c_1c_3 + s_1s_3
+            \\end{eqnarray}
+
+        using the helper variables:
+
+        .. math::
+
+            \\begin{eqnarray}
+            \\theta_+ & = & \\frac{\\theta_3 + \\theta_1}{2} \\\\ \\\\
+            \\theta_- & = & \\frac{\\theta_3 - \\theta_1}{2}
+            \\end{eqnarray}
 
         With it we can obtain the following relation between the quaternion and
         the orthogonal components:
 
         .. math::
 
-            \\begin{eqnarray}
             \\begin{bmatrix}
                 a \\\\ b \\\\ c \\\\ d
             \\end{bmatrix} & = &
             \\begin{bmatrix}
+                c_2c_+ \\\\ c_2s_+ \\\\ s_2c_- \\\\ s_2s_-
+            \\end{bmatrix}
+
+        The array :math:`\\begin{bmatrix} b & c & d\\end{bmatrix}^T` is a
+        permutation of the elements of the vector part of the quaternion.
+
+        .. math::
+
+            \\begin{bmatrix}
+                b \\\\ c \\\\ d
+            \\end{bmatrix} & = & \\,
+            \\begin{bmatrix}
+                \\mathbf{v} & \\mathbf{v}' & \\mathbf{v} \\times \\mathbf{v}'
+            \\end{bmatrix}^T
+            \\begin{bmatrix}
+                q_x \\\\ q_y \\\\ q_z
+            \\end{bmatrix}
+
+        From it, we simplify the expression for :math:`\\theta_+` and
+        :math:`\\theta_-`:
+
+        .. math::
+
+            \\begin{eqnarray}
+            \\theta_+ & = & \\arctan2(b, a) \\\\ \\\\
+            \\theta_- & = & \\arctan2(-d, c) \\\\
+            \\end{eqnarray}
+
+        To calculate :math:`\\theta_2`, we see that:
+
+        .. math::
+
+            \\begin{eqnarray}
+            c_2 & = & \\cos\\frac{\\theta_2}{2} = \\sqrt{a^2 + b^2} \\\\ \\\\
+            s_2 & = & \\sin\\frac{\\theta_2}{2} = \\sqrt{c^2 + d^2}
+            \\end{eqnarray}
+
+        Using inverse trigonometrics, we find the solution for :math:`\\theta_2`:
+
+        .. math::
+
+            \\boxed{
+            \\theta_2 = 2 \\arctan2\\big(\\sqrt{c^2 + d^2}, \\sqrt{a^2 + b^2}\\big)
+            }
+
+        This yields the solution for the other two angles:
+
+        .. math::
+
+            \\begin{eqnarray}
+            \\theta_1 & = & \\theta_+ - \\theta_- \\\\
+            \\theta_3 & = & \\theta_+ + \\theta_-
+            \\end{eqnarray}
+
+        However, there are two **Singularities** with this approach:
+
+        - When :math:`\\theta_2=0`, we get :math:`s_2=c=0`, and
+          :math:`\\theta_-` is undefined.
+        - When :math:`\\theta_2=\\pi`, we get :math:`c_2=b=0`, and
+          :math:`\\theta_+` is undefined.
+
+        In both cases a degree of freedom is lost, and we cannot uniquely
+        determine angles :math:`\\theta_1` and :math:`\\theta_3`. This is known
+        as a [Gimbal Lock](https://en.wikipedia.org/wiki/Gimbal_lock).
+
+        In such cases, we set the undefined angle to zero, or set it to its
+        last known value.
 
         Returns
         -------
@@ -1835,7 +1936,7 @@ class Quaternion(np.ndarray):
                              f"got {seq}")
 
         seq = seq.lower()
-        quat = self.A    # qx, qy, qz, qw
+        quat = np.roll(self.A, -1)    # qx, qy, qz, qw
         if not extrinsic:
             seq = seq[::-1]
         valid_axes = ['x', 'y', 'z']
