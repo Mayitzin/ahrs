@@ -423,10 +423,11 @@ class TestRandomAttitudes(unittest.TestCase):
 
 class TestTransformationQuaternionToAngles(unittest.TestCase):
     def setUp(self) -> None:
-        self.q1 = ahrs.Quaternion([1.0, 1.0, 0.0, 0.0])
+        self.q1 = ahrs.Quaternion([ np.sqrt(2)/2, np.sqrt(2)/2, 0.0, 0.0])  # (qw, qx, qy, qz) order
 
     def test_quaternion_to_angles(self):
         np.testing.assert_almost_equal(self.q1.to_angles(), [0., 0., np.pi/2], decimal=15)
+        np.testing.assert_almost_equal(self.q1.to_angles(seq='ZYZ'), [-np.pi/2, np.pi/2, np.pi/2], decimal=15)
 
 if __name__ == "__main__":
     unittest.main()
