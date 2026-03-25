@@ -1965,11 +1965,10 @@ class Quaternion(np.ndarray):
             b = quat[i] + quat[k] * sign
             c = quat[j] + quat[3]
             d = quat[k] * sign - quat[i]
-        n2 = a**2 + b**2 + c**2 + d**2
 
         # Step 3
         # Compute second angle
-        angles[1] = np.arccos(2*(a**2 + b**2) / n2 - 1)
+        angles[1] = 2.0 * np.arctan2(np.sqrt(c**2 + d**2), np.sqrt(a**2 + b**2))
 
         # ... and check if equalt to is 0 or pi, causing a singularity
         safe1 = abs(angles[1]) >= eps
