@@ -337,7 +337,7 @@ single point, as long as the northerly magnetic intensity is defined (:math:`b_x
     f_{g,b}( \\mathbf{q}, \\,^S\\mathbf{a}, \\,^E\\mathbf{b}, \\,^S\\mathbf{m})=
     \\begin{bmatrix}f_g( \\mathbf{q}, \\,^S\\mathbf{a}) \\\\ f_b( \\mathbf{q}, \\,^E\\mathbf{b}, \\,^S\\mathbf{m})\\end{bmatrix}\\\\ \\\\
     J_{g,b}( \\mathbf{q}, \\,^E\\mathbf{b})=
-    \\begin{bmatrix}J_g^T( \\mathbf{q}) \\\\ J_b^T( \\mathbf{q}, \\,^E\\mathbf{b})\\end{bmatrix}
+    \\begin{bmatrix}J_g( \\mathbf{q}) \\\\ J_b( \\mathbf{q}, \\,^E\\mathbf{b})\\end{bmatrix}
     \\end{array}
 
 Simliar to the implementation with IMU, the estimation of the new quaternion
