@@ -91,8 +91,9 @@ def geodetic2ecef(lat: float, lon: float, h: float, a: float = EARTH_EQUATOR_RAD
     a : float, default: 6378137.0
         Ellipsoid's equatorial radius (semi-major axis), in meters. Defaults to
         Earth's.
-    ecc : float, default: 8.1819190842622e-2
-        Ellipsoid's first eccentricity. Defaults to Earth's.
+    b : float, default: 6356752.3142
+        Ellipsoid's polar radius (semi-minor axis), in meters. Defaults to
+        Earth's.
 
     Returns
     -------
@@ -179,8 +180,9 @@ def geodetic2enu(lat: float, lon: float, h: float, lat0: float, lon0: float, h0:
     a : float, default: 6378137.0
         Ellipsoid's equatorial radius (semi-major axis), in meters. Defaults to
         Earth's.
-    ecc : float, default: 8.1819190842622e-2
-        Ellipsoid's first eccentricity. Defaults to Earth's.
+    b : float, default: 6356752.3142
+        Ellipsoid's polar radius (semi-minor axis), in meters. Defaults to
+        Earth's.
 
     Returns
     -------
@@ -379,8 +381,9 @@ def ecef2enu(x: float, y: float, z: float, lat: float, lon: float, h: float, a: 
     a : float, default: 6378137.0
         Ellipsoid's equatorial radius (semi-major axis), in meters. Defaults to
         Earth's.
-    ecc : float, default: 8.1819190842622e-2
-        Ellipsoid's first eccentricity. Defaults to Earth's.
+    b : float, default: 6356752.3142
+        Ellipsoid's polar radius (semi-minor axis), in meters. Defaults to
+        Earth's.
 
     Returns
     -------
@@ -544,8 +547,9 @@ def enu2ecef(east: float, north: float, up: float, lat: float, lon: float, h: fl
     a : float, default: 6378137.0
         Ellipsoid's equatorial radius (semi-major axis), in meters. Defaults to
         Earth's.
-    ecc : float, default: 8.1819190842622e-2
-        Ellipsoid's first eccentricity. Defaults to Earth's.
+    b : float, default: 6356752.3142
+        Ellipsoid's polar radius (semi-minor axis), in meters. Defaults to
+        Earth's.
 
     Returns
     -------

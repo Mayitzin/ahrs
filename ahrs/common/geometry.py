@@ -19,9 +19,9 @@ def circle(center: Union[list, np.ndarray], radius: float = 1.0, num_points: int
 
     Parameters
     ----------
-    c : array-like
+    center : array-like
         2D Coordinates of center.
-    r : float
+    radius : float
         Radius of the circle.
     num_points : int
         Number of points to build.

@@ -145,8 +145,8 @@ def rotation(ax: str | int = None, ang: float = 0.0, degrees: bool = False) -> n
     ax : string or int
         Axis to rotate around. Possible are `X`, `Y` or `Z` (upper- or
         lowercase) or the corresponding axis index 0, 1 or 2. Defaults to 'z'.
-    angle : float, default: 0.0
-        Angle, in degrees, to rotate around.
+    ang : float, default: 0.0
+        Angle to rotate around.
     degrees : bool, default: False
         If True, the angle is given in degrees. Otherwise, it is given in
         radians.
