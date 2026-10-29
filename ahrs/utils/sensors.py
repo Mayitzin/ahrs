@@ -258,8 +258,6 @@ class Sensors:
 
         # Add gyro biases: uniform random constant biases within 1/200th of the full range of the gyroscopes
         self.biases_gyroscopes = (self.rng.random(3)-0.5) * np.ptp(self.gyroscopes)/200
-        if not self.in_degrees:
-            self.biases_gyroscopes *= DEG2RAD
         self.gyroscopes += self.biases_gyroscopes
 
         # Accelerometers and magnetometers are measured w.r.t. global frame (inverse of the local frame)
