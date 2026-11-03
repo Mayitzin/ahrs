@@ -805,6 +805,20 @@ class TestEKF(unittest.TestCase):
         orientation = ahrs.QuaternionArray(ahrs.filters.EKF(gyr=self.gyroscopes, acc=self.accelerometers, mag=self.magnetometers).Q)
         self.assertLess(np.nanmean(ahrs.utils.metrics.qad(REFERENCE_QUATERNIONS, orientation)), THRESHOLD)
 
+    def test_step_by_step_with_mag(self):
+        # Initialize EKF empty
+        ekf = ahrs.filters.EKF()
+        
+        q_init = ahrs.common.orientation.acc2q(self.accelerometers[0])
+        q_updated = ekf.update(
+            q=q_init, 
+            gyr=self.gyroscopes[0], 
+            acc=self.accelerometers[0], 
+            mag=self.magnetometers[0]
+        )
+        self.assertEqual(q_updated.shape, (4,))
+        self.assertFalse(np.isnan(q_updated).any())
+
     def test_wrong_input_vectors(self):
         self.assertRaises(TypeError, ahrs.filters.EKF, gyr=1.0, acc=self.accelerometers)
         self.assertRaises(TypeError, ahrs.filters.EKF, gyr="self.gyroscopes", acc=self.accelerometers)
