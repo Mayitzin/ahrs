@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import unittest
+import itertools
 import numpy as np
 import ahrs
 
@@ -428,6 +429,28 @@ class TestTransformationQuaternionToAngles(unittest.TestCase):
     def test_quaternion_to_angles(self):
         np.testing.assert_almost_equal(self.q1.to_angles(), [0., 0., np.pi/2], decimal=15)
         np.testing.assert_almost_equal(self.q1.to_angles(seq='ZYZ'), [-np.pi/2, np.pi/2, np.pi/2], decimal=15)
+        np.testing.assert_almost_equal(self.q1.to_angles(seq='zyz'), [np.pi/2, np.pi/2, -np.pi/2], decimal=15)
+        np.testing.assert_almost_equal(self.q1.to_angles(seq='xyz'), [np.pi/2, 0., 0.], decimal=15)
+
+    def test_quaternion_to_angles_reconstructs_orientation(self):
+        def rot(axis, angle):
+            c, s = np.cos(angle), np.sin(angle)
+            return {'x': np.array([[1., 0., 0.], [0., c, -s], [0., s, c]]),
+                    'y': np.array([[c, 0., s], [0., 1., 0.], [-s, 0., c]]),
+                    'z': np.array([[c, -s, 0.], [s, c, 0.], [0., 0., 1.]])}[axis]
+        rng = np.random.default_rng(42)
+        sequences = [''.join(s) for s in itertools.product('xyz', repeat=3) if s[0] != s[1] and s[1] != s[2]]
+        for seq in sequences + [s.upper() for s in sequences]:
+            for _ in range(20):
+                q = ahrs.Quaternion(rng.normal(size=4))
+                R = np.eye(3)
+                for axis, angle in zip(seq.lower(), q.to_angles(seq=seq)):
+                    R = rot(axis, angle) @ R if seq.islower() else R @ rot(axis, angle)
+                np.testing.assert_almost_equal(R, q.to_DCM(), decimal=7, err_msg=seq)
+
+    def test_quaternion_to_angles_wrong_sequences(self):
+        for seq in ['ZY', 'ZYXX', 'ZZY', 'ABC', 'zYX']:
+            self.assertRaises(ValueError, self.q1.to_angles, seq)
 
 if __name__ == "__main__":
     unittest.main()

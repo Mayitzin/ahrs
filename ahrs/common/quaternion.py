@@ -1699,20 +1699,28 @@ class Quaternion(np.ndarray):
         axis = np.zeros(3) if angle==0.0 else self.v/denom
         return axis, angle
 
-    def to_angles(self, seq='ZYX') -> np.ndarray:
+    def to_angles(self, seq: str = 'ZYX') -> np.ndarray:
         """
         .. versionchanged:: 0.4.1
 
-        Return the Euler angles from quaternion.
+        Return the Euler angles from the Quaternion.
 
         This is a new implementation based on the excellent work by Evandro
         Bernardes and Stéphane Viollet :cite:p:`bernardes2022`.
 
+        **Derivation**
+
         Given a versor (unit quaternion) :math:`\\mathbf{q} = \\begin{bmatrix}
-        q_w & q_x & q_y & q_z \\end{bmatrix}^T`, the goal is to obtain the
-        Euler angles :math:`\\begin{bmatrix}\\theta_1 & \\theta_2 & \\theta_3
-        \\end{bmatrix}^T` that represent the same orientation for a given
-        sequence of rotations (e.g., ``'ZYX'``, ``'XYZ'``, etc.)
+        q_w & q_x & q_y & q_z \\end{bmatrix}^T`, return the rotation angles
+        :math:`\\begin{bmatrix}\\theta_1 &\\theta_2 &\\theta_3\\end{bmatrix}^T`
+        that represent the same orientation for a given sequence of 3 rotations
+        (e.g., ``'ZYX'``, ``'XYZ'``, etc.)
+
+        When rotation axes are all different, the sequence is called
+        **Tait-Bryan angles**.
+
+        When the first and third rotation axes are the same, the sequence is
+        called **Proper Euler angles**.
 
         If the rotations occur around a fixed global coordinate system, the
         angles are called **extrinsic**.
@@ -1801,8 +1809,9 @@ class Quaternion(np.ndarray):
 
         where :math:`\\varepsilon = \\pm 1`.
 
+        The values of :math:`s_2` and :math:`c_2` are in the range :math:`[-1, 1]`.
         The authors chose a solution in which :math:`s_2>0`, and :math:`c_2>0`.
-        Therefore, a factorization around with these properties leads to:
+        A factorization with these properties leads to:
 
         .. math::
 
@@ -1903,22 +1912,100 @@ class Quaternion(np.ndarray):
 
         However, there are two **Singularities** with this approach:
 
-        - When :math:`\\theta_2=0`, we get :math:`s_2=c=0`, and
+        - When :math:`\\theta_2=0` : we get :math:`s_2=c=0`, and
           :math:`\\theta_-` is undefined.
-        - When :math:`\\theta_2=\\pi`, we get :math:`c_2=b=0`, and
+        - When :math:`\\theta_2=\\pi` : we get :math:`c_2=b=0`, and
           :math:`\\theta_+` is undefined.
 
-        In both cases a degree of freedom is lost, and we cannot uniquely
+        In both situations, a degree of freedom is lost, and we cannot uniquely
         determine angles :math:`\\theta_1` and :math:`\\theta_3`. This is known
-        as a [Gimbal Lock](https://en.wikipedia.org/wiki/Gimbal_lock).
+        as a `Gimbal Lock <https://en.wikipedia.org/wiki/Gimbal_lock>`_.
 
         In such cases, we set the undefined angle to zero, or set it to its
         last known value.
 
+        In this implementation, the angle that is set to zero is the last
+        one of the sequence ``seq``, so that the remaining rotation is absorbed
+        by the first angle. The original article instead sets :math:`\\theta_1`
+        to zero. Both choices give the same orientation.
+
+        **Tait-Bryan angles.** For sequences whose three axes are all different,
+        the second factor of the decomposition is rotated by :math:`\\pi/2`
+        around the middle axis, and the third angle changes sign.
+
+        Writing :math:`\\theta_2' = \\theta_2 + \\pi/2` and :math:`\\theta_3' =
+        \\varepsilon\\theta_3`, the proper-case formulas can be reused. After
+        computing them, the implementation applies
+
+        .. math::
+
+            \\theta_2 \\leftarrow \\theta_2 - \\frac{\\pi}{2}, \\qquad
+            \\theta_3 \\leftarrow \\varepsilon\\,\\theta_3
+
+        where :math:`\\varepsilon = \\pm 1` is the parity of the permutation
+        of the axes, given by the Levi-Civita symbol of their indices.
+
+        **Algorithm Summary.** The steps of the conversion are:
+
+        1. Compute the parity :math:`\\varepsilon`, and combine the components
+           of the quaternion into :math:`(a, b, c, d)`. For proper sequences,
+           this is a simple permutation of :math:`(q_w, q_x, q_y, q_z)`
+           (Eq. 20-22). For Tait-Bryan sequences, the components are combined
+           as :math:`a = q_w - q_j`, :math:`b = q_i + \\varepsilon q_k`,
+           :math:`c = q_j + q_w`, and :math:`d = \\varepsilon q_k - q_i`,
+           where :math:`(i, j, k)` are the indices of the axes.
+        2. Compute the middle angle as
+           :math:`\\theta_2 = 2\\arctan2\\big(\\sqrt{c^2+d^2}, \\sqrt{a^2+b^2}\\big)`
+           (Eq. 33-34). This needs no normalization of the quaternion.
+        3. Compute :math:`\\theta_+ = \\arctan2(b, a)` and
+           :math:`\\theta_- = \\arctan2(d, c)`. Then
+           :math:`\\theta_1 = \\theta_+ - \\theta_-` and
+           :math:`\\theta_3 = \\theta_+ + \\theta_-` (Eq. 32).
+        4. Apply the Tait-Bryan correction if needed, and wrap the angles to
+           the interval :math:`[-\\pi, \\pi]`.
+
+        Since no intermediate rotation matrix is built, the method only needs
+        a few trigonometric functions and permutations of the components.
+
+        Parameters
+        ----------
+        seq : str, default: 'ZYX'
+            Sequence of three rotation axes. Upper-case letters (e.g.,
+            ``'ZYX'``) describe **intrinsic** rotations, and lower-case letters
+            (e.g., ``'zyx'``) describe **extrinsic** rotations. Both cannot be
+            mixed, and consecutive axes must be different.
+
         Returns
         -------
         angles : numpy.ndarray
-            Euler angles of quaternion.
+            Euler angles of quaternion, in radians, in the order given by
+            ``seq``.
+
+        Raises
+        ------
+        ValueError
+            If ``seq`` has not three axes, mixes intrinsic and extrinsic
+            axes, contains invalid axes, or has equal consecutive axes.
+
+        Examples
+        --------
+        Rotation of :math:`\\pi/2` around the X-axis, given as the quaternion
+        :math:`\\begin{bmatrix}\\cos(\\pi/4) & \\sin(\\pi/4) & 0 & 0\\end{bmatrix}`:
+
+        >>> import numpy as np
+        >>> q = Quaternion([np.sqrt(2)/2, np.sqrt(2)/2, 0.0, 0.0])
+        >>> q.to_angles()
+        array([0.        , 0.        , 1.57079633])
+        >>> q.to_angles(seq='ZYZ')
+        array([-1.57079633,  1.57079633,  1.57079633])
+        >>> q.to_angles(seq='xyz')
+        array([1.57079633, 0.        , 0.        ])
+
+        Rotation of :math:`\\pi/4` around the Z-axis:
+
+        >>> q = Quaternion([np.cos(np.pi/8), 0.0, 0.0, np.sin(np.pi/8)])
+        >>> q.to_angles(seq='ZYX')
+        array([0.78539816, 0.        , 0.        ])
 
         """
         if len(seq) != 3:
@@ -1936,84 +2023,49 @@ class Quaternion(np.ndarray):
                              f"got {seq}")
 
         seq = seq.lower()
-        quat = np.roll(self.A, -1)    # qx, qy, qz, qw
+        quat = np.roll(self.A, -1)    # Change order to qx, qy, qz, qw
         if not extrinsic:
             seq = seq[::-1]
-        valid_axes = ['x', 'y', 'z']
-        if not any(axis in valid_axes for axis in seq):
-            raise ValueError(f"Expected axes from `seq` to be from "
-                             f"{valid_axes}, got {seq}")
-        i = valid_axes.index(seq[0])
-        j = valid_axes.index(seq[1])
-        k = valid_axes.index(seq[2])
+        i, j, k = ('xyz'.index(axis) for axis in seq)
         is_proper = i == k
         if is_proper:
             k = 3 - i - j # get third axis
 
-        # Step 0
         # Check if permutation is even (+1) or odd (-1)
-        sign = int((i-j)*(j-k)*(k-i)/2)
-        eps = 1e-7
-        angles = np.zeros(3)
+        sign = (i-j)*(j-k)*(k-i) // 2
         if is_proper:
-            a = quat[3]
-            b = quat[i]
-            c = quat[j]
-            d = quat[k] * sign
+            a, b, c, d = quat[3], quat[i], quat[j], quat[k]*sign
         else:
             a = quat[3] - quat[j]
-            b = quat[i] + quat[k] * sign
+            b = quat[i] + quat[k]*sign
             c = quat[j] + quat[3]
-            d = quat[k] * sign - quat[i]
+            d = quat[k]*sign - quat[i]
 
-        # Step 3
         # Compute second angle
-        angles[1] = 2.0 * np.arctan2(np.sqrt(c**2 + d**2), np.sqrt(a**2 + b**2))
+        eps = 1e-7
+        angles = np.zeros(3)
+        angles[1] = 2.0 * np.arctan2(np.hypot(c, d), np.hypot(a, b))
 
-        # ... and check if equalt to is 0 or pi, causing a singularity
-        safe1 = abs(angles[1]) >= eps
-        safe2 = abs(angles[1] - np.pi) >= eps
-        safe = safe1 and safe2
-
-        # Step 4
-        # compute first and third angles, according to case
-        if safe:
-            half_sum = np.arctan2(b, a)     # == (alpha+gamma)/2
-            half_diff = np.arctan2(-d, c)   # == (alpha-gamma)/2
+        half_sum = np.arctan2(b, a)     # == (alpha+gamma)/2
+        half_diff = np.arctan2(-d, c)   # == (alpha-gamma)/2
+        if eps < angles[1] < np.pi - eps:
             angles[0] = half_sum + half_diff
             angles[2] = half_sum - half_diff
         else:
-            if not extrinsic:
-                # For intrinsic, set first angle to zero so that after reversal we
-                # ensure that third angle is zero
-                # 6a
-                if not safe:
-                    angles[0] = 0
-                if not safe1:
-                    half_sum = np.arctan2(b, a)
-                    angles[2] = 2 * half_sum
-                # 6c
-                if not safe2:
-                    half_diff = np.arctan2(-d, c)
-                    angles[2] = -2 * half_diff
+            print("Gimbal lock detected. Setting third angle to zero, "
+                  "since it is not possible to uniquely determine all angles.")
+            # Only one angle can be determined: store it in the first angle for
+            # extrinsic, or in the third one for intrinsic (before reversal)
+            at_zero = angles[1] < eps
+            angle = 2.0 * (half_sum if at_zero else half_diff)
+            if extrinsic:
+                angles[0] = angle
             else:
-                # For extrinsic, set third angle to zero
-                # 6b
-                if not safe:
-                    angles[2] = 0
-                if not safe1:
-                    half_sum = np.arctan2(b, a)
-                    angles[0] = 2 * half_sum
-                # 6c
-                if not safe2:
-                    half_diff = np.arctan2(-d, c)
-                    angles[0] = 2 * half_diff
+                angles[2] = angle if at_zero else -angle
 
-        for i_ in range(3):
-            if angles[i_] < -np.pi:
-                angles[i_] += 2 * np.pi
-            elif angles[i_] > np.pi:
-                angles[i_] -= 2 * np.pi
+        # Wrap angles to [-pi, pi]
+        angles = np.where(angles < -np.pi, angles + 2*np.pi, angles)
+        angles = np.where(angles > np.pi, angles - 2*np.pi, angles)
 
         # for Tait-Bryan angles
         if not is_proper:
@@ -2021,14 +2073,7 @@ class Quaternion(np.ndarray):
             angles[1] -= np.pi / 2
 
         if not extrinsic:
-            # reversal
-            angles[0], angles[2] = angles[2], angles[0]
-
-        # Step 8
-        if not safe:
-            print("Gimbal lock detected. Setting third angle to zero "
-                  "since it is not possible to uniquely determine "
-                  "all angles.")
+            angles = angles[::-1]   # reversal
 
         return angles
 
