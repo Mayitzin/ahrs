@@ -92,8 +92,6 @@ def euclidean(x: np.ndarray, y: np.ndarray) -> float:
         M-by-N array to compare. Usually a reference array.
     y : numpy.array
         M-by-N array to compare.
-    mode : str
-        Mode of distance computation.
 
     Return
     ------
