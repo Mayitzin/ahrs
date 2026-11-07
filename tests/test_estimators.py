@@ -991,6 +991,34 @@ class TestTilt(unittest.TestCase):
         tilt = ahrs.filters.Tilt()
         self.assertRaises(ValueError, tilt.estimate, acc=self.accelerometers[0], mag=np.zeros(3))
 
+    def test_as_angles(self):
+        # Backwards-compatible parameter 'as_angles' (issue #138)
+        tilt = ahrs.filters.Tilt(acc=self.accelerometers, mag=self.magnetometers, as_angles=True)
+        self.assertEqual(tilt.representation, 'angles')
+        self.assertTrue(tilt.as_angles)
+        self.assertEqual(tilt.Q.shape, (len(self.accelerometers), 3))
+        np.testing.assert_allclose(tilt.Q, tilt.angles)
+        tilt = ahrs.filters.Tilt(as_angles=True)
+        angles = tilt.estimate(acc=self.accelerometers[0], mag=self.magnetometers[0])
+        self.assertEqual(angles.shape, (3,))
+        # Explicit representation takes precedence over 'as_angles'
+        tilt = ahrs.filters.Tilt(as_angles=True, representation='quaternion')
+        self.assertFalse(tilt.as_angles)
+        self.assertEqual(tilt.estimate(acc=self.accelerometers[0]).shape, (4,))
+
+    def test_estimate_uses_representation(self):
+        # estimate() defaults to the representation given at construction (issue #138)
+        acc, mag = self.accelerometers[0], self.magnetometers[0]
+        batch_angles = ahrs.filters.Tilt(acc=self.accelerometers, mag=self.magnetometers, representation='angles').Q
+        angles = ahrs.filters.Tilt(representation='angles').estimate(acc=acc, mag=mag)
+        np.testing.assert_allclose(angles[:2], batch_angles[0, :2])
+        rotmat = ahrs.filters.Tilt(representation='rotmat').estimate(acc=acc, mag=mag)
+        self.assertEqual(rotmat.shape, (3, 3))
+        self.assertEqual(ahrs.filters.Tilt().estimate(acc=acc, mag=mag).shape, (4,))
+        # An explicit argument still overrides the default
+        tilt = ahrs.filters.Tilt(representation='angles')
+        self.assertEqual(tilt.estimate(acc=acc, mag=mag, representation='quaternion').shape, (4,))
+
     def test_method_estimate(self):
         orientation = ahrs.QuaternionArray(ahrs.filters.Tilt(acc=self.accelerometers, mag=self.magnetometers).Q)
         orientation_as_angles = ahrs.filters.Tilt(acc=self.accelerometers, mag=self.magnetometers, representation='angles').Q
