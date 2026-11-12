@@ -1328,6 +1328,14 @@ class TestAngular(unittest.TestCase):
         orientation = ahrs.filters.AngularRate(gyr=self.gyroscopes, method='series', representation='rotmat').R
         self.assertLess(np.nanmean(ahrs.utils.metrics.chordal(REFERENCE_ROTATIONS, orientation)), THRESHOLD)
 
+    def test_series_high_order_matches_closed(self):
+        angular_rate = ahrs.filters.AngularRate()
+        q = np.array([0.5, 0.1, -0.7, 0.3])
+        gyr = np.array([0.8, -0.5, 0.33])
+        closed = angular_rate.update(q, gyr, method='closed')
+        series = angular_rate.update(q, gyr, method='series', order=4)
+        self.assertLess(np.linalg.norm(series - closed), 1e-12)
+
     def test_wrong_input_gyroscope_types(self):
         self.assertRaises(TypeError, ahrs.filters.AngularRate, gyr=1.0)
         self.assertRaises(TypeError, ahrs.filters.AngularRate, gyr="self.gyroscopes")

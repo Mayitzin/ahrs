@@ -559,6 +559,6 @@ class AngularRate:
             S = 0.5 * dt * Omega
             A = np.identity(4)
             for i in range(1, order+1):
-                A += S**i / factorial(i)
+                A += np.linalg.matrix_power(S, i) / factorial(i)
         q_new = Quaternion(A @ q)
         return q_new.to_array()
