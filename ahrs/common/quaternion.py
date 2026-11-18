@@ -1455,10 +1455,10 @@ class Quaternion(np.ndarray):
         .. math::
             \\begin{eqnarray}
             \\mathbf{pq} & = & \\big( (q_w p_w - \\mathbf{q}_v \\cdot \\mathbf{p}_v) \\; ,
-            \\; \\mathbf{q}_v \\times \\mathbf{p}_v + q_w \\mathbf{p}_v + p_w \\mathbf{q}_v \\big) \\\\
+            \\; \\mathbf{p}_v \\times \\mathbf{q}_v + q_w \\mathbf{p}_v + p_w \\mathbf{q}_v \\big) \\\\
             & = &
             \\begin{bmatrix}q_w p_w - \\mathbf{q}_v \\cdot \\mathbf{p}_v \\\\
-            \\mathbf{q}_v \\times \\mathbf{p}_v + q_w \\mathbf{p}_v + p_w \\mathbf{q}_v \\end{bmatrix} \\\\
+            \\mathbf{p}_v \\times \\mathbf{q}_v + q_w \\mathbf{p}_v + p_w \\mathbf{q}_v \\end{bmatrix} \\\\
             & = &
             \\begin{bmatrix}
             p_w & -\\mathbf{p}_v^T \\\\ \\mathbf{p}_v & p_w \\mathbf{I}_3 + \\lfloor \\mathbf{p}_v \\rfloor_\\times
