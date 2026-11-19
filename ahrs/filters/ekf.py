@@ -1198,7 +1198,7 @@ class EKF:
         x = 0.5*dt*omega
         return np.identity(4) + self.Omega(x)
 
-    def h(self, q: np.ndarray) -> np.ndarray:
+    def h(self, q: np.ndarray, use_mag: bool = False) -> np.ndarray:
         """
         Measurement Model
 
@@ -1232,17 +1232,20 @@ class EKF:
         q : numpy.ndarray
             Predicted Quaternion.
 
+        use_mag : bool, default : ``False``
+            Whether or not to use the geomagnetic field.
+
         Returns
         -------
         numpy.ndarray
             Expected Measurements.
         """
         C = Quaternion(q).to_DCM().T
-        if self.mag is None:
+        if not use_mag:
             return C @ self.a_ref
         return np.r_[C @ self.a_ref, C @ self.m_ref]
 
-    def dhdq(self, q: np.ndarray, mode: str = 'normal') -> np.ndarray:
+    def dhdq(self, q: np.ndarray, mode: str = 'normal', use_mag: bool = False) -> np.ndarray:
         """
         Linearization of observations with Jacobian.
 
@@ -1293,6 +1296,8 @@ class EKF:
         mode : str, default: ``'normal'``
             Computation mode for Observation matrix. Options are: ``'normal'``,
             or ``'refactored'``.
+        use_mag : bool, default : ``False``
+            Whether or not to use the geomagnetic field.
 
         Returns
         -------
@@ -1305,7 +1310,7 @@ class EKF:
         if mode.lower() == 'refactored':
             t = skew(self.a_ref)@q[1:]
             H = np.c_[t, q[1:]*self.a_ref*np.identity(3) + skew(t + qw*self.a_ref) - np.outer(self.a_ref, q[1:])]
-            if self.mag is not None:
+            if use_mag:
                 t = skew(self.m_ref)@q[1:]
                 H_2 = np.c_[t, q[1:]*self.m_ref*np.identity(3) + skew(t + qw*self.m_ref) - np.outer(self.m_ref, q[1:])]
                 H = np.vstack((H, H_2))
@@ -1314,7 +1319,7 @@ class EKF:
         H = np.array([[ v[0]*qw + v[1]*qz - v[2]*qy, v[0]*qx + v[1]*qy + v[2]*qz, -v[0]*qy + v[1]*qx - v[2]*qw, -v[0]*qz + v[1]*qw + v[2]*qx],
                       [-v[0]*qz + v[1]*qw + v[2]*qx, v[0]*qy - v[1]*qx + v[2]*qw,  v[0]*qx + v[1]*qy + v[2]*qz, -v[0]*qw - v[1]*qz + v[2]*qy],
                       [ v[0]*qy - v[1]*qx + v[2]*qw, v[0]*qz - v[1]*qw - v[2]*qx,  v[0]*qw + v[1]*qz - v[2]*qy,  v[0]*qx + v[1]*qy + v[2]*qz]])
-        if self.mag is not None:
+        if use_mag:
             H_2 = np.array([[ v[3]*qw + v[4]*qz - v[5]*qy, v[3]*qx + v[4]*qy + v[5]*qz, -v[3]*qy + v[4]*qx - v[5]*qw, -v[3]*qz + v[4]*qw + v[5]*qx],
                             [-v[3]*qz + v[4]*qw + v[5]*qx, v[3]*qy - v[4]*qx + v[5]*qw,  v[3]*qx + v[4]*qy + v[5]*qz, -v[3]*qw - v[4]*qz + v[5]*qy],
                             [ v[3]*qy - v[4]*qx + v[5]*qw, v[3]*qz - v[4]*qw - v[5]*qx,  v[3]*qw + v[4]*qz - v[5]*qy,  v[3]*qx + v[4]*qy + v[5]*qz]])
@@ -1347,7 +1352,8 @@ class EKF:
         _assert_numerical_iterable(q, 'Quaternion')
         _assert_numerical_iterable(gyr, 'Tri-axial gyroscope sample')
         _assert_numerical_iterable(acc, 'Tri-axial accelerometer sample')
-        if mag is not None:
+        use_mag = mag is not None
+        if use_mag:
             _assert_numerical_iterable(mag, 'Tri-axial magnetometer sample')
         dt = self.Dt if dt is None else dt
         if not np.isclose(np.linalg.norm(q), 1.0):
@@ -1360,12 +1366,12 @@ class EKF:
             return q
         a /= a_norm
         z = np.copy(a)
-        if mag is not None:
+        if use_mag:
             m_norm = np.linalg.norm(mag)
             if m_norm == 0:
                 raise ValueError("Invalid geomagnetic field. Its magnitude must be greater than zero.")
             z = np.r_[a, mag/m_norm]
-        self.R = np.diag(np.repeat(self.noises[1:] if mag is not None else self.noises[1], 3))
+        self.R = np.diag(np.repeat(self.noises[1:] if use_mag else self.noises[1], 3))
         # ----- Prediction -----
         q_t = self.f(q, g, dt)                  # Predicted State
         F   = self.dfdq(g, dt)                  # Linearized Fundamental Matrix
@@ -1373,9 +1379,9 @@ class EKF:
         Q_t = self.g_noise * W@W.T              # Process Noise Covariance
         P_t = F@self.P@F.T + Q_t                # Predicted Covariance Matrix
         # ----- Correction -----
-        y   = self.h(q_t)                       # Expected Measurement function
+        y   = self.h(q_t, use_mag=use_mag)              # Expected Measurement function
         v   = z - y                             # Innovation (Measurement Residual)
-        H   = self.dhdq(q_t)                    # Linearized Measurement Matrix
+        H   = self.dhdq(q_t, use_mag=use_mag)           # Linearized Measurement Matrix
         S   = H@P_t@H.T + self.R                # Measurement Prediction Covariance
         K   = P_t@H.T@np.linalg.inv(S)          # Kalman Gain
         self.P = (np.identity(4) - K@H)@P_t     # Updated Covariance Matrix
