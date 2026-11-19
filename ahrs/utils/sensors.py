@@ -272,8 +272,6 @@ class Sensors:
             self.magnetometers_enu[i] = rotations[i].T @ self.reference_magnetic_vector_enu
 
         # Add noise
-        if self.mag_noise < np.ptp(self.magnetometers):
-            self.mag_noise = np.linalg.norm(REFERENCE_MAGNETIC_VECTOR) * 0.005
         self.gyroscopes += self.rng.standard_normal((self.num_samples, 3)) * self.gyr_noise
         self.accelerometers += self.rng.standard_normal((self.num_samples, 3)) * self.acc_noise
         self.magnetometers += self.rng.standard_normal((self.num_samples, 3)) * self.mag_noise
