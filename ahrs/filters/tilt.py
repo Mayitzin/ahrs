@@ -114,6 +114,9 @@ class Tilt:
     representation : str, default: ``'quaternion'``
         Attitude representation. Options are ``'quaternion'``, ``'angles'`` or
         ``'rotmat'``.
+    as_angles : bool, default: False
+        Legacy alias of ``representation='angles'``. Ignored if
+        ``representation`` is given.
 
     Attributes
     ----------
@@ -204,9 +207,11 @@ class Tilt:
     def __init__(self, acc: np.ndarray = None, mag: np.ndarray = None, **kwargs):
         self.acc: np.ndarray = acc
         self.mag: np.ndarray = mag
-        self.representation: str = kwargs.get('representation', 'quaternion')
-        self.as_angles: bool = kwargs.get('as_angles', self.representation == 'angles') # Old parameter. Backwards compatiblity.
+        # 'as_angles' is the old parameter. Kept for backwards compatibility.
+        default_representation = 'angles' if kwargs.get('as_angles', False) else 'quaternion'
+        self.representation: str = kwargs.get('representation', default_representation)
         _assert_representation(self.representation)
+        self.as_angles: bool = self.representation == 'angles'
         self.angles: np.ndarray = None
         if self.acc is not None:
             self.Q = self._compute_all()
@@ -268,7 +273,7 @@ class Tilt:
         Q = QuaternionArray(Q)
         return Q.to_DCM()
 
-    def estimate(self, acc: np.ndarray, mag: np.ndarray = None, representation: str = 'quaternion') -> np.ndarray:
+    def estimate(self, acc: np.ndarray, mag: np.ndarray = None, representation: str = None) -> np.ndarray:
         """
         Estimate the quaternion from the tilting read by an orthogonal
         tri-axial array of accelerometers.
@@ -283,6 +288,10 @@ class Tilt:
             Sample of tri-axial Accelerometer in m/s^2.
         mag : numpy.ndarray, default: None
             N-by-3 array with measurements of magnetic field in mT.
+        representation : str, default: None
+            Attitude representation. Options are ``'quaternion'``,
+            ``'angles'`` or ``'rotmat'``. If ``None``, the representation
+            set at construction is used.
 
         Returns
         -------
@@ -303,9 +312,11 @@ class Tilt:
 
         >>> tilt = Tilt(as_angles=True)
         >>> tilt.estimate(acc=acc_data, mag=mag_data)
-        array([ 76.15281566 -24.66891862 146.02634429])
+        array([ 1.32911737, -0.43055385,  2.5486405 ])
 
         """
+        if representation is None:
+            representation = self.representation
         _assert_representation(representation)
         _assert_numerical_iterable(acc, 'Gravitational acceleration vector')
         acc = np.copy(acc)
